@@ -1,23 +1,15 @@
-import { useAccount, useBalance, useChainId } from 'wagmi';
-import { useMemo } from 'react';
+import { useWeb3Context } from '../lib/context/web3-context';
 
+/**
+ * Safe Web3 hook that provides wallet data when WagmiProvider is available.
+ * Returns default values (isConnected: false, etc.) when Web3 is not ready.
+ * 
+ * This hook is safe to use anywhere in the app - it will never throw an error
+ * even if called before WagmiProvider is initialized.
+ */
 export function useWeb3() {
-  const { address, isConnected } = useAccount();
-  const chainId = useChainId();
-  const { data: balance } = useBalance({
-    address,
-    enabled: !!address,
-  });
-
-  return useMemo(
-    () => ({
-      address,
-      isConnected,
-      chainId,
-      balance: balance?.value.toString(),
-      balanceFormatted: balance?.formatted,
-      symbol: balance?.symbol,
-    }),
-    [address, isConnected, chainId, balance]
-  );
+  return useWeb3Context();
 }
+
+// Type export for components that need it
+export type Web3State = ReturnType<typeof useWeb3>;

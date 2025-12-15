@@ -19,6 +19,7 @@ import { GlobalAuthGuard } from "./lib/global-auth-guard";
 import { BottomNav } from "./components/layout/bottom-nav";
 import { BoostifyRadio } from "./components/radio/boostify-radio";
 import { useAuth } from "@clerk/clerk-react";
+import { Web3NotReadyProvider, Web3ReadyInternalProvider } from "./lib/context/web3-context";
 
 // Web3 Provider wrapper - NO BLOQUEA, carga Web3 de forma lazy
 function Web3Wrapper({ children }: { children: ReactNode }) {
@@ -32,23 +33,33 @@ function Web3Wrapper({ children }: { children: ReactNode }) {
     return () => clearTimeout(timer);
   }, []);
 
-  // SIEMPRE renderizar children primero
+  // SIEMPRE renderizar children con el contexto de Web3Ready
   // Web3 se activa después en background
   if (!web3Enabled) {
-    return <>{children}</>;
+    return (
+      <Web3NotReadyProvider>
+        {children}
+      </Web3NotReadyProvider>
+    );
   }
 
   try {
     return (
       <WagmiProvider config={wagmiConfig}>
         <RainbowKitProvider>
-          {children}
+          <Web3ReadyInternalProvider>
+            {children}
+          </Web3ReadyInternalProvider>
         </RainbowKitProvider>
       </WagmiProvider>
     );
   } catch (error) {
     console.warn('[Web3] Failed to initialize, continuing without Web3:', error);
-    return <>{children}</>;
+    return (
+      <Web3NotReadyProvider>
+        {children}
+      </Web3NotReadyProvider>
+    );
   }
 }
 import { CustomerServiceAgent } from "./components/agents/customer-service-agent";
