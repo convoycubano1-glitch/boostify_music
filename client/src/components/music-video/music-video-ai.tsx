@@ -6062,13 +6062,22 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                 .filter(item => item.generatedImage || item.firebaseUrl || item.imageUrl || item.thumbnail)
                 .map((item, idx) => ({
                   id: String(item.id) || `scene-${idx}`,
-                  imageUrl: item.generatedImage || item.firebaseUrl || item.imageUrl || item.thumbnail || '',
+                  imageUrl: (typeof item.generatedImage === 'string' ? item.generatedImage : '') || 
+                           item.firebaseUrl || item.imageUrl || item.thumbnail || '',
                   timestamp: (item.start_time || 0) / 1000, // Convert ms to seconds
-                  description: item.lyricsSegment || item.description || item.imagePrompt || `Scene ${idx + 1}`
+                  description: item.lyricsSegment || item.description || item.imagePrompt || `Scene ${idx + 1}`,
+                  lyricsSegment: item.lyricsSegment || ''
                 }))}
               audioPreviewUrl={selectedFile?.url || audioUrl}
               onChange={(clips) => setTimelineItems(clips)}
               onExport={handleExportVideo}
+              onClose={() => {
+                // Allow user to go back/close timeline editor
+                // This resets to show the generation modal or previous step
+                if (window.confirm('¿Seguro que quieres salir del editor? Tus cambios se guardarán.')) {
+                  setShowPreviewModal(true);
+                }
+              }}
               isExporting={isExporting}
               exportProgress={exportProgress}
               exportStatus={exportStatus}
