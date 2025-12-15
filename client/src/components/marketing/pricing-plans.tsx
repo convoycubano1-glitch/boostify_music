@@ -6,153 +6,57 @@ import { createCheckoutSession } from '../../lib/api/stripe-service';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { Check, X, Loader2 } from 'lucide-react';
+import { Check, X, Loader2, Sparkles, Zap, Crown, Rocket } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
 import { useLocation } from 'wouter';
-
-interface PricingPlan {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  interval: 'month' | 'year';
-  currency: string;
-  features: {
-    included: string[];
-    excluded: string[];
-  };
-  cta: string;
-  plan: 'free' | 'basic' | 'pro' | 'premium';
-  mostPopular?: boolean;
-}
+import { SUBSCRIPTION_PLANS, PlanTier } from '../../lib/pricing-config';
+import { motion } from 'framer-motion';
 
 interface PricingPlansProps {
   /**
    * Whether to show all plans (default) or just the upgrade plans
    */
   simplified?: boolean;
+  /**
+   * Whether to animate the cards
+   */
+  withAnimation?: boolean;
 }
+
+// Map plan keys to icons
+const planIcons: Record<PlanTier, React.ReactNode> = {
+  free: <Sparkles className="h-6 w-6" />,
+  creator: <Zap className="h-6 w-6" />,
+  professional: <Rocket className="h-6 w-6" />,
+  enterprise: <Crown className="h-6 w-6" />
+};
+
+// Plan order for display
+const planOrder: PlanTier[] = ['free', 'creator', 'professional', 'enterprise'];
 
 /**
  * The pricing plans offered by the platform
+ * Uses centralized pricing-config.ts as single source of truth
  */
-export function PricingPlans({ simplified = false }: PricingPlansProps) {
+export function PricingPlans({ simplified = false, withAnimation = false }: PricingPlansProps) {
   const { user } = useAuth();
   const { status, currentPlan } = useSubscription();
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const { toast } = useToast();
   const [_, setLocation] = useLocation();
 
-  const plans: PricingPlan[] = [
-    {
-      id: 'free',
-      name: 'Free',
-      description: 'Basic features for starting musicians',
-      price: 0,
-      interval: 'month',
-      currency: 'USD',
-      features: {
-        included: [
-          'Basic music analytics',
-          'Limited song storage',
-          'Public artist profile',
-          'Educational resources'
-        ],
-        excluded: [
-          'AI music generation',
-          'Marketing tools',
-          'Advanced analytics',
-          'Distribution tools',
-          'Priority support'
-        ]
-      },
-      cta: 'Get Started',
-      plan: 'free'
-    },
-    {
-      id: 'basic',
-      name: 'Basic',
-      description: 'Essential tools for developing artists',
-      price: 59.99,
-      interval: 'month',
-      currency: 'USD',
-      features: {
-        included: [
-          'Everything in Free',
-          'Standard music analytics',
-          'Increased song storage',
-          'Basic marketing tools',
-          'Email support'
-        ],
-        excluded: [
-          'AI music generation',
-          'Advanced analytics',
-          'Distribution tools',
-          'Priority support'
-        ]
-      },
-      cta: 'Subscribe',
-      plan: 'basic',
-      mostPopular: true
-    },
-    {
-      id: 'pro',
-      name: 'Pro',
-      description: 'Professional tools for serious artists',
-      price: 99.99,
-      interval: 'month',
-      currency: 'USD',
-      features: {
-        included: [
-          'Everything in Basic',
-          'Advanced analytics',
-          'AI music generation',
-          'Enhanced marketing tools',
-          'Distribution planning',
-          'Priority email support'
-        ],
-        excluded: [
-          'Unlimited song storage',
-          'Dedicated support manager'
-        ]
-      },
-      cta: 'Subscribe',
-      plan: 'pro'
-    },
-    {
-      id: 'premium',
-      name: 'Premium',
-      description: 'Complete solution for professional artists',
-      price: 149.99,
-      interval: 'month',
-      currency: 'USD',
-      features: {
-        included: [
-          'Everything in Pro',
-          'Unlimited song storage',
-          'Full access to AI tools',
-          'Complete analytics suite',
-          'Premium distribution tools',
-          'Dedicated support manager',
-          'Early access to new features'
-        ],
-        excluded: []
-      },
-      cta: 'Subscribe',
-      plan: 'premium'
-    }
-  ];
+  // Convert SUBSCRIPTION_PLANS to array in correct order
+  const allPlans = planOrder.map(key => SUBSCRIPTION_PLANS[key]);
 
   // Filter plans based on current subscription
   const filteredPlans = simplified
-    ? plans.filter(plan => {
+    ? allPlans.filter(plan => {
         // Show plans with higher tier than current plan
-        if (currentPlan === 'free') return plan.plan !== 'free';
-        if (currentPlan === 'basic') return plan.plan !== 'free' && plan.plan !== 'basic';
-        if (currentPlan === 'pro') return plan.plan === 'premium';
-        return false; // Don't show any plans if already on premium
+        const currentIndex = planOrder.indexOf(currentPlan as PlanTier || 'free');
+        const planIndex = planOrder.indexOf(plan.key);
+        return planIndex > currentIndex;
       })
-    : plans;
+    : allPlans;
 
   // If using the simplified view and there are no valid upgrade plans, show a message
   if (simplified && filteredPlans.length === 0) {
@@ -160,26 +64,33 @@ export function PricingPlans({ simplified = false }: PricingPlansProps) {
       <div className="text-center p-8">
         <h3 className="text-xl font-bold mb-2">You're on our highest plan!</h3>
         <p className="text-muted-foreground">
-          You're already subscribed to our Premium plan with all features unlocked.
+          You're already subscribed to our Dominate plan with all features unlocked.
         </p>
       </div>
     );
   }
 
-  const handleSubscribe = async (planId: string) => {
+  const handleSubscribe = async (planKey: PlanTier) => {
     if (!user) {
       toast({
         title: "Login Required",
         description: "Please login to subscribe to a plan",
         variant: "destructive",
       });
-      setLocation('/');
+      setLocation('/signup');
+      return;
+    }
+
+    const plan = SUBSCRIPTION_PLANS[planKey];
+    if (!plan.stripeIds.monthly) {
+      // Free plan - go to dashboard
+      setLocation('/dashboard');
       return;
     }
 
     try {
-      setIsLoading(planId);
-      const response = await createCheckoutSession(planId);
+      setIsLoading(planKey);
+      const response = await createCheckoutSession(plan.stripeIds.monthly);
       
       if (response.url) {
         window.location.href = response.url;
@@ -198,13 +109,21 @@ export function PricingPlans({ simplified = false }: PricingPlansProps) {
     }
   };
 
-  const formatPrice = (price: number, currency: string) => {
+  const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency,
+      currency: 'USD',
       minimumFractionDigits: price % 1 === 0 ? 0 : 2,
     }).format(price);
   };
+
+  const CardWrapper = withAnimation ? motion.div : 'div';
+  const cardAnimationProps = withAnimation ? {
+    initial: { opacity: 0, y: 20 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true },
+    whileHover: { y: -8, transition: { duration: 0.2 } }
+  } : {};
 
   return (
     <div className="container mx-auto py-10">
@@ -218,63 +137,100 @@ export function PricingPlans({ simplified = false }: PricingPlansProps) {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {filteredPlans.map((plan) => {
-          const isCurrentPlan = status?.plan === plan.plan;
+        {filteredPlans.map((plan, index) => {
+          const isCurrentPlan = currentPlan === plan.key;
+          const includedFeatures = plan.features.filter(f => f.included).map(f => f.name);
+          const excludedFeatures = plan.features.filter(f => !f.included).map(f => f.name);
           
           return (
-            <Card 
-              key={plan.id}
-              className={`flex flex-col h-full ${plan.mostPopular ? 'border-primary shadow-lg' : ''}`}
+            <CardWrapper
+              key={plan.key}
+              {...(withAnimation ? { ...cardAnimationProps, transition: { delay: index * 0.1 } } : {})}
             >
-              <CardHeader>
-                {plan.mostPopular && (
-                  <Badge className="w-fit mb-2">Most Popular</Badge>
-                )}
-                <CardTitle>{plan.name}</CardTitle>
-                <CardDescription>{plan.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-grow">
-                <div className="mb-6">
-                  <span className="text-3xl font-bold">{formatPrice(plan.price, plan.currency)}</span>
-                  <span className="text-muted-foreground">/{plan.interval}</span>
-                </div>
-                
-                <div className="space-y-4">
-                  {plan.features.included.map((feature, i) => (
-                    <div key={i} className="flex items-center">
-                      <Check className="text-green-500 mr-2 h-5 w-5 flex-shrink-0" />
-                      <span className="text-sm">{feature}</span>
-                    </div>
-                  ))}
-                  
-                  {plan.features.excluded.map((feature, i) => (
-                    <div key={i} className="flex items-center text-muted-foreground">
-                      <X className="text-red-400 mr-2 h-5 w-5 flex-shrink-0" />
-                      <span className="text-sm">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  className="w-full" 
-                  variant={plan.price === 0 ? "outline" : (plan.mostPopular ? "default" : "secondary")}
-                  onClick={() => plan.price > 0 ? handleSubscribe(plan.id) : setLocation('/dashboard')}
-                  disabled={isCurrentPlan || isLoading === plan.id}
-                >
-                  {isLoading === plan.id ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : isCurrentPlan ? (
-                    'Current Plan'
-                  ) : (
-                    plan.cta
+              <Card 
+                className={`flex flex-col h-full transition-all duration-300 ${
+                  plan.popular 
+                    ? 'border-orange-500 shadow-lg shadow-orange-500/20 bg-gradient-to-b from-orange-500/10 to-transparent' 
+                    : 'border-zinc-800 hover:border-orange-500/50'
+                }`}
+              >
+                <CardHeader className="pb-4">
+                  {plan.popular && (
+                    <Badge className="w-fit mb-2 bg-orange-500 text-white border-0">
+                      {plan.highlight}
+                    </Badge>
                   )}
-                </Button>
-              </CardFooter>
-            </Card>
+                  {!plan.popular && plan.highlight && (
+                    <Badge variant="outline" className="w-fit mb-2 border-zinc-700 text-zinc-400">
+                      {plan.highlight}
+                    </Badge>
+                  )}
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${plan.popular ? 'bg-orange-500/20 text-orange-400' : 'bg-zinc-800 text-zinc-400'}`}>
+                      {planIcons[plan.key]}
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl">{plan.displayName}</CardTitle>
+                      <CardDescription className="text-sm mt-1">{plan.description}</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <div className="mb-6">
+                    <span className="text-4xl font-bold">{formatPrice(plan.price.monthly)}</span>
+                    <span className="text-muted-foreground">/month</span>
+                    {plan.price.yearly > 0 && (
+                      <p className="text-sm text-orange-400 mt-1">
+                        or {formatPrice(plan.price.yearlyEquivalentMonthly)}/mo billed yearly (save 16%)
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {includedFeatures.slice(0, simplified ? 5 : 8).map((feature, i) => (
+                      <div key={i} className="flex items-center">
+                        <Check className="text-green-500 mr-2 h-4 w-4 flex-shrink-0" />
+                        <span className="text-sm">{feature}</span>
+                      </div>
+                    ))}
+                    
+                    {!simplified && excludedFeatures.slice(0, 3).map((feature, i) => (
+                      <div key={i} className="flex items-center text-muted-foreground">
+                        <X className="text-zinc-600 mr-2 h-4 w-4 flex-shrink-0" />
+                        <span className="text-sm">{feature}</span>
+                      </div>
+                    ))}
+                    
+                    {includedFeatures.length > (simplified ? 5 : 8) && (
+                      <p className="text-sm text-orange-400 font-medium">
+                        + {includedFeatures.length - (simplified ? 5 : 8)} more features
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    className={`w-full ${plan.popular ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
+                    variant={plan.price.monthly === 0 ? "outline" : (plan.popular ? "default" : "secondary")}
+                    onClick={() => handleSubscribe(plan.key)}
+                    disabled={isCurrentPlan || isLoading === plan.key}
+                  >
+                    {isLoading === plan.key ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : isCurrentPlan ? (
+                      'Current Plan'
+                    ) : plan.price.monthly === 0 ? (
+                      'Get Started Free'
+                    ) : (
+                      'Subscribe Now'
+                    )}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </CardWrapper>
           );
         })}
       </div>
