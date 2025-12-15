@@ -77,7 +77,7 @@ async function build() {
     // Build server with esbuild
     console.log('🔨 Building server with esbuild...');
     const { stdout: serverOutput, stderr: serverError } = await execPromise(
-      'npx esbuild server/index.ts --bundle --platform=node --packages=external --outfile=dist/server/index.js --format=esm --sourcemap'
+      'npx esbuild server/index.ts --bundle --platform=node --packages=external --external:./vite --external:vite --outfile=dist/server/index.js --format=esm --sourcemap --define:process.env.NODE_ENV=\\"production\\"'
     );
     if (serverOutput) console.log(serverOutput);
     if (serverError) console.error(serverError);

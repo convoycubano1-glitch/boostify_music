@@ -314,19 +314,28 @@ app.use((req, res, next) => {
       log('✅ OPENAI_API_KEY is configured and ready for use');
     }
 
-    if (process.env.NODE_ENV !== "production") {
+    // ONLY setup Vite in development - NEVER in production builds
+    // The production build excludes vite completely
+    if (process.env.NODE_ENV !== "production" && !isProduction) {
+      console.log('🛠 Development mode: Setting up Vite server');
       log('🛠 Setting up Vite development server');
       log('📌 Configuring Vite to handle frontend routes like "/"');
       // Dynamic import of Vite module only in development
-      const { setupVite } = await import("./vite");
-      await setupVite(app, server);
-      log('✅ Vite development server configured');
-      app.use('*', (req, res, next) => {
-        if (!req.path.startsWith('/api/') && !req.path.startsWith('/@') && !req.path.startsWith('/src/')) {
-          log(`⚠️ Route not handled by Vite: ${req.method} ${req.path}`);
-        }
-        next();
-      });
+      try {
+        const { setupVite } = await import("./vite");
+        await setupVite(app, server);
+        log('✅ Vite development server configured');
+        app.use('*', (req, res, next) => {
+          if (!req.path.startsWith('/api/') && !req.path.startsWith('/@') && !req.path.startsWith('/src/')) {
+            log(`⚠️ Route not handled by Vite: ${req.method} ${req.path}`);
+          }
+          next();
+        });
+      } catch (err) {
+        console.error('Failed to load Vite (expected in production):', err);
+      }
+    } else {
+      console.log('🚀 Production mode: Serving static files, Vite disabled');
     }
 
     const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
