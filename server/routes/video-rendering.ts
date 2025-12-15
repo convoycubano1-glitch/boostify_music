@@ -7,6 +7,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { logger } from '../utils/logger';
 import { startVideoRender, checkRenderStatus } from '../services/video-rendering/shotstack-service';
+import { uploadVideoToFirebaseStorage } from '../services/video-upload-firebase';
 import { db } from '../db';
 import { musicVideoProjects } from '../../db/schema';
 import { eq } from 'drizzle-orm';
@@ -15,6 +16,7 @@ const router = Router();
 
 const renderRequestSchema = z.object({
   projectId: z.number().optional(),
+  userId: z.string().optional(),
   clips: z.array(
     z.object({
       id: z.string(),
@@ -30,6 +32,7 @@ const renderRequestSchema = z.object({
   resolution: z.enum(['480p', '720p', '1080p', '4k']).optional(),
   fps: z.enum([25, 30, 60]).optional(),
   quality: z.enum(['low', 'medium', 'high']).optional(),
+  aspectRatio: z.enum(['16:9', '9:16', '1:1']).optional(),
 });
 
 /**
@@ -59,6 +62,7 @@ router.post('/start', async (req, res) => {
       resolution: validatedData.resolution,
       fps: validatedData.fps,
       quality: validatedData.quality,
+      aspectRatio: validatedData.aspectRatio,
     });
 
     if (!result.success) {
@@ -110,6 +114,7 @@ router.post('/start', async (req, res) => {
 router.get('/status/:renderId', async (req, res) => {
   try {
     const { renderId } = req.params;
+    const { projectId, userId } = req.query;
 
     if (!renderId) {
       return res.status(400).json({
@@ -122,11 +127,45 @@ router.get('/status/:renderId', async (req, res) => {
 
     const result = await checkRenderStatus(renderId);
 
-    // Si el renderizado está completo, actualizar el proyecto
-    if (result.status === 'done' && result.url) {
-      // Intentar encontrar el proyecto por el renderId
-      // (esto requeriría guardar el renderId en el proyecto, lo cual ya hicimos arriba)
-      logger.log(`✅ [VIDEO RENDERING] Video listo: ${result.url}`);
+    // Si el renderizado está completo, subir a Firebase y actualizar DB
+    if (result.status === 'done' && result.url && projectId && userId) {
+      logger.log(`✅ [VIDEO RENDERING] Video listo, subiendo a Firebase Storage...`);
+      
+      try {
+        // Subir video a Firebase Storage
+        const uploadResult = await uploadVideoToFirebaseStorage(
+          result.url,
+          String(userId),
+          String(projectId)
+        );
+
+        if (uploadResult.success && uploadResult.firebaseUrl) {
+          // Actualizar la base de datos con la URL de Firebase
+          await db
+            .update(musicVideoProjects)
+            .set({
+              finalVideoUrl: uploadResult.firebaseUrl,
+              status: 'completed',
+              lastModified: new Date(),
+            })
+            .where(eq(musicVideoProjects.id, parseInt(String(projectId))));
+
+          logger.log(`💾 [VIDEO RENDERING] Proyecto actualizado con video final: ${uploadResult.firebaseUrl}`);
+
+          // Devolver la URL de Firebase en lugar de Shotstack
+          return res.json({
+            ...result,
+            url: uploadResult.firebaseUrl,
+            firebaseUrl: uploadResult.firebaseUrl,
+            shotstackUrl: result.url, // Guardar original por referencia
+          });
+        } else {
+          logger.warn(`⚠️ [VIDEO RENDERING] Error subiendo a Firebase, usando URL de Shotstack`);
+        }
+      } catch (uploadError) {
+        logger.error('❌ [VIDEO RENDERING] Error subiendo a Firebase:', uploadError);
+        // Continuar con URL de Shotstack si falla Firebase
+      }
     }
 
     res.json(result);

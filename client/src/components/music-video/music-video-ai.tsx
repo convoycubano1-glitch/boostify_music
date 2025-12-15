@@ -421,6 +421,8 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   }, [preSelectedDirector, toast]);
 
   const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [exportStatus, setExportStatus] = useState<string>('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -4704,8 +4706,8 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
   };
 
   /**
-   * Exporta el video generado basado en las imágenes y el audio
-   * @returns Promise<string> URL del video generado
+   * Exporta el video generado usando Shotstack API para renderizado real
+   * @returns Promise<string> URL del video generado en Firebase Storage
    */
   const handleExportVideo = async (): Promise<string | null> => {
     if (!timelineItems.length || !audioBuffer) {
@@ -4717,61 +4719,169 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       return null;
     }
     
-    // Verificar que todos los segmentos tengan imágenes generadas
-    const missingImages = timelineItems.filter(item => !item.generatedImage && !item.firebaseUrl).length;
-    if (missingImages > 0) {
+    // Verificar que todos los segmentos tengan imágenes o videos generados
+    const validItems = timelineItems.filter(item => 
+      item.generatedVideo || item.firebaseVideoUrl || item.generatedImage || item.firebaseUrl
+    );
+    
+    if (validItems.length === 0) {
       toast({
-        title: "Advertencia",
-        description: `Faltan ${missingImages} imágenes por generar. El video puede estar incompleto.`,
+        title: "Error",
+        description: "No hay elementos generados para exportar",
         variant: "destructive",
       });
+      return null;
     }
     
     setIsExporting(true);
+    setExportProgress(0);
+    setExportStatus('Preparando clips...');
+    
     try {
-      // Primero, guardar todas las imágenes en Firebase para tener URLs estables
+      // 1. Asegurar que todas las imágenes estén en Firebase
+      logger.log('📤 [EXPORT] Guardando assets en Firebase...');
       const savePromises = timelineItems.map(async (item) => {
+        // Priorizar video sobre imagen
+        if (item.generatedVideo || item.firebaseVideoUrl) {
+          return {
+            id: item.id,
+            videoUrl: item.firebaseVideoUrl || item.generatedVideo,
+            imageUrl: undefined,
+            start: item.startTime / 1000, // Convertir ms a segundos
+            duration: item.duration / 1000,
+          };
+        }
+        
+        // Si no hay video, usar imagen
         if (item.generatedImage && !item.firebaseUrl) {
           const url = await saveToFirebase(item);
-          if (url) {
-            return {
-              id: item.id,
-              url
-            };
-          }
+          return {
+            id: item.id,
+            videoUrl: undefined,
+            imageUrl: url || item.generatedImage,
+            start: item.startTime / 1000,
+            duration: item.duration / 1000,
+          };
         }
+        
         return {
           id: item.id,
-          url: item.firebaseUrl || item.generatedImage
+          videoUrl: undefined,
+          imageUrl: item.firebaseUrl || item.generatedImage,
+          start: item.startTime / 1000,
+          duration: item.duration / 1000,
         };
       });
       
-      const savedImages = await Promise.all(savePromises);
+      const clips = await Promise.all(savePromises);
+      setExportProgress(10);
+      setExportStatus('Iniciando renderizado...');
       
-      // Simulamos el proceso de renderizado (en una implementación real, aquí iría la lógica de FFmpeg)
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // 2. Iniciar renderizado con Shotstack
+      logger.log('🎬 [EXPORT] Iniciando renderizado con Shotstack...');
+      const renderResponse = await fetch('/api/video-rendering/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: currentProjectId ? parseInt(currentProjectId) : undefined,
+          userId: user?.uid,
+          clips: clips.filter(c => c.videoUrl || c.imageUrl),
+          audioUrl: audioUrl || undefined,
+          audioDuration: estimatedDuration / 1000,
+          resolution: '1080p',
+          quality: 'high',
+          aspectRatio: videoAspectRatio,
+        }),
+      });
       
-      // Crear un simulado video URL (en una implementación real, esto sería una URL de Firebase Storage)
-      const mockVideoUrl = `https://storage.googleapis.com/music-video-generator/${Date.now()}_export.mp4`;
+      const renderData = await renderResponse.json();
+      
+      if (!renderData.success || !renderData.renderId) {
+        throw new Error(renderData.error || 'Error al iniciar renderizado');
+      }
+      
+      const renderId = renderData.renderId;
+      logger.log(`✅ [EXPORT] Renderizado iniciado: ${renderId}`);
+      setExportProgress(20);
+      setExportStatus('Procesando video...');
+      
+      // 3. Polling para verificar estado del renderizado
+      const pollInterval = 3000; // 3 segundos
+      const maxAttempts = 120; // Max 6 minutos (120 * 3s)
+      let attempts = 0;
+      
+      const checkStatus = async (): Promise<string | null> => {
+        while (attempts < maxAttempts) {
+          attempts++;
+          
+          const statusResponse = await fetch(
+            `/api/video-rendering/status/${renderId}?projectId=${currentProjectId}&userId=${user?.uid}`
+          );
+          const statusData = await statusResponse.json();
+          
+          if (!statusData.success) {
+            if (statusData.status === 'failed') {
+              throw new Error('El renderizado falló');
+            }
+            // Continuar polling si hay error temporal
+          }
+          
+          // Actualizar progreso
+          const progress = statusData.progress || 0;
+          setExportProgress(20 + Math.round(progress * 0.7)); // 20-90%
+          
+          switch (statusData.status) {
+            case 'queued':
+              setExportStatus('En cola de renderizado...');
+              break;
+            case 'processing':
+              setExportStatus(`Renderizando video... ${progress}%`);
+              break;
+            case 'done':
+              setExportProgress(100);
+              setExportStatus('¡Video listo!');
+              // Devolver URL de Firebase (o Shotstack si Firebase falló)
+              return statusData.firebaseUrl || statusData.url;
+            case 'failed':
+              throw new Error('El renderizado falló');
+          }
+          
+          // Esperar antes de siguiente verificación
+          await new Promise(resolve => setTimeout(resolve, pollInterval));
+        }
+        
+        throw new Error('Timeout: El renderizado tardó demasiado');
+      };
+      
+      const finalVideoUrl = await checkStatus();
+      
+      if (!finalVideoUrl) {
+        throw new Error('No se recibió URL del video');
+      }
+      
+      logger.log(`🎉 [EXPORT] Video exportado exitosamente: ${finalVideoUrl}`);
       
       toast({
-        title: "Exportación completada",
-        description: "Video disponible para descarga",
+        title: "¡Exportación completada!",
+        description: "Tu video está listo para descargar",
       });
       
       setCurrentStep(6); // Marcar como completado
-
-      return mockVideoUrl;
+      
+      return finalVideoUrl;
+      
     } catch (error) {
       logger.error("Error exportando video:", error);
       toast({
-        title: "Error",
+        title: "Error en exportación",
         description: error instanceof Error ? error.message : "Error al exportar el video",
         variant: "destructive",
       });
       return null;
     } finally {
       setIsExporting(false);
+      setExportProgress(0);
+      setExportStatus('');
     }
   };
 
@@ -5958,6 +6068,10 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                 }))}
               audioPreviewUrl={selectedFile?.url || audioUrl}
               onChange={(clips) => setTimelineItems(clips)}
+              onExport={handleExportVideo}
+              isExporting={isExporting}
+              exportProgress={exportProgress}
+              exportStatus={exportStatus}
             />
           )}
         </div>

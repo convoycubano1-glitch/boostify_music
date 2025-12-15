@@ -26,6 +26,7 @@ export interface RenderRequest {
   resolution?: '480p' | '720p' | '1080p' | '4k';
   fps?: 25 | 30 | 60;
   quality?: 'low' | 'medium' | 'high';
+  aspectRatio?: '16:9' | '9:16' | '1:1';
 }
 
 export interface RenderResponse {
@@ -52,13 +53,27 @@ export async function startVideoRender(request: RenderRequest): Promise<RenderRe
     // Construir el timeline de Shotstack
     const timeline = buildShotstackTimeline(request);
 
+    // Configurar resolución basada en aspect ratio
+    let outputSize: { width: number; height: number } | undefined;
+    if (request.aspectRatio === '9:16') {
+      outputSize = { width: 1080, height: 1920 }; // Vertical (TikTok/Reels)
+    } else if (request.aspectRatio === '1:1') {
+      outputSize = { width: 1080, height: 1080 }; // Cuadrado (Instagram)
+    }
+    // 16:9 usa la resolución por defecto
+
     // Configurar output
-    const output = {
+    const output: any = {
       format: 'mp4',
       resolution: request.resolution || '1080p',
       fps: request.fps || 30,
       quality: request.quality || 'high',
     };
+
+    // Agregar size solo si no es 16:9
+    if (outputSize) {
+      output.size = outputSize;
+    }
 
     const payload = {
       timeline,

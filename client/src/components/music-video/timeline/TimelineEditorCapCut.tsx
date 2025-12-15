@@ -19,6 +19,10 @@ interface TimelineEditorCapCutProps {
   videoPreviewUrl?: string;
   audioPreviewUrl?: string;
   onChange?: (clips: TimelineClip[]) => void;
+  onExport?: () => Promise<string | null>;
+  isExporting?: boolean;
+  exportProgress?: number;
+  exportStatus?: string;
 }
 
 export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
@@ -27,7 +31,11 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
   scenes = [],
   videoPreviewUrl,
   audioPreviewUrl,
-  onChange
+  onChange,
+  onExport,
+  isExporting = false,
+  exportProgress = 0,
+  exportStatus = ''
 }) => {
   const [clips, setClips] = useState<TimelineClip[]>(initialClips);
   const [currentTime, setCurrentTime] = useState(0);
@@ -107,15 +115,46 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
           <span className="text-xs text-zinc-400">{formatTime(duration)}</span>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="text-cyan-400 hover:bg-cyan-400/10">
-            <Download className="w-4 h-4 mr-2" />
-            Export
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-cyan-400 hover:bg-cyan-400/10 disabled:opacity-50"
+            onClick={onExport}
+            disabled={isExporting || !onExport}
+          >
+            {isExporting ? (
+              <>
+                <div className="w-4 h-4 mr-2 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                {exportProgress > 0 ? `${exportProgress}%` : 'Processing...'}
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4 mr-2" />
+                Export
+              </>
+            )}
           </Button>
           <Button variant="ghost" size="sm" className="text-zinc-400">
             <Settings className="w-4 h-4" />
           </Button>
         </div>
       </div>
+
+      {/* Export Progress Bar */}
+      {isExporting && (
+        <div className="bg-black border-b border-orange-500/20 px-4 py-2">
+          <div className="flex items-center justify-between text-sm mb-1">
+            <span className="text-orange-400">{exportStatus || 'Exporting video...'}</span>
+            <span className="text-zinc-400">{exportProgress}%</span>
+          </div>
+          <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-orange-500 to-cyan-500 transition-all duration-300"
+              style={{ width: `${exportProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
