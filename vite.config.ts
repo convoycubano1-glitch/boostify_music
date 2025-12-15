@@ -27,9 +27,6 @@ export default defineConfig({
       },
     },
     allowedHosts: [
-      '.replit.dev',
-      '.replit.app',
-      '.repl.co',
       '.onrender.com',
       'boostifymusic.com',
       '.boostifymusic.com',
