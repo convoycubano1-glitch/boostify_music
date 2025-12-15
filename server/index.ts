@@ -1,13 +1,19 @@
+console.log('[BOOT] Loading dotenv...');
 import 'dotenv/config';
+console.log('[BOOT] Loading express...');
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
+console.log('[BOOT] Loading routes...');
 import { registerRoutes } from "./routes";
+console.log('[BOOT] Loading logger...');
 import { log } from "./logger";
+console.log('[BOOT] Loading path utilities...');
 import path from 'path';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
 import fs from 'fs';
 import fileUpload from 'express-fileupload';
+console.log('[BOOT] All imports completed');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
