@@ -1077,6 +1077,284 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Professional Artist Profile - FREE Section */}
+      <section className="py-24 relative overflow-hidden bg-gradient-to-br from-zinc-950 via-black to-zinc-950">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:60px_60px]"></div>
+        <div className="absolute top-1/2 left-1/4 w-[600px] h-[600px] bg-gradient-to-r from-orange-600/20 to-amber-500/10 rounded-full filter blur-[120px] animate-pulse" style={{ animationDuration: '8s' }}></div>
+        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-gradient-to-l from-red-600/15 to-orange-500/10 rounded-full filter blur-[100px] animate-pulse" style={{ animationDuration: '12s' }}></div>
+        
+        {/* Floating particles effect */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(20)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-1 bg-orange-500/30 rounded-full"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              }}
+              animate={{
+                y: [0, -30, 0],
+                opacity: [0.3, 0.8, 0.3],
+              }}
+              transition={{
+                duration: 3 + Math.random() * 2,
+                repeat: Infinity,
+                delay: Math.random() * 2,
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="container mx-auto px-4 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="max-w-5xl mx-auto"
+          >
+            {/* Main content card */}
+            <div className="relative">
+              {/* Glowing border effect */}
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 rounded-3xl blur opacity-30 group-hover:opacity-100 animate-pulse" style={{ animationDuration: '4s' }}></div>
+              
+              <div className="relative bg-zinc-900/90 backdrop-blur-xl border border-orange-500/20 rounded-3xl p-8 md:p-12 overflow-hidden">
+                {/* Decorative corner elements */}
+                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-orange-500/20 to-transparent rounded-bl-full"></div>
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-orange-500/10 to-transparent rounded-tr-full"></div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                  {/* Left content */}
+                  <div className="space-y-6">
+                    <motion.div
+                      initial={{ opacity: 0, x: -30 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      <Badge className="mb-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border-green-500/30 px-4 py-2 text-sm font-bold">
+                        <Sparkles className="h-3.5 w-3.5 mr-2 inline" />
+                        100% GRATIS
+                      </Badge>
+                      
+                      <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight">
+                        <span className="text-white">Create Your</span>
+                        <br />
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-amber-400 to-orange-500 animate-gradient">
+                          Professional
+                        </span>
+                        <br />
+                        <span className="text-white">Artist Website</span>
+                      </h2>
+                    </motion.div>
+                    
+                    <motion.p
+                      initial={{ opacity: 0, x: -30 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.3 }}
+                      className="text-lg md:text-xl text-white/70 leading-relaxed"
+                    >
+                      Stand out with a stunning artist profile. Showcase your music, connect all your social platforms, and let fans discover everything about you in one place.
+                    </motion.p>
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.4 }}
+                      className="space-y-3"
+                    >
+                      {[
+                        { icon: Globe, text: "Custom boostify.com/yourname URL" },
+                        { icon: Music2, text: "Embed Spotify, Apple Music & more" },
+                        { icon: Video, text: "Showcase your music videos" },
+                        { icon: Users2, text: "Link all your social profiles" },
+                        { icon: BarChart2, text: "Track visitor analytics" },
+                      ].map((item, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, x: -20 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: 0.5 + i * 0.1 }}
+                          className="flex items-center gap-3"
+                        >
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center">
+                            <item.icon className="h-4 w-4 text-orange-400" />
+                          </div>
+                          <span className="text-white/90">{item.text}</span>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.8 }}
+                      className="flex flex-col sm:flex-row gap-4 pt-4"
+                    >
+                      <Link href="/signup">
+                        <Button 
+                          size="lg"
+                          className="group w-full sm:w-auto bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold px-8 py-6 text-lg shadow-2xl shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300 hover:scale-105"
+                        >
+                          <UserCircle2 className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
+                          Create My Profile FREE
+                          <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                        </Button>
+                      </Link>
+                      <Link href="/artist-profiles">
+                        <Button 
+                          size="lg"
+                          variant="outline"
+                          className="w-full sm:w-auto border-white/20 hover:bg-white/10 px-8 py-6 text-lg"
+                        >
+                          <ExternalLink className="mr-2 h-5 w-5" />
+                          See Examples
+                        </Button>
+                      </Link>
+                    </motion.div>
+                  </div>
+
+                  {/* Right side - Profile preview mockup */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
+                    whileInView={{ opacity: 1, scale: 1, rotateY: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8, delay: 0.3 }}
+                    className="relative"
+                  >
+                    {/* Phone mockup frame */}
+                    <div className="relative mx-auto max-w-[320px]">
+                      {/* Glow effect behind phone */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-orange-500/40 to-red-500/40 rounded-[3rem] blur-2xl transform scale-90"></div>
+                      
+                      {/* Phone frame */}
+                      <div className="relative bg-zinc-800 rounded-[2.5rem] p-3 shadow-2xl border border-zinc-700">
+                        {/* Phone screen */}
+                        <div className="bg-gradient-to-b from-zinc-900 to-black rounded-[2rem] overflow-hidden aspect-[9/19]">
+                          {/* Status bar */}
+                          <div className="flex justify-between items-center px-6 py-2 text-xs text-white/60">
+                            <span>9:41</span>
+                            <div className="flex gap-1">
+                              <div className="w-4 h-2 bg-white/60 rounded-sm"></div>
+                            </div>
+                          </div>
+                          
+                          {/* Profile content */}
+                          <div className="px-4 py-6 space-y-4">
+                            {/* Profile image */}
+                            <motion.div 
+                              className="mx-auto w-24 h-24 rounded-full bg-gradient-to-br from-orange-400 to-red-500 p-0.5"
+                              animate={{ 
+                                boxShadow: ['0 0 20px rgba(249,115,22,0.4)', '0 0 40px rgba(249,115,22,0.6)', '0 0 20px rgba(249,115,22,0.4)']
+                              }}
+                              transition={{ duration: 2, repeat: Infinity }}
+                            >
+                              <div className="w-full h-full rounded-full bg-zinc-900 flex items-center justify-center">
+                                <Music2 className="h-10 w-10 text-orange-400" />
+                              </div>
+                            </motion.div>
+                            
+                            {/* Artist name */}
+                            <div className="text-center">
+                              <h4 className="text-lg font-bold text-white">Your Artist Name</h4>
+                              <p className="text-xs text-orange-400">@yourname</p>
+                            </div>
+                            
+                            {/* Bio */}
+                            <p className="text-center text-xs text-white/60 px-2">
+                              "Your bio and story goes here..."
+                            </p>
+                            
+                            {/* Social icons */}
+                            <div className="flex justify-center gap-2">
+                              {[SiSpotify, SiInstagram, SiYoutube, SiTiktok].map((Icon, i) => (
+                                <motion.div
+                                  key={i}
+                                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
+                                  whileHover={{ scale: 1.2, backgroundColor: 'rgba(249,115,22,0.3)' }}
+                                >
+                                  <Icon className="h-4 w-4 text-white/80" />
+                                </motion.div>
+                              ))}
+                            </div>
+                            
+                            {/* Music embed preview */}
+                            <div className="bg-zinc-800/80 rounded-xl p-3 border border-zinc-700/50">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+                                  <Play className="h-4 w-4 text-white fill-white" />
+                                </div>
+                                <div className="flex-1">
+                                  <p className="text-xs font-medium text-white truncate">Latest Release</p>
+                                  <p className="text-[10px] text-white/50">Your Song Title</p>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Stats */}
+                            <div className="grid grid-cols-3 gap-2 text-center">
+                              <div className="bg-zinc-800/50 rounded-lg p-2">
+                                <p className="text-xs font-bold text-orange-400">10K+</p>
+                                <p className="text-[10px] text-white/50">Plays</p>
+                              </div>
+                              <div className="bg-zinc-800/50 rounded-lg p-2">
+                                <p className="text-xs font-bold text-orange-400">500+</p>
+                                <p className="text-[10px] text-white/50">Fans</p>
+                              </div>
+                              <div className="bg-zinc-800/50 rounded-lg p-2">
+                                <p className="text-xs font-bold text-orange-400">25</p>
+                                <p className="text-[10px] text-white/50">Tracks</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Floating elements around phone */}
+                      <motion.div
+                        className="absolute -top-4 -right-4 bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg"
+                        animate={{ y: [0, -8, 0] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        FREE!
+                      </motion.div>
+                      
+                      <motion.div
+                        className="absolute top-1/4 -left-8 bg-zinc-800 border border-orange-500/30 text-white text-xs px-3 py-2 rounded-lg shadow-lg"
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 1 }}
+                      >
+                        <Sparkles className="h-3 w-3 text-orange-400 inline mr-1" />
+                        AI-Powered
+                      </motion.div>
+                      
+                      <motion.div
+                        className="absolute bottom-1/4 -right-6 bg-zinc-800 border border-orange-500/30 text-white text-xs px-3 py-2 rounded-lg shadow-lg"
+                        initial={{ opacity: 0, x: 20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 1.2 }}
+                      >
+                        <Globe className="h-3 w-3 text-orange-400 inline mr-1" />
+                        Custom URL
+                      </motion.div>
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Key Features Highlight Section */}
       {featureHighlights.map((feature, index) => (
         <section 
