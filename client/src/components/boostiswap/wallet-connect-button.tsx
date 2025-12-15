@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Button } from "../ui/button";
-import { useAccount } from 'wagmi';
+import { useWeb3 } from "../../hooks/use-web3";
 import { Wallet, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
@@ -13,7 +13,7 @@ import {
 } from "../ui/dropdown-menu";
 
 export function WalletConnectButton() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useWeb3();
   const [isOpen, setIsOpen] = useState(false);
 
   // Truncate address for display

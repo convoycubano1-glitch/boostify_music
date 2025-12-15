@@ -13,6 +13,9 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion, useAnimation } from "framer-motion";
+import { TokenCardVisual } from "../components/boostiswap/token-card-visual";
+import { artistProfiles } from "../data/artist-profiles";
+import { getArtistImage } from "../data/artist-images";
 import { useAuth } from "../hooks/use-auth";
 import { useToast } from "../hooks/use-toast";
 import { Footer } from "../components/layout/footer";
@@ -1225,183 +1228,38 @@ export default function HomePage() {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-              {/* Artist Card 1 */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.1 }}
-                whileHover={{ y: -8, scale: 1.02 }}
-                className="group cursor-pointer"
-              >
-                <Link href="/boostiswap">
-                  <div className="relative bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-2xl overflow-hidden border border-zinc-700/50 hover:border-purple-500/50 transition-all duration-300">
-                    <div className="aspect-square relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-purple-600/40 to-pink-600/40"></div>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
-                          <Music2 className="h-10 w-10 text-white" />
-                        </div>
-                      </div>
-                      <div className="absolute top-2 right-2">
-                        <Badge className="bg-green-500/90 text-white text-[10px] px-2 py-0.5 border-0">
-                          +24.5%
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h4 className="font-bold text-white truncate">Luna Vega</h4>
-                      <p className="text-xs text-white/50 mb-2">@lunavega</p>
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="text-[10px] text-white/40">Floor Price</p>
-                          <p className="text-sm font-bold text-purple-400">0.85 ETH</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-[10px] text-white/40">Holders</p>
-                          <p className="text-sm font-bold text-white">1.2K</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </motion.div>
-
-              {/* Artist Card 2 */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
-                whileHover={{ y: -8, scale: 1.02 }}
-                className="group cursor-pointer"
-              >
-                <Link href="/boostiswap">
-                  <div className="relative bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-2xl overflow-hidden border border-zinc-700/50 hover:border-orange-500/50 transition-all duration-300">
-                    <div className="aspect-square relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-orange-600/40 to-red-600/40"></div>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
-                          <Headphones className="h-10 w-10 text-white" />
-                        </div>
-                      </div>
-                      <div className="absolute top-2 right-2">
-                        <Badge className="bg-green-500/90 text-white text-[10px] px-2 py-0.5 border-0">
-                          +18.2%
-                        </Badge>
-                      </div>
-                      <div className="absolute top-2 left-2">
-                        <Badge className="bg-orange-500/90 text-white text-[10px] px-2 py-0.5 border-0">
-                          🔥 HOT
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h4 className="font-bold text-white truncate">Marcus Cole</h4>
-                      <p className="text-xs text-white/50 mb-2">@marcuscole</p>
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="text-[10px] text-white/40">Floor Price</p>
-                          <p className="text-sm font-bold text-orange-400">1.25 ETH</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-[10px] text-white/40">Holders</p>
-                          <p className="text-sm font-bold text-white">2.8K</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </motion.div>
-
-              {/* Artist Card 3 */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.3 }}
-                whileHover={{ y: -8, scale: 1.02 }}
-                className="group cursor-pointer"
-              >
-                <Link href="/boostiswap">
-                  <div className="relative bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-2xl overflow-hidden border border-zinc-700/50 hover:border-blue-500/50 transition-all duration-300">
-                    <div className="aspect-square relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/40 to-cyan-600/40"></div>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                          <Volume2 className="h-10 w-10 text-white" />
-                        </div>
-                      </div>
-                      <div className="absolute top-2 right-2">
-                        <Badge className="bg-green-500/90 text-white text-[10px] px-2 py-0.5 border-0">
-                          +31.7%
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h4 className="font-bold text-white truncate">Skylar Dreams</h4>
-                      <p className="text-xs text-white/50 mb-2">@skylardreams</p>
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="text-[10px] text-white/40">Floor Price</p>
-                          <p className="text-sm font-bold text-blue-400">0.65 ETH</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-[10px] text-white/40">Holders</p>
-                          <p className="text-sm font-bold text-white">890</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </motion.div>
-
-              {/* Artist Card 4 */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.4 }}
-                whileHover={{ y: -8, scale: 1.02 }}
-                className="group cursor-pointer"
-              >
-                <Link href="/boostiswap">
-                  <div className="relative bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-2xl overflow-hidden border border-zinc-700/50 hover:border-emerald-500/50 transition-all duration-300">
-                    <div className="aspect-square relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/40 to-teal-600/40"></div>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                          <Sparkles className="h-10 w-10 text-white" />
-                        </div>
-                      </div>
-                      <div className="absolute top-2 right-2">
-                        <Badge className="bg-green-500/90 text-white text-[10px] px-2 py-0.5 border-0">
-                          +42.1%
-                        </Badge>
-                      </div>
-                      <div className="absolute top-2 left-2">
-                        <Badge className="bg-purple-500/90 text-white text-[10px] px-2 py-0.5 border-0">
-                          ⭐ TOP
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h4 className="font-bold text-white truncate">Nova Beats</h4>
-                      <p className="text-xs text-white/50 mb-2">@novabeats</p>
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="text-[10px] text-white/40">Floor Price</p>
-                          <p className="text-sm font-bold text-emerald-400">2.10 ETH</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-[10px] text-white/40">Holders</p>
-                          <p className="text-sm font-bold text-white">3.5K</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </motion.div>
+              {/* Artist Token Cards - Using real TokenCardVisual component */}
+              {[1, 2, 3, 4].map((artistId, index) => {
+                const profile = artistProfiles[artistId];
+                const artistImage = getArtistImage(artistId);
+                const prices = [2.45, 3.12, 1.89, 4.25];
+                const changes = [24.5, 18.2, 31.7, 42.1];
+                
+                return (
+                  <motion.div
+                    key={artistId}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.1 * (index + 1) }}
+                    whileHover={{ y: -8, scale: 1.02 }}
+                    className="group cursor-pointer"
+                  >
+                    <Link href="/boostiswap">
+                      <TokenCardVisual
+                        songName={profile?.name || `Artist ${artistId}`}
+                        artistName={profile?.name || `Artist ${artistId}`}
+                        tokenSymbol={profile?.name?.substring(0, 3).toUpperCase() || 'TKN'}
+                        price={prices[index]}
+                        artistImage={artistImage}
+                        songImageUrl={artistImage}
+                        change24h={changes[index]}
+                        tracks={profile?.tracks || []}
+                      />
+                    </Link>
+                  </motion.div>
+                );
+              })}
             </div>
 
             {/* View All CTA */}

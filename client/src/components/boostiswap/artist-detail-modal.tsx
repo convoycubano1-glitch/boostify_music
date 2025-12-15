@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { parseEther } from 'viem';
 import {
   Dialog,
@@ -25,8 +26,10 @@ import {
   AlertCircle,
   CheckCircle2,
   ArrowRight,
+  Wallet,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useWeb3 } from "@/hooks/use-web3";
 import { ArtistProfile } from "@/data/artist-profiles";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { BOOSTIFY_CONTRACT_ADDRESS, ERC1155_ABI } from "@/lib/web3-config";
@@ -39,20 +42,59 @@ interface ArtistDetailModalProps {
   artistImage?: string;
 }
 
+// Wrapper component that checks if Web3 is ready before rendering the modal content
 export function ArtistDetailModal({
   artist,
   isOpen,
   onClose,
   artistImage,
 }: ArtistDetailModalProps) {
-  // Early return BEFORE any hooks - required for React Hook Rules
+  const { isWeb3Ready } = useWeb3();
+  
+  // Don't render anything if no artist
   if (!artist) return null;
   
-  const { address, isConnected } = useAccount();
+  // If Web3 is not ready, show a loading dialog
+  if (!isWeb3Ready) {
+    return (
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="max-w-md bg-slate-900 border-slate-700">
+          <div className="flex flex-col items-center justify-center py-12 gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-orange-400" />
+            <p className="text-white">Initializing Web3...</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+  
+  // When Web3 is ready, render the full modal with wagmi hooks
+  return (
+    <ArtistDetailModalContent
+      artist={artist}
+      isOpen={isOpen}
+      onClose={onClose}
+      artistImage={artistImage}
+    />
+  );
+}
+
+// Internal component that uses wagmi hooks - only rendered when Web3 is ready
+function ArtistDetailModalContent({
+  artist,
+  isOpen,
+  onClose,
+  artistImage,
+}: ArtistDetailModalProps) {
+  // Now we can safely use wagmi hooks because Web3 is guaranteed to be ready
+  const { address, isConnected } = useWeb3();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const { writeContract, data: hash, error: writeError } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  // artist is guaranteed to exist here
+  if (!artist) return null;
 
   // Generate chart data for growth trends
   const generateGrowthData = () => {
@@ -374,37 +416,50 @@ export function ArtistDetailModal({
               {!isConnected && (
                 <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3 flex items-center gap-2">
                   <AlertCircle className="h-4 w-4 text-red-400 flex-shrink-0" />
-                  <p className="text-xs text-red-300">Conecta tu MetaMask para comprar</p>
+                  <p className="text-xs text-red-300">Conecta tu wallet para comprar tokens</p>
                 </div>
               )}
-              <Button 
-                onClick={() => handleBuyTokens(artist)}
-                disabled={isProcessing || isConfirming || !isConnected}
-                className="w-full bg-orange-500 hover:bg-orange-600 font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                data-testid="button-buy-artist-token"
-              >
-                {!isConnected ? (
-                  <>
-                    <AlertCircle className="mr-2 h-4 w-4" />
-                    Connect MetaMask
-                  </>
-                ) : isProcessing || isConfirming ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {isConfirming ? "Confirmando..." : "Procesando..."}
-                  </>
-                ) : isSuccess ? (
-                  <>
-                    <CheckCircle2 className="mr-2 h-4 w-4" />
-                    ¡Compra exitosa!
-                  </>
-                ) : (
-                  <>
-                    <ShoppingCart className="mr-2 h-4 w-4" />
-                    Comprar 100 Tokens - 0.5 ETH
-                  </>
-                )}
-              </Button>
+              
+              {/* Connect Wallet Button - uses RainbowKit's ConnectButton.Custom */}
+              {!isConnected ? (
+                <ConnectButton.Custom>
+                  {({ openConnectModal }) => (
+                    <Button 
+                      onClick={openConnectModal}
+                      className="w-full font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                      data-testid="button-connect-wallet"
+                    >
+                      <Wallet className="mr-2 h-4 w-4" />
+                      Connect Wallet
+                    </Button>
+                  )}
+                </ConnectButton.Custom>
+              ) : (
+                <Button 
+                  onClick={() => handleBuyTokens(artist)}
+                  disabled={isProcessing || isConfirming}
+                  className="w-full font-semibold text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  data-testid="button-buy-artist-token"
+                >
+                  {isProcessing || isConfirming ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {isConfirming ? "Confirmando..." : "Procesando..."}
+                    </>
+                  ) : isSuccess ? (
+                    <>
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      ¡Compra exitosa!
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="mr-2 h-4 w-4" />
+                      Comprar 100 Tokens - 0.5 ETH
+                    </>
+                  )}
+                </Button>
+              )}
+              
               <p className="text-xs text-slate-400 text-center">
                 {isConnected ? (
                   <>💳 100 tokens @ 0.005 ETH • Pago seguro en blockchain</>
