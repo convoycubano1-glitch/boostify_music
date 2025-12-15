@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { log } from "./logger";
 import path from 'path';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
@@ -298,6 +298,8 @@ app.use((req, res, next) => {
     if (process.env.NODE_ENV !== "production") {
       log('🛠 Setting up Vite development server');
       log('📌 Configuring Vite to handle frontend routes like "/"');
+      // Dynamic import of Vite module only in development
+      const { setupVite } = await import("./vite");
       await setupVite(app, server);
       log('✅ Vite development server configured');
       app.use('*', (req, res, next) => {
