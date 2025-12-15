@@ -8,6 +8,7 @@ import { Header } from '../components/layout/header';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../hooks/use-auth';
+import { isAdminEmail, ADMIN_EMAILS } from '@shared/constants';
 import { 
   BarChart3, Users, DollarSign, Music, FileVideo, Target, 
   Shield, RefreshCw, Activity, Upload, Sparkles, Link as LinkIcon,
@@ -24,6 +25,7 @@ import { SessionManager } from '../components/admin/session-manager';
 import { AffiliateSessions } from '../components/admin/affiliate-sessions';
 import { InvestorSessions } from '../components/admin/investor-sessions';
 import { StripeEventsLog } from '../components/admin/stripe-events-log';
+import { UserManagement } from '../components/admin/user-management';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -32,8 +34,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [showImportModal, setShowImportModal] = useState(false);
   
-  const ADMIN_EMAIL = 'convoycubano@gmail.com';
-  const isAdmin = user && (user.isAdmin === true || user.email === ADMIN_EMAIL);
+  const isAdmin = user && (user.isAdmin === true || isAdminEmail(user.email));
 
   const [stats, setStats] = useState({
     totalArtists: 0, totalInvestors: 0, totalInvestments: 0, totalRevenue: 0,
@@ -65,7 +66,7 @@ export default function AdminDashboard() {
         <Card className="p-8 bg-slate-900 border-red-500/20">
           <Shield className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-white text-center mb-2">Access Denied</h2>
-          <p className="text-slate-400 text-center">Admin only: {ADMIN_EMAIL}</p>
+          <p className="text-slate-400 text-center">Admin only: {ADMIN_EMAILS[0]}</p>
         </Card>
       </div>
     );
@@ -139,10 +140,11 @@ export default function AdminDashboard() {
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <ScrollArea className="w-full mb-4">
-                <TabsList className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 w-full bg-slate-900/50 border border-orange-500/20 p-1 h-auto gap-1">
+                <TabsList className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-10 w-full bg-slate-900/50 border border-orange-500/20 p-1 h-auto gap-1">
                   {[
                     { value: 'overview', label: 'Overview', icon: BarChart3 },
                     { value: 'ai-agent', label: 'AI Agent', icon: Sparkles },
+                    { value: 'users', label: 'Users', icon: Users },
                     { value: 'accounting', label: 'Accounting', icon: DollarSign },
                     { value: 'api-usage', label: 'API Usage', icon: Activity },
                     { value: 'artists', label: 'Artists', icon: Music },
@@ -237,6 +239,10 @@ export default function AdminDashboard() {
 
               <TabsContent value="ai-agent" className="w-full">
                 <AdminAgent />
+              </TabsContent>
+
+              <TabsContent value="users" className="w-full">
+                <UserManagement />
               </TabsContent>
 
               <TabsContent value="accounting" className="w-full">
