@@ -42,14 +42,14 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com https://*.googleapis.com; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com https://*.googleapis.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "img-src 'self' data: https: blob: *; " +
-    "font-src 'self' https://fonts.gstatic.com; " +
-    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.freepik.com https://api.piapi.ai https://api.fal.ai https://*.unsplash.com wss://*.firebaseio.com *; " +
+    "font-src 'self' https://fonts.gstatic.com data:; " +
+    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.freepik.com https://api.piapi.ai https://api.fal.ai https://*.unsplash.com wss://*.firebaseio.com https://*.clerk.accounts.dev https://*.clerk.com *; " +
     "media-src 'self' https: blob: *; " +
     "worker-src 'self' blob:; " +
-    "frame-src 'self';"
+    "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com;"
   );
 
   res.setHeader('Access-Control-Allow-Origin', '*');
