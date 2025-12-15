@@ -34,8 +34,13 @@ log(`🚀 Running in ${process.env.NODE_ENV} mode`);
 
 const app = express();
 
-// Enable CORS for development
-app.use(cors());
+// Enable CORS with credentials support for Clerk Auth
+app.use(cors({
+  origin: true, // Allow all origins in development
+  credentials: true, // Allow cookies to be sent
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 
 // Middleware to configure security headers (CSP)
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -52,7 +57,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com;"
   );
 
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type,Authorization');
 

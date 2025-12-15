@@ -31,6 +31,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, getDocs, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase";
 import { useAuth } from "../../hooks/use-auth";
+import { useAuth as useClerkAuth } from "@clerk/clerk-react"; // Para obtener getToken
 import { AnalyticsDashboard } from './analytics-dashboard';
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { VideoGenerator } from "./video-generator";
@@ -142,23 +143,32 @@ async function retryWithBackoff<T>(
 }
 
 // Transcribe audio using backend API (secure)
-async function transcribeAudio(file: File) {
+// Ahora acepta un token opcional para autenticación con Clerk
+async function transcribeAudio(file: File, authToken?: string | null) {
   try {
     const formData = new FormData();
     formData.append('audio', file);
 
     logger.info('🌐 Fetching /api/audio/transcribe...');
+    logger.info('🔐 Auth token present:', !!authToken);
     
     // Crear AbortController para timeout de 15 minutos (para archivos grandes)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 900000); // 15 minutos
     
+    // Preparar headers con token de autenticación si está disponible
+    const headers: HeadersInit = {};
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    
     try {
       const response = await fetch('/api/audio/transcribe', {
         method: 'POST',
         body: formData,
+        headers,
         signal: controller.signal,
-        credentials: 'include' // Necesario para enviar cookies de sesión de Replit Auth
+        credentials: 'include' // También enviar cookies por si acaso
       });
       
       clearTimeout(timeoutId);
@@ -348,6 +358,7 @@ interface MusicVideoAIProps {
 export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { getToken } = useClerkAuth(); // Para obtener token de autenticación
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
@@ -1818,7 +1829,11 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       }, 200);
       
       try {
-        const transcriptionText = await transcribeAudio(selectedFile);
+        // Obtener token de Clerk para autenticación
+        const authToken = await getToken();
+        logger.info('🔐 Token de autenticación obtenido:', !!authToken);
+        
+        const transcriptionText = await transcribeAudio(selectedFile, authToken);
         logger.info('✅ Transcripción completada, length:', transcriptionText.length, 'characters');
         clearInterval(progressInterval);
         setProgressPercentage(100);
@@ -2329,7 +2344,11 @@ DESIGN REQUIREMENTS:
           
           try {
             logger.info('📤 Sending file to server for transcription...');
-            const transcriptionText = await transcribeAudio(file);
+            // Obtener token de Clerk para autenticación
+            const authToken = await getToken();
+            logger.info('🔐 Token de autenticación obtenido:', !!authToken);
+            
+            const transcriptionText = await transcribeAudio(file, authToken);
             logger.info('✅ Transcription completed, length:', transcriptionText.length, 'characters');
             clearInterval(progressInterval);
             setProgressPercentage(100);

@@ -42,7 +42,15 @@ export async function clerkAuthMiddleware(req: Request, res: Response, next: Nex
  */
 export const isAuthenticated: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
   const authData = getAuth(req);
+  
+  // Debug logging para diagnóstico
+  console.log('🔐 [isAuthenticated] Checking auth for:', req.path);
+  console.log('🔐 [isAuthenticated] authData:', authData ? { userId: authData.userId, sessionId: authData.sessionId } : 'null');
+  console.log('🔐 [isAuthenticated] cookies:', req.headers.cookie ? 'present' : 'none');
+  console.log('🔐 [isAuthenticated] authorization header:', req.headers.authorization ? 'present' : 'none');
+  
   if (!authData || !authData.userId) {
+    console.log('❌ [isAuthenticated] No valid auth data - returning 401');
     return res.status(401).json({ error: 'Authentication required' });
   }
   
@@ -51,6 +59,7 @@ export const isAuthenticated: RequestHandler = (req: Request, res: Response, nex
     (req as any).user = { clerkUserId: authData.userId, id: authData.userId } as ClerkAuthUser;
   }
   
+  console.log('✅ [isAuthenticated] User authenticated:', authData.userId);
   return next();
 };
 

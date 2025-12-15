@@ -28,6 +28,7 @@ import {
 import { CinematicSceneEditor, type CinematicSceneData } from './CinematicSceneEditor';
 import { useToast } from "../../hooks/use-toast";
 import { useAuth } from '../../hooks/use-auth';
+import { useAuth as useClerkAuth } from "@clerk/clerk-react";
 import { musicVideoProjectService } from '../../lib/services/music-video-project-service';
 import { useLocation } from 'wouter';
 
@@ -64,6 +65,7 @@ export function MusicVideoWorkspaceComplete({
 }: MusicVideoWorkspaceCompleteProps) {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { getToken } = useClerkAuth(); // Para obtener token de autenticación
   const [, setLocation] = useLocation();
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [isSavingProject, setIsSavingProject] = useState(false);
@@ -248,13 +250,22 @@ export function MusicVideoWorkspaceComplete({
         description: "Este proceso puede tardar algunos minutos..."
       });
 
+      // Obtener token de Clerk para autenticación
+      const authToken = await getToken();
+      
       const formData = new FormData();
       formData.append('audio', audioFile.file);
+
+      const headers: HeadersInit = {};
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
 
       const response = await fetch('/api/audio/transcribe', {
         method: 'POST',
         body: formData,
-        credentials: 'include' // Necesario para enviar cookies de sesión de Replit Auth
+        headers,
+        credentials: 'include'
       });
 
       const data = await response.json();
