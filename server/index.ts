@@ -119,12 +119,17 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
+    console.log('🔄 [1/10] Starting server setup...');
     log('🔄 Starting server setup...');
 
+    console.log('🔄 [2/10] Importing environment check...');
     const { checkEnvironment } = await import('./utils/environment-check');
+    console.log('🔄 [3/10] Running environment check...');
     checkEnvironment();
+    console.log('🔄 [4/10] Environment check completed');
     
     // Setup Clerk Auth middleware (replacing Replit Auth)
+    console.log('🔐 [5/10] Setting up Clerk Auth middleware...');
     log('🔐 Setting up Clerk Auth middleware...');
     try {
       const { clerkMiddleware } = await import('@clerk/express');
@@ -133,8 +138,10 @@ app.use((req, res, next) => {
       app.use(clerkMiddleware());
       // Then apply our custom middleware to populate req.user
       app.use('/api', clerkAuthMiddleware);
+      console.log('✅ [6/10] Clerk Auth middleware configured successfully');
       log('✅ Clerk Auth middleware configured successfully');
     } catch (error) {
+      console.error('❌ ERROR setting up Clerk Auth:', error);
       log(`❌ ERROR setting up Clerk Auth: ${error}`);
       console.error('Full error:', error);
       throw error;
