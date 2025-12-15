@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { auth } from '../firebase';
 import { DecodedIdToken } from 'firebase-admin/auth';
+import { getAuth as getClerkAuth } from '@clerk/express';
 
 /**
  * Niveles de suscripción disponibles, ordenados por jerarquía
@@ -59,6 +60,24 @@ declare global {
  */
 export async function authenticate(req: Request, res: Response, next: NextFunction) {
   try {
+    // PRIORITY 0: Check Clerk authentication first (new system)
+    try {
+      const clerkAuth = getClerkAuth(req);
+      if (clerkAuth && clerkAuth.userId) {
+        console.log('✅ User authenticated via Clerk:', clerkAuth.userId);
+        req.user = {
+          id: clerkAuth.userId,
+          uid: clerkAuth.userId,
+          email: null,
+          role: 'artist',
+          isAdmin: false
+        };
+        return next();
+      }
+    } catch (clerkError) {
+      // Clerk not configured or no token, continue with other methods
+    }
+    
     // PRIORITY 1: Check Replit Auth via passport (req.user)
     if (req.user && (req.user as any).id) {
       console.log('✅ User authenticated via Replit Auth (passport):', {

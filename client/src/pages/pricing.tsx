@@ -87,7 +87,8 @@ const plans = [
     color: 'from-orange-700 to-red-700',
     icon: Crown,
     highlighted: false,
-    priceId: 'price_1R0lb12LyFplWimf7JpMynKA',
+    priceId: null, // TODO: Create this price in Stripe Dashboard and add the ID here
+    comingSoon: true,
     features: [
       'Everything in Amplify',
       'Virtual Label Empire (10 artists)',
@@ -138,9 +139,9 @@ export default function PricingPage() {
     try {
       setProcessingPlanId(plan.id);
 
-      // Plan gratis - ir a login
+      // Plan gratis - ir a auth
       if (!plan.priceId) {
-        window.location.href = '/api/login';
+        setLocation('/auth');
         return;
       }
 
@@ -267,11 +268,16 @@ export default function PricingPage() {
 
                       <Button 
                         onClick={() => handleSelectPlan(plan)}
-                        disabled={processingPlanId === plan.id}
-                        className={`w-full mb-6 ${plan.highlighted ? `bg-gradient-to-r ${plan.color} hover:shadow-lg hover:shadow-orange-500/50` : 'bg-slate-700 hover:bg-slate-600'} text-white font-semibold transition-all`}
+                        disabled={processingPlanId === plan.id || (plan as any).comingSoon}
+                        className={`w-full mb-6 ${plan.highlighted ? `bg-gradient-to-r ${plan.color} hover:shadow-lg hover:shadow-orange-500/50` : 'bg-slate-700 hover:bg-slate-600'} text-white font-semibold transition-all ${(plan as any).comingSoon ? 'opacity-60 cursor-not-allowed' : ''}`}
                         data-testid={`button-select-plan-${plan.id}`}
                       >
-                        {processingPlanId === plan.id ? (
+                        {(plan as any).comingSoon ? (
+                          <>
+                            Coming Soon
+                            <Sparkles className="w-4 h-4 ml-2" />
+                          </>
+                        ) : processingPlanId === plan.id ? (
                           <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                             Procesando...

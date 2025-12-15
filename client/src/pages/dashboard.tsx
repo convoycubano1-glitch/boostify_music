@@ -65,37 +65,25 @@ export default function Dashboard() {
     aiAgentsUsed: 0,
     musicGenerated: 0
   });
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    // Redirigir al login si no hay usuario autenticado
+    // Solo ejecutar una vez
+    if (initialized) return;
+    setInitialized(true);
+
+    // No redirigir - ProtectedRoute ya maneja esto
     if (!user) {
-      logger.warn('Usuario no autenticado, redirigiendo a login');
-      setLocation('/auth/login');
+      logger.warn('Usuario no autenticado en Dashboard');
       return;
     }
 
     // Initialize metrics with default values
     // TODO: Implement PostgreSQL metrics table
-    const initialMetrics = {
-      spotifyFollowers: 0,
-      instagramFollowers: 0,
-      youtubeViews: 0,
-      contractsCreated: 0,
-      prCampaigns: 0,
-      totalEngagement: 0,
-      musicVideos: 0,
-      aiVideos: 0,
-      contacts: 0,
-      styleRecommendations: 0,
-      coursesEnrolled: 0,
-      merchandiseSold: 0,
-      aiAgentsUsed: 0,
-      musicGenerated: 0
-    };
-    setMetrics(initialMetrics);
+    // Metrics ya están inicializados en useState, no necesitamos setMetrics aquí
 
     // No need to process pending plans - checkout is done directly from pricing page
-  }, [user, toast]);
+  }, [user, initialized]);
 
   const services = [
     {

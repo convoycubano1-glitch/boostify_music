@@ -11,6 +11,9 @@ import { nanoid } from "nanoid";
 
 const viteLogger = createLogger();
 
+// Get project root for envDir
+const projectRoot = path.resolve(__dirname, "..");
+
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",
@@ -26,6 +29,7 @@ export async function setupVite(app: Express, server: Server) {
   const vite = await createViteServer({
     ...viteConfig,
     configFile: false,
+    envDir: projectRoot, // Ensure .env is loaded from project root
     customLogger: {
       ...viteLogger,
       error: (msg, options) => {
@@ -48,6 +52,11 @@ export async function setupVite(app: Express, server: Server) {
   app.use(vite.middlewares);
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
+
+    // Skip API routes - they should be handled by Express routes, not Vite
+    if (url.startsWith('/api/') || url.startsWith('/api')) {
+      return next();
+    }
 
     try {
       const clientTemplate = path.resolve(

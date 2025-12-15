@@ -3,13 +3,13 @@ import { db } from '../db';
 import { musicianClips, musicVideoProjects } from '../db/schema';
 import { insertMusicianClipSchema, type InsertMusicianClip } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
-import { GoogleGenAI } from '@google/genai';
-import { generateCinematicImage } from '../services/gemini-image-service';
+import OpenAI from 'openai';
+import { generateImageWithNanoBanana, editImageWithNanoBanana } from '../services/fal-service';
 import { logger } from '../utils/logger';
 
 const router = Router();
 
-const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY || '' });
 
 router.post('/api/musician-clips/generate-description', async (req, res) => {
   try {
@@ -39,14 +39,16 @@ Include:
 - Pose and expression while playing
 
 Keep it consistent with the video's overall aesthetic and make it cinematic.
-Format as a single, detailed paragraph optimized for Gemini image generation.`;
+Format as a single, detailed paragraph optimized for AI image generation.`;
 
-    const result = await genAI.models.generateContent({
-      model: 'gemini-2.0-flash-exp',
-      contents: prompt,
+    const result = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 500,
+      temperature: 0.8,
     });
     
-    const description = result.text?.trim() || '';
+    const description = result.choices[0]?.message?.content?.trim() || '';
     
     if (!description) {
       throw new Error('No description generated from AI');
@@ -71,15 +73,14 @@ router.post('/api/musician-clips/generate-image', async (req, res) => {
       return res.status(400).json({ error: 'Description is required' });
     }
 
-    logger.log('🎸 Generating musician image with Gemini...');
+    logger.log('🎸 Generating musician image with FAL nano-banana...');
     logger.log('📝 Description:', description);
     
     let finalPrompt = `${description}\n\nPhotorealistic, cinematic quality, professional lighting, 8K resolution.`;
     
     if (faceReferenceUrl) {
       logger.log('👤 Using face reference for musician generation');
-      const { generateImageWithMultipleFaceReferences } = await import('../services/gemini-image-service');
-      const result = await generateImageWithMultipleFaceReferences(finalPrompt, [faceReferenceUrl]);
+      const result = await editImageWithNanoBanana([faceReferenceUrl], finalPrompt);
       
       if (!result.success || !result.imageUrl) {
         throw new Error(result.error || 'Failed to generate image with face reference');
@@ -91,7 +92,7 @@ router.post('/api/musician-clips/generate-image', async (req, res) => {
       });
     }
 
-    const result = await generateCinematicImage(finalPrompt);
+    const result = await generateImageWithNanoBanana(finalPrompt);
     
     if (!result.success || !result.imageUrl) {
       throw new Error(result.error || 'Failed to generate image');

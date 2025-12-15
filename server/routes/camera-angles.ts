@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { generateCinematicImage } from '../services/gemini-image-service';
+import { generateImageWithNanoBanana } from '../services/fal-service';
 import { logger } from '../utils/logger';
 import fetch from 'node-fetch';
 

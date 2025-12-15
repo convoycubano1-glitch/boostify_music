@@ -156,17 +156,41 @@ export async function updateSubscription(priceId: string): Promise<{success: boo
 export async function fetchSubscriptionPlans(): Promise<SubscriptionPlansResponse> {
   try {
     // Usamos fetch directamente porque esta es una ruta pública
-    const response = await fetch('/api/subscription-plans');
+    const response = await fetch('/api/subscription-plans', {
+      signal: AbortSignal.timeout(5000) // 5 second timeout
+    });
+    
+    // Check if response is HTML (error page) instead of JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      logger.debug('Subscription plans endpoint returned non-JSON response, using defaults');
+      // Return default plans from config instead of failing
+      return {
+        success: true,
+        plans: [],
+        message: 'Using default plans'
+      };
+    }
+    
     const data = await response.json();
     
     if (data.success && data.plans) {
       return data as SubscriptionPlansResponse;
     } else {
-      logger.error('Error fetching subscription plans:', data);
-      throw new Error('Failed to get subscription plans');
+      logger.debug('Subscription plans response missing expected fields');
+      return {
+        success: true,
+        plans: [],
+        message: 'Using default plans'
+      };
     }
   } catch (error) {
-    logger.error('Error fetching subscription plans:', error);
-    throw error;
+    // Silently handle errors - the app should use default plans from pricing-config
+    logger.debug('Subscription plans fetch (non-critical):', error instanceof Error ? error.message : 'Unknown error');
+    return {
+      success: true,
+      plans: [],
+      message: 'Using default plans'
+    };
   }
 }

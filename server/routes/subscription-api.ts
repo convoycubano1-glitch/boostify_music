@@ -19,7 +19,8 @@ router.get('/user/:userId', async (req, res) => {
     const userId = parseInt(req.params.userId);
     
     if (isNaN(userId)) {
-      return res.status(400).json({ error: 'Invalid user ID' });
+      // Devolver null en lugar de error para usuarios sin ID válido
+      return res.json(null);
     }
     
     // Buscar suscripción activa o en trial
@@ -31,13 +32,15 @@ router.get('/user/:userId', async (req, res) => {
       .limit(1);
     
     if (!subscription || subscription.length === 0) {
-      return res.status(404).json({ error: 'No subscription found' });
+      // Usuario en plan free - devolver null (no es un error)
+      return res.json(null);
     }
     
     return res.json(subscription[0]);
   } catch (error) {
-    console.error('Error fetching subscription:', error);
-    return res.status(500).json({ error: 'Failed to fetch subscription' });
+    console.warn('Error fetching subscription (non-critical):', error);
+    // Devolver null en lugar de error para no romper la app
+    return res.json(null);
   }
 });
 

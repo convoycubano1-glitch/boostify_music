@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server as HttpServer } from "http";
-import { setupAuth } from "./replitAuth";
+// NOTE: Auth is now handled by Clerk - see server/middleware/clerk-auth.ts
 import { setupInstagramRoutes } from "./instagram";
 import { setupSpotifyRoutes } from "./spotify";
 import { setupOpenAIRoutes } from "./routes/openai";
@@ -135,8 +135,8 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     });
   });
   
-  // Session middleware is configured in setupAuth() which is called later
-  // No need to configure it here to avoid duplication
+  // Auth middleware is configured via Clerk in server/index.ts
+  // Session handling is done by Clerk's clerkMiddleware()
 
   // Endpoint público para buscar artista por slug (usado por artist-profile.tsx)
   app.get('/api/artist/by-slug/:slug', async (req, res) => {
@@ -886,7 +886,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     }
   });
   
-  // Contracts router moved after setupAuth() to ensure Passport is initialized
+  // Contracts router - Auth is now handled by Clerk middleware
   console.log('✅ Rutas de perfil, songs, merch, AI assistant, FAL AI, Gemini agents, y Printful registradas');
   
   // ☑️ Rutas de Kling API ahora están separadas en su propio router
@@ -1146,8 +1146,8 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     });
   });
   
-  // NOTE: setupAuth() is now called from server/index.ts AFTER registerRoutes() 
-  // but BEFORE setupVite() to ensure auth endpoints are registered before Vite's catch-all
+  // NOTE: Clerk Auth middleware is configured in server/index.ts BEFORE registerRoutes()
+  // This ensures all /api routes have access to req.user via clerkAuthMiddleware
   
   // Register contracts router (Passport is initialized in server/index.ts)
   app.use('/api/contracts', contractsRouter);

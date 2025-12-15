@@ -1,12 +1,25 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useAccount } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Coins, ShoppingCart, Sparkles } from 'lucide-react';
+import { Coins, ShoppingCart, Sparkles, Wallet } from 'lucide-react';
 import { BuyTokensDialog } from './buy-tokens-dialog';
+
+// Componente ConnectButton lazy para evitar errores cuando wagmi no está disponible
+const LazyConnectButton = () => {
+  try {
+    const { ConnectButton } = require('@rainbow-me/rainbowkit');
+    return <ConnectButton chainStatus="none" showBalance={false} />;
+  } catch {
+    return (
+      <Button variant="outline" disabled>
+        <Wallet className="w-4 h-4 mr-2" />
+        Connect Wallet
+      </Button>
+    );
+  }
+};
 
 interface TokenizedSong {
   id: number;
@@ -41,7 +54,7 @@ interface TokenizedMusicViewProps {
 }
 
 export function TokenizedMusicView({ artistId, postgresId, isAIGenerated, artistName }: TokenizedMusicViewProps) {
-  const { isConnected } = useAccount();
+  // No usamos hooks de wagmi aquí - el botón de conectar wallet se encarga de todo
   const [selectedSong, setSelectedSong] = useState<TokenizedSong | null>(null);
   
   const numericArtistId = typeof artistId === 'string' ? parseInt(artistId) : artistId;
@@ -88,12 +101,7 @@ export function TokenizedMusicView({ artistId, postgresId, isAIGenerated, artist
                 Compra tokens exclusivos con MetaMask y obtén beneficios especiales
               </p>
             </div>
-            {!isConnected && (
-              <ConnectButton 
-                chainStatus="none"
-                showBalance={false}
-              />
-            )}
+            <LazyConnectButton />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -249,7 +257,6 @@ export function TokenizedMusicView({ artistId, postgresId, isAIGenerated, artist
         <BuyTokensDialog
           song={selectedSong}
           artistName={artistName}
-          isConnected={isConnected}
           onClose={() => setSelectedSong(null)}
         />
       )}

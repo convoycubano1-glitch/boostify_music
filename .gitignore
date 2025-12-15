@@ -52,7 +52,28 @@ drizzle/*.sql
 
 # Firebase credentials
 *-firebase-adminsdk-*.json
+attached_assets/*firebase*.json
 
 # Caches
 .cache
 .npm
+
+# Test/Debug files
+check-*.js
+check-*.ts
+db-push-output.log
+
+# Replit specific
+.replit
+replit.md
+.config/
+.local/
+
+# Python
+__pycache__/
+*.py[cod]
+uv.lock
+pyproject.toml
+
+# Uploads (user generated content)
+uploads/

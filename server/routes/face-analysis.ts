@@ -1,14 +1,17 @@
 import { Router } from 'express';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 
 const router = Router();
 
-// Inicializar Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+// Inicializar OpenAI
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || ''
+});
 
 /**
  * POST /api/gemini/analyze-face
  * Analiza fotos del artista para extraer características faciales detalladas
+ * Migrado de Gemini a OpenAI Vision para mayor eficiencia
  */
 router.post('/analyze-face', async (req, res) => {
   try {
@@ -18,25 +21,23 @@ router.post('/analyze-face', async (req, res) => {
       return res.status(400).json({ error: 'Se requieren imágenes para analizar' });
     }
 
-    console.log(`🔍 Analizando ${images.length} fotos del artista...`);
+    console.log(`🔍 Analizando ${images.length} fotos del artista con OpenAI Vision...`);
 
-    // Convertir base64 a formato para Gemini
-    const imageParts = images.map((base64Image: string) => {
-      // Remover el prefijo data:image/...;base64, si existe
-      const base64Data = base64Image.includes('base64,') 
-        ? base64Image.split('base64,')[1] 
-        : base64Image;
+    // Preparar las imágenes para OpenAI Vision
+    const imageContents: OpenAI.ChatCompletionContentPart[] = images.map((base64Image: string) => {
+      // Asegurar que tiene el prefijo correcto
+      const imageData = base64Image.includes('base64,') 
+        ? base64Image 
+        : `data:image/jpeg;base64,${base64Image}`;
       
       return {
-        inlineData: {
-          data: base64Data,
-          mimeType: 'image/jpeg'
+        type: 'image_url' as const,
+        image_url: {
+          url: imageData,
+          detail: 'high' as const
         }
       };
     });
-
-    // Usar Gemini 2.0 Flash para análisis visual
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
     const prompt = `Analyze these ${images.length} photo(s) of the same person in extreme detail. Extract ALL facial characteristics with precision.
 
@@ -77,10 +78,25 @@ Return ONLY valid JSON with this EXACT structure (no markdown, no code blocks):
 
 CRITICAL: Return ONLY the JSON object. No explanations, no markdown, no code blocks. Start with { and end with }.`;
 
-    const result = await model.generateContent([prompt, ...imageParts]);
-    const responseText = result.response.text();
+    // Usar OpenAI GPT-4 Vision para análisis
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            ...imageContents
+          ]
+        }
+      ],
+      max_tokens: 2000,
+      response_format: { type: 'json_object' }
+    });
+
+    const responseText = response.choices[0]?.message?.content || '';
     
-    console.log('📊 Respuesta de Gemini recibida');
+    console.log('📊 Respuesta de OpenAI recibida');
 
     // Limpiar la respuesta si viene con markdown
     let cleanedResponse = responseText.trim();

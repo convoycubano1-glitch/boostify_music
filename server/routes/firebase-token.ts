@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { isAuthenticated } from '../replitAuth';
+import { isAuthenticated } from '../middleware/clerk-auth';
 import { auth } from '../firebase';
 
 const router = Router();

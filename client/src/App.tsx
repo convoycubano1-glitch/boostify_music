@@ -4,7 +4,7 @@ import { Switch, Route, Router as WouterRouter } from "wouter";
 import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import '@rainbow-me/rainbowkit/styles.css';
-import { queryClient } from "./lib/queryClient";
+import { queryClient, setClerkGetToken } from "./lib/queryClient";
 import { wagmiConfig } from "./lib/web3-config";
 import { Toaster } from "./components/ui/toaster";
 import { PageLoader } from "./components/ui/page-loader";
@@ -18,6 +18,39 @@ import { EditorProvider } from "./lib/context/editor-context";
 import { GlobalAuthGuard } from "./lib/global-auth-guard";
 import { BottomNav } from "./components/layout/bottom-nav";
 import { BoostifyRadio } from "./components/radio/boostify-radio";
+import { useAuth } from "@clerk/clerk-react";
+
+// Web3 Provider wrapper - NO BLOQUEA, carga Web3 de forma lazy
+function Web3Wrapper({ children }: { children: ReactNode }) {
+  const [web3Enabled, setWeb3Enabled] = useState(false);
+
+  useEffect(() => {
+    // Cargar Web3 después de que la app ya esté renderizada
+    const timer = setTimeout(() => {
+      setWeb3Enabled(true);
+    }, 1000); // 1 segundo delay para no interferir con la carga inicial
+    return () => clearTimeout(timer);
+  }, []);
+
+  // SIEMPRE renderizar children primero
+  // Web3 se activa después en background
+  if (!web3Enabled) {
+    return <>{children}</>;
+  }
+
+  try {
+    return (
+      <WagmiProvider config={wagmiConfig}>
+        <RainbowKitProvider>
+          {children}
+        </RainbowKitProvider>
+      </WagmiProvider>
+    );
+  } catch (error) {
+    console.warn('[Web3] Failed to initialize, continuing without Web3:', error);
+    return <>{children}</>;
+  }
+}
 import { CustomerServiceAgent } from "./components/agents/customer-service-agent";
 
 import NotFound from "./pages/not-found";
@@ -168,6 +201,19 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     return this.props.children;
   }
 }
+
+// Componente para inicializar el token de Clerk en el queryClient
+const ClerkTokenInitializer = ({ children }: { children: ReactNode }) => {
+  const { getToken } = useAuth();
+  
+  useEffect(() => {
+    // Configurar la función getToken de Clerk en el queryClient
+    setClerkGetToken(getToken);
+    console.log('✅ Clerk token initializer configured');
+  }, [getToken]);
+  
+  return <>{children}</>;
+};
 
 const PageWrapper = ({ children }: { children: ReactNode }) => {
   return (
@@ -483,20 +529,20 @@ const App = () => {
       {/* Componente invisible para manejar errores de WebSocket */}
       <div className="min-h-screen bg-background text-foreground">
         <ViteHMRErrorHandler />
-        <QueryClientProvider client={queryClient}>
-          <SubscriptionProvider>
-            <GlobalAuthGuard>
-              <EditorProvider>
-                <WagmiProvider config={wagmiConfig}>
-                  <RainbowKitProvider>
+        <ClerkTokenInitializer>
+          <QueryClientProvider client={queryClient}>
+            <SubscriptionProvider>
+              <GlobalAuthGuard>
+                <EditorProvider>
+                  <Web3Wrapper>
                     <Router />
-                  </RainbowKitProvider>
-                </WagmiProvider>
-                <Toaster />
-              </EditorProvider>
-            </GlobalAuthGuard>
-          </SubscriptionProvider>
-        </QueryClientProvider>
+                  </Web3Wrapper>
+                  <Toaster />
+                </EditorProvider>
+              </GlobalAuthGuard>
+            </SubscriptionProvider>
+          </QueryClientProvider>
+        </ClerkTokenInitializer>
       </div>
     </ErrorBoundary>
   );

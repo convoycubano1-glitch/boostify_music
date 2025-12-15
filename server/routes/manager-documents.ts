@@ -1,9 +1,9 @@
 /**
- * API Routes para Manager Tools - Solo generación de contenido con Gemini
+ * API Routes para Manager Tools - Solo generación de contenido con OpenAI
  * El almacenamiento en Firestore se maneja desde el cliente
  */
 import express from 'express';
-import { generateProfessionalDocument } from '../services/gemini-text-service';
+import { generateProfessionalDocument } from '../services/openai-text-service';
 
 const router = express.Router();
 

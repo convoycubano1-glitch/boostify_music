@@ -1,17 +1,24 @@
 import { Router } from "express";
-import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 import { authenticate } from "../middleware/auth";
 
 const router = Router();
 
-// Initialize Gemini AI using Replit AI Integrations
-const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || '',
-  httpOptions: {
-    apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL || '',
-  },
+// Initialize OpenAI for text generation (migrated from Gemini)
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || '',
 });
+
+// Helper function to generate content with OpenAI
+async function generateWithOpenAI(prompt: string, maxTokens: number = 1000): Promise<string> {
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
+    max_tokens: maxTokens,
+    response_format: { type: 'json_object' }
+  });
+  return response.choices[0]?.message?.content || '';
+}
 
 // Usage tracking helper
 async function trackUsage(userId: number, feature: string) {
@@ -57,8 +64,7 @@ Return ONLY a valid JSON object in this exact format (no markdown, no code block
   ]
 }`;
 
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const responseText = await generateWithOpenAI(prompt, 1000);
     
     // Clean response to extract JSON
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
@@ -120,8 +126,7 @@ Return ONLY a valid JSON object (no markdown, no code blocks):
   "bestPractices": "Use a mix of all three sizes..."
 }`;
 
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const responseText = await generateWithOpenAI(prompt, 1000);
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -191,8 +196,7 @@ Return ONLY a valid JSON object (no markdown, no code blocks):
   }
 }`;
 
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const responseText = await generateWithOpenAI(prompt, 1200);
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -262,8 +266,7 @@ Return ONLY a valid JSON object (no markdown, no code blocks):
   }
 }`;
 
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const responseText = await generateWithOpenAI(prompt, 800);
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -340,8 +343,7 @@ Return ONLY a valid JSON object (no markdown, no code blocks):
   ]
 }`;
 
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const responseText = await generateWithOpenAI(prompt, 1000);
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {

@@ -2,14 +2,11 @@ import { Router, Request } from 'express';
 import { db } from '../firebase';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { generateContract, analyzeContract, generateTemplateContract, CONTRACT_TEMPLATES } from '../services/gemini-contracts';
+import { generateContract, analyzeContract, generateTemplateContract, CONTRACT_TEMPLATES } from '../services/openai-contracts';
+import { isAuthenticated, ClerkAuthUser } from '../middleware/clerk-auth';
 
 interface AuthRequest extends Request {
-  isAuthenticated(): boolean;
-  user?: {
-    uid: string;
-    email: string;
-  };
+  user?: ClerkAuthUser;
 }
 
 const router = Router();
@@ -31,11 +28,7 @@ const saveContractSchema = z.object({
   status: z.enum(['draft', 'active', 'signed', 'expired']).optional(),
 });
 
-router.post('/generate', async (req: any, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-
+router.post('/generate', isAuthenticated, async (req: any, res) => {
   try {
     const validationResult = generateContractSchema.safeParse(req.body);
     
@@ -62,11 +55,7 @@ router.post('/generate', async (req: any, res) => {
   }
 });
 
-router.post('/analyze', async (req: any, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-
+router.post('/analyze', isAuthenticated, async (req: any, res) => {
   try {
     const { contractText } = req.body;
 
@@ -97,11 +86,7 @@ router.get('/templates', async (req, res) => {
   });
 });
 
-router.post('/generate-template', async (req: any, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-
+router.post('/generate-template', isAuthenticated, async (req: any, res) => {
   try {
     const { templateType, customParams } = req.body;
 
@@ -125,11 +110,7 @@ router.post('/generate-template', async (req: any, res) => {
   }
 });
 
-router.post('/', async (req: any, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-
+router.post('/', isAuthenticated, async (req: any, res) => {
   try {
     const validationResult = saveContractSchema.safeParse(req.body);
     
@@ -140,7 +121,7 @@ router.post('/', async (req: any, res) => {
       });
     }
 
-    const userId = req.user.uid;
+    const userId = req.user.clerkUserId;
     const contractData = {
       ...validationResult.data,
       userId,
@@ -166,13 +147,9 @@ router.post('/', async (req: any, res) => {
   }
 });
 
-router.get('/', async (req: any, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-
+router.get('/', isAuthenticated, async (req: any, res) => {
   try {
-    const userId = req.user.uid;
+    const userId = req.user.clerkUserId;
 
     const contractsSnapshot = await db.collection('contracts')
       .where('userId', '==', userId)
@@ -198,13 +175,9 @@ router.get('/', async (req: any, res) => {
   }
 });
 
-router.get('/:id', async (req: any, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-
+router.get('/:id', isAuthenticated, async (req: any, res) => {
   try {
-    const userId = req.user.uid;
+    const userId = req.user.clerkUserId;
     const { id } = req.params;
 
     const contractDoc = await db.collection('contracts').doc(id).get();
@@ -236,13 +209,9 @@ router.get('/:id', async (req: any, res) => {
   }
 });
 
-router.patch('/:id', async (req: any, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-
+router.patch('/:id', isAuthenticated, async (req: any, res) => {
   try {
-    const userId = req.user.uid;
+    const userId = req.user.clerkUserId;
     const { id } = req.params;
 
     const contractDoc = await db.collection('contracts').doc(id).get();
@@ -281,13 +250,9 @@ router.patch('/:id', async (req: any, res) => {
   }
 });
 
-router.delete('/:id', async (req: any, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-
+router.delete('/:id', isAuthenticated, async (req: any, res) => {
   try {
-    const userId = req.user.uid;
+    const userId = req.user.clerkUserId;
     const { id } = req.params;
 
     const contractDoc = await db.collection('contracts').doc(id).get();

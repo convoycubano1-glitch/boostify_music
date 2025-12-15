@@ -1,15 +1,12 @@
 import { Router, Request, Response } from 'express';
-import { GoogleGenAI, Type } from "@google/genai";
+import OpenAI from 'openai';
+import { generateImageWithNanoBanana } from '../services/fal-service';
 
 const router = Router();
 
-// Initialize Gemini with AI Integrations
-const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || 'dummy',
-  httpOptions: {
-    apiVersion: '',
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
-  },
+// Initialize OpenAI
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || '',
 });
 
 // Simple retry helper without external dependencies
@@ -107,84 +104,38 @@ router.post('/api/education/generate-20-courses', async (req: Request, res: Resp
       console.log(`Generating course ${idx + 1}/20: ${topic} (${level})`);
       
       return await retryWithBackoff(async () => {
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: `Generate a JSON course structure for: "${topic}" - Level: ${level}. Include: title, description, preview (first 2 lessons only), fullCurriculum (complete), objectives (3-4), topics (4-5), estimatedHours, skills (3-4), prerequisites, imagePrompt.`,
-          config: {
-            responseMimeType: 'application/json',
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                title: { type: Type.STRING },
-                description: { type: Type.STRING },
-                level: { type: Type.STRING },
-                preview: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      title: { type: Type.STRING },
-                      description: { type: Type.STRING },
-                      duration: { type: Type.STRING }
-                    },
-                    required: ['title', 'description', 'duration']
-                  }
-                },
-                fullCurriculum: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      module: { type: Type.STRING },
-                      lessons: {
-                        type: Type.ARRAY,
-                        items: {
-                          type: Type.OBJECT,
-                          properties: {
-                            title: { type: Type.STRING },
-                            description: { type: Type.STRING },
-                            duration: { type: Type.STRING },
-                            content: { type: Type.STRING }
-                          },
-                          required: ['title', 'description', 'duration', 'content']
-                        }
-                      }
-                    },
-                    required: ['module', 'lessons']
-                  }
-                },
-                objectives: { type: Type.ARRAY, items: { type: Type.STRING } },
-                topics: { type: Type.ARRAY, items: { type: Type.STRING } },
-                estimatedHours: { type: Type.NUMBER },
-                skills: { type: Type.ARRAY, items: { type: Type.STRING } },
-                prerequisites: { type: Type.ARRAY, items: { type: Type.STRING } },
-                imagePrompt: { type: Type.STRING }
-              },
-              required: ['title', 'description', 'level', 'preview', 'fullCurriculum', 'objectives', 'topics', 'estimatedHours', 'skills', 'prerequisites', 'imagePrompt']
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a music education expert. Generate course structures in valid JSON format.'
+            },
+            {
+              role: 'user',
+              content: `Generate a JSON course structure for: "${topic}" - Level: ${level}. Include: title, description, preview (first 2 lessons only), fullCurriculum (complete), objectives (3-4), topics (4-5), estimatedHours, skills (3-4), prerequisites, imagePrompt.`
             }
-          }
+          ],
+          response_format: { type: 'json_object' },
+          temperature: 0.7,
         });
 
-        const courseData = JSON.parse(response.text || '{}');
+        const courseData = JSON.parse(response.choices[0].message.content || '{}');
         
-        // Generate thumbnail image with Gemini 2.5 Flash Image (Nano Banana)
+        // Generate thumbnail image with FAL nano-banana
         let thumbnail = null;
         try {
           const imagePrompt = courseData.imagePrompt || `Professional music course thumbnail for ${topic}. Modern design with vibrant colors, musical elements, and text "${topic}". 16:9 aspect ratio.`;
           
-          const imageResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: [{ role: 'user', parts: [{ text: imagePrompt }] }],
-            config: {
-              responseModalities: ['image'],
-            }
+          const imageResult = await generateImageWithNanoBanana(imagePrompt, {
+            aspectRatio: '16:9',
+            outputFormat: 'png'
           });
 
-          const candidate = imageResponse.candidates?.[0];
-          const imagePart = candidate?.content?.parts?.find((p: any) => p.inlineData);
-          if (imagePart?.inlineData?.data) {
-            const mimeType = imagePart.inlineData.mimeType || 'image/png';
-            thumbnail = `data:${mimeType};base64,${imagePart.inlineData.data}`;
+          if (imageResult.success && imageResult.imageUrl) {
+            thumbnail = imageResult.imageUrl;
+          } else if (imageResult.success && imageResult.imageBase64) {
+            thumbnail = `data:image/png;base64,${imageResult.imageBase64}`;
           }
         } catch (imgError) {
           console.warn(`Could not generate image for ${topic}:`, imgError);
@@ -244,58 +195,23 @@ router.post('/api/education/generate-full-content', async (req: Request, res: Re
     console.log(`📖 Generating full content for course: ${courseTitle}`);
 
     const content = await retryWithBackoff(async () => {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: `Generate complete course content for "${courseTitle}" (${level || 'Intermediate'} level). Include: detailed lessons with exercises, practical examples, code snippets, best practices, common mistakes to avoid, and a comprehensive final exam with 10 multiple choice questions.`,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              modules: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    title: { type: Type.STRING },
-                    lessons: {
-                      type: Type.ARRAY,
-                      items: {
-                        type: Type.OBJECT,
-                        properties: {
-                          title: { type: Type.STRING },
-                          content: { type: Type.STRING },
-                          exercises: { type: Type.ARRAY, items: { type: Type.STRING } },
-                          examples: { type: Type.ARRAY, items: { type: Type.STRING } }
-                        }
-                      }
-                    }
-                  }
-                }
-              },
-              exam: {
-                type: Type.OBJECT,
-                properties: {
-                  title: { type: Type.STRING },
-                  questions: {
-                    type: Type.ARRAY,
-                    items: {
-                      type: Type.OBJECT,
-                      properties: {
-                        question: { type: Type.STRING },
-                        options: { type: Type.ARRAY, items: { type: Type.STRING } },
-                        correct: { type: Type.NUMBER }
-                      }
-                    }
-                  }
-                }
-              }
-            }
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a music education expert. Generate complete course content in valid JSON format with modules, lessons, exercises, examples, and exams.'
+          },
+          {
+            role: 'user',
+            content: `Generate complete course content for "${courseTitle}" (${level || 'Intermediate'} level). Include: detailed lessons with exercises, practical examples, code snippets, best practices, common mistakes to avoid, and a comprehensive final exam with 10 multiple choice questions. Return JSON with "modules" array (each with title and lessons array containing title, content, exercises, examples) and "exam" object (with title and questions array containing question, options array, and correct index).`
           }
-        }
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.7,
       });
 
-      return JSON.parse(response.text || '{}');
+      return JSON.parse(response.choices[0].message.content || '{}');
     }, 3, 2000);
 
     console.log(`✅ Full content generated for ${courseTitle}`);

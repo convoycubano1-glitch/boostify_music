@@ -3,7 +3,7 @@ import { db } from '../db';
 import { musicians, insertMusicianSchema, selectMusicianSchema } from '../../db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { z } from 'zod';
-import { enhanceMusicianDescription } from '../services/gemini-description-service';
+import { enhanceMusicianDescription } from '../services/openai-description-service';
 
 const router = express.Router();
 

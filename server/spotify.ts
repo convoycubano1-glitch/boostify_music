@@ -1,6 +1,7 @@
 import { Express } from "express";
 import { db } from './firebase';
 import { getFirestore } from 'firebase-admin/firestore';
+import { isAuthenticated, ClerkAuthUser } from './middleware/clerk-auth';
 
 const SPOTIFY_API_URL = "https://api.spotify.com/v1";
 const SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize";
@@ -8,9 +9,7 @@ const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
 
 declare global {
   namespace Express {
-    interface User {
-      uid: string;
-    }
+    interface User extends ClerkAuthUser {}
   }
 }
 
@@ -22,9 +21,7 @@ const PLAN_LIMITS = {
 
 export function setupSpotifyRoutes(app: Express) {
   // Iniciar flujo de OAuth de Spotify
-  app.get("/api/spotify/auth", (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-
+  app.get("/api/spotify/auth", isAuthenticated, (req, res) => {
     const clientId = process.env.VITE_FIREBASE_API_KEY;
     const redirectUri = `${req.protocol}://${req.get("host")}/api/spotify/callback`;
     const scope = "user-read-private user-read-email user-library-read user-follow-read user-top-read";
@@ -34,9 +31,7 @@ export function setupSpotifyRoutes(app: Express) {
   });
 
   // Manejar callback de Spotify OAuth
-  app.get("/api/spotify/callback", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-
+  app.get("/api/spotify/callback", isAuthenticated, async (req, res) => {
     const { code } = req.query;
     if (!code) return res.status(400).send("Authorization code not found");
 
@@ -70,7 +65,7 @@ export function setupSpotifyRoutes(app: Express) {
       }).then(res => res.json());
 
       // Guardar datos en Firestore
-      const spotifyDataRef = db.collection('spotify_data').doc(req.user.uid);
+      const spotifyDataRef = db.collection('spotify_data').doc(req.user!.clerkUserId);
       await spotifyDataRef.set({
         accessToken,
         refreshToken,
@@ -103,11 +98,9 @@ export function setupSpotifyRoutes(app: Express) {
   });
 
   // Obtener datos del perfil de Spotify del usuario
-  app.get("/api/spotify/profile", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-
+  app.get("/api/spotify/profile", isAuthenticated, async (req, res) => {
     try {
-      const spotifyDataRef = db.collection('spotify_data').doc(req.user.uid);
+      const spotifyDataRef = db.collection('spotify_data').doc(req.user!.clerkUserId);
       const spotifyDoc = await spotifyDataRef.get();
 
       if (!spotifyDoc.exists || !spotifyDoc.data()?.accessToken) {

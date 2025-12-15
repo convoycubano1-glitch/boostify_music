@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../hooks/use-auth';
 import { useSubscription } from './context/subscription-context';
 import { useLocation } from 'wouter';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import { Button } from '../components/ui/button';
-import { Loader2, Lock, Crown } from 'lucide-react';
+import { Crown } from 'lucide-react';
 
 interface GlobalAuthGuardProps {
   children: React.ReactNode;
@@ -17,7 +17,7 @@ const PUBLIC_ROUTES = [
   '/login',
   '/signup',
   '/register',
-  '/dashboard', // Temporal para debugging auth
+  '/dashboard',
   '/pricing',
   '/features',
   '/privacy',
@@ -33,91 +33,52 @@ const PUBLIC_ROUTES = [
 ];
 
 /**
- * GlobalAuthGuard verifica que el usuario esté autenticado y tenga un plan activo
- * antes de permitir acceso a cualquier funcionalidad de la aplicación.
- * 
- * Reglas:
- * - convoycubano@gmail.com = ADMIN (acceso completo sin restricciones)
- * - Usuario no autenticado = redirigir a login
- * - Usuario autenticado sin plan = mostrar modal de subscripciones
- * - Usuario con plan 'free' o superior = acceso permitido
+ * GlobalAuthGuard - SIMPLIFICADO para no bloquear la UI
+ * Solo muestra modales cuando sea necesario, nunca bloquea el render
  */
 export function GlobalAuthGuard({ children }: GlobalAuthGuardProps) {
-  const { user, loading: authLoading, isAuthenticated } = useAuth();
-  const { currentPlan, isLoading: subscriptionLoading } = useSubscription();
+  const { user, isAuthenticated } = useAuth();
+  const { currentPlan } = useSubscription();
   const [location] = useLocation();
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
-  const isLoading = authLoading || subscriptionLoading;
-  const isPublicRoute = PUBLIC_ROUTES.some(route => 
-    location === route || location.startsWith(route + '/')
+  // Calcular valores derivados
+  const isPublicRoute = useMemo(() => 
+    PUBLIC_ROUTES.some(route => location === route || location.startsWith(route + '/')),
+    [location]
   );
 
-  // Verificar si es admin
-  const isAdmin = user?.email === 'convoycubano@gmail.com';
+  const isAdmin = useMemo(() => 
+    user?.email === 'convoycubano@gmail.com',
+    [user?.email]
+  );
 
+  // Efecto para mostrar modal de suscripción si es necesario
+  // PERO nunca bloquea el render
   useEffect(() => {
-    // No hacer nada si aún está cargando o es ruta pública
-    if (isLoading || isPublicRoute) {
-      return;
-    }
-
-    // Si es admin, permitir acceso completo
-    if (isAdmin) {
-      setShowAuthModal(false);
+    // No mostrar modal en rutas públicas o si es admin
+    if (isPublicRoute || isAdmin) {
       setShowSubscriptionModal(false);
       return;
     }
 
-    // Si no está autenticado, mostrar modal de login
-    if (!isAuthenticated) {
-      setShowAuthModal(true);
-      setShowSubscriptionModal(false);
-      return;
-    }
-
-    // Si está autenticado pero no tiene plan, mostrar modal de subscripción
+    // Si está autenticado pero no tiene plan, mostrar modal después de 2 segundos
     if (isAuthenticated && !currentPlan) {
-      setShowAuthModal(false);
-      setShowSubscriptionModal(true);
-      return;
+      const timer = setTimeout(() => {
+        setShowSubscriptionModal(true);
+      }, 2000);
+      return () => clearTimeout(timer);
     }
 
-    // Si tiene plan (incluido 'free'), permitir acceso
-    if (currentPlan) {
-      setShowAuthModal(false);
-      setShowSubscriptionModal(false);
-    }
-  }, [isLoading, isAuthenticated, currentPlan, isPublicRoute, isAdmin]);
+    setShowSubscriptionModal(false);
+  }, [isAuthenticated, currentPlan, isPublicRoute, isAdmin]);
 
-  // Mostrar loading mientras se verifica
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Verificando acceso...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Rutas públicas siempre se muestran
-  if (isPublicRoute) {
-    return <>{children}</>;
-  }
-
-  // Admin tiene acceso completo
-  if (isAdmin) {
-    return <>{children}</>;
-  }
-
+  // SIEMPRE renderizar children - nunca bloquear
   return (
     <>
       {children}
 
-      {/* Modal de Subscripción */}
+      {/* Modal de Subscripción - solo se muestra si necesario */}
       <Dialog open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -149,18 +110,16 @@ export function GlobalAuthGuard({ children }: GlobalAuthGuardProps) {
               <Button 
                 onClick={() => window.location.href = '/pricing'}
                 className="w-full"
-                data-testid="button-view-plans"
               >
                 Ver Planes y Seleccionar
               </Button>
               
               <Button 
                 variant="outline" 
-                onClick={() => window.location.href = '/'}
+                onClick={() => setShowSubscriptionModal(false)}
                 className="w-full"
-                data-testid="button-back-home-2"
               >
-                Volver al Inicio
+                Continuar sin plan
               </Button>
             </div>
           </div>

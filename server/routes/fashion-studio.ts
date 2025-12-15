@@ -3,7 +3,7 @@
  * 
  * Endpoints para Artist Fashion Studio:
  * - Sessions management
- * - Fashion analysis con Gemini
+ * - Fashion analysis con OpenAI Vision
  * - Results storage
  * - Portfolio management
  */
@@ -292,7 +292,7 @@ router.get('/video-status/:videoId', authenticate, async (req: Request, res: Res
 });
 
 // ============================================
-// FASHION ANALYSIS CON GEMINI
+// FASHION ANALYSIS CON OPENAI VISION
 // ============================================
 
 router.post('/analyze', authenticate, async (req: Request, res: Response) => {
@@ -304,17 +304,58 @@ router.post('/analyze', authenticate, async (req: Request, res: Response) => {
 
     const { imageUrl, prompt, genre, occasion, sessionId } = req.body;
 
-    console.log('🎨 Analizando moda con Gemini...');
+    console.log('🎨 Analizando moda con OpenAI Vision...');
 
-    // Usar servicio Gemini del proyecto
-    const { GoogleGenerativeAI } = require('@google/generative-ai');
-    const genai = new GoogleGenerativeAI(process.env.VITE_GEMINI_API_KEY);
-    const model = genai.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    // Usar OpenAI para análisis de moda
+    const OpenAI = require('openai');
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    const fullPrompt = `${prompt}\n\nGenre: ${genre || 'N/A'}\nOccasion: ${occasion || 'N/A'}`;
+    const fullPrompt = `Analyze this fashion image and provide detailed style recommendations.
+    
+${prompt}
 
-    const result = await model.generateContent(fullPrompt);
-    const responseText = result.response.text();
+Genre context: ${genre || 'N/A'}
+Occasion: ${occasion || 'N/A'}
+
+Respond in JSON format with:
+{
+  "styleScore": number (0-100),
+  "colorPalette": array of hex colors,
+  "bodyType": string,
+  "genreCoherence": number (0-100),
+  "suggestions": array of 4 strings with improvement suggestions,
+  "moodBoard": {
+    "keywords": array of style keywords,
+    "artistReferences": array of artist style references,
+    "trendReferences": array of current trend references
+  },
+  "detailedAnalysis": detailed text analysis
+}`;
+
+    const messages: any[] = [
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: fullPrompt },
+          { 
+            type: 'image_url', 
+            image_url: { 
+              url: imageUrl,
+              detail: 'high'
+            } 
+          }
+        ]
+      }
+    ];
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages,
+      max_tokens: 2000,
+      response_format: { type: 'json_object' }
+    });
+
+    const responseText = response.choices[0]?.message?.content || '';
 
     // Intentar parsear JSON
     let analysis;

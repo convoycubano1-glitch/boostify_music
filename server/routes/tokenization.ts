@@ -3,9 +3,8 @@ import { db } from '../db';
 import { tokenizedSongs, tokenPurchases, artistTokenEarnings, users } from '../db/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { GoogleGenAI, Modality } from '@google/genai';
-import * as fal from '@fal-ai/serverless-client';
+import OpenAI from 'openai';
+import { generateImageWithNanoBanana } from '../services/fal-service';
 
 const router = Router();
 
@@ -370,12 +369,11 @@ router.post('/ai/improve-description', async (req, res) => {
   try {
     const { songName, currentDescription } = req.body;
     
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(500).json({ error: 'Gemini API key not configured' });
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     const prompt = `Eres un experto en marketing musical y tokenización NFT. 
     
@@ -391,8 +389,14 @@ Mejora esta descripción para una canción tokenizada en blockchain. La descripc
 
 Responde SOLO con la descripción mejorada, sin explicaciones adicionales.`;
 
-    const result = await model.generateContent(prompt);
-    const improvedDescription = result.response.text();
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 500,
+      temperature: 0.7,
+    });
+
+    const improvedDescription = completion.choices[0]?.message?.content || '';
 
     res.json({ description: improvedDescription });
   } catch (error: any) {
@@ -409,77 +413,22 @@ router.post('/ai/generate-image', async (req, res) => {
 ${description ? `${description}. ` : ''}
 High quality music cover art, vibrant colors, eye-catching design, modern style, professional photography, studio quality, 4k, artistic composition`;
 
-    // Try nano banana (gemini-2.5-flash-image) first with Replit AI Integrations
-    if (process.env.AI_INTEGRATIONS_GEMINI_BASE_URL && process.env.AI_INTEGRATIONS_GEMINI_API_KEY) {
-      try {
-        console.log('Generating image with nano banana (gemini-2.5-flash-image) for song:', songName);
-        
-        const ai = new GoogleGenAI({
-          apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
-          httpOptions: {
-            apiVersion: "",
-            baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
-          },
-        });
-
-        const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash-image",
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          config: {
-            responseModalities: [Modality.TEXT, Modality.IMAGE],
-          },
-        });
-
-        const candidate = response.candidates?.[0];
-        const imagePart = candidate?.content?.parts?.find((part: any) => part.inlineData);
-        
-        if (imagePart?.inlineData?.data) {
-          const mimeType = imagePart.inlineData.mimeType || "image/png";
-          const imageUrl = `data:${mimeType};base64,${imagePart.inlineData.data}`;
-          console.log('Image generated successfully with nano banana');
-          return res.json({ imageUrl });
-        }
-      } catch (nanoBananaError: any) {
-        console.warn('Nano banana failed, falling back to FAL:', nanoBananaError.message);
-      }
-    }
-
-    // Fallback to FAL if nano banana fails or isn't available
-    if (!process.env.FAL_KEY) {
-      return res.status(500).json({ error: 'No image generation service configured' });
-    }
-
-    console.log('Generating image with FAL for song:', songName);
+    console.log('🎨 [TOKENIZATION] Generating image with FAL nano-banana for song:', songName);
     
-    fal.config({
-      credentials: process.env.FAL_KEY
+    const result = await generateImageWithNanoBanana(prompt, {
+      aspectRatio: '1:1',
+      numImages: 1,
+      outputFormat: 'png'
     });
-    
-    const result = await fal.subscribe('fal-ai/flux/schnell', {
-      input: {
-        prompt: prompt,
-        image_size: 'square_hd',
-        num_inference_steps: 4,
-        num_images: 1,
-        enable_safety_checker: false,
-      },
-      logs: true,
-      onQueueUpdate: (update) => {
-        if (update.status === 'IN_PROGRESS') {
-          console.log('FAL generation progress:', update.logs);
-        }
-      },
-    }) as any;
 
-    if (result && result.images && result.images.length > 0) {
-      const imageUrl = result.images[0].url;
-      console.log('Image generated successfully with FAL');
-      res.json({ imageUrl });
+    if (result.success && result.imageUrl) {
+      console.log('✅ [TOKENIZATION] Image generated successfully with FAL nano-banana');
+      return res.json({ imageUrl: result.imageUrl });
     } else {
-      throw new Error('No image generated');
+      throw new Error(result.error || 'No image generated');
     }
   } catch (error: any) {
-    console.error('Error generating image:', error);
+    console.error('❌ [TOKENIZATION] Error generating image:', error);
     res.status(500).json({ 
       error: 'Failed to generate image',
       details: error.message 

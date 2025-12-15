@@ -3,10 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Lock, Shield, CheckCircle2, Mail, Github } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import { motion } from "framer-motion";
+import { useLocation } from "wouter";
 
 export default function LoginPage() {
+  const [, setLocation] = useLocation();
+  
   const handleLogin = () => {
-    window.location.href = "/api/login";
+    setLocation("/auth");
   };
 
   return (

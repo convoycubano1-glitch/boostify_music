@@ -1,5 +1,5 @@
 import express from 'express';
-import { geminiService } from '../services/gemini-service';
+import { agentsService as geminiService } from '../services/openai-agents-service';
 import { z } from 'zod';
 import { logApiUsage } from '../utils/api-logger';
 

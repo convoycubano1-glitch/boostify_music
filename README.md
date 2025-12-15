@@ -1,63 +1,127 @@
 # Boostify Music Platform
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
 ## Descripción
-Boostify Music es una plataforma avanzada de educación musical impulsada por IA que crea experiencias de aprendizaje personalizadas y atractivas para músicos a través de tecnologías inteligentes y herramientas interactivas de análisis.
+Boostify Music es una plataforma avanzada de música impulsada por IA que permite crear artistas virtuales con canciones generadas automáticamente usando FAL AI MiniMax, tokenización de música en blockchain, y herramientas de promoción para artistas.
 
-## Tecnologías Principales
-- React.js con TypeScript para frontend responsive
-- OpenRouter AI para generación inteligente de contenido
-- Firebase Firestore para gestión de datos en tiempo real
-- WebSocket para streaming de audio en vivo
-- Tailwind CSS para estilizado dinámico
-- Análisis detallado de artistas con información detallada de rendimiento
+## 🚀 Características Principales
+- **Generación de Artistas con IA**: Crea artistas virtuales completos con biografía, imágenes y canciones
+- **Música Generada por IA**: Canciones con voces reales usando FAL AI MiniMax Music V2
+- **Tokenización de Música**: Sistema de tokens para canciones en blockchain
+- **Perfiles de Artistas**: Páginas de perfil personalizables con múltiples secciones
+- **Sistema de Suscripciones**: Planes con Stripe para acceso a funciones premium
+- **Video Rendering**: Creación de videos musicales con Shotstack
 
-## Requisitos
-- Node.js 18+ / 20+
-- PostgreSQL
-- Firebase cuenta y proyecto configurado
-- Claves de API: OpenRouter, OpenAI, Stripe, etc.
+## 🛠 Tecnologías Principales
+- **Frontend**: React.js, TypeScript, Tailwind CSS, Radix UI
+- **Backend**: Express.js, Node.js
+- **Base de Datos**: PostgreSQL (Neon), Firebase Firestore
+- **Autenticación**: Clerk
+- **Pagos**: Stripe
+- **IA**: FAL AI (música/imágenes), OpenAI, Anthropic Claude
+- **Storage**: Firebase Storage
 
-## Instalación
+## 📋 Requisitos
+- Node.js 18+
+- PostgreSQL (recomendado: Neon)
+- Firebase proyecto configurado
+- Cuentas: Clerk, Stripe, FAL AI
 
-### Configuración del entorno
-1. Clona el repositorio
-2. Copia `.env.example` a `.env` y configura las variables de entorno
+## 🔧 Instalación Local
 
+### 1. Clonar el repositorio
 ```bash
-cp .env.example .env
+git clone https://github.com/tu-usuario/Boostify.git
+cd Boostify
 ```
 
-3. Instala las dependencias
+### 2. Configurar variables de entorno
+```bash
+cp .env.example .env
+# Edita .env con tus credenciales
+```
 
+### 3. Instalar dependencias
 ```bash
 npm install
 ```
 
-4. Aplica las migraciones de la base de datos
-
+### 4. Configurar base de datos
 ```bash
-npm run db:push
+npm run db:migrate
 ```
 
-### Desarrollo
-
-Para ejecutar el proyecto en modo desarrollo:
-
+### 5. Ejecutar en desarrollo
 ```bash
 npm run dev
 ```
 
-Esto iniciará el servidor de desarrollo de Vite y el servidor Express en el puerto 5000.
+El servidor estará disponible en `http://localhost:5000`
 
-## Despliegue en producción
+## 🚀 Despliegue en Render
 
-Hemos desarrollado varios scripts optimizados que facilitan el despliegue seguro y eficiente en producción:
+### Opción 1: Deploy Automático
+1. Haz clic en el botón "Deploy to Render" arriba
+2. Conecta tu cuenta de GitHub
+3. Configura las variables de entorno en Render Dashboard
 
-### Scripts de Producción Disponibles
+### Opción 2: Deploy Manual
+1. Crea un nuevo **Web Service** en Render
+2. Conecta tu repositorio de GitHub
+3. Configura:
+   - **Build Command**: `npm install && npm run build`
+   - **Start Command**: `npm start`
+   - **Node Version**: 18 o superior
 
-Estos scripts automatizan el proceso de preparación para producción:
+### Variables de Entorno Requeridas en Render
+
+| Variable | Descripción |
+|----------|-------------|
+| `DATABASE_URL` | URL de PostgreSQL (Neon) |
+| `VITE_FIREBASE_API_KEY` | Firebase API Key |
+| `VITE_FIREBASE_PROJECT_ID` | Firebase Project ID |
+| `VITE_FIREBASE_STORAGE_BUCKET` | Firebase Storage Bucket |
+| `FIREBASE_SERVICE_ACCOUNT_KEY` | Service Account JSON (base64) |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk Publishable Key |
+| `CLERK_SECRET_KEY` | Clerk Secret Key |
+| `STRIPE_SECRET_KEY` | Stripe Secret Key |
+| `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe Publishable Key |
+| `FAL_KEY` | FAL AI API Key |
+| `OPENAI_API_KEY` | OpenAI API Key |
+
+> **Nota**: Para `FIREBASE_SERVICE_ACCOUNT_KEY`, codifica tu archivo JSON en base64:
+> ```bash
+> base64 -i your-firebase-adminsdk.json | tr -d '\n'
+> ```
+
+## 📁 Estructura del Proyecto
+```
+├── client/                 # Frontend React
+│   ├── src/
+│   │   ├── components/    # Componentes React
+│   │   ├── pages/         # Páginas de la aplicación
+│   │   └── hooks/         # Custom hooks
+├── server/                 # Backend Express
+│   ├── routes/            # API routes
+│   ├── services/          # Servicios (FAL, Stripe, etc)
+│   └── index.ts           # Entry point
+├── db/                     # Esquema de base de datos
+├── shared/                 # Código compartido
+└── public/                 # Assets estáticos
+```
+
+## 🔑 Scripts Disponibles
 
 | Script | Descripción |
+|--------|-------------|
+| `npm run dev` | Desarrollo local |
+| `npm run build` | Build para producción |
+| `npm start` | Iniciar servidor de producción |
+| `npm run db:migrate` | Aplicar migraciones |
+
+## 📄 Licencia
+MIT
 |--------|-------------|
 | `production-check.js` | Verifica la aplicación para detectar problemas de seguridad y rendimiento |
 | `fix-typescript-errors.js` | Corrige errores comunes de TypeScript para permitir la compilación |

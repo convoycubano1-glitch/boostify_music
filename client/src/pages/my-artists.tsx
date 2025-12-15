@@ -33,6 +33,7 @@ import {
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
+import { AIGenerationModal } from "../components/artist/ai-generation-modal";
 
 interface Artist {
   id: number;
@@ -60,8 +61,10 @@ export default function MyArtistsPage() {
   // Detectar si el usuario es admin
   const isAdmin = user?.email === 'convoycubano@gmail.com';
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showAIGenerationModal, setShowAIGenerationModal] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [deletingArtistId, setDeletingArtistId] = useState<number | null>(null);
   
   // Form state for manual artist creation
   const [manualArtistForm, setManualArtistForm] = useState({
@@ -91,6 +94,7 @@ export default function MyArtistsPage() {
       return response;
     },
     onSuccess: (data) => {
+      // El modal se cierra automáticamente cuando detecta isGenerating = false
       toast({
         title: "¡Artista creado!",
         description: `${data.name} ha sido creado exitosamente`,
@@ -99,6 +103,8 @@ export default function MyArtistsPage() {
       setIsGenerating(false);
     },
     onError: (error: any) => {
+      // Cerrar modal inmediatamente en caso de error
+      setShowAIGenerationModal(false);
       toast({
         title: "Error",
         description: error.message || "No se pudo crear el artista",
@@ -111,6 +117,7 @@ export default function MyArtistsPage() {
   // Mutation para eliminar un artista
   const deleteArtistMutation = useMutation({
     mutationFn: async (artistId: number) => {
+      setDeletingArtistId(artistId);
       const response = await apiRequest({
         url: `/api/artist-generator/delete-artist/${artistId}`,
         method: "DELETE"
@@ -123,6 +130,7 @@ export default function MyArtistsPage() {
         description: "El artista ha sido eliminado exitosamente",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/artist-generator/my-artists"] });
+      setDeletingArtistId(null);
     },
     onError: (error: any) => {
       toast({
@@ -130,6 +138,7 @@ export default function MyArtistsPage() {
         description: error.message || "No se pudo eliminar el artista",
         variant: "destructive",
       });
+      setDeletingArtistId(null);
     },
   });
 
@@ -166,6 +175,7 @@ export default function MyArtistsPage() {
 
   const handleCreateArtist = async () => {
     setIsGenerating(true);
+    setShowAIGenerationModal(true);
     createArtistMutation.mutate();
   };
 
@@ -568,10 +578,10 @@ export default function MyArtistsPage() {
                         size="icon"
                         className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
                         onClick={() => handleDeleteArtist(artist.id, artist.name)}
-                        disabled={deleteArtistMutation.isPending}
+                        disabled={deletingArtistId === artist.id}
                         data-testid={`button-delete-artist-${artist.id}`}
                       >
-                        {deleteArtistMutation.isPending ? (
+                        {deletingArtistId === artist.id ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           <Trash2 className="h-4 w-4" />
@@ -585,6 +595,13 @@ export default function MyArtistsPage() {
           )}
           </div>
         </div>
+
+        {/* Modal de Generación con IA */}
+        <AIGenerationModal 
+          isOpen={showAIGenerationModal}
+          isGenerating={createArtistMutation.isPending}
+          onClose={() => setShowAIGenerationModal(false)}
+        />
       </>
     </PlanTierGuard>
   );

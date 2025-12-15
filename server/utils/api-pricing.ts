@@ -117,6 +117,20 @@ export const API_PRICING: Record<string, Record<string, ModelPricing>> = {
     'fal-ai/kling-video': {
       inputCost: 0,
       outputCost: 0.1  // Videos son más caros
+    },
+    // Nano Banana Pro models for image generation
+    'fal-ai/nano-banana-pro': {
+      inputCost: 0,
+      outputCost: 0.004  // ~$0.004 por imagen
+    },
+    'fal-ai/nano-banana-pro/edit': {
+      inputCost: 0,
+      outputCost: 0.005  // Edición ligeramente más cara
+    },
+    // MiniMax Music v2 for audio generation
+    'fal-ai/minimax-music/v2': {
+      inputCost: 0,
+      outputCost: 0.02  // ~$0.02 por minuto de audio
     }
   },
   

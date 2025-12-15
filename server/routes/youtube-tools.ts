@@ -1,6 +1,6 @@
 /**
  * YouTube Growth Tools - Backend Endpoints
- * Powered by Gemini AI (Nano Banana) + Apify Scraping
+ * Powered by OpenAI GPT-4o-mini + Apify Scraping
  * 
  * Features:
  * - Pre-Launch Score: Predict video success before publishing
@@ -11,7 +11,7 @@
 
 import { Router, Request, Response } from 'express';
 import { ApifyClient } from 'apify-client';
-import { GoogleGenAI } from '@google/genai';
+import OpenAI from 'openai';
 import { authenticate } from '../middleware/auth';
 import { db as firebaseDb } from '../firebase';
 
@@ -24,14 +24,22 @@ const getApifyClient = () => {
   });
 };
 
-// Initialize Gemini AI using Replit AI Integrations (no API key needed)
-const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || '',
-  httpOptions: {
-    apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL || '',
-  },
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
+
+// Helper function to call OpenAI and extract JSON response
+async function callOpenAI(prompt: string): Promise<string> {
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      { role: 'user', content: prompt }
+    ],
+    temperature: 0.7,
+  });
+  return response.choices[0]?.message?.content || '';
+}
 
 // Subscription limits per plan
 const PLAN_LIMITS = {
@@ -269,8 +277,7 @@ Return JSON:
   }
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const responseText = await callOpenAI(prompt);
     
     // Extract JSON from response
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
@@ -403,8 +410,7 @@ Return JSON:
   ]
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const responseText = await callOpenAI(prompt);
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const keywordData = jsonMatch ? JSON.parse(jsonMatch[0]) : { keywords: [] };
@@ -516,8 +522,7 @@ Return JSON:
   "improvedTitles": ["alternative 1", "alternative 2", "alternative 3"]
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const responseText = await callOpenAI(prompt);
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : {
@@ -654,8 +659,7 @@ Return JSON:
   ]
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const responseText = await callOpenAI(prompt);
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const ideas = jsonMatch ? JSON.parse(jsonMatch[0]) : {
@@ -757,8 +761,7 @@ Return JSON:
   ]
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const responseText = await callOpenAI(prompt);
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const aiSuggestions = jsonMatch ? JSON.parse(jsonMatch[0]) : { thumbnails: [] };
@@ -920,8 +923,7 @@ Return JSON:
   "weaknesses": ["weakness 1", "weakness 2"]
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const responseText = await callOpenAI(prompt);
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
@@ -1046,8 +1048,7 @@ Return JSON:
   "urgentOpportunities": ["opportunity 1", "opportunity 2"]
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const responseText = await callOpenAI(prompt);
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const predictions = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
@@ -1157,8 +1158,7 @@ Return JSON:
   "bestMoment": "which clip to create first"
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const responseText = await callOpenAI(prompt);
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : {
@@ -1337,8 +1337,7 @@ Return JSON:
   "crossPromotionIdeas": ["idea 1", "idea 2"]
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const responseText = await callOpenAI(prompt);
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const analytics = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
@@ -1456,8 +1455,7 @@ Return JSON:
   "notes": ["tip 1", "tip 2"]
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const responseText = await callOpenAI(prompt);
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const calendar = jsonMatch ? JSON.parse(jsonMatch[0]) : {
@@ -1625,8 +1623,7 @@ Return JSON:
   "predictedImprovement": "X% increase in views"
 }`;
     
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const responseText = await callOpenAI(prompt);
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : {};

@@ -1,6 +1,6 @@
 /**
  * Spotify Growth Tools - Backend Endpoints
- * Powered by Gemini AI + Apify Scraping
+ * Powered by OpenAI GPT-4o-mini + Apify Scraping
  * 
  * Features:
  * - Monthly Listeners AI Predictor: Predict and optimize listener growth
@@ -11,7 +11,7 @@
 
 import { Router, Request, Response } from 'express';
 import { ApifyClient } from 'apify-client';
-import { GoogleGenAI } from '@google/genai';
+import OpenAI from 'openai';
 import { authenticate } from '../middleware/auth';
 import { db as firebaseDb } from '../firebase';
 import { db } from '../../db';
@@ -27,13 +27,9 @@ const getApifyClient = () => {
   });
 };
 
-// Initialize Gemini AI using Replit AI Integrations
-const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || '',
-  httpOptions: {
-    apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL || '',
-  },
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || '',
 });
 
 // Subscription limits per plan
@@ -235,8 +231,11 @@ Return JSON:
   }
 }`;
 
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const result = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+    });
+    const responseText = result.choices[0]?.message?.content || "";
     
     // Extract JSON from response
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
@@ -348,8 +347,11 @@ Return JSON:
   "bestMatches": ["playlist type 1", "playlist type 2", "playlist type 3"]
 }`;
 
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const result = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+    });
+    const responseText = result.choices[0]?.message?.content || "";
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -463,8 +465,11 @@ Return JSON:
   }
 }`;
 
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const result = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+    });
+    const responseText = result.choices[0]?.message?.content || "";
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -602,8 +607,11 @@ Return JSON:
   ]
 }`;
 
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const result = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+    });
+    const responseText = result.choices[0]?.message?.content || "";
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -1012,8 +1020,11 @@ Return JSON:
   "tips": ["tip 1", "tip 2", "tip 3"]
 }`;
 
-    const result = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt });
-    const responseText = result.text || "";
+    const result = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+    });
+    const responseText = result.choices[0]?.message?.content || "";
     
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {

@@ -48,7 +48,19 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
 router.post('/generated', authenticate, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { title, description, audioUrl, genre, duration, prompt, coverArt } = req.body;
+    const { 
+      title, 
+      description, 
+      audioUrl, 
+      genre, 
+      mood,
+      lyrics, // Letras generadas por AI
+      artistGender,
+      duration, 
+      prompt, 
+      coverArt,
+      aiProvider // ej: 'fal-minimax-music-v2'
+    } = req.body;
     
     if (!audioUrl) {
       return res.status(400).json({ message: 'Audio URL is required' });
@@ -58,7 +70,7 @@ router.post('/generated', authenticate, async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Title is required' });
     }
     
-    // Create song record with AI-generated audio URL
+    // Create song record with AI-generated audio URL and lyrics
     const [newSong] = await db
       .insert(songs)
       .values({
@@ -67,6 +79,11 @@ router.post('/generated', authenticate, async (req: Request, res: Response) => {
         description: description || prompt || 'AI-generated music',
         audioUrl,
         genre: genre || 'AI Generated',
+        mood: mood || null,
+        lyrics: lyrics || null,
+        artistGender: artistGender || null,
+        generatedWithAI: true,
+        aiProvider: aiProvider || 'fal-minimax-music-v2',
         coverArt: coverArt || null,
         duration: duration || null,
         releaseDate: new Date(),

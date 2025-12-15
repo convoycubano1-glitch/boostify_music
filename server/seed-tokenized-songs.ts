@@ -423,7 +423,27 @@ export async function seedTokenizedSongs() {
   try {
     console.log("🌱 Iniciando seed de canciones tokenizadas...");
     
+    // First check if there are any users in the database
+    const { users } = await import('./db/schema');
+    const existingUsers = await db.select({ id: users.id }).from(users).limit(1);
+    
+    if (existingUsers.length === 0) {
+      console.log("⏭️  No hay usuarios en la base de datos. Saltando seed de canciones tokenizadas.");
+      console.log("   (Las canciones se crearán cuando haya usuarios registrados)");
+      return;
+    }
+    
+    // Get all existing user IDs to validate artistId references
+    const allUsers = await db.select({ id: users.id }).from(users);
+    const validUserIds = new Set(allUsers.map(u => u.id));
+    
     for (const song of TOKENIZED_SONGS_SEED) {
+      // Skip songs where artistId doesn't exist in users table
+      if (!validUserIds.has(song.artistId)) {
+        console.log(`⏭️  Saltando ${song.songName} - artistId ${song.artistId} no existe`);
+        continue;
+      }
+      
       const existing = await db.select().from(tokenizedSongs)
         .where(eq(tokenizedSongs.tokenId, song.tokenId));
       
@@ -437,6 +457,7 @@ export async function seedTokenizedSongs() {
     
     console.log("✅ Seed completado!");
   } catch (error) {
-    console.error("❌ Error en seed:", error);
+    // Log warning but don't crash - seed is optional
+    console.warn("⚠️ Seed de canciones tokenizadas omitido:", error instanceof Error ? error.message : 'Error desconocido');
   }
 }

@@ -1,11 +1,13 @@
 /**
  * Rutas para gestión de galerías de imágenes de artista
+ * Migrado a FAL nano-banana para mayor eficiencia
  */
 import { Router, Request, Response } from 'express';
 import { 
-  generateImageWithMultipleFaceReferences, 
-  generateImageWithFAL 
-} from '../services/gemini-image-service';
+  generateImageWithNanoBanana, 
+  editImageWithNanoBanana,
+  type FalImageResult
+} from '../services/fal-service';
 import type { 
   CreateGalleryRequest, 
   GenerateImagesRequest,
@@ -17,7 +19,7 @@ const router = Router();
 
 /**
  * Crea una nueva galería y genera 6 imágenes profesionales
- * Usa 3 referencias faciales para mantener la identidad del artista
+ * Usa FAL nano-banana para mantener la identidad del artista
  */
 router.post('/create-and-generate', async (req: Request, res: Response) => {
   try {
@@ -43,7 +45,7 @@ router.post('/create-and-generate', async (req: Request, res: Response) => {
       });
     }
 
-    console.log(`🎨 Creando galería para "${singleName}" de ${artistName}`);
+    console.log(`🎨 Creando galería para "${singleName}" de ${artistName} con FAL nano-banana`);
     console.log(`📸 Referencias faciales: ${referenceImages.length}`);
 
     // Generar 6 variaciones de imágenes profesionales
@@ -66,36 +68,23 @@ router.post('/create-and-generate', async (req: Request, res: Response) => {
       const batchPromises = [];
       
       for (let i = batchStart; i < batchEnd; i++) {
-        console.log(`📷 Iniciando generación de imagen ${i + 1}/6...`);
+        console.log(`📷 Iniciando generación de imagen ${i + 1}/6 con FAL nano-banana...`);
         
         batchPromises.push(
           (async () => {
             try {
-              // Intentar con Gemini primero
-              console.log(`🔄 Intentando generar imagen ${i + 1} con Gemini...`);
-              let result = await generateImageWithMultipleFaceReferences(
-                imagePrompts[i],
-                referenceImages
+              // Usar FAL nano-banana/edit para mantener referencias
+              console.log(`🔄 Generando imagen ${i + 1} con FAL nano-banana...`);
+              const result = await editImageWithNanoBanana(
+                referenceImages.slice(0, 3),
+                imagePrompts[i]
               );
               
-              console.log(`📊 Resultado de Gemini para imagen ${i + 1}:`, {
+              console.log(`📊 Resultado de FAL para imagen ${i + 1}:`, {
                 success: result.success,
                 hasImageUrl: !!result.imageUrl,
-                error: result.error,
-                quotaError: (result as any).quotaError
+                error: result.error
               });
-
-              // Si Gemini falla, usar FAL AI como fallback
-              if (!result.success) {
-                console.log(`⚠️ Gemini falló para imagen ${i + 1}, usando FAL AI como fallback...`);
-                console.log(`📝 Error de Gemini:`, result.error);
-                result = await generateImageWithFAL(imagePrompts[i], referenceImages, Date.now() + i);
-                console.log(`📊 Resultado de FAL para imagen ${i + 1}:`, {
-                  success: result.success,
-                  hasImageUrl: !!result.imageUrl,
-                  error: result.error
-                });
-              }
 
               if (result.success && result.imageUrl) {
                 console.log(`✅ Imagen ${i + 1} generada exitosamente`);
@@ -180,6 +169,7 @@ router.post('/create-and-generate', async (req: Request, res: Response) => {
 
 /**
  * Regenera una imagen específica de la galería
+ * Usa FAL nano-banana para consistencia
  */
 router.post('/regenerate-image', async (req: Request, res: Response) => {
   try {
@@ -192,16 +182,13 @@ router.post('/regenerate-image', async (req: Request, res: Response) => {
       });
     }
 
-    console.log('🔄 Regenerando imagen...');
+    console.log('🔄 Regenerando imagen con FAL nano-banana...');
 
-    // Intentar con Gemini primero
-    let result = await generateImageWithMultipleFaceReferences(prompt, referenceImages);
-
-    // Si Gemini falla, usar FAL AI como fallback
-    if (!result.success && (result as any).quotaError) {
-      console.log('⚠️ Gemini quota exceeded, usando FAL AI...');
-      result = await generateImageWithFAL(prompt, referenceImages, Date.now());
-    }
+    // Usar FAL nano-banana/edit para regenerar con referencias
+    const result = await editImageWithNanoBanana(
+      referenceImages.slice(0, 3), 
+      prompt
+    );
 
     if (result.success && result.imageUrl) {
       return res.json({

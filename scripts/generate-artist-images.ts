@@ -1,7 +1,7 @@
 /**
- * Script para generar imágenes de artistas virtuales usando FAL AI
+ * Script para generar imágenes de artistas virtuales usando FAL AI Nano Banana Pro
  */
-import { generateImageWithFAL } from '../server/services/gemini-image-service';
+import { generateArtistImagesWithFAL } from '../server/services/fal-service';
 import { logger } from '../server/utils/logger';
 
 export interface ArtistImageUrls {
@@ -11,43 +11,27 @@ export interface ArtistImageUrls {
 
 /**
  * Genera imágenes para un artista basándose en su descripción
+ * Usa FAL AI Nano Banana Pro para generación de alta calidad
  * @param description - Descripción física del artista generada por IA
+ * @param artistName - Nombre del artista (opcional)
+ * @param genre - Género musical del artista (opcional)
  * @returns URLs de las imágenes generadas (perfil y portada)
  */
-export async function generateArtistImages(description: string): Promise<ArtistImageUrls> {
-  logger.log(`🎨 Generando imágenes para artista...`);
+export async function generateArtistImages(
+  description: string,
+  artistName: string = 'Unknown Artist',
+  genre: string = 'pop'
+): Promise<ArtistImageUrls> {
+  logger.log(`🎨 Generando imágenes para artista con FAL AI Nano Banana Pro...`);
   logger.log(`📝 Descripción: ${description.substring(0, 100)}...`);
 
   try {
-    // Generar imagen de perfil (primer plano del rostro)
-    const profilePrompt = `Professional headshot portrait photo, close-up view. ${description}. Studio lighting, neutral background, looking at camera, photorealistic, 8K, highly detailed.`;
+    const result = await generateArtistImagesWithFAL(description, artistName, genre);
     
-    logger.log(`📸 Generando imagen de perfil...`);
-    const profileResult = await generateImageWithFAL(profilePrompt, [], undefined);
+    logger.log(`✅ Imagen de perfil generada: ${result.profileUrl.substring(0, 80)}...`);
+    logger.log(`✅ Imagen de portada generada: ${result.coverUrl.substring(0, 80)}...`);
     
-    if (!profileResult.success || !profileResult.imageUrl) {
-      throw new Error(profileResult.error || 'Error al generar imagen de perfil');
-    }
-    
-    logger.log(`✅ Imagen de perfil generada: ${profileResult.imageUrl}`);
-    
-    // Generar imagen de portada (toma completa del cuerpo)
-    const coverPrompt = `Full body portrait photo, professional photography. ${description}. Artistic lighting, creative background, dynamic pose, photorealistic, 8K, highly detailed, cinematic.`;
-    
-    logger.log(`📸 Generando imagen de portada...`);
-    const coverResult = await generateImageWithFAL(coverPrompt, [], undefined);
-    
-    if (!coverResult.success || !coverResult.imageUrl) {
-      throw new Error(coverResult.error || 'Error al generar imagen de portada');
-    }
-    
-    logger.log(`✅ Imagen de portada generada: ${coverResult.imageUrl}`);
-    
-    return {
-      profileUrl: profileResult.imageUrl,
-      coverUrl: coverResult.imageUrl
-    };
-    
+    return result;
   } catch (error) {
     logger.error('❌ Error generando imágenes del artista:', error);
     throw error;

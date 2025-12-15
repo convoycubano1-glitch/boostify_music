@@ -9,6 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 export default defineConfig({
   plugins: [react(), runtimeErrorOverlay(), themePlugin()],
+  envDir: __dirname, // Load .env from project root
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'client', 'src'),
@@ -17,6 +18,14 @@ export default defineConfig({
   },
   root: path.resolve(__dirname, "client"),
   server: {
+    port: 5000,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
     allowedHosts: [
       '.replit.dev',
       '.replit.app',

@@ -1,9 +1,9 @@
 /**
  * Servicio completo para Manager Tools
- * Combina Gemini (texto) + Nano Banana (imágenes) + Firestore (almacenamiento)
+ * Combina OpenAI (texto) + FAL Nano Banana (imágenes) + Firestore (almacenamiento)
  */
-import { generateProfessionalDocument, generateDocumentPreview, DocumentGenerationOptions } from './gemini-text-service';
-import { generateCinematicImage } from './gemini-image-service';
+import { generateProfessionalDocument, generateDocumentPreview, DocumentGenerationOptions } from './openai-text-service';
+import { generateImageWithNanoBanana } from './fal-service';
 import { db } from '../firebase';
 import { Timestamp } from 'firebase-admin/firestore';
 
@@ -53,11 +53,11 @@ export class ManagerDocumentsService {
         for (const imagePrompt of imagePrompts) {
           try {
             console.log(`🎨 Generando imagen: ${imagePrompt.type}`);
-            const result = await generateCinematicImage(imagePrompt.prompt);
+            const result = await generateImageWithNanoBanana(imagePrompt.prompt);
             
-            if (result.success && result.imageBase64) {
+            if (result.success && result.imageUrl) {
               images.push({
-                url: `data:image/png;base64,${result.imageBase64}`,
+                url: result.imageUrl,
                 prompt: imagePrompt.prompt,
                 type: imagePrompt.type
               });
@@ -190,11 +190,11 @@ export class ManagerDocumentsService {
       for (const imagePrompt of imagePrompts) {
         try {
           console.log(`🎨 Regenerando imagen: ${imagePrompt.type}`);
-          const result = await generateCinematicImage(imagePrompt.prompt);
+          const result = await generateImageWithNanoBanana(imagePrompt.prompt);
           
-          if (result.success && result.imageBase64) {
+          if (result.success && result.imageUrl) {
             images.push({
-              url: `data:image/png;base64,${result.imageBase64}`,
+              url: result.imageUrl,
               prompt: imagePrompt.prompt,
               type: imagePrompt.type
             });

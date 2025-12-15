@@ -1,14 +1,15 @@
 /**
- * Hook de autenticación para Replit Auth
- * Reemplaza Firebase Auth pero mantiene Firestore intacto
+ * Hook de autenticación usando Clerk
+ * Reemplaza Replit Auth y Firebase Auth
  */
+import { useUser, useClerk, useAuth as useClerkAuth } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 
 // Tipo de usuario basado en el schema de la base de datos
 interface User {
   id: number;
-  replitId?: string | null;
+  clerkId?: string | null;
   username?: string | null;
   email?: string | null;
   firstName?: string | null;
@@ -27,28 +28,47 @@ interface User {
 }
 
 export function useAuth() {
-  // Usar queryFn personalizado que retorna null en 401 en lugar de lanzar error
-  const { data: user, isLoading } = useQuery<User | null>({
+  const { user: clerkUser, isLoaded: clerkLoaded, isSignedIn } = useUser();
+  const { signOut: clerkSignOut, openSignIn } = useClerk();
+  
+  // Fetch full user data from our API once Clerk is loaded and user is signed in
+  const { data: dbUser, isLoading: dbLoading, refetch } = useQuery<User | null>({
     queryKey: ["/api/auth/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
+    enabled: clerkLoaded && isSignedIn, // Only fetch when Clerk says user is signed in
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
 
-  const logout = () => {
-    window.location.href = "/api/logout";
+  const isLoading = !clerkLoaded || (isSignedIn && dbLoading);
+
+  // Combine Clerk user with DB user
+  const user: User | null = dbUser ?? (isSignedIn && clerkUser ? {
+    id: 0, // Will be set from DB
+    clerkId: clerkUser.id,
+    email: clerkUser.primaryEmailAddress?.emailAddress || null,
+    firstName: clerkUser.firstName,
+    lastName: clerkUser.lastName,
+    profileImageUrl: clerkUser.imageUrl,
+    role: 'artist',
+    username: clerkUser.username,
+  } : null);
+
+  const logout = async () => {
+    await clerkSignOut();
   };
 
   const login = () => {
-    window.location.href = "/api/login";
+    openSignIn();
   };
 
   return {
-    user: user ?? null,
+    user,
     isLoading,
     loading: isLoading,
-    isAuthenticated: !!user,
+    isAuthenticated: isSignedIn ?? false,
     logout,
     login,
+    refetch,
   };
 }

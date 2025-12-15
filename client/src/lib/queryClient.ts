@@ -1,5 +1,15 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import { getAuth } from "firebase/auth";
+
+// Variable global para almacenar la función getToken de Clerk
+let clerkGetToken: (() => Promise<string | null>) | null = null;
+
+/**
+ * Set the Clerk getToken function from the ClerkProvider context
+ * This should be called from a component that has access to useAuth()
+ */
+export function setClerkGetToken(getToken: () => Promise<string | null>) {
+  clerkGetToken = getToken;
+}
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -9,15 +19,20 @@ async function throwIfResNotOk(res: Response) {
 }
 
 async function getAuthHeaders(): Promise<HeadersInit> {
-  const auth = getAuth();
-  const token = await auth.currentUser?.getIdToken();
-
   const headers: HeadersInit = {
     "Content-Type": "application/json"
   };
 
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+  // Try to get Clerk token if available
+  if (clerkGetToken) {
+    try {
+      const token = await clerkGetToken();
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+    } catch (error) {
+      console.warn('Failed to get Clerk token:', error);
+    }
   }
 
   return headers;

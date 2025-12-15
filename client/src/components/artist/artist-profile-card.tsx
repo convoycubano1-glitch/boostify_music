@@ -61,7 +61,7 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { collection, getDocs, query, where, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
 import { db, storage } from "../../firebase";
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { useToast } from "../../hooks/use-toast";
@@ -677,6 +677,10 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
   const [songUploadProgress, setSongUploadProgress] = useState(0);
   const [videoUploadProgress, setVideoUploadProgress] = useState(0);
   const [showUploadSongDialog, setShowUploadSongDialog] = useState(false);
+  const [showGenerateAISongDialog, setShowGenerateAISongDialog] = useState(false);
+  const [isGeneratingAISong, setIsGeneratingAISong] = useState(false);
+  const [aiSongPrompt, setAiSongPrompt] = useState('');
+  const [aiSongMood, setAiSongMood] = useState<'energetic' | 'mellow' | 'upbeat' | 'dark' | 'romantic'>('energetic');
   const [showUploadVideoDialog, setShowUploadVideoDialog] = useState(false);
   const [newSongTitle, setNewSongTitle] = useState('');
   const [newVideoTitle, setNewVideoTitle] = useState('');
@@ -1044,35 +1048,51 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
 
   // Query para canciones
   const { data: songs = [] as Song[], refetch: refetchSongs } = useQuery<Song[]>({
-    queryKey: ["songs", userProfile?.pgId || userProfile?.uid || artistId],
+    queryKey: ["songs", userProfile?.firestoreId || artistId],
     queryFn: async () => {
       try {
-        const pgId = userProfile?.pgId || artistId;
-        const firebaseUid = userProfile?.uid || artistId;
-        logger.info(`🎵 Fetching songs for artist: ${pgId} (PostgreSQL ID) or ${firebaseUid} (Firebase UID)`);
+        // Buscar canciones por artistId (Firestore ID del artista)
+        const firestoreArtistId = String(userProfile?.firestoreId || artistId);
+        logger.info(`🎵 Fetching songs for artist Firestore ID: ${firestoreArtistId}`);
         
         const songsRef = collection(db, "songs");
         let allSongs: any[] = [];
         
-        // Intentar buscar por pgId primero (para artistas generados)
+        // Buscar por artistId (Firestore ID) - PRINCIPAL
         try {
-          const q1 = query(songsRef, where("userId", "==", pgId));
+          const q1 = query(songsRef, where("artistId", "==", firestoreArtistId));
           const snap1 = await getDocs(q1);
           allSongs = [...snap1.docs.map(doc => ({ id: doc.id, ...doc.data() }))];
-          logger.info(`📊 Found ${snap1.size} songs by pgId`);
+          logger.info(`📊 Found ${snap1.size} songs by artistId (Firestore ID): ${firestoreArtistId}`);
         } catch (e) {
-          logger.warn('⚠️ Error searching by pgId:', e);
+          logger.warn('⚠️ Error searching by artistId:', e);
         }
         
-        // Si no se encontraron por pgId, intentar por Firebase UID (para usuarios personales)
-        if (allSongs.length === 0 && firebaseUid !== pgId) {
+        // FALLBACK: Si no se encontraron por artistId, intentar por userId con postgresId
+        if (allSongs.length === 0 && userProfile?.pgId) {
+          const pgIdStr = String(userProfile.pgId);
+          const pgIdNum = Number(userProfile.pgId);
+          logger.info(`🔄 Fallback: Searching by userId (postgresId): ${pgIdStr}`);
+          
           try {
-            const q2 = query(songsRef, where("userId", "==", firebaseUid));
+            const q2 = query(songsRef, where("userId", "==", pgIdStr));
             const snap2 = await getDocs(q2);
             allSongs = [...snap2.docs.map(doc => ({ id: doc.id, ...doc.data() }))];
-            logger.info(`📊 Found ${snap2.size} songs by Firebase UID`);
+            logger.info(`📊 Found ${snap2.size} songs by userId (string): ${pgIdStr}`);
           } catch (e) {
-            logger.warn('⚠️ Error searching by Firebase UID:', e);
+            logger.warn('⚠️ Error searching by userId (string):', e);
+          }
+          
+          // También intentar como número
+          if (allSongs.length === 0 && !isNaN(pgIdNum)) {
+            try {
+              const q3 = query(songsRef, where("userId", "==", pgIdNum));
+              const snap3 = await getDocs(q3);
+              allSongs = [...snap3.docs.map(doc => ({ id: doc.id, ...doc.data() }))];
+              logger.info(`📊 Found ${snap3.size} songs by userId (number): ${pgIdNum}`);
+            } catch (e) {
+              logger.warn('⚠️ Error searching by userId (number):', e);
+            }
           }
         }
         
@@ -1202,88 +1222,229 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
 
   // Query para productos con auto-generación
   const { data: products = [] as Product[], refetch: refetchProducts } = useQuery<Product[]>({
-    queryKey: ["merchandise", userProfile?.pgId || artistId],
+    queryKey: ["merchandise", userProfile?.pgId, artistId],
     queryFn: async () => {
       try {
-        const pgId = userProfile?.pgId || artistId;
-        logger.info(`🛍️ Fetching merchandise for artist: ${pgId} (PostgreSQL ID)`);
-        logger.info(`👤 User profile loaded:`, userProfile ? 'YES' : 'NO');
-        logger.info(`🔍 DEBUG - Using PostgreSQL ID for query:`, pgId);
-        logger.info(`🔍 DEBUG - Artist ID type:`, typeof pgId);
+        // Usar pgId si está disponible, sino artistId (que puede ser slug)
+        const pgId = userProfile?.pgId;
+        const slug = userProfile?.slug || artistId;
+        
+        logger.info(`🛍️ Fetching merchandise for artist:`, { pgId, slug, artistId });
         
         const merchRef = collection(db, "merchandise");
-        const q = query(merchRef, where("userId", "==", pgId));
-        const querySnapshot = await getDocs(q);
-
-        logger.info(`📊 Merchandise query returned ${querySnapshot.size} documents`);
+        let allProducts: any[] = [];
         
-        // Log todos los productos en Firestore con este userId
-        if (!querySnapshot.empty) {
+        // Buscar por múltiples identificadores para encontrar todos los productos
+        // 1. Buscar por pgId (número)
+        if (pgId) {
+          const q1 = query(merchRef, where("userId", "==", pgId));
+          const snap1 = await getDocs(q1);
+          snap1.docs.forEach(doc => {
+            if (!allProducts.find(p => p.id === doc.id)) {
+              allProducts.push({ id: doc.id, ...doc.data() });
+            }
+          });
+          logger.info(`📊 Found ${snap1.size} products by pgId: ${pgId}`);
+          
+          // También buscar por pgId como string
+          const q1b = query(merchRef, where("userId", "==", String(pgId)));
+          const snap1b = await getDocs(q1b);
+          snap1b.docs.forEach(doc => {
+            if (!allProducts.find(p => p.id === doc.id)) {
+              allProducts.push({ id: doc.id, ...doc.data() });
+            }
+          });
+          if (snap1b.size > 0) {
+            logger.info(`📊 Found ${snap1b.size} additional products by pgId as string`);
+          }
+        }
+        
+        // 2. Buscar por slug (string)
+        if (slug && slug !== String(pgId)) {
+          const q2 = query(merchRef, where("userId", "==", slug));
+          const snap2 = await getDocs(q2);
+          snap2.docs.forEach(doc => {
+            if (!allProducts.find(p => p.id === doc.id)) {
+              allProducts.push({ id: doc.id, ...doc.data() });
+            }
+          });
+          if (snap2.size > 0) {
+            logger.info(`📊 Found ${snap2.size} products by slug: ${slug}`);
+          }
+        }
+        
+        // 3. Buscar por artistId original si es diferente
+        if (artistId !== slug && artistId !== String(pgId)) {
+          const q3 = query(merchRef, where("userId", "==", artistId));
+          const snap3 = await getDocs(q3);
+          snap3.docs.forEach(doc => {
+            if (!allProducts.find(p => p.id === doc.id)) {
+              allProducts.push({ id: doc.id, ...doc.data() });
+            }
+          });
+          if (snap3.size > 0) {
+            logger.info(`📊 Found ${snap3.size} products by artistId: ${artistId}`);
+          }
+        }
+        
+        // 4. Si no encontramos nada, buscar en generated_artists (productos generados por IA)
+        if (allProducts.length === 0) {
+          logger.info(`🔍 No products in merchandise collection, checking generated_artists...`);
+          
+          // Buscar el documento del artista en generated_artists usando firestoreId
+          const firestoreId = userProfile?.firestoreId;
+          if (firestoreId) {
+            try {
+              // Usar getDoc para obtener el documento directamente por ID
+              const genArtistDocRef = doc(db, "generated_artists", firestoreId);
+              const genArtistSnap = await getDoc(genArtistDocRef);
+              
+              if (genArtistSnap.exists()) {
+                const artistData = genArtistSnap.data();
+                if (artistData.merchandise && Array.isArray(artistData.merchandise)) {
+                  logger.info(`📊 Found ${artistData.merchandise.length} products in generated_artists`);
+                  
+                  // Migrar productos a la colección merchandise y agregarlos a allProducts
+                  for (const product of artistData.merchandise) {
+                    const merchDoc = {
+                      name: product.name,
+                      description: `Official ${artistData.name || userProfile?.name} merchandise - ${product.type}`,
+                      price: product.price,
+                      imageUrl: product.imageUrl,
+                      category: product.type === 'T-Shirt' || product.type === 'Hoodie' ? 'Apparel' : 
+                                product.type === 'Cap' || product.type === 'Sticker Pack' ? 'Accessories' :
+                                product.type === 'Poster' ? 'Art' : 'Music',
+                      sizes: product.type === 'T-Shirt' || product.type === 'Hoodie' ? ['S', 'M', 'L', 'XL', 'XXL'] :
+                             product.type === 'Cap' ? ['One Size'] :
+                             product.type === 'Poster' ? ['18x24"', '24x36"'] :
+                             product.type === 'Vinyl' ? ['12"'] : ['Standard'],
+                      userId: pgId || artistId,
+                      createdAt: new Date(),
+                      generatedByAI: true
+                    };
+                    
+                    // Guardar en colección merchandise para futuras consultas
+                    const newDocRef = doc(collection(db, "merchandise"));
+                    await setDoc(newDocRef, merchDoc);
+                    allProducts.push({ id: newDocRef.id, ...merchDoc });
+                    logger.info(`✅ Migrated product: ${product.name}`);
+                  }
+                  
+                  logger.info(`✅ Migrated ${allProducts.length} products from generated_artists to merchandise`);
+                }
+              } else {
+                logger.info(`⚠️ No generated_artists document found for firestoreId: ${firestoreId}`);
+              }
+            } catch (error) {
+              logger.error('Error checking generated_artists:', error);
+            }
+          }
+        }
+        
+        logger.info(`📊 Total unique products found: ${allProducts.length}`);
+        
+        // Log todos los productos encontrados
+        if (allProducts.length > 0) {
           logger.info(`📦 Products found in Firestore:`);
-          querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            logger.info(`  - Product ID: ${doc.id}`, {
-              name: data.name,
-              userId: data.userId,
-              hasImage: !!data.imageUrl,
-              imageUrl: data.imageUrl?.substring(0, 80) + '...'
+          allProducts.forEach((product) => {
+            logger.info(`  - Product ID: ${product.id}`, {
+              name: product.name,
+              userId: product.userId,
+              hasImage: !!product.imageUrl,
+              imageUrl: product.imageUrl?.substring(0, 80) + '...'
             });
           });
         } else {
-          logger.info(`⚠️ No products found for userId: ${artistId}`);
+          logger.info(`⚠️ No products found for artist`);
         }
 
-        if (!querySnapshot.empty) {
-          // Verificar si los productos existentes tienen tallas (productos nuevos)
-          const firstProduct = querySnapshot.docs[0].data();
-          const hasNewFormat = firstProduct.sizes !== undefined;
+        if (allProducts.length > 0) {
+          // 🧹 LIMPIEZA: Eliminar productos duplicados y con imágenes incorrectas
+          // Productos válidos tienen imágenes en 'merchandise-images/' no en 'artist-images/'
+          const validProducts: typeof allProducts = [];
+          const seenTypes = new Set<string>();
+          const productsToDelete: string[] = [];
           
-          if (hasNewFormat) {
-            // Cargar productos actualizados con tallas
-            const productsData = querySnapshot.docs.map((doc) => {
-              const data = doc.data();
-              logger.info('🛍️ Product data:', { id: doc.id, name: data.name, price: data.price, sizes: data.sizes });
+          for (const product of allProducts) {
+            const productType = product.name?.split(' ').pop() || product.category || 'Unknown';
+            const hasValidMerchImage = product.imageUrl?.includes('merchandise-imag') || 
+                                        product.imageUrl?.includes('merchandise_') ||
+                                        (product.generatedByAI === true && !product.imageUrl?.includes('artist-images'));
+            const isArtistImage = product.imageUrl?.includes('artist-images/');
+            const isUnsplashFallback = product.imageUrl?.includes('unsplash.com');
+            
+            // Mantener solo productos con imágenes válidas de merchandise (1 por tipo)
+            if (!seenTypes.has(productType) && hasValidMerchImage && !isArtistImage && !isUnsplashFallback) {
+              seenTypes.add(productType);
+              validProducts.push(product);
+            } else {
+              // Marcar para eliminación si es duplicado o tiene imagen incorrecta
+              productsToDelete.push(product.id);
+            }
+          }
+          
+          // Si hay productos inválidos, eliminarlos
+          if (productsToDelete.length > 0 && validProducts.length >= 6) {
+            logger.info(`🗑️ Cleaning up ${productsToDelete.length} invalid/duplicate products...`);
+            // Eliminar en batches para no sobrecargar
+            const batchSize = 10;
+            for (let i = 0; i < productsToDelete.length; i += batchSize) {
+              const batch = productsToDelete.slice(i, i + batchSize);
+              await Promise.all(batch.map(id => deleteDoc(doc(db, "merchandise", id)).catch(() => {})));
+            }
+            logger.info(`✅ Cleaned up products, keeping ${validProducts.length} valid ones`);
+            allProducts = validProducts;
+          } else if (validProducts.length === 0 && allProducts.length > 6) {
+            // Todos los productos tienen imágenes inválidas - eliminar y regenerar
+            logger.info(`⚠️ All ${allProducts.length} products have invalid images - cleaning up...`);
+            const batchSize = 10;
+            for (let i = 0; i < allProducts.length; i += batchSize) {
+              const batch = allProducts.slice(i, i + batchSize);
+              await Promise.all(batch.map(p => deleteDoc(doc(db, "merchandise", p.id)).catch(() => {})));
+            }
+            logger.info(`✅ Deleted all invalid products, will regenerate`);
+            allProducts = [];
+          }
+          
+          // Verificar si los productos existentes tienen tallas (productos nuevos)
+          const firstProduct = allProducts[0];
+          const hasNewFormat = firstProduct?.sizes !== undefined;
+          
+          if (allProducts.length > 0 && hasNewFormat) {
+            // Cargar productos actualizados con tallas - limitar a 6 productos
+            const productsData = allProducts.slice(0, 6).map((product) => {
+              logger.info('🛍️ Product data:', { id: product.id, name: product.name, price: product.price, sizes: product.sizes });
               return {
-                id: doc.id,
-                name: data.name,
-                description: data.description,
-                price: data.price,
-                imageUrl: data.imageUrl,
-                category: data.category,
-                sizes: data.sizes,
-                userId: data.userId,
-                createdAt: data.createdAt?.toDate(),
+                id: product.id,
+                name: product.name,
+                description: product.description,
+                price: product.price,
+                imageUrl: product.imageUrl,
+                category: product.category,
+                sizes: product.sizes,
+                userId: product.userId,
+                createdAt: product.createdAt?.toDate ? product.createdAt.toDate() : product.createdAt,
               };
             });
             logger.info(`✅ Successfully loaded ${productsData.length} existing products with sizes`);
             return productsData;
-          } else {
+          } else if (allProducts.length > 0 && !hasNewFormat) {
             // Productos viejos sin tallas - borrarlos y regenerar
             logger.info('🗑️ Deleting old products without sizes...');
-            const deletePromises = querySnapshot.docs.map(docSnap => deleteDoc(docSnap.ref));
+            const deletePromises = allProducts.map(product => deleteDoc(doc(db, "merchandise", product.id)));
             await Promise.all(deletePromises);
             logger.info('✅ Old products deleted, will regenerate new ones');
-            // Continuar con la generación de nuevos productos
-          }
-          
-          // NUEVO: Detectar si todos los productos tienen la misma imagen (error de generación)
-          if (querySnapshot.docs.length > 2) {
-            const allImages = querySnapshot.docs.map(doc => doc.data().imageUrl);
-            const uniqueImages = new Set(allImages);
-            if (uniqueImages.size === 1 && allImages[0] !== undefined) {
-              logger.info('⚠️ [PRODUCTION] All products have the SAME image - This is a generation error!');
-              logger.info('🗑️ [PRODUCTION] Deleting products with duplicate images and regenerating...');
-              const deletePromises = querySnapshot.docs.map(docSnap => deleteDoc(docSnap.ref));
-              await Promise.all(deletePromises);
-              logger.info('✅ [PRODUCTION] Old products with duplicate images deleted');
-              // Continuar con la generación de nuevos productos
-            }
+            allProducts = []; // Clear to trigger regeneration
           }
         }
 
         // Si no hay productos, generar 6 automáticamente con imágenes únicas
+        if (allProducts.length === 0) {
         const artistName = userProfile?.displayName || userProfile?.name || "Artist";
         const brandImage = userProfile?.profileImage || userProfile?.photoURL || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400';
+        
+        // Usar pgId para guardar los productos (consistencia)
+        const userIdForProducts = userProfile?.pgId || artistId;
         
         const productTypes = [
           {
@@ -1389,18 +1550,22 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
             imageUrl: productImage,
             category: productDef.category,
             sizes: productDef.sizes,
-            userId: artistId,
+            userId: userIdForProducts, // Usar pgId para consistencia
             createdAt: new Date(),
           };
           
           const newDocRef = doc(collection(db, "merchandise"));
           await setDoc(newDocRef, product);
           savedProducts.push({ ...product, id: newDocRef.id });
-          logger.info(`✅ Product created: ${product.name}`);
+          logger.info(`✅ Product created: ${product.name} for userId: ${userIdForProducts}`);
         }
 
         logger.info(`🎉 Successfully created ${savedProducts.length} products`);
         return savedProducts;
+        } // End of if (allProducts.length === 0)
+        
+        // Retornar productos existentes (nunca debería llegar aquí pero por seguridad)
+        return allProducts;
       } catch (error) {
         logger.error("❌ Error fetching/creating merchandise:", error);
         return [];
@@ -1419,13 +1584,95 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
     }
   }, [products]);
 
+  // Query para verificar si este artista está en my-artists del usuario actual
+  // Este query se ejecuta independientemente de userProfile para ser más rápido
+  // Usamos user.id > 0 en lugar de !!user.id porque id puede ser 0 temporalmente
+  const { data: isInMyArtists, isLoading: isCheckingMyArtists } = useQuery({
+    queryKey: ["isInMyArtists", artistId, user?.id],
+    queryFn: async () => {
+      logger.info('🔍 Executing isInMyArtists query for artistId:', artistId);
+      try {
+        const response = await fetch('/api/artist-generator/my-artists');
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Comparar usando TODOS los identificadores posibles
+          // artistId puede ser: slug, firestoreId, o pgId numérico
+          const found = data.artists?.some((a: any) => {
+            // Comparar por slug (URL)
+            if (a.slug && a.slug === artistId) return true;
+            // Comparar por firestoreId
+            if (a.firestoreId && a.firestoreId === artistId) return true;
+            // Comparar por id numérico
+            if (a.id && String(a.id) === String(artistId)) return true;
+            return false;
+          });
+          
+          logger.info('🔍 isInMyArtists check:', {
+            artistIdFromUrl: artistId,
+            myArtistsCount: data.artists?.length,
+            myArtistsSlugs: data.artists?.map((a: any) => a.slug),
+            found
+          });
+          
+          return found === true;
+        }
+        logger.warn('⚠️ my-artists response not ok:', response.status);
+        return false;
+      } catch (error) {
+        logger.error('Error checking isInMyArtists:', error);
+        return false;
+      }
+    },
+    // Habilitar cuando hay un usuario autenticado (user existe, incluso si id es 0)
+    enabled: !!user && !!artistId,
+    staleTime: 5000, // Cache por 5 segundos
+  });
+
   // Verificar si es perfil propio: SIMPLE Y PERMISIVO
-  // ✅ Permite editar si: es creador del artista O propietario directo
-  const isOwnProfile = user?.id && (
-    userProfile?.generatedBy === user.id ||
-    Number(user.id) === Number(userProfile?.pgId) ||
-    String(user.id) === String(artistId)
-  );
+  // ✅ Permite editar si: es creador del artista O propietario directo O está en my-artists
+  // Mejorado para manejar el caso donde user.id puede ser 0 temporalmente
+  const isOwnProfile = (() => {
+    if (!user) return false;
+    
+    // ✅ PRIORIDAD 1: Si está en my-artists del usuario, es SU perfil y puede editarlo
+    // Esto funciona para artistas generados por IA
+    if (isInMyArtists === true) {
+      logger.info('✅ isOwnProfile=true porque isInMyArtists=true');
+      return true;
+    }
+    
+    // Si user.id es 0 pero tenemos clerkId, intentar comparar con clerkId
+    const userId = user.id > 0 ? user.id : null;
+    const userClerkId = (user as any).clerkId;
+    
+    // Comparación por ID numérico de PostgreSQL
+    if (userId && userProfile?.pgId && Number(userId) === Number(userProfile.pgId)) {
+      return true;
+    }
+    
+    // Comparación por generatedBy (artistas creados por este usuario)
+    if (userId && userProfile?.generatedBy && Number(userProfile.generatedBy) === Number(userId)) {
+      return true;
+    }
+    
+    // Comparación por clerkId (si el artista tiene el mismo clerkId)
+    if (userClerkId && (userProfile as any)?.clerkId && userClerkId === (userProfile as any).clerkId) {
+      return true;
+    }
+    
+    // Comparación por artistId en la URL vs userId
+    if (userId && String(userId) === String(artistId)) {
+      return true;
+    }
+    
+    // Comparación por firestoreId
+    if (userClerkId && userProfile?.uid && userClerkId === userProfile.uid) {
+      return true;
+    }
+    
+    return false;
+  })();
   
   // Debug logging para verificar autenticación
   useEffect(() => {
@@ -1437,6 +1684,9 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
       userProfilePgId: userProfile?.pgId,
       userProfileGeneratedBy: userProfile?.generatedBy,
       userProfileUid: userProfile?.uid,
+      userProfileRole: userProfile?.role,
+      userProfileIsAIGenerated: userProfile?.isAIGenerated,
+      isInMyArtists,
       isOwnProfile,
       isCreator: userProfile?.generatedBy === user?.id,
       userAuthenticated: !!user,
@@ -1444,7 +1694,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
       profileImage: userProfile?.profileImage,
       coverImage: userProfile?.coverImage
     });
-  }, [user, artistId, userProfile, isOwnProfile]);
+  }, [user, artistId, userProfile, isOwnProfile, isInMyArtists]);
 
   // Query para shows
   const { data: shows = [] as Show[], refetch: refetchShows} = useQuery<Show[]>({
@@ -1568,9 +1818,26 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
       audioRef.current?.pause();
       setPlayingSongId(null);
     } else {
+      // Validate that audioUrl exists and is playable (not IPFS placeholder)
+      if (!song.audioUrl || song.audioUrl.startsWith('ipfs://')) {
+        toast({
+          title: "Audio no disponible",
+          description: "Esta canción es una versión tokenizada. El audio real se añadirá próximamente.",
+        });
+        return;
+      }
+      
       if (audioRef.current) {
         audioRef.current.src = song.audioUrl;
-        audioRef.current.play();
+        audioRef.current.play().catch((error) => {
+          console.error('Error playing audio:', error);
+          toast({
+            title: "Error de reproducción",
+            description: "No se pudo reproducir este archivo de audio.",
+            variant: "destructive"
+          });
+          setPlayingSongId(null);
+        });
       }
       setPlayingSongId(song.id);
     }
@@ -1656,6 +1923,62 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
     } finally {
       setIsUploadingSong(false);
       setSongUploadProgress(0);
+    }
+  };
+
+  // Función para generar canción con IA (FAL AI MiniMax)
+  const handleGenerateAISong = async () => {
+    // Título es opcional - si no se proporciona, el backend genera uno automáticamente
+
+    setIsGeneratingAISong(true);
+    try {
+      const artistName = artist?.name || artist?.artistName || 'Artist';
+      const genre = artist?.genre || artist?.genres?.[0] || 'pop';
+      const firestoreArtistId = userProfile?.firestoreId || artistId;
+      const artistBio = artist?.biography || artist?.bio || '';
+      
+      // Llamar al endpoint de generación de canciones
+      // Si no hay título, el backend generará uno automáticamente
+      const response = await fetch('/api/artist-generator/generate-single-song', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          artistName,
+          songTitle: aiSongPrompt.trim() || '', // Permitir vacío - el backend generará título
+          genre,
+          mood: aiSongMood,
+          artistId: firestoreArtistId,
+          artistGender: artist?.gender || 'male',
+          artistBio
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate song');
+      }
+
+      const result = await response.json();
+      const generatedTitle = result.song?.title || aiSongPrompt || 'New Song';
+      
+      toast({
+        title: "🎵 Song Generated!",
+        description: `"${generatedTitle}" has been created with AI.`,
+      });
+
+      setAiSongPrompt('');
+      setShowGenerateAISongDialog(false);
+      refetchSongs();
+    } catch (error) {
+      logger.error("Error generating AI song:", error);
+      toast({
+        title: "Generation failed",
+        description: "Could not generate the song. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingAISong(false);
     }
   };
 
@@ -1890,7 +2213,15 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
   const primaryBtn = `py-2 px-4 rounded-full text-sm font-semibold transition duration-300 shadow-lg whitespace-nowrap`;
   
   const merchCategories = ['Todo', 'Music', 'Videos', 'Shows'];
-  const totalPlays = songs.reduce((acc, song) => acc + (parseInt(song.duration?.split(':')[0] || '0') * 100), 0);
+  const totalPlays = songs.reduce((acc, song) => {
+    // Handle duration as string "M:SS" or number (seconds)
+    if (typeof song.duration === 'string' && song.duration.includes(':')) {
+      return acc + (parseInt(song.duration.split(':')[0] || '0') * 100);
+    } else if (typeof song.duration === 'number') {
+      return acc + (Math.floor(song.duration / 60) * 100);
+    }
+    return acc;
+  }, 0);
 
   return (
     <div className="min-h-screen text-white transition-colors duration-500" style={{ margin: 0, padding: 0, backgroundColor: '#000000' }}>
@@ -2603,19 +2934,20 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                     </div>
                   </button>
                   {isOwnProfile && (
-                    <Dialog open={showUploadSongDialog} onOpenChange={setShowUploadSongDialog}>
-                      <DialogTrigger asChild>
-                        <Button
-                          size="sm"
-                          className="rounded-full"
-                          style={{ backgroundColor: colors.hexPrimary, color: 'white' }}
-                          data-testid="button-upload-song"
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Upload Song
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
+                    <div className="flex gap-2">
+                      <Dialog open={showUploadSongDialog} onOpenChange={setShowUploadSongDialog}>
+                        <DialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            className="rounded-full"
+                            style={{ backgroundColor: colors.hexPrimary, color: 'white' }}
+                            data-testid="button-upload-song"
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Upload Song
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
                         <DialogHeader>
                           <DialogTitle>Upload New Song</DialogTitle>
                           <DialogDescription>
@@ -2677,6 +3009,122 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
+                    
+                    {/* Botón para generar canción con IA */}
+                    <Button
+                      size="sm"
+                      className="rounded-full"
+                      style={{ 
+                        background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                        color: 'white' 
+                      }}
+                      onClick={() => setShowGenerateAISongDialog(true)}
+                      data-testid="button-generate-ai-song"
+                    >
+                      <Sparkles className="h-4 w-4 mr-1" />
+                      Generate AI
+                    </Button>
+                    
+                    {/* Dialog para generar canción con IA */}
+                    <Dialog open={showGenerateAISongDialog} onOpenChange={setShowGenerateAISongDialog}>
+                      <DialogContent className="bg-gray-900 border-gray-800">
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center gap-2 text-white">
+                            <Sparkles className="h-5 w-5" style={{ color: colors.hexAccent }} />
+                            Generate AI Song
+                          </DialogTitle>
+                          <DialogDescription>
+                            Create a unique song using FAL AI MiniMax with real vocals. 
+                            Based on {artist?.artistName || artist?.name || 'Artist'}'s style ({artist?.genres?.[0] || 'pop'})
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="ai-song-title" className="text-white">
+                              Song Title <span className="text-gray-500 text-sm font-normal">(optional)</span>
+                            </Label>
+                            <Input
+                              id="ai-song-title"
+                              value={aiSongPrompt}
+                              onChange={(e) => setAiSongPrompt(e.target.value)}
+                              placeholder="Leave empty for AI-generated title"
+                              className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
+                              disabled={isGeneratingAISong}
+                            />
+                            <p className="text-xs text-gray-500">
+                              💡 If empty, AI will create a creative title based on the artist's genre and mood
+                            </p>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="ai-song-mood" className="text-white">Mood / Style</Label>
+                            <select
+                              id="ai-song-mood"
+                              value={aiSongMood}
+                              onChange={(e) => setAiSongMood(e.target.value as any)}
+                              className="w-full p-2 rounded-md bg-gray-800 border border-gray-700 text-white"
+                              disabled={isGeneratingAISong}
+                            >
+                              <option value="energetic">🔥 Energetic</option>
+                              <option value="mellow">🌙 Mellow</option>
+                              <option value="upbeat">🎉 Upbeat</option>
+                              <option value="dark">🖤 Dark</option>
+                              <option value="romantic">💕 Romantic</option>
+                            </select>
+                          </div>
+                          
+                          {isGeneratingAISong && (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
+                                <div className="animate-spin h-4 w-4 border-2 border-t-transparent rounded-full" style={{ borderColor: colors.hexAccent, borderTopColor: 'transparent' }} />
+                                <span>Generating song with AI... (~20-30 seconds)</span>
+                              </div>
+                              <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                                <div 
+                                  className="h-2 rounded-full animate-pulse"
+                                  style={{ 
+                                    width: '100%',
+                                    background: `linear-gradient(90deg, ${colors.hexPrimary}, ${colors.hexAccent})`
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <DialogFooter className="gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setShowGenerateAISongDialog(false);
+                              setAiSongPrompt('');
+                            }}
+                            disabled={isGeneratingAISong}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={handleGenerateAISong}
+                            disabled={isGeneratingAISong}
+                            style={{ 
+                              background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                              color: 'white' 
+                            }}
+                          >
+                            {isGeneratingAISong ? (
+                              <>
+                                <div className="animate-spin h-4 w-4 border-2 border-t-transparent rounded-full mr-2" style={{ borderColor: 'white', borderTopColor: 'transparent' }} />
+                                Generating...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="h-4 w-4 mr-2" />
+                                {aiSongPrompt.trim() ? 'Generate Song' : 'Generate Random Song'}
+                              </>
+                            )}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                    </div>
                   )}
                 </div>
                 

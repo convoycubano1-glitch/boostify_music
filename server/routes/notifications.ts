@@ -1,31 +1,39 @@
 import { Router } from "express";
 import { db } from "../db";
-import { notifications, insertNotificationSchema } from "@db/schema";
+import { notifications, insertNotificationSchema, users } from "@db/schema";
 import { eq, desc, and } from "drizzle-orm";
+import { isAuthenticated } from '../middleware/clerk-auth';
 
 const router = Router();
 
-// Middleware de autenticación para Replit Auth
-const isAuthenticated = (req: any, res: any, next: any) => {
-  if (req.user) {
-    return next();
-  }
-  return res.status(401).json({ error: "Usuario no autenticado" });
-};
+// Helper para obtener el PostgreSQL user ID desde Clerk ID
+async function getPostgresUserId(clerkId: string): Promise<number | null> {
+  const userRecord = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.clerkId, clerkId))
+    .limit(1);
+  return userRecord.length > 0 ? userRecord[0].id : null;
+}
 
 // GET /api/notifications - Obtener todas las notificaciones del usuario autenticado
 router.get("/", isAuthenticated, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const clerkUserId = req.user?.id;
     
-    if (!userId) {
+    if (!clerkUserId) {
       return res.status(401).json({ error: "Usuario no autenticado" });
+    }
+
+    const pgUserId = await getPostgresUserId(clerkUserId);
+    if (!pgUserId) {
+      return res.json([]); // Usuario no tiene perfil en PostgreSQL aún
     }
 
     const userNotifications = await db
       .select()
       .from(notifications)
-      .where(eq(notifications.userId, userId))
+      .where(eq(notifications.userId, pgUserId))
       .orderBy(desc(notifications.createdAt))
       .limit(50);
 
@@ -39,17 +47,22 @@ router.get("/", isAuthenticated, async (req, res) => {
 // GET /api/notifications/unread-count - Contar notificaciones no leídas
 router.get("/unread-count", isAuthenticated, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const clerkUserId = req.user?.id;
     
-    if (!userId) {
+    if (!clerkUserId) {
       return res.status(401).json({ error: "Usuario no autenticado" });
+    }
+
+    const pgUserId = await getPostgresUserId(clerkUserId);
+    if (!pgUserId) {
+      return res.json({ count: 0 }); // Usuario no tiene perfil en PostgreSQL aún
     }
 
     const unreadNotifications = await db
       .select()
       .from(notifications)
       .where(and(
-        eq(notifications.userId, userId),
+        eq(notifications.userId, pgUserId),
         eq(notifications.read, false)
       ));
 

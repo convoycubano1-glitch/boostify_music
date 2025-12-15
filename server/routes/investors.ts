@@ -4,18 +4,13 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import Stripe from 'stripe';
 import axios from 'axios';
+import { isAuthenticated, ClerkAuthUser } from '../middleware/clerk-auth';
 
 const router = Router();
 
 // Extend Express Request type
 interface AuthRequest extends Request {
-  isAuthenticated(): boolean;
-  user: {
-    id: number;
-    uid: string;
-    email?: string | null;
-    role: string;
-  };
+  user?: ClerkAuthUser;
 }
 
 // Initialize Stripe
@@ -42,11 +37,7 @@ const investorSchema = z.object({
 });
 
 // Route to register a new investor
-router.post('/register', async (req: AuthRequest, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  
+router.post('/register', isAuthenticated, async (req: AuthRequest, res) => {
   try {
     // Validate the request body
     const validationResult = investorSchema.safeParse(req.body);
@@ -117,13 +108,9 @@ router.post('/register', async (req: AuthRequest, res) => {
  * GET /api/investors/me
  * Get current investor data
  */
-router.get('/me', async (req: AuthRequest, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
-  }
-  
+router.get('/me', isAuthenticated, async (req: AuthRequest, res) => {
   try {
-    const userId = req.user.uid;
+    const userId = req.user!.clerkUserId;
 
     const investorSnapshot = await db.collection('investors')
       .where('userId', '==', userId)
@@ -186,13 +173,9 @@ router.get('/me', async (req: AuthRequest, res) => {
  * POST /api/investors/investment/create-checkout
  * Create Stripe checkout session for investment
  */
-router.post('/investment/create-checkout', async (req: AuthRequest, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
-  }
-  
+router.post('/investment/create-checkout', isAuthenticated, async (req: AuthRequest, res) => {
   try {
-    const userId = req.user.uid;
+    const userId = req.user!.clerkUserId;
     const { amount, planType, duration } = req.body;
 
     // Validate investor is registered

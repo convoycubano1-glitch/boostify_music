@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useArtistTokens } from "@/hooks/use-artist-tokens";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
 export function ArtistPricesTicker() {
   const artistTokens = useArtistTokens();
   const [animatedTokens, setAnimatedTokens] = useState(artistTokens);
+  const initializedRef = useRef(false);
 
+  // Solo actualizar cuando artistTokens cambia de contenido, no de referencia
   useEffect(() => {
-    setAnimatedTokens(artistTokens);
-  }, [artistTokens]);
+    if (!initializedRef.current && artistTokens && artistTokens.length > 0) {
+      setAnimatedTokens(artistTokens);
+      initializedRef.current = true;
+    }
+  }, [artistTokens?.length]);
 
   useEffect(() => {
     const interval = setInterval(() => {

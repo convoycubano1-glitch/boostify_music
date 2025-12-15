@@ -1,410 +1,128 @@
-import { Button } from "@/components/ui/button";
-import { logger } from "../lib/logger";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Lock, Shield, CheckCircle2, Mail, Github, Star, Zap, 
-  Music2, Video, TrendingUp, Users, Sparkles, Crown, Rocket
-} from "lucide-react";
-import { SiGoogle, SiApple } from "react-icons/si";
-import { motion } from "framer-motion";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-
-const plans = [
-  {
-    name: "Discover",
-    price: "$0",
-    period: "forever",
-    priceId: null,
-    description: "Start your music journey",
-    popular: false,
-    features: [
-      "Community Hub",
-      "Merch Store",
-      "Learn Hub",
-      "BoostifyTV",
-      "Earn Commissions"
-    ],
-    color: "from-gray-400 to-gray-600",
-    icon: Music2
-  },
-  {
-    name: "Elevate",
-    price: "$59.99",
-    period: "per month",
-    priceId: "price_1R0lay2LyFplWimfQxUL6Hn0",
-    description: "Build your artist presence & fanbase",
-    popular: true,
-    features: [
-      "Everything in Discover",
-      "Artist Hub",
-      "Spotify Growth Engine",
-      "Contract Templates",
-      "PR Starter Kit",
-      "News & Events Hub",
-      "Content Studio",
-      "Creative Image AI",
-      "Master Classes",
-      "Expert Advisors (3/month)"
-    ],
-    color: "from-orange-500 to-orange-700",
-    icon: Video
-  },
-  {
-    name: "Amplify",
-    price: "$99.99",
-    period: "per month",
-    priceId: "price_1R0laz2LyFplWimfsBd5ASoa",
-    description: "Scale your sound & reach globally",
-    popular: false,
-    features: [
-      "Everything in Elevate",
-      "Pro Analytics Engine",
-      "YouTube Mastery Suite",
-      "Instagram Domination Suite",
-      "Career Manager Suite",
-      "Music Production Lab",
-      "AI Music Studio (Advanced)",
-      "Premium Merch Hub",
-      "Global Language Studio",
-      "Creative Canvas AI (50/month)",
-      "Expert Advisors (10/month)"
-    ],
-    color: "from-orange-600 to-red-600",
-    icon: Zap
-  },
-  {
-    name: "Dominate",
-    price: "$149.99",
-    period: "per month",
-    priceId: "price_1R0lb12LyFplWimf7JpMynKA",
-    description: "Conquer the music industry",
-    popular: false,
-    features: [
-      "Everything in Amplify",
-      "Virtual Label Empire (10 artists)",
-      "AI Agent Suite (Unlimited)",
-      "Expert Advisors (Unlimited)",
-      "Artist Generator Pro",
-      "Global Ecosystem Hub",
-      "Premium Video Studio (Unlimited)",
-      "Enterprise Analytics",
-      "YouTube Mastery Unlimited",
-      "Instagram Domination Unlimited",
-      "Spotify Growth Unlimited",
-      "VIP Support (24/7)"
-    ],
-    color: "from-orange-700 to-red-700",
-    icon: Crown
-  }
-];
-
-const authProviders = [
-  { name: "Google", icon: SiGoogle, color: "from-orange-500 to-red-500" },
-  { name: "GitHub", icon: Github, color: "from-gray-700 to-gray-900" },
-  { name: "Apple", icon: SiApple, color: "from-gray-800 to-black" },
-  { name: "Email", icon: Mail, color: "from-orange-600 to-orange-800" }
-];
+import { SignUp, useUser } from '@clerk/clerk-react';
+import { useEffect } from 'react';
+import { useLocation } from 'wouter';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, Music, Sparkles, Rocket } from 'lucide-react';
 
 export default function AuthSignupPage() {
-  const [selectedPlan, setSelectedPlan] = useState("Elevate");
-  const [processingPlan, setProcessingPlan] = useState<string | null>(null);
-  const { toast } = useToast();
+  const { isSignedIn, isLoaded } = useUser();
+  const [, setLocation] = useLocation();
 
-  const handleSignUp = async (planName?: string, priceId?: string | null) => {
-    setProcessingPlan(planName || "login");
-
-    try {
-      // Si hay plan seleccionado, guardar en localStorage
-      if (planName) {
-        const planData = {
-          planName,
-          priceId: priceId || null,
-          timestamp: Date.now()
-        };
-        localStorage.setItem("selectedPlan", JSON.stringify(planData));
-
-        if (!priceId || planName === "Free") {
-          toast({
-            title: "¡Bienvenido!",
-            description: `Iniciando sesión con plan ${planName}...`,
-          });
-        } else {
-          toast({
-            title: "Procesando suscripción",
-            description: `Por favor completa tu suscripción al plan ${planName}.`,
-          });
-        }
-      } else {
-        toast({
-          title: "Iniciando sesión",
-          description: "Conectando con Replit...",
-        });
-      }
-
-      // Redirigir directamente a Replit Auth (sin página de consentimiento)
-      window.location.href = "/api/login";
-    } catch (error) {
-      logger.error("Error al procesar signup:", error);
-      toast({
-        title: "Error",
-        description: "Hubo un problema al procesar tu solicitud. Por favor, intenta de nuevo.",
-        variant: "destructive",
-      });
-      setProcessingPlan(null);
+  // Redirect to dashboard if already signed in
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      setLocation('/dashboard');
     }
-  };
+  }, [isLoaded, isSignedIn, setLocation]);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 dark:from-gray-950 dark:via-gray-900 dark:to-orange-950">
-      {/* Beta Notice Banner */}
-      <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white py-3">
-        <div className="container mx-auto px-4">
-          <p className="text-center text-sm md:text-base font-medium">
-            🚀 Platform in Beta Testing & Development Phase - Official Launch: January 2026
-          </p>
+  // Show loading while Clerk initializes
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-900 via-black to-red-900">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 animate-spin text-orange-400" />
+          <p className="text-white/70">Cargando...</p>
         </div>
       </div>
+    );
+  }
 
-      {/* Hero Section */}
-      <div className="container mx-auto px-4 py-12">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
-          <Badge className="mb-4 text-sm px-4 py-1" variant="secondary">
-            <Sparkles className="w-3 h-3 mr-1 inline" />
-            Trusted by 10,000+ Artists Worldwide
-          </Badge>
-          
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-orange-600 via-red-600 to-orange-800 bg-clip-text text-transparent">
-            Boost Your Music Career
-          </h1>
-          
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8">
-            Join the AI-powered platform helping artists grow their audience, 
-            create stunning content, and manage their music business.
-          </p>
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-900 via-black to-red-900 p-4">
+      {/* Background Effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-red-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
+      </div>
 
-          {/* Hero Image */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="mb-8"
-          >
-            <div className="relative max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-2xl">
-              <img 
-                src="/images/signup-hero.png" 
-                alt="Boostify Music Platform" 
-                className="w-full h-auto object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-            </div>
-          </motion.div>
-
-          <div className="flex flex-wrap gap-4 justify-center mb-8">
-            {authProviders.map((provider) => (
-              <Button
-                key={provider.name}
-                onClick={() => handleSignUp()}
-                variant="outline"
-                size="lg"
-                className="group hover:scale-105 transition-transform"
-                data-testid={`button-auth-${provider.name.toLowerCase()}`}
-              >
-                <provider.icon className={`w-5 h-5 mr-2 bg-gradient-to-r ${provider.color} bg-clip-text`} />
-                Continue with {provider.name}
-              </Button>
-            ))}
+      <div className="relative z-10 w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Music className="w-10 h-10 text-orange-400" />
+            <h1 className="text-4xl font-bold text-white">BOOSTIFY</h1>
+            <Rocket className="w-8 h-8 text-yellow-400" />
           </div>
-
-          <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Shield className="w-4 h-4 text-green-600" />
-              <span>Secure Authentication</span>
-            </div>
-            <span>•</span>
-            <div className="flex items-center gap-1">
-              <Lock className="w-4 h-4 text-green-600" />
-              <span>256-bit Encryption</span>
-            </div>
-            <span>•</span>
-            <span>No Credit Card Required</span>
-          </div>
-        </motion.div>
-
-        {/* Plans Section */}
-        <div className="mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
-            Choose Your Plan
-          </h2>
-          <p className="text-center text-muted-foreground mb-8">
-            Start free, upgrade anytime. All plans include 14-day money-back guarantee.
+          <p className="text-white/70 text-lg">
+            Crea tu cuenta y empieza tu viaje musical
           </p>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-            {plans.map((plan, index) => {
-              const Icon = plan.icon;
-              return (
-                <motion.div
-                  key={plan.name}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  <Card 
-                    className={`relative h-full transition-all duration-300 hover:shadow-2xl cursor-pointer ${
-                      selectedPlan === plan.name 
-                        ? 'ring-2 ring-orange-600 shadow-xl scale-105' 
-                        : 'hover:scale-102'
-                    } ${plan.popular ? 'border-orange-600 border-2' : ''}`}
-                    onClick={() => setSelectedPlan(plan.name)}
-                    data-testid={`card-plan-${plan.name.toLowerCase()}`}
-                  >
-                    {plan.popular && (
-                      <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                        <Badge className="bg-gradient-to-r from-orange-600 to-red-600 text-white px-4 py-1">
-                          Más Popular
-                        </Badge>
-                      </div>
-                    )}
+        {/* Signup Card */}
+        <Card className="bg-black/40 backdrop-blur-xl border-orange-500/30">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl text-white flex items-center justify-center gap-2">
+              <Sparkles className="w-6 h-6 text-orange-400" />
+              Únete a BOOSTIFY
+            </CardTitle>
+            <CardDescription className="text-white/60">
+              Solo necesitas tu email para comenzar
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <SignUp 
+              appearance={{
+                elements: {
+                  rootBox: 'w-full',
+                  card: 'bg-transparent shadow-none border-none',
+                  headerTitle: 'hidden',
+                  headerSubtitle: 'hidden',
+                  socialButtonsBlockButton: 'bg-white/10 border-white/20 text-white hover:bg-white/20',
+                  socialButtonsBlockButtonText: 'text-white',
+                  dividerLine: 'bg-white/20',
+                  dividerText: 'text-white/50',
+                  formFieldLabel: 'text-white/80',
+                  formFieldInput: 'bg-white/10 border-white/20 text-white placeholder:text-white/40',
+                  formButtonPrimary: 'bg-orange-600 hover:bg-orange-700',
+                  footerActionLink: 'text-orange-400 hover:text-orange-300',
+                  identityPreviewText: 'text-white',
+                  identityPreviewEditButton: 'text-orange-400',
+                  formFieldInputShowPasswordButton: 'text-white/60',
+                  otpCodeFieldInput: 'bg-white/10 border-white/20 text-white',
+                  footer: 'hidden',
+                  // Hide phone number field
+                  formFieldRow__phoneNumber: 'hidden',
+                  phoneInputBox: 'hidden',
+                },
+                variables: {
+                  colorPrimary: '#ea580c',
+                  colorBackground: 'transparent',
+                  colorText: 'white',
+                  colorTextSecondary: 'rgba(255,255,255,0.7)',
+                  colorInputBackground: 'rgba(255,255,255,0.1)',
+                  colorInputText: 'white',
+                }
+              }}
+              routing="hash"
+              signInUrl="/auth"
+              afterSignUpUrl="/dashboard"
+            />
+          </CardContent>
+        </Card>
 
-                    <CardHeader className="pb-4">
-                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-4`}>
-                        <Icon className="w-6 h-6 text-white" />
-                      </div>
-                      
-                      <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                      <CardDescription>{plan.description}</CardDescription>
-                      
-                      <div className="mt-4">
-                        <span className="text-4xl font-bold">{plan.price}</span>
-                        <span className="text-muted-foreground ml-2">/ {plan.period}</span>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent>
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSignUp(plan.name, plan.priceId);
-                        }}
-                        disabled={processingPlan === plan.name}
-                        className={`w-full mb-6 bg-gradient-to-r ${plan.color} hover:opacity-90 transition-opacity text-white`}
-                        size="lg"
-                        data-testid={`button-signup-${plan.name.toLowerCase()}`}
-                      >
-                        {processingPlan === plan.name ? (
-                          <>
-                            <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                            Procesando...
-                          </>
-                        ) : (
-                          plan.price === "$0" ? "Comenzar Gratis" : `Obtener ${plan.name}`
-                        )}
-                      </Button>
-
-                      <div className="space-y-3">
-                        {plan.features.map((feature, idx) => (
-                          <div key={idx} className="flex items-start gap-2">
-                            <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-muted-foreground">{feature}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              );
-            })}
+        {/* Features */}
+        <div className="mt-8 grid grid-cols-3 gap-4 text-center">
+          <div className="p-3 rounded-lg bg-white/5 backdrop-blur">
+            <p className="text-2xl mb-1">🎵</p>
+            <p className="text-xs text-white/60">Música IA</p>
+          </div>
+          <div className="p-3 rounded-lg bg-white/5 backdrop-blur">
+            <p className="text-2xl mb-1">🎬</p>
+            <p className="text-xs text-white/60">Videos</p>
+          </div>
+          <div className="p-3 rounded-lg bg-white/5 backdrop-blur">
+            <p className="text-2xl mb-1">💎</p>
+            <p className="text-xs text-white/60">NFT</p>
           </div>
         </div>
 
-        {/* Features Highlight */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="max-w-4xl mx-auto"
-        >
-          <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-orange-200 dark:border-orange-800">
-            <CardContent className="p-8">
-              <h3 className="text-2xl font-bold text-center mb-6">
-                Por Qué los Artistas Eligen Boostify Music
-              </h3>
-              
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-orange-600 to-red-600 flex items-center justify-center">
-                    <Zap className="w-8 h-8 text-white" />
-                  </div>
-                  <h4 className="font-semibold mb-2">Herramientas IA</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Crea videos musicales, genera contenido y automatiza marketing con IA de vanguardia
-                  </p>
-                </div>
-
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center">
-                    <TrendingUp className="w-8 h-8 text-white" />
-                  </div>
-                  <h4 className="font-semibold mb-2">Crece tu Audiencia</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Impulsa tu presencia en Spotify, Instagram y YouTube con estrategias probadas
-                  </p>
-                </div>
-
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-red-600 to-orange-600 flex items-center justify-center">
-                    <Users className="w-8 h-8 text-white" />
-                  </div>
-                  <h4 className="font-semibold mb-2">Plataforma Todo-en-Uno</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Gestiona contratos, reservas, campañas de PR y más desde un solo panel
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Security Footer */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-          className="text-center mt-12 space-y-4"
-        >
-          <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
-              <span>OpenID Connect & OAuth 2.0</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
-              <span>End-to-end Encryption</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
-              <span>GDPR Compliant</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
-              <span>14-Day Money Back</span>
-            </div>
-          </div>
-
-          <p className="text-xs text-muted-foreground">
-            By signing up, you agree to our{" "}
-            <a href="/terms" className="underline hover:text-foreground">Terms of Service</a>
-            {" "}and{" "}
-            <a href="/privacy" className="underline hover:text-foreground">Privacy Policy</a>
-          </p>
-        </motion.div>
+        {/* Login Link */}
+        <p className="mt-6 text-center text-white/60">
+          ¿Ya tienes cuenta?{' '}
+          <a href="/auth" className="text-orange-400 hover:text-orange-300 underline">
+            Inicia sesión
+          </a>
+        </p>
       </div>
     </div>
   );

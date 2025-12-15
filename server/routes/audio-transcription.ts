@@ -4,22 +4,12 @@ import OpenAI from 'openai';
 import { fal } from '@fal-ai/client';
 import fs from 'fs';
 import path from 'path';
+import { isAuthenticated } from '../middleware/clerk-auth';
 
 const router = Router();
 
-// Middleware para verificar autenticación con Replit Auth
-const requireAuth = (req: Request, res: Response, next: Function) => {
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
-    console.error('❌ Usuario no autenticado en ruta de transcripción');
-    return res.status(401).json({
-      success: false,
-      error: 'Autenticación requerida. Por favor inicia sesión.'
-    });
-  }
-  
-  console.log('✅ Usuario autenticado:', (req.user as any)?.id || 'unknown');
-  next();
-};
+// Use Clerk auth middleware
+const requireAuth = isAuthenticated;
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY2

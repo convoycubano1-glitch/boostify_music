@@ -120,15 +120,18 @@ app.use((req, res, next) => {
     const { checkEnvironment } = await import('./utils/environment-check');
     checkEnvironment();
     
-    // CRITICAL: Setup Replit Auth FIRST before ANY routes
-    // This must be BEFORE all endpoints so they have access to req.user and req.session
-    log('🔐 Setting up Replit Auth...');
+    // Setup Clerk Auth middleware (replacing Replit Auth)
+    log('🔐 Setting up Clerk Auth middleware...');
     try {
-      const { setupAuth } = await import('./replitAuth');
-      await setupAuth(app);
-      log('✅ Replit Auth configured successfully');
+      const { clerkMiddleware } = await import('@clerk/express');
+      const { clerkAuthMiddleware } = await import('./middleware/clerk-auth');
+      // Apply Clerk's built-in middleware first (handles cookie/header parsing)
+      app.use(clerkMiddleware());
+      // Then apply our custom middleware to populate req.user
+      app.use('/api', clerkAuthMiddleware);
+      log('✅ Clerk Auth middleware configured successfully');
     } catch (error) {
-      log(`❌ ERROR setting up Replit Auth: ${error}`);
+      log(`❌ ERROR setting up Clerk Auth: ${error}`);
       console.error('Full error:', error);
       throw error;
     }
@@ -149,32 +152,20 @@ app.use((req, res, next) => {
     const server = await registerRoutes(app);
     log('✅ API routes registered successfully');
 
-    // Register /api/auth/user endpoint
+    // Register /api/auth/user endpoint (Clerk-based)
     log('🔐 Registering /api/auth/user endpoint...');
     app.get('/api/auth/user', async (req: any, res) => {
       try {
-        console.log('[/api/auth/user] req.user:', req.user ? { id: req.user.id, email: req.user.email } : 'undefined');
-        console.log('[/api/auth/user] req.isAuthenticated:', typeof req.isAuthenticated, req.isAuthenticated ? req.isAuthenticated() : 'undefined');
-        console.log('[/api/auth/user] req.session:', req.session ? 'exists' : 'undefined');
-        
-        // Check if user is authenticated via passport
-        if (req.user && req.user.id) {
-          console.log('✅ User authenticated via req.user');
-        } else if (req.isAuthenticated && req.isAuthenticated()) {
-          console.log('✅ User authenticated via req.isAuthenticated()');
-        } else {
-          console.log('❌ User not authenticated - no req.user and isAuthenticated() = false');
-          return res.status(401).json({ message: "Unauthorized" });
-        }
-        
-        // Get user from session (already deserialized by passport)
         const user = req.user;
-        if (!user || !user.id) {
-          console.log('❌ No user.id found');
+        console.log('[/api/auth/user] req.user:', user ? { clerkUserId: user.clerkUserId, email: user.email } : 'undefined');
+        
+        // Check if user is authenticated via Clerk middleware
+        if (!user || !user.clerkUserId) {
+          console.log('❌ User not authenticated - no clerkUserId');
           return res.status(401).json({ message: "Unauthorized" });
         }
         
-        const userId = user.id;
+        const clerkUserId = user.clerkUserId;
         const userEmail = user.email;
         
         // Check if user is admin (convoycubano@gmail.com)
@@ -184,14 +175,24 @@ app.use((req, res, next) => {
         const { users } = await import('@db/schema');
         const { eq } = await import('drizzle-orm');
         
-        const [dbUser] = await db
+        // Try to find user by clerkId; if not found, create new user
+        let [dbUser] = await db
           .select()
           .from(users)
-          .where(eq(users.id, userId))
+          .where(eq(users.clerkId, clerkUserId))
           .limit(1);
         
         if (!dbUser) {
-          return res.status(404).json({ message: "User not found" });
+          // Create user on first login
+          const [newUser] = await db
+            .insert(users)
+            .values({
+              clerkId: clerkUserId,
+              email: userEmail || null,
+              role: 'artist',
+            })
+            .returning();
+          dbUser = newUser;
         }
         
         // Return user with admin status
@@ -295,9 +296,7 @@ app.use((req, res, next) => {
       });
     }
 
-    const PORT = process.env.NODE_ENV !== "production" ? 5000 :
-      (process.env.PORT ? parseInt(process.env.PORT, 10) :
-      (process.env.REPLIT_PORT ? parseInt(process.env.REPLIT_PORT, 10) : 5000));
+    const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
     const isReplitEnv = !!process.env.REPL_SLUG || !!process.env.REPLIT_IDENTITY;
 

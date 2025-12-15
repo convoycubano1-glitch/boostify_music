@@ -1,146 +1,78 @@
 /**
- * Rutas para generación de conceptos de videos musicales usando Gemini
+ * Rutas para generación de conceptos de videos musicales usando OpenAI + FAL
  */
 import { Router, Request, Response } from 'express';
-import { GoogleGenAI } from "@google/genai";
-import fetch from 'node-fetch';
+import OpenAI from 'openai';
+import { generateImageWithNanoBanana } from '../services/fal-service';
 
 const router = Router();
 
-// Configurar múltiples clientes de Gemini para fallback automático
-const apiKeys = [
-  process.env.GEMINI_API_KEY,
-  process.env.GEMINI_API_KEY2
-].filter(key => key && key.length > 0);
-
-const geminiClients = apiKeys.map(key => new GoogleGenAI({ apiKey: key || "" }));
+// Cliente OpenAI para generación de texto
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || ''
+});
 
 /**
- * Intenta generar contenido con fallback automático entre API keys
+ * Genera contenido de texto usando OpenAI gpt-4o-mini
  */
-async function generateContentWithFallback(params: any): Promise<any> {
-  let lastError: any = null;
+async function generateTextWithOpenAI(prompt: string, options: {
+  temperature?: number;
+  maxTokens?: number;
+} = {}): Promise<string> {
+  console.log(`🤖 Generando texto con OpenAI gpt-4o-mini...`);
   
-  for (let i = 0; i < geminiClients.length; i++) {
-    try {
-      console.log(`🔑 Generando con Gemini API key ${i + 1}/${geminiClients.length}...`);
-      const client = geminiClients[i];
-      
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Gemini API timeout después de 60 segundos')), 60000);
-      });
-      
-      const generationPromise = client.models.generateContent(params);
-      
-      const response = await Promise.race([generationPromise, timeoutPromise]);
-      console.log(`✅ Generación exitosa con API key ${i + 1}`);
-      return response;
-    } catch (error: any) {
-      lastError = error;
-      
-      console.error(`❌ Error con API key ${i + 1}:`, error.message);
-      
-      if (error.status === 429 || error.message?.includes('quota') || error.message?.includes('RESOURCE_EXHAUSTED')) {
-        console.warn(`⚠️ API key ${i + 1} sin cuota disponible, intentando con siguiente key...`);
-        continue;
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      {
+        role: 'user',
+        content: prompt
       }
-      
-      if (error.message?.includes('timeout')) {
-        console.warn(`⏱️ API key ${i + 1} timeout, intentando con siguiente key...`);
-        continue;
-      }
-      
-      throw error;
-    }
+    ],
+    temperature: options.temperature ?? 0.9,
+    max_tokens: options.maxTokens ?? 8192,
+  });
+
+  const content = response.choices[0]?.message?.content;
+  if (!content) {
+    throw new Error('No content received from OpenAI');
   }
   
-  console.error('❌ Todas las API keys agotaron su cuota o fallaron');
-  throw lastError || new Error('Todas las API keys de Gemini han fallado');
+  console.log(`✅ Texto generado con OpenAI`);
+  return content;
 }
 
 /**
- * Genera imagen con FLUX Context (fal-ai/flux-pro/kontext) - RÁPIDO
- * Fallback a Gemini si falla
+ * Genera imagen con FAL nano-banana (Gemini 2.5 Flash via FAL)
  */
 async function generateConceptImage(prompt: string, conceptIndex: number): Promise<{ success: boolean; imageUrl?: string; error?: string; provider?: string }> {
-  const FAL_API_KEY = process.env.FAL_KEY || process.env.FAL_API_KEY;
-  
-  // INTENTO 1: FLUX Context (más rápido - 2x)
-  if (FAL_API_KEY) {
-    try {
-      console.log(`🚀 [Concept #${conceptIndex + 1}] Generando con FLUX Context...`);
-      
-      const response = await fetch('https://fal.run/fal-ai/flux-pro/kontext', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Key ${FAL_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          prompt: prompt,
-          image_size: 'portrait_4_3',
-          num_images: 1,
-          num_inference_steps: 30,
-          guidance_scale: 3.5,
-          enable_safety_checker: false
-        })
-      });
-
-      if (response.ok) {
-        const result = await response.json() as any;
-        if (result.images && result.images.length > 0) {
-          console.log(`✅ [Concept #${conceptIndex + 1}] Imagen generada con FLUX (rápido!)`);
-          return {
-            success: true,
-            imageUrl: result.images[0].url,
-            provider: 'flux-context'
-          };
-        }
-      }
-    } catch (fluxError: any) {
-      console.warn(`⚠️ [Concept #${conceptIndex + 1}] FLUX falló:`, fluxError.message);
-    }
-  }
-
-  // INTENTO 2: Gemini 2.5 Flash Image (fallback)
   try {
-    console.log(`🔄 [Concept #${conceptIndex + 1}] Fallback a Gemini 2.5 Flash Image...`);
+    console.log(`🎨 [Concept #${conceptIndex + 1}] Generando imagen con FAL nano-banana...`);
     
-    // Generar imagen con Gemini usando el cliente disponible
-    const client = geminiClients[0];
-    if (!client) {
-      return { success: false, error: 'No Gemini client available' };
-    }
-
-    const response = await generateContentWithFallback({
-      model: "gemini-2.5-flash-image",
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: `Create a cinematic movie poster for a music video with this concept: ${prompt}. High-quality, professional, cinematographic style.` }]
-        }
-      ],
-      config: {
-        temperature: 0.7,
-      }
+    const enhancedPrompt = `Create a cinematic movie poster for a music video with this concept: ${prompt}. High-quality, professional, cinematographic style.`;
+    
+    const result = await generateImageWithNanoBanana(enhancedPrompt, {
+      aspectRatio: '3:4', // Portrait para pósters
+      numImages: 1,
+      outputFormat: 'png'
     });
 
-    const imagePart = response.candidates?.[0]?.content?.parts?.find((part: any) => part.inlineData);
-    if (imagePart?.inlineData?.data) {
-      const base64Image = imagePart.inlineData.data;
-      const dataUrl = `data:image/jpeg;base64,${base64Image}`;
-      console.log(`✅ [Concept #${conceptIndex + 1}] Imagen generada con Gemini fallback`);
+    if (result.success && result.imageUrl) {
+      console.log(`✅ [Concept #${conceptIndex + 1}] Imagen generada con FAL nano-banana`);
       return {
         success: true,
-        imageUrl: dataUrl,
-        provider: 'gemini-fallback'
+        imageUrl: result.imageUrl,
+        provider: 'fal-nano-banana'
       };
     }
 
-    return { success: false, error: 'No image data from Gemini' };
-  } catch (geminiError: any) {
-    console.error(`❌ [Concept #${conceptIndex + 1}] Gemini fallback también falló:`, geminiError.message);
-    return { success: false, error: geminiError.message };
+    return { 
+      success: false, 
+      error: result.error || 'No image generated' 
+    };
+  } catch (error: any) {
+    console.error(`❌ [Concept #${conceptIndex + 1}] Error generando imagen:`, error.message);
+    return { success: false, error: error.message };
   }
 }
 
@@ -156,11 +88,11 @@ router.post("/generate-concepts", async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Lyrics are required' });
     }
 
-    if (geminiClients.length === 0) {
-      return res.status(500).json({ error: 'No Gemini API keys configured' });
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
     }
 
-    console.log(`🎬 Generando 3 conceptos de video musical con Gemini...`);
+    console.log(`🎬 Generando 3 conceptos de video musical con OpenAI...`);
     console.log(`📝 Letra: ${lyrics.substring(0, 100)}...`);
     console.log(`🎭 Director: ${directorName || 'Unknown'}`);
 
@@ -215,22 +147,10 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no extra
 
 ${prompt}`;
 
-    const response = await generateContentWithFallback({
-      model: "gemini-2.0-flash-exp",
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: fullPrompt }]
-        }
-      ],
-      config: {
-        temperature: 0.9,
-        topP: 0.95,
-        maxOutputTokens: 8192,
-      }
+    const textContent = await generateTextWithOpenAI(fullPrompt, {
+      temperature: 0.9,
+      maxTokens: 8192
     });
-
-    const textContent = response.candidates?.[0]?.content?.parts?.[0]?.text;
     
     if (!textContent) {
       throw new Error('No content received from Gemini');
@@ -302,11 +222,11 @@ router.post("/generate-script", async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Lyrics are required' });
     }
 
-    if (geminiClients.length === 0) {
-      return res.status(500).json({ error: 'No Gemini API keys configured' });
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
     }
 
-    console.log(`🎬 Generando script completo de video musical con Gemini...`);
+    console.log(`🎬 Generando script completo de video musical con OpenAI...`);
     console.log(`📝 Duración: ${audioDuration}s, Escenas: ${sceneCount || 'auto'}`);
 
     const targetScenes = sceneCount || (audioDuration ? Math.ceil(audioDuration / 4) : 12);
@@ -430,27 +350,11 @@ This creates MAXIMUM REALISM and VISUAL VARIETY - the artist appears in multiple
 
 REMEMBER: Mix PERFORMANCE, B-ROLL, and STORY shots. Use artist reference creatively for detail shots and angles, not just full performance. Tell a COMPLETE STORY with visual variety!`;
 
-    const response = await generateContentWithFallback({
-      model: "gemini-2.0-flash-exp",
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: prompt }]
-        }
-      ],
-      config: {
-        temperature: 0.8,
-        topP: 0.95,
-        maxOutputTokens: 8192,
-      }
+    const textContent = await generateTextWithOpenAI(prompt, {
+      temperature: 0.8,
+      maxTokens: 8192
     });
-
-    const textContent = response.candidates?.[0]?.content?.parts?.[0]?.text;
     
-    if (!textContent) {
-      throw new Error('No content received from Gemini');
-    }
-
     let cleanedContent = textContent.trim();
     if (cleanedContent.startsWith('```json')) {
       cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/```\s*$/, '');
@@ -511,11 +415,11 @@ router.post("/enhance-prompt", async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Base prompt is required' });
     }
 
-    if (geminiClients.length === 0) {
-      return res.status(500).json({ error: 'No Gemini API keys configured' });
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
     }
 
-    console.log(`🎨 Mejorando prompt cinematográfico con Gemini...`);
+    console.log(`🎨 Mejorando prompt cinematográfico con OpenAI...`);
 
     const enhancePrompt = `You are a professional cinematic prompt engineer. Take this basic video prompt and enhance it with detailed, visually expressive cinematographic details while maintaining all technical specifications.
 
@@ -535,25 +439,13 @@ Enhance this prompt with:
 
 Return ONLY the enhanced prompt text, no JSON, no extra formatting.`;
 
-    const response = await generateContentWithFallback({
-      model: "gemini-2.0-flash-exp",
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: enhancePrompt }]
-        }
-      ],
-      config: {
-        temperature: 0.7,
-        topP: 0.9,
-        maxOutputTokens: 500,
-      }
+    const enhancedPrompt = await generateTextWithOpenAI(enhancePrompt, {
+      temperature: 0.7,
+      maxTokens: 500
     });
-
-    const enhancedPrompt = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
     
     if (!enhancedPrompt) {
-      throw new Error('No enhanced prompt received from Gemini');
+      throw new Error('No enhanced prompt received from OpenAI');
     }
 
     console.log(`✅ Prompt mejorado generado`);

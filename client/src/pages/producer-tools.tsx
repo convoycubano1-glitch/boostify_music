@@ -388,10 +388,24 @@ export default function ProducerToolsPage() {
       logger.info("Loading musicians from PostgreSQL and Firestore...");
       setIsLoadingImages(true);
 
-      const [postgresResponse, firestoreMusicians] = await Promise.all([
-        fetch('/api/musicians').then(res => res.json()),
-        loadFirestoreMusicians()
-      ]);
+      // Cargar de ambas fuentes pero no fallar si una no funciona
+      let postgresResponse = { success: false, data: [] };
+      let firestoreMusicians: MusicianService[] = [];
+
+      try {
+        const response = await fetch('/api/musicians');
+        if (response.ok) {
+          postgresResponse = await response.json();
+        }
+      } catch (e) {
+        logger.warn("Could not load from PostgreSQL:", e);
+      }
+
+      try {
+        firestoreMusicians = await loadFirestoreMusicians();
+      } catch (e) {
+        logger.warn("Could not load from Firestore:", e);
+      }
 
       let allMusicians: MusicianService[] = [];
 

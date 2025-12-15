@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const envSchema = z.object({
   VITE_OPENROUTER_API_KEY: z.string().optional(),
-  VITE_FAL_API_KEY: z.string().min(1, "FAL API Key is required"),
+  VITE_FAL_API_KEY: z.string().optional().default(''),
   VITE_FIREBASE_API_KEY: z.string().min(1, "Firebase API Key is required"),
   VITE_FIREBASE_AUTH_DOMAIN: z.string().min(1, "Firebase Auth Domain is required"),
   VITE_FIREBASE_PROJECT_ID: z.string().min(1, "Firebase Project ID is required"),

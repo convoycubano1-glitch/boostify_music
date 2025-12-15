@@ -4,27 +4,37 @@ import { env } from "../../env";
 import { db } from "../firebase";
 import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
 
+// No lanzar error si no hay API key - simplemente advertir
 if (!env.VITE_OPENROUTER_API_KEY) {
-  logger.error('OpenRouter API key is not configured');
-  throw new Error('OpenRouter API key is not configured');
+  logger.warn('OpenRouter API key is not configured - AI features will be limited');
 }
 
-const openai = new OpenAI({
-  apiKey: env.VITE_OPENROUTER_API_KEY || '',
+// Crear cliente solo si hay API key
+const openai = env.VITE_OPENROUTER_API_KEY ? new OpenAI({
+  apiKey: env.VITE_OPENROUTER_API_KEY,
   baseURL: 'https://openrouter.ai/api/v1',
   dangerouslyAllowBrowser: true,
   defaultHeaders: {
-    'HTTP-Referer': window.location.origin,
+    'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000',
     'X-Title': 'Boostify Music Manager',
   }
-});
+}) : null;
+
+// Helper para verificar si AI está disponible
+const checkAIAvailable = () => {
+  if (!openai) {
+    throw new Error('AI features require OpenRouter API key. Please configure VITE_OPENROUTER_API_KEY in your environment.');
+  }
+  return openai;
+};
 
 export const recordLabelService = {
   async generateRemix(track: string, style: string, userId: string) {
     try {
+      const ai = checkAIAvailable();
       const prompt = `Generate a modern remix style guide for the track "${track}" in the style of ${style}. Include detailed instructions for tempo, key changes, arrangement modifications, and suggested modern elements to incorporate.`;
 
-      const completion = await openai.chat.completions.create({
+      const completion = await ai.chat.completions.create({
         model: "anthropic/claude-3-sonnet",
         messages: [
           {
@@ -62,9 +72,10 @@ export const recordLabelService = {
 
   async generateMaster(track: string, reference: string, userId: string) {
     try {
+      const ai = checkAIAvailable();
       const prompt = `Create professional mastering instructions for the track "${track}" using "${reference}" as reference. Include specific recommendations for EQ, compression, limiting, and other mastering techniques.`;
 
-      const completion = await openai.chat.completions.create({
+      const completion = await ai.chat.completions.create({
         model: "anthropic/claude-3-sonnet",
         messages: [
           {
@@ -102,9 +113,10 @@ export const recordLabelService = {
 
   async generateMusicVideo(track: string, style: string, userId: string) {
     try {
+      const ai = checkAIAvailable();
       const prompt = `Create a detailed music video concept for "${track}" in the style of ${style}. Include scene descriptions, visual themes, transitions, and special effects recommendations.`;
 
-      const completion = await openai.chat.completions.create({
+      const completion = await ai.chat.completions.create({
         model: "anthropic/claude-3-sonnet",
         messages: [
           {

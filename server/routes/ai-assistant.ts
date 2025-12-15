@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { GoogleGenAI } from '@google/genai';
+import OpenAI from 'openai';
 import { authenticate } from '../middleware/auth';
 import { db } from '../db';
 import { users } from '../db/schema';
@@ -7,12 +7,13 @@ import { eq } from 'drizzle-orm';
 import fileUpload from 'express-fileupload';
 import fs from 'fs/promises';
 import path from 'path';
+import { generateImageWithNanoBanana, editImageWithNanoBanana } from '../services/fal-service';
 
 const router = Router();
 
-// Initialize Gemini client
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY || "",
+// Initialize OpenAI client (for text generation)
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || "",
 });
 
 // Preset artistic prompts for cover generation
@@ -116,11 +117,21 @@ router.post('/enrich-profile', authenticate, async (req: Request, res: Response)
     
     Only return valid JSON. If you cannot find information for a field, set it to null or empty array.`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a helpful assistant that provides accurate information about music artists in JSON format.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
     });
-    const text = response.text || '';
+    const text = response.choices[0]?.message?.content || '';
     
     // Extract JSON from the response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -201,55 +212,39 @@ router.post('/generate-cover', authenticate, async (req: any, res: Response) => 
       ? `${basePrompt} Incorporate the essence and style of artist "${artistName}".`
       : basePrompt;
 
-    // Handle reference image if provided
-    const parts: any[] = [{ text: finalPrompt }];
+    // Generate image with FAL nano-banana
+    let result;
     
     if (req.files && req.files.referenceImage) {
+      // If there's a reference image, use editImageWithNanoBanana
       const file = Array.isArray(req.files.referenceImage) 
         ? req.files.referenceImage[0] 
         : req.files.referenceImage;
       
-      // Read the file as base64
-      const imageData = file.data.toString('base64');
+      // Convert to base64 data URL
+      const base64Data = file.data.toString('base64');
+      const referenceUrl = `data:${file.mimetype};base64,${base64Data}`;
       
-      parts.push({
-        inlineData: {
-          mimeType: file.mimetype,
-          data: imageData
-        }
-      });
-      
-      parts[0].text = `Using this reference image, ${finalPrompt}`;
+      result = await editImageWithNanoBanana([referenceUrl], `Using this reference image as inspiration, ${finalPrompt}`);
+    } else {
+      // No reference image, generate from scratch
+      result = await generateImageWithNanoBanana(finalPrompt, '1:1');
     }
-
-    // Generate image with Gemini 2.5 Flash Image (nano banana)
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
-      contents: [{ role: 'user', parts }],
-    });
     
-    // Extract image from response
-    let imageData: string | null = null;
-    const candidate = response.candidates?.[0];
-    const imagePart = candidate?.content?.parts?.find((part: any) => part.inlineData);
-    
-    if (imagePart?.inlineData?.data) {
-      imageData = imagePart.inlineData.data;
+    if (!result.success || !result.imageUrl) {
+      return res.status(500).json({ message: result.error || 'Failed to generate image' });
     }
 
-    if (!imageData) {
-      return res.status(500).json({ message: 'Failed to generate image' });
-    }
-
-    // Save the generated image
+    // Save the generated image locally
     const uploadsDir = path.join(process.cwd(), 'uploads', 'covers', userId.toString());
     await fs.mkdir(uploadsDir, { recursive: true });
 
     const filename = `cover-${Date.now()}.png`;
     const filepath = path.join(uploadsDir, filename);
     
-    // Convert base64 to buffer and save
-    const imageBuffer = Buffer.from(imageData, 'base64');
+    // Download the image from FAL and save locally
+    const imageResponse = await fetch(result.imageUrl);
+    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
     await fs.writeFile(filepath, imageBuffer);
 
     const imageUrl = `/uploads/covers/${userId}/${filename}`;

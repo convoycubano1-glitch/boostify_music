@@ -1,24 +1,25 @@
 import express, { Request, Response } from 'express';
 import { authenticate } from '../middleware/auth';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 
 const router = express.Router();
 
-// Initialize Gemini AI
-const genAI = process.env.GEMINI_API_KEY 
-  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+// Initialize OpenAI
+const openai = process.env.OPENAI_API_KEY 
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
 /**
  * POST /api/pr-ai/generate-pitch
- * Genera un mensaje pitch profesional usando Gemini AI
+ * Genera un mensaje pitch profesional usando OpenAI
+ * Migrado de Gemini a OpenAI para mayor eficiencia
  */
 router.post('/generate-pitch', authenticate, async (req: Request, res: Response) => {
   try {
-    if (!genAI) {
+    if (!openai) {
       return res.status(503).json({ 
         success: false, 
-        message: 'Gemini AI no está configurado' 
+        message: 'OpenAI no está configurado' 
       });
     }
 
@@ -30,8 +31,6 @@ router.post('/generate-pitch', authenticate, async (req: Request, res: Response)
         message: 'Faltan campos requeridos' 
       });
     }
-
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `Eres un experto en relaciones públicas para la industria musical.
 
@@ -55,8 +54,13 @@ NO uses lenguaje demasiado florido o exagerado.
 NO incluyas saludos ni despedidas.
 Solo el pitch en sí.`;
 
-    const result = await model.generateContent(prompt);
-    const generatedText = result.response.text();
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 300
+    });
+
+    const generatedText = response.choices[0]?.message?.content || '';
 
     res.json({
       success: true,
@@ -74,14 +78,14 @@ Solo el pitch en sí.`;
 
 /**
  * POST /api/pr-ai/improve-text
- * Mejora cualquier texto usando Gemini AI
+ * Mejora cualquier texto usando OpenAI
  */
 router.post('/improve-text', authenticate, async (req: Request, res: Response) => {
   try {
-    if (!genAI) {
+    if (!openai) {
       return res.status(503).json({ 
         success: false, 
-        message: 'Gemini AI no está configurado' 
+        message: 'OpenAI no está configurado' 
       });
     }
 
@@ -93,8 +97,6 @@ router.post('/improve-text', authenticate, async (req: Request, res: Response) =
         message: 'Texto requerido' 
       });
     }
-
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `Mejora el siguiente texto para que sea más profesional, conciso y efectivo para ${context || 'comunicación con medios'}:
 
@@ -110,8 +112,13 @@ Instrucciones:
 
 Solo devuelve el texto mejorado, sin explicaciones.`;
 
-    const result = await model.generateContent(prompt);
-    const improvedText = result.response.text();
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 300
+    });
+
+    const improvedText = response.choices[0]?.message?.content || '';
 
     res.json({
       success: true,
@@ -200,16 +207,14 @@ router.post('/generate-press-photo', authenticate, async (req: Request, res: Res
  */
 router.post('/suggest-campaign-title', authenticate, async (req: Request, res: Response) => {
   try {
-    if (!genAI) {
+    if (!openai) {
       return res.status(503).json({ 
         success: false, 
-        message: 'Gemini AI no está configurado' 
+        message: 'OpenAI no está configurado' 
       });
     }
 
     const { artistName, contentType, contentTitle } = req.body;
-
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `Sugiere 3 títulos creativos y profesionales para una campaña de PR.
 
@@ -226,8 +231,13 @@ Los títulos deben:
 
 Formato: devuelve solo 3 títulos, uno por línea, sin numeración ni explicaciones.`;
 
-    const result = await model.generateContent(prompt);
-    const suggestions = result.response.text().trim().split('\n').filter(s => s.trim());
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 200
+    });
+
+    const suggestions = (response.choices[0]?.message?.content || '').trim().split('\n').filter(s => s.trim());
 
     res.json({
       success: true,

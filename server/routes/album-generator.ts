@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { GoogleGenAI } from '@google/genai';
+import OpenAI from 'openai';
 import { authenticate } from '../middleware/auth';
 import { db } from '../db';
 import { users, songs } from '../db/schema';
@@ -8,9 +8,9 @@ import axios from 'axios';
 
 const router = Router();
 
-// Initialize Gemini client
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY || "",
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || "",
 });
 
 // FAL AI Client
@@ -114,22 +114,33 @@ Rules:
 4. Return ONLY JSON, nothing else
 5. Generate exactly 3 songs - no more, no less`;
 
-    let songResponse;
+    let songText = '';
     try {
-      songResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: songPrompt,
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert music producer and songwriter. Return ONLY valid JSON without markdown code blocks.'
+          },
+          {
+            role: 'user',
+            content: songPrompt
+          }
+        ],
+        temperature: 0.8,
+        max_tokens: 4000,
       });
-    } catch (geminiError: any) {
-      console.error('🔴 Gemini API error:', geminiError);
+      songText = completion.choices[0]?.message?.content || '';
+    } catch (openaiError: any) {
+      console.error('🔴 OpenAI API error:', openaiError);
       return res.status(500).json({ 
         message: 'Failed to generate album content',
-        error: geminiError.message 
+        error: openaiError.message 
       });
     }
 
-    const songText = songResponse.text || '';
-    console.log('📝 Gemini response length:', songText.length);
+    console.log('📝 OpenAI response length:', songText.length);
 
     // Extract JSON from response
     const jsonMatch = songText.match(/\{[\s\S]*\}/);

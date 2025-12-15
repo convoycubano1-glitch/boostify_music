@@ -6,17 +6,12 @@ import { db } from '../db';
 import { users, artistProfileImages, musicVideoProjects } from '../../db/schema';
 import { eq, and, inArray, isNull } from 'drizzle-orm';
 import { z } from 'zod';
-import { GoogleGenAI } from "@google/genai";
+import OpenAI from 'openai';
 
 const router = Router();
 
-// Configurar Gemini para generar biografías
-const apiKeys = [
-  process.env.GEMINI_API_KEY,
-  process.env.GEMINI_API_KEY2
-].filter(key => key && key.length > 0);
-
-const geminiClients = apiKeys.map(key => new GoogleGenAI({ apiKey: key || "" }));
+// Configurar OpenAI para generar biografías
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /**
  * Genera biografía de artista usando Gemini basándose en el concepto del video
@@ -26,7 +21,7 @@ async function generateArtistBiography(
   concept: any,
   lyrics: string
 ): Promise<string> {
-  if (geminiClients.length === 0) {
+  if (!process.env.OPENAI_API_KEY) {
     return `${artistName} is an innovative artist creating unique visual and musical experiences.`;
   }
 
@@ -47,29 +42,26 @@ Generate a professional artist biography (2-3 paragraphs) that:
 Return ONLY the biography text, no JSON, no markdown.`;
 
   try {
-    const client = geminiClients[0];
-    const response = await client.models.generateContent({
-      model: "gemini-2.0-flash-exp",
-      contents: [
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
         {
           role: "user",
-          parts: [{ text: prompt }]
+          content: prompt
         }
       ],
-      config: {
-        temperature: 0.8,
-        topP: 0.9,
-        maxOutputTokens: 500,
-      }
+      temperature: 0.8,
+      top_p: 0.9,
+      max_tokens: 500,
     });
 
-    const biography = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    const biography = response.choices?.[0]?.message?.content?.trim();
     
     if (biography && biography.length > 50) {
       return biography;
     }
   } catch (error) {
-    console.error('Error generating biography with Gemini:', error);
+    console.error('Error generating biography with OpenAI:', error);
   }
 
   return `${artistName} is an innovative artist known for their unique blend of visual storytelling and musical artistry. Their work combines cinematic visuals with compelling narratives, creating immersive experiences that resonate with audiences worldwide.`;
@@ -147,8 +139,8 @@ router.post("/create-from-video", async (req: Request, res: Response) => {
       slugCounter++;
     }
 
-    // Generar biografía con Gemini
-    console.log('✍️ [CREATE ARTIST PROFILE] Generando biografía con Gemini...');
+    // Generar biografía con OpenAI
+    console.log('✍️ [CREATE ARTIST PROFILE] Generando biografía con OpenAI...');
     const biography = await generateArtistBiography(
       data.artistName,
       data.selectedConcept,

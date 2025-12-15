@@ -1,20 +1,32 @@
 /**
- * Rutas para generación de imágenes con Gemini
+ * Rutas para generación de imágenes con FAL AI Nano Banana
+ * Migrado de Gemini a FAL para mayor eficiencia y consistencia
+ * Mantiene la misma API para compatibilidad con el resto del sistema
  */
 import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/auth';
 import { 
-  generateCinematicImage, 
-  generateImageFromCinematicScene,
-  generateBatchImages,
-  generateBatchImagesWithMultipleFaceReferences,
-  generateImageWithMultipleFaceReferences,
-  editImageWithGemini,
-  generateHollywoodStylePoster,
-  type CinematicScene 
-} from '../services/gemini-image-service';
+  generateImageWithNanoBanana, 
+  editImageWithNanoBanana,
+  type FalImageResult,
+  type NanoBananaAspectRatio
+} from '../services/fal-service';
 
 const router = Router();
+
+// Función helper para generar imagen cinematográfica (reemplaza generateCinematicImage)
+async function generateCinematicImage(prompt: string, aspectRatio: NanoBananaAspectRatio = '16:9'): Promise<FalImageResult> {
+  const cinematicPrompt = `Cinematic professional shot: ${prompt}. High quality, studio lighting, professional photography.`;
+  return generateImageWithNanoBanana(cinematicPrompt, { aspectRatio });
+}
+
+// Función helper para generar con referencias (reemplaza generateImageWithMultipleFaceReferences)
+async function generateWithFaceReferences(prompt: string, referenceImages: string[]): Promise<FalImageResult> {
+  if (referenceImages.length === 0) {
+    return generateImageWithNanoBanana(prompt);
+  }
+  return editImageWithNanoBanana(referenceImages, prompt);
+}
 
 /**
  * Edita una imagen existente con instrucciones específicas
@@ -37,9 +49,9 @@ router.post('/edit-image', async (req: Request, res: Response) => {
       });
     }
     
-    console.log(`✏️ Editando imagen con instrucciones: ${editInstructions.substring(0, 100)}...`);
+    console.log(`✏️ Editando imagen con FAL nano-banana: ${editInstructions.substring(0, 100)}...`);
     
-    const result = await editImageWithGemini(imageUrl, editInstructions, originalPrompt);
+    const result = await editImageWithNanoBanana([imageUrl], editInstructions);
     
     if (!result.success) {
       return res.status(500).json({
@@ -52,7 +64,8 @@ router.post('/edit-image', async (req: Request, res: Response) => {
       success: true,
       imageUrl: result.imageUrl,
       imageBase64: result.imageBase64,
-      prompt: editInstructions
+      prompt: editInstructions,
+      provider: 'fal-nano-banana'
     });
   } catch (error: any) {
     console.error('Error en /edit-image:', error);
@@ -80,14 +93,14 @@ router.post('/generate-simple', async (req: Request, res: Response) => {
     
     // Si hay imágenes de referencia, usar la función con múltiples referencias
     if (referenceImages && Array.isArray(referenceImages) && referenceImages.length > 0) {
-      console.log(`🎨 Generando imagen simple con ${referenceImages.length} referencias faciales`);
-      const { generateImageWithMultipleFaceReferences } = await import('../services/gemini-image-service');
-      const result = await generateImageWithMultipleFaceReferences(prompt, referenceImages);
+      console.log(`🎨 Generando imagen con FAL nano-banana + ${referenceImages.length} referencias`);
+      const result = await generateWithFaceReferences(prompt, referenceImages);
       return res.json(result);
     }
     
     // Sin referencias, usar generación simple
-    const result = await generateCinematicImage(prompt);
+    console.log('🎨 Generando imagen con FAL nano-banana');
+    const result = await generateImageWithNanoBanana(prompt);
     
     return res.json(result);
   } catch (error: any) {
@@ -104,7 +117,7 @@ router.post('/generate-simple', async (req: Request, res: Response) => {
  */
 router.post('/generate-scene', async (req: Request, res: Response) => {
   try {
-    const scene: CinematicScene = req.body;
+    const scene = req.body;
     
     if (!scene.scene || !scene.camera || !scene.lighting || !scene.style || !scene.movement) {
       return res.status(400).json({
@@ -113,7 +126,9 @@ router.post('/generate-scene', async (req: Request, res: Response) => {
       });
     }
     
-    const result = await generateImageFromCinematicScene(scene);
+    // Construir prompt desde la escena
+    const scenePrompt = `${scene.scene}. Camera: ${scene.camera}. Lighting: ${scene.lighting}. Style: ${scene.style}. Movement: ${scene.movement}. ${scene.emotion || ''} ${scene.colorGrading || ''}`;
+    const result = await generateCinematicImage(scenePrompt);
     
     return res.json(result);
   } catch (error: any) {
@@ -130,7 +145,7 @@ router.post('/generate-scene', async (req: Request, res: Response) => {
  */
 router.post('/generate-batch', async (req: Request, res: Response) => {
   try {
-    const { scenes }: { scenes: CinematicScene[] } = req.body;
+    const { scenes } = req.body;
     
     if (!scenes || !Array.isArray(scenes) || scenes.length === 0) {
       return res.status(400).json({
@@ -139,13 +154,14 @@ router.post('/generate-batch', async (req: Request, res: Response) => {
       });
     }
     
-    const results = await generateBatchImages(scenes);
-    
-    // Convertir Map a objeto para JSON
     const resultsObj: Record<number, any> = {};
-    results.forEach((value, key) => {
-      resultsObj[key] = value;
-    });
+    
+    for (let i = 0; i < scenes.length; i++) {
+      const scene = scenes[i];
+      const scenePrompt = `${scene.scene}. Camera: ${scene.camera}. Lighting: ${scene.lighting}. Style: ${scene.style}.`;
+      const result = await generateImageWithNanoBanana(scenePrompt);
+      resultsObj[i] = result;
+    }
     
     return res.json({
       success: true,
@@ -174,8 +190,7 @@ router.post('/generate-with-face', async (req: Request, res: Response) => {
       });
     }
     
-    const { generateImageWithFaceReference } = await import('../services/gemini-image-service');
-    const result = await generateImageWithFaceReference(prompt, referenceImageBase64);
+    const result = await editImageWithNanoBanana([referenceImageBase64], prompt);
     
     return res.json(result);
   } catch (error: any) {
@@ -199,90 +214,25 @@ router.post('/generate-single-with-multiple-faces', async (req: Request, res: Re
       });
     }
 
-    console.log(`🎬 Generando UNA imagen con ${referenceImagesBase64.length} referencias faciales`);
+    console.log(`🎬 Generando imagen con FAL nano-banana + ${referenceImagesBase64.length} referencias`);
     console.log(`📝 Prompt: ${prompt.substring(0, 100)}...`);
 
-    // Intentar primero con Gemini
-    const { generateImageWithMultipleFaceReferences } = await import('../services/gemini-image-service');
-    const result = await generateImageWithMultipleFaceReferences(
-      prompt,
-      referenceImagesBase64
+    // Usar FAL nano-banana/edit para mantener referencias
+    const result = await editImageWithNanoBanana(
+      referenceImagesBase64.slice(0, 3), // Máximo 3 referencias
+      prompt
     );
 
-    // Si Gemini tuvo éxito, retornar
     if (result.success && result.imageUrl) {
-      console.log('✅ Imagen generada con Gemini (Nano Banana)');
+      console.log('✅ Imagen generada con FAL nano-banana');
       return res.json({
         success: true,
         imageUrl: result.imageUrl,
-        provider: 'gemini'
+        provider: 'fal-nano-banana'
       });
     }
 
-    // Si Gemini falló (cuota excedida), usar FAL AI como fallback
-    console.log('⚠️ Gemini falló, usando FAL AI FLUX Kontext Pro como fallback...');
-    
-    // Generar con FAL AI
-    const axios = (await import('axios')).default;
-    const FAL_API_KEY = process.env.FAL_API_KEY;
-    
-    if (!FAL_API_KEY) {
-      return res.status(500).json({
-        success: false,
-        error: 'Gemini agotó su cuota y FAL_API_KEY no está configurada para fallback'
-      });
-    }
-
-    // Mejorar prompt para FLUX Kontext Pro
-    const enhancedPrompt = `${prompt}. Maintain exact facial features and identity, professional photography, cinematic lighting, 8k resolution.`;
-    
-    const requestBody: any = {
-      prompt: enhancedPrompt,
-      image_size: "landscape_16_9",
-      num_inference_steps: 35,
-      guidance_scale: 4.5,
-      num_images: 1,
-      enable_safety_checker: false,
-      output_format: "jpeg",
-      sync_mode: true
-    };
-
-    // Agregar imágenes de referencia si hay
-    if (referenceImagesBase64 && referenceImagesBase64.length > 0) {
-      requestBody.reference_images = referenceImagesBase64.slice(0, 3);
-      requestBody.reference_image_weight = 0.8;
-    }
-
-    // Agregar seed si está disponible
-    if (seed) {
-      requestBody.seed = seed;
-    }
-
-    console.log(`🎨 Generando con FAL AI FLUX Kontext Pro (${referenceImagesBase64.length} referencias, seed: ${seed || 'auto'})...`);
-    
-    const falResponse = await axios.post(
-      'https://fal.run/fal-ai/flux-pro/kontext',
-      requestBody,
-      {
-        headers: {
-          'Authorization': `Key ${FAL_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 120000
-      }
-    );
-
-    if (falResponse.data && falResponse.data.images && falResponse.data.images.length > 0) {
-      const imageUrl = falResponse.data.images[0].url;
-      console.log(`✅ Imagen generada exitosamente con FAL AI (fallback)`);
-      return res.json({
-        success: true,
-        imageUrl: imageUrl,
-        provider: 'fal'
-      });
-    }
-
-    throw new Error('FAL AI no retornó imágenes');
+    throw new Error(result.error || 'Error generando imagen');
 
   } catch (error: any) {
     console.error('Error generating single image with multiple faces:', error);
@@ -298,7 +248,7 @@ router.post('/generate-single-with-multiple-faces', async (req: Request, res: Re
  */
 router.post('/generate-batch-with-face', async (req: Request, res: Response) => {
   try {
-    const { scenes, referenceImageBase64 }: { scenes: CinematicScene[], referenceImageBase64: string } = req.body;
+    const { scenes, referenceImageBase64 } = req.body;
     
     if (!scenes || !Array.isArray(scenes) || scenes.length === 0) {
       return res.status(400).json({
@@ -314,14 +264,14 @@ router.post('/generate-batch-with-face', async (req: Request, res: Response) => 
       });
     }
     
-    const { generateBatchImagesWithFaceReference } = await import('../services/gemini-image-service');
-    const results = await generateBatchImagesWithFaceReference(scenes, referenceImageBase64);
-    
-    // Convertir Map a objeto para JSON
     const resultsObj: Record<number, any> = {};
-    results.forEach((value, key) => {
-      resultsObj[key] = value;
-    });
+    
+    for (let i = 0; i < scenes.length; i++) {
+      const scene = scenes[i];
+      const scenePrompt = `${scene.scene}. Camera: ${scene.camera}. Lighting: ${scene.lighting}. Style: ${scene.style}.`;
+      const result = await editImageWithNanoBanana([referenceImageBase64], scenePrompt);
+      resultsObj[i] = result;
+    }
     
     return res.json({
       success: true,
@@ -342,11 +292,7 @@ router.post('/generate-batch-with-face', async (req: Request, res: Response) => 
  */
 router.post('/generate-batch-with-multiple-faces', async (req: Request, res: Response) => {
   try {
-    const { scenes, referenceImagesBase64, useFallback = true }: { 
-      scenes: CinematicScene[], 
-      referenceImagesBase64: string[],
-      useFallback?: boolean
-    } = req.body;
+    const { scenes, referenceImagesBase64, useFallback = true } = req.body;
     
     if (!scenes || !Array.isArray(scenes) || scenes.length === 0) {
       return res.status(400).json({
@@ -369,40 +315,20 @@ router.post('/generate-batch-with-multiple-faces', async (req: Request, res: Res
       });
     }
     
-    console.log(`🎨 Generando ${scenes.length} escenas con ${referenceImagesBase64.length} referencias faciales`);
-    console.log(`📌 Fallback a FAL AI: ${useFallback ? 'ACTIVADO' : 'DESACTIVADO'}`);
-    const results = await generateBatchImagesWithMultipleFaceReferences(scenes, referenceImagesBase64, useFallback);
+    console.log(`🎨 Generando ${scenes.length} escenas con FAL nano-banana + ${referenceImagesBase64.length} referencias`);
     
-    // Convertir Map a objeto para JSON y rastrear proveedores
     const resultsObj: Record<number, any> = {};
     let successCount = 0;
-    let quotaExceeded = false;
-    let geminiCount = 0;
-    let falCount = 0;
     
-    results.forEach((value, key) => {
-      resultsObj[key] = value;
-      if (value.success) {
-        successCount++;
-        if (value.provider === 'gemini') geminiCount++;
-        if (value.provider === 'fal') falCount++;
-      }
-      if ((value as any).quotaError) quotaExceeded = true;
-    });
-    
-    let message = '';
-    if (quotaExceeded) {
-      message = `Límite de cuota alcanzado. Se generaron ${successCount}/${scenes.length} imágenes`;
-      if (falCount > 0) {
-        message += ` (${geminiCount} con Gemini, ${falCount} con FAL AI fallback)`;
-      }
-      message += '. La cuota se restablecerá en 24 horas.';
-    } else {
-      message = `Se generaron ${successCount}/${scenes.length} imágenes exitosamente`;
-      if (falCount > 0) {
-        message += ` (${geminiCount} con Gemini, ${falCount} con FAL AI fallback)`;
-      }
-      message += '.';
+    for (let i = 0; i < scenes.length; i++) {
+      const scene = scenes[i];
+      const scenePrompt = `${scene.scene}. Camera: ${scene.camera}. Lighting: ${scene.lighting}. Style: ${scene.style}.`;
+      const result = await editImageWithNanoBanana(
+        referenceImagesBase64.slice(0, 3), 
+        scenePrompt
+      );
+      resultsObj[i] = { ...result, provider: 'fal-nano-banana' };
+      if (result.success) successCount++;
     }
     
     return res.json({
@@ -411,11 +337,11 @@ router.post('/generate-batch-with-multiple-faces', async (req: Request, res: Res
       totalScenes: scenes.length,
       totalReferences: referenceImagesBase64.length,
       successCount,
-      quotaExceeded,
-      geminiCount,
-      falCount,
-      usedFallback: falCount > 0,
-      message
+      quotaExceeded: false,
+      geminiCount: 0,
+      falCount: successCount,
+      usedFallback: false,
+      message: `Se generaron ${successCount}/${scenes.length} imágenes con FAL nano-banana.`
     });
   } catch (error: any) {
     console.error('Error en /generate-batch-with-multiple-faces:', error);
@@ -427,7 +353,7 @@ router.post('/generate-batch-with-multiple-faces', async (req: Request, res: Res
 });
 
 /**
- * Genera Master Character con Nano Banana
+ * Genera Master Character con FAL Nano Banana
  * Combina análisis facial + generación de personaje consistente
  */
 router.post('/generate-master-character', async (req: Request, res: Response) => {
@@ -448,7 +374,7 @@ router.post('/generate-master-character', async (req: Request, res: Response) =>
       });
     }
 
-    console.log(`🎭 Generando Master Character con Nano Banana`);
+    console.log(`🎭 Generando Master Character con FAL Nano Banana`);
     console.log(`📸 Referencias: ${referenceImagesBase64.length}`);
     console.log(`🎬 Estilo: ${directorStyle || 'default'}`);
     console.log(`📝 Prompt: ${prompt.substring(0, 100)}...`);
@@ -468,10 +394,10 @@ CRITICAL REQUIREMENTS:
 - Production-ready quality
 - 8K resolution clarity`;
 
-    // Generar con Nano Banana (gemini-2.5-flash-image) usando múltiples referencias
-    const result = await generateImageWithMultipleFaceReferences(
-      masterPrompt,
-      referenceImagesBase64
+    // Generar con FAL nano-banana/edit usando múltiples referencias
+    const result = await editImageWithNanoBanana(
+      referenceImagesBase64.slice(0, 3),
+      masterPrompt
     );
 
     if (!result.success) {
@@ -482,13 +408,13 @@ CRITICAL REQUIREMENTS:
       });
     }
 
-    console.log('✅ Master Character generado exitosamente con Nano Banana');
+    console.log('✅ Master Character generado exitosamente con FAL Nano Banana');
 
     return res.json({
       success: true,
       imageUrl: result.imageUrl,
       imageBase64: result.imageBase64,
-      provider: 'gemini-nano-banana'
+      provider: 'fal-nano-banana'
     });
 
   } catch (error: any) {
@@ -503,10 +429,7 @@ CRITICAL REQUIREMENTS:
 /**
  * POST /api/gemini/generate-image
  * Genera imagen para escena del timeline respetando el guión JSON y referencias faciales
- * Soporta:
- * - Prompts específicos de escena
- * - Múltiples referencias faciales para consistencia
- * - Contexto cinematográfico del director
+ * Ahora usa FAL nano-banana
  */
 router.post('/generate-image', async (req: Request, res: Response) => {
   try {
@@ -527,16 +450,16 @@ router.post('/generate-image', async (req: Request, res: Response) => {
       });
     }
 
-    console.log(`🎬 [Timeline] Generando imagen para escena ${sceneNumber || '?'}`);
+    console.log(`🎬 [Timeline] Generando imagen para escena ${sceneNumber || '?'} con FAL nano-banana`);
     console.log(`📝 Prompt: ${prompt.substring(0, 100)}...`);
 
-    // Si hay referencias faciales, usar generación con múltiples rostros para consistencia
+    // Si hay referencias faciales, usar edición para mantener consistencia
     if (referenceImages && Array.isArray(referenceImages) && referenceImages.length > 0) {
       console.log(`📸 Usando ${referenceImages.length} referencias faciales para consistencia`);
       
-      const result = await generateImageWithMultipleFaceReferences(
-        prompt,
-        referenceImages
+      const result = await editImageWithNanoBanana(
+        referenceImages.slice(0, 3),
+        prompt
       );
 
       if (result.success && result.imageUrl) {
@@ -545,7 +468,7 @@ router.post('/generate-image', async (req: Request, res: Response) => {
           success: true,
           imageUrl: result.imageUrl,
           imageBase64: result.imageBase64,
-          provider: 'gemini-with-faces',
+          provider: 'fal-nano-banana',
           sceneNumber
         });
       }
@@ -555,7 +478,7 @@ router.post('/generate-image', async (req: Request, res: Response) => {
     }
 
     // Generación simple (sin referencias o como fallback)
-    const result = await generateCinematicImage(prompt);
+    const result = await generateImageWithNanoBanana(prompt);
 
     if (!result.success) {
       return res.status(500).json({
@@ -570,7 +493,7 @@ router.post('/generate-image', async (req: Request, res: Response) => {
       success: true,
       imageUrl: result.imageUrl,
       imageBase64: result.imageBase64,
-      provider: 'gemini',
+      provider: 'fal-nano-banana',
       sceneNumber
     });
 
@@ -597,21 +520,25 @@ router.post('/generate-hollywood-poster', async (req: Request, res: Response) =>
       });
     }
 
-    if (!artistReferenceImages || !Array.isArray(artistReferenceImages) || artistReferenceImages.length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Se requieren imágenes de referencia del artista'
-      });
+    console.log(`🎬 Generando poster Hollywood con FAL nano-banana: "${conceptTitle}"`);
+
+    // Construir prompt para poster
+    const posterPrompt = `Hollywood movie poster for "${conceptTitle}": ${conceptDescription}. 
+    Directed by ${directorName || 'Director'}. 
+    Cinematic typography, dramatic lighting, professional movie poster composition, 
+    2:3 vertical aspect ratio, high quality, theatrical release style.`;
+
+    let result;
+    
+    if (artistReferenceImages && Array.isArray(artistReferenceImages) && artistReferenceImages.length > 0) {
+      result = await editImageWithNanoBanana(
+        artistReferenceImages.slice(0, 3),
+        posterPrompt,
+        { aspectRatio: '2:3' }
+      );
+    } else {
+      result = await generateImageWithNanoBanana(posterPrompt, { aspectRatio: '2:3' });
     }
-
-    console.log(`🎬 Generando poster Hollywood: "${conceptTitle}"`);
-
-    const result = await generateHollywoodStylePoster(
-      conceptTitle,
-      conceptDescription,
-      artistReferenceImages,
-      directorName || 'Director'
-    );
 
     if (!result.success) {
       return res.status(500).json({
@@ -624,7 +551,7 @@ router.post('/generate-hollywood-poster', async (req: Request, res: Response) =>
       success: true,
       imageUrl: result.imageUrl,
       imageBase64: result.imageBase64,
-      provider: result.provider
+      provider: 'fal-nano-banana'
     });
 
   } catch (error: any) {

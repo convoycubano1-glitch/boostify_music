@@ -1,12 +1,18 @@
 /**
  * Script para generar artistas aleatorios con metadata completa
  * y guardarlos en Firestore para su uso en otras herramientas
+ * Migrado a OpenAI para consistencia con el resto de la plataforma
  */
 
 import { db } from '../server/firebase';
 import { Timestamp } from 'firebase-admin/firestore';
 import { faker } from '@faker-js/faker';
-import axios from 'axios';
+import OpenAI from 'openai';
+
+// Cliente OpenAI para generación de texto
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY || '',
+});
 
 /**
  * Genera un ID único con prefijo
@@ -29,51 +35,44 @@ function generateRandomDuration(): string {
 }
 
 /**
- * Genera una descripción artística usando OpenRouter
+ * Genera una descripción artística usando OpenAI GPT-4o-mini
  * @param prompt El prompt para generar la descripción
  * @returns Descripción generada o descripción de fallback si hay error
  */
 async function generateAIDescription(prompt: string): Promise<string> {
   try {
-    const openRouterKey = process.env.VITE_OPENROUTER_API_KEY || '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';
+    const apiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
     
-    if (!openRouterKey) {
-      console.warn('No se encontró la API key de OpenRouter, usando descripción generada localmente');
+    if (!apiKey) {
+      console.warn('No se encontró la API key de OpenAI, usando descripción generada localmente');
       return '';
     }
     
-    const response = await axios.post(
-      'https://openrouter.ai/api/v1/chat/completions',
-      {
-        model: 'openai/gpt-3.5-turbo',
-        messages: [
-          {
-            role: 'system',
-            content: 'Eres un experto en describir artistas musicales con detalles físicos, estilísticos y de personalidad. Genera descripciones realistas, diversas y detalladas.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        max_tokens: 250
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${openRouterKey}`,
-          'Content-Type': 'application/json'
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'Eres un experto en describir artistas musicales con detalles físicos, estilísticos y de personalidad. Genera descripciones realistas, diversas y detalladas.'
+        },
+        {
+          role: 'user',
+          content: prompt
         }
-      }
-    );
+      ],
+      max_tokens: 300,
+      temperature: 0.8,
+    });
     
-    if (response.data && response.data.choices && response.data.choices.length > 0) {
-      return response.data.choices[0].message.content.trim();
+    const content = response.choices[0]?.message?.content?.trim();
+    if (content) {
+      return content;
     } else {
-      console.warn('Respuesta vacía de OpenRouter, usando descripción generada localmente');
+      console.warn('Respuesta vacía de OpenAI, usando descripción generada localmente');
       return '';
     }
   } catch (error) {
-    console.error('Error al generar descripción con OpenRouter:', error);
+    console.error('Error al generar descripción con OpenAI:', error);
     return '';
   }
 }
@@ -223,13 +222,13 @@ export async function generateRandomArtist() {
   const hairColor = faker.helpers.arrayElement(['negro', 'castaño oscuro', 'castaño claro', 'rubio', 'pelirrojo', 'gris', 'teñido de azul', 'teñido de verde', 'teñido de morado', 'teñido de rosa']);
   const bodyType = faker.helpers.arrayElement(['delgado', 'atlético', 'musculoso', 'robusto', 'curvilíneo']);
 
-  // Generar descripciones con OpenRouter para mayor diversidad
+  // Generar descripciones con OpenAI para mayor diversidad
   // Preparamos primero las descripciones locales como respaldo
   const defaultLookDescription = `${gender} ${age} de ${height}cm de altura con complexión ${bodyType}. Tiene ojos ${eyeColor}, piel ${skinTone} y ${facialFeatures.join(', ')}. Su cabello es ${hairColor} con estilo ${selectedHairStyle}. Suele lucir ${selectedAccessory} como accesorio distintivo. Viste con estilo ${selectedFashion} usando principalmente colores ${selectedColors.join(', ')} que reflejan su identidad musical. Su presencia escénica es ${faker.helpers.arrayElement(['magnética', 'intensa', 'relajada', 'enigmática', 'extravagante', 'minimalista'])}.`;
 
   const defaultBiography = `${artistName} es un${gender === 'Mujer' ? 'a' : ''} talentoso${gender === 'Mujer' ? 'a' : ''} artista de ${selectedGenres.join(', ')} originario${gender === 'Mujer' ? 'a' : ''} de ${faker.location.city()}, ${faker.location.country()}. Conocido${gender === 'Mujer' ? 'a' : ''} por sus composiciones únicas y su ${faker.helpers.arrayElement(['potente', 'melódica', 'emotiva', 'versátil', 'distintiva'])} voz, ha logrado cautivar audiencias en todo el mundo. Su música explora temas de ${faker.helpers.arrayElements(['amor', 'identidad', 'sociedad', 'política', 'naturaleza', 'tecnología', 'existencialismo', 'cultura urbana'], faker.number.int({ min: 1, max: 3 })).join(', ')}.`;
 
-  // Intentar generar descripciones con OpenRouter para mayor diversidad
+  // Intentar generar descripciones con OpenAI para mayor diversidad
   let detailedLookDescription = defaultLookDescription;
   let biography = defaultBiography;
   
@@ -261,7 +260,7 @@ Escribe en tercera persona, entre 100-150 palabras, destacando rasgos únicos y 
 Escribe en tercera persona, entre 100-150 palabras, destacando su historia personal, influencias, logros y estilo musical único. Usa un tono que refleje su género musical.`;
 
   try {
-    // Intentar obtener descripciones de OpenRouter
+    // Intentar obtener descripciones de OpenAI
     const lookDescriptionAI = await generateAIDescription(lookPrompt);
     const biographyAI = await generateAIDescription(bioPrompt);
     
@@ -274,7 +273,7 @@ Escribe en tercera persona, entre 100-150 palabras, destacando su historia perso
       biography = biographyAI;
     }
   } catch (error) {
-    console.warn('Error al generar descripciones con OpenRouter, usando descripciones locales.', error);
+    console.warn('Error al generar descripciones con OpenAI, usando descripciones locales.', error);
     // Mantenemos las descripciones por defecto
   }
 
@@ -285,6 +284,7 @@ Escribe en tercera persona, entre 100-150 palabras, destacando su historia perso
   const artistData = {
     id: generateId("ART"),
     name: artistName,
+    gender: gender === 'Mujer' ? 'female' : 'male', // Género del artista para voz (male/female)
     biography: biography,
     album: {
       id: generateId("ALB"),

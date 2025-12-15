@@ -1,24 +1,17 @@
 import express, { Request, Response } from 'express';
 import { authenticate } from '../middleware/auth';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 import { db } from '../db';
 import { users } from '@db/schema';
 import { eq } from 'drizzle-orm';
-import * as fal from '@fal-ai/serverless-client';
+import { generateImageWithNanoBanana } from '../services/fal-service';
 
 const router = express.Router();
 
-// Initialize Gemini AI
-const genAI = process.env.GEMINI_API_KEY 
-  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+// Initialize OpenAI
+const openai = process.env.OPENAI_API_KEY 
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
-
-// Configure FAL AI
-if (process.env.FAL_KEY) {
-  fal.config({
-    credentials: process.env.FAL_KEY
-  });
-}
 
 interface EPKData {
   // Basic Info
@@ -80,10 +73,10 @@ interface EPKData {
  */
 router.post('/generate', authenticate, async (req: Request, res: Response) => {
   try {
-    if (!genAI) {
+    if (!openai) {
       return res.status(503).json({ 
         success: false, 
-        message: 'Gemini AI no está configurado' 
+        message: 'OpenAI no está configurado' 
       });
     }
 
@@ -117,9 +110,7 @@ router.post('/generate', authenticate, async (req: Request, res: Response) => {
     
     console.log(`[EPK] Generando EPK para: ${artistName}`);
 
-    // 1. Generate enhanced biography content
-    const textModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    
+    // 1. Generate enhanced biography content with OpenAI GPT-4o
     const bioPrompt = `Eres un experto en crear EPKs (Electronic Press Kits) profesionales para artistas musicales.
 
 Información del artista:
@@ -156,8 +147,17 @@ Importante:
 - Si no hay biografía, crea una narrativa convincente basada en el género
 - Los logros deben ser creíbles para un artista emergente/independiente`;
 
-    const bioResult = await textModel.generateContent(bioPrompt);
-    const bioText = bioResult.response.text();
+    const bioResult = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: 'Eres un experto en crear EPKs profesionales para artistas musicales. Responde SOLO con JSON válido.' },
+        { role: 'user', content: bioPrompt }
+      ],
+      temperature: 0.7,
+      response_format: { type: 'json_object' }
+    });
+    
+    const bioText = bioResult.choices[0]?.message?.content || '{}';
     
     // Extract JSON from response (remove markdown code blocks if present)
     let generatedContent;
@@ -277,79 +277,40 @@ Importante:
       }
     ];
 
-    console.log('[EPK] 🍌 Generando imágenes profesionales con Gemini nano banana (gemini-2.5-flash-image)');
+    console.log('[EPK] 🍌 Generando imágenes profesionales con FAL nano-banana');
 
-    // Use Gemini nano banana for direct image generation
-    if (genAI) {
-      const nanoModel = genAI.getGenerativeModel({ 
-        model: 'gemini-2.5-flash-image' // nano banana - native image generation
-      });
+    // Use FAL nano-banana for image generation
+    for (const imagePrompt of imagePrompts) {
+      try {
+        console.log(`[EPK] 🖼️ Generando imagen con FAL nano-banana: ${imagePrompt.caption}`);
+        
+        // Generate image with FAL nano-banana service
+        const imageResult = await generateImageWithNanoBanana(imagePrompt.prompt, {
+          aspectRatio: '16:9', // Landscape format for press photos
+          numImages: 1,
+          outputFormat: 'png'
+        });
 
-      for (const imagePrompt of imagePrompts) {
-        try {
-          console.log(`[EPK] 🖼️ Generando imagen con nano banana: ${imagePrompt.caption}`);
-          
-          // Generate image directly with Gemini nano banana
-          const imageResult = await nanoModel.generateContent({
-            contents: [{
-              parts: [{ text: imagePrompt.prompt }]
-            }],
-            generationConfig: {
-              // @ts-ignore - imageConfig may not be in types yet
-              imageConfig: {
-                aspectRatio: '16:9' // Landscape format for press photos
-              }
-            }
-          });
-
-          // Extract image from response (Gemini returns inline_data with base64)
-          const response = imageResult.response;
-          let imageBase64: string | null = null;
-
-          if (response.candidates && response.candidates.length > 0) {
-            const parts = response.candidates[0].content.parts;
-            for (const part of parts) {
-              // @ts-ignore - inline_data may not be in types
-              if (part.inlineData) {
-                // @ts-ignore
-                imageBase64 = part.inlineData.data;
-                console.log(`[EPK] ✅ Imagen generada por nano banana: ${imagePrompt.caption}`);
-                break;
-              }
-            }
-          }
-
-          if (imageBase64) {
-            // Convert base64 to data URL
-            const imageDataUrl = `data:image/png;base64,${imageBase64}`;
-            pressPhotos.push({
-              url: imageDataUrl,
-              caption: imagePrompt.caption
-            });
-          } else {
-            throw new Error('nano banana no devolvió imagen en la respuesta');
-          }
-          
-          // Delay to avoid rate limits
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        } catch (imgError: any) {
-          console.error(`[EPK] ❌ Error generando con nano banana "${imagePrompt.caption}":`, imgError.message);
-          // Use reference image or profile image as fallback
+        if (imageResult.success && imageResult.imageUrl) {
+          console.log(`[EPK] ✅ Imagen generada por FAL nano-banana: ${imagePrompt.caption}`);
           pressPhotos.push({
-            url: referenceImageUrl || user.profileImage || user.coverImage || 'https://via.placeholder.com/1920x1080/667eea/ffffff?text=Press+Photo',
+            url: imageResult.imageUrl,
             caption: imagePrompt.caption
           });
+        } else {
+          throw new Error(imageResult.error || 'FAL nano-banana no devolvió imagen');
         }
-      }
-    } else {
-      console.log('[EPK] ⚠️ Gemini no disponible, usando imágenes existentes del perfil');
-      // Use existing profile images
-      imagePrompts.forEach(prompt => {
+        
+        // Delay to avoid rate limits
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } catch (imgError: any) {
+        console.error(`[EPK] ❌ Error generando con FAL nano-banana "${imagePrompt.caption}":`, imgError.message);
+        // Use reference image or profile image as fallback
         pressPhotos.push({
           url: referenceImageUrl || user.profileImage || user.coverImage || 'https://via.placeholder.com/1920x1080/667eea/ffffff?text=Press+Photo',
-          caption: prompt.caption
+          caption: imagePrompt.caption
         });
-      });
+      }
     }
 
     // 4. Build complete EPK data with all links

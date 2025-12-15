@@ -1,9 +1,9 @@
 /**
- * Rutas para perfil de artista con generación automática de Gemini + Nano Banana
+ * Rutas para perfil de artista con generación automática de OpenAI + FAL Nano Banana
  */
 import { Router, Request, Response } from 'express';
-import { generateCinematicImage, generateImageWithMultipleFaceReferences, generateImageWithFAL } from '../services/gemini-image-service';
-import { generateArtistBiography, type ArtistInfo } from '../services/gemini-profile-service';
+import { generateImageWithNanoBanana, editImageWithNanoBanana, generateMerchandiseImage } from '../services/fal-service';
+import { generateArtistBiography, type ArtistInfo } from '../services/openai-profile-service';
 import Stripe from 'stripe';
 import { db } from '../db';
 import { users } from '../db/schema';
@@ -16,7 +16,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 const router = Router();
 
 /**
- * Genera imagen de perfil de artista con Gemini 2.5 Flash Image (Nano Banana)
+ * Genera imagen de perfil de artista con FAL AI Nano Banana
  * Soporta imagen de referencia para preservar identidad facial
  */
 router.post('/generate-profile-image', async (req: Request, res: Response) => {
@@ -37,30 +37,21 @@ router.post('/generate-profile-image', async (req: Request, res: Response) => {
     High quality portrait photography, studio lighting, professional artist photograph, 
     centered composition, clean background, artistic and professional aesthetic.`;
     
-    console.log('🎨 Generating profile image with Gemini (with FAL AI fallback)...');
+    console.log('🎨 Generating profile image with FAL AI Nano Banana...');
     
     let result;
     
-    // Si hay imagen de referencia, usar generación con preservación facial
+    // Si hay imagen de referencia, usar edición con nano-banana
     if (referenceImage) {
       console.log('👤 Using reference image for facial consistency...');
-      const referenceImages = [referenceImage];
-      result = await generateImageWithMultipleFaceReferences(basePrompt, referenceImages);
-      
-      // Si Gemini falla por cuota, intentar con FAL AI
-      if (!result.success && (result as any).quotaError) {
-        console.log('⚠️ Gemini quota exceeded, trying FAL AI fallback...');
-        result = await generateImageWithFAL(basePrompt, referenceImages);
-      }
+      result = await editImageWithNanoBanana(
+        [referenceImage],
+        basePrompt,
+        { aspectRatio: '1:1' }
+      );
     } else {
       // Sin referencia, usar generación normal
-      result = await generateCinematicImage(basePrompt);
-      
-      // Si Gemini falla por cuota, intentar con FAL AI
-      if (!result.success && (result as any).quotaError) {
-        console.log('⚠️ Gemini quota exceeded, trying FAL AI fallback...');
-        result = await generateImageWithFAL(basePrompt, []);
-      }
+      result = await generateImageWithNanoBanana(basePrompt, { aspectRatio: '1:1' });
     }
     
     console.log('🎨 Profile image result:', { success: result.success, hasError: !!result.error, provider: result.provider });
@@ -78,7 +69,7 @@ router.post('/generate-profile-image', async (req: Request, res: Response) => {
 });
 
 /**
- * Genera imagen de banner/portada de artista con Gemini 2.5 Flash Image (Nano Banana)
+ * Genera imagen de banner/portada de artista con FAL AI Nano Banana
  * Soporta imagen de referencia para incluir al artista en el banner
  */
 router.post('/generate-banner-image', async (req: Request, res: Response) => {
@@ -100,30 +91,21 @@ router.post('/generate-banner-image', async (req: Request, res: Response) => {
     Wide format banner, 16:9 aspect ratio, cinematic lighting, professional music artist aesthetic, 
     vibrant colors, high quality photography, artistic and dynamic composition.`;
     
-    console.log('🎨 Generating banner image with Gemini (with FAL AI fallback)...');
+    console.log('🎨 Generating banner image with FAL AI Nano Banana...');
     
     let result;
     
-    // Si hay imagen de referencia, usar generación con preservación facial
+    // Si hay imagen de referencia, usar edición con nano-banana
     if (referenceImage) {
       console.log('👤 Using reference image for facial consistency in banner...');
-      const referenceImages = [referenceImage];
-      result = await generateImageWithMultipleFaceReferences(basePrompt, referenceImages);
-      
-      // Si Gemini falla por cuota, intentar con FAL AI
-      if (!result.success && (result as any).quotaError) {
-        console.log('⚠️ Gemini quota exceeded, trying FAL AI fallback...');
-        result = await generateImageWithFAL(basePrompt, referenceImages);
-      }
+      result = await editImageWithNanoBanana(
+        [referenceImage],
+        basePrompt,
+        { aspectRatio: '16:9' }
+      );
     } else {
       // Sin referencia, usar generación normal
-      result = await generateCinematicImage(basePrompt);
-      
-      // Si Gemini falla por cuota, intentar con FAL AI
-      if (!result.success && (result as any).quotaError) {
-        console.log('⚠️ Gemini quota exceeded, trying FAL AI fallback...');
-        result = await generateImageWithFAL(basePrompt, []);
-      }
+      result = await generateImageWithNanoBanana(basePrompt, { aspectRatio: '16:9' });
     }
     
     console.log('🎨 Banner image result:', { success: result.success, hasError: !!result.error, provider: result.provider });
@@ -141,7 +123,7 @@ router.post('/generate-banner-image', async (req: Request, res: Response) => {
 });
 
 /**
- * Genera biografía de artista con Gemini
+ * Genera biografía de artista con OpenAI
  */
 router.post('/generate-biography', async (req: Request, res: Response) => {
   try {
@@ -168,11 +150,12 @@ router.post('/generate-biography', async (req: Request, res: Response) => {
 });
 
 /**
- * Genera imagen de producto de merchandise con Gemini
+ * Genera imagen de producto de merchandise con FAL AI nano-banana/edit
+ * Usa la imagen del perfil del artista como base para coherencia visual
  */
 router.post('/generate-product-image', async (req: Request, res: Response) => {
   try {
-    const { productType, artistName, brandImage } = req.body;
+    const { productType, artistName, artistImageUrl, genre } = req.body;
     
     if (!productType) {
       return res.status(400).json({
@@ -181,35 +164,48 @@ router.post('/generate-product-image', async (req: Request, res: Response) => {
       });
     }
     
-    // Crear prompts específicos para productos de colaboración artista x Boostify
-    const productPrompts: Record<string, string> = {
-      'T-Shirt': `Premium collaboration merchandise: black cotton t-shirt with "${artistName} x Boostify" co-branded design, large artist name on front in bold typography, small orange Boostify logo on chest, modern streetwear aesthetic combining artist's style with orange and black color scheme, front view centered on pure white background, professional e-commerce photography, sharp focus, 4K quality`,
-      
-      'Hoodie': `High-end collaboration streetwear: oversized hoodie featuring "${artistName} x Boostify" branding, artist name prominently displayed on chest, Boostify logo on sleeve in vibrant orange, dark charcoal or black base color with orange accent details, hood up, kangaroo pocket visible, front facing view, isolated white background, studio lighting, commercial product shot, urban fashion collaboration aesthetic`,
-      
-      'Cap': `Professional headwear collaboration: premium snapback cap with "${artistName} x Boostify" embroidered on front panel, artist name as main focus with small Boostify logo integrated, black cap with vibrant orange bill and accents, 3/4 angle view showing curved brim and depth, white background, product photography lighting, ultra sharp details, limited edition collaboration piece`,
-      
-      'Poster': `Music collaboration poster design: framed concert poster featuring "${artistName} x Boostify" at top, bold modern typography combining artist's name with Boostify branding elements, vibrant orange and black color palette, dynamic graphic design with music industry aesthetic, artist's silhouette or abstract representation, 24x36 inches in black gallery frame on white wall, soft ambient lighting, centered composition, professional interior photography`,
-      
-      'Sticker Pack': `Collaboration merchandise flat lay: set of 10 premium vinyl stickers featuring "${artistName} x Boostify" designs, mix of artist name stickers and Boostify logo variations, vibrant orange, black and white color scheme, arranged in attractive grid pattern, matte finish quality, white background, overhead shot, crisp details, commercial photography, music lifestyle collaboration branding`,
-      
-      'Vinyl Record': `Limited edition collaboration vinyl: "${artistName} x Boostify" exclusive vinyl record with striking orange and black swirl pattern on disc, custom album artwork featuring both artist name and Boostify branding prominently, modern design combining artist's aesthetic with Boostify's orange/black identity, black sleeve with orange accents visible, record partially out of sleeve, white background, dramatic side lighting, audiophile quality presentation, collector's edition collaboration piece`
-    };
+    console.log(`🎨 Generating ${productType} product image with FAL AI nano-banana/edit...`);
+    console.log(`   Artist: ${artistName}`);
+    console.log(`   Artist Image: ${artistImageUrl ? artistImageUrl.substring(0, 50) + '...' : 'none'}`);
+    console.log(`   Genre: ${genre || 'Pop'}`);
     
-    const prompt = productPrompts[productType] || 
-      `Professional product photography: ${artistName} ${productType} merchandise, clean white background, e-commerce style, centered composition`;
+    // Usar generateMerchandiseImage que usa nano-banana/edit con la imagen del artista
+    const falResult = await generateMerchandiseImage(
+      artistName || 'Artist',
+      productType,
+      artistImageUrl || '',
+      genre || 'Pop'
+    );
     
-    console.log(`🎨 Generating ${productType} product image...`);
-    
-    let result = await generateCinematicImage(prompt);
-    
-    // Si Gemini falla, intentar con FAL AI
-    if (!result.success && (result as any).quotaError) {
-      console.log('⚠️ Gemini quota exceeded, trying FAL AI fallback...');
-      result = await generateImageWithFAL(prompt, []);
+    if (falResult.success && falResult.imageUrl) {
+      console.log(`✅ ${productType} image generated successfully with ${falResult.provider}`);
+      return res.json({
+        success: true,
+        imageUrl: falResult.imageUrl,
+        provider: falResult.provider
+      });
     }
     
-    return res.json(result);
+    // Fallback a flux/schnell sin imagen de artista
+    console.log('⚠️ nano-banana/edit failed, trying flux/schnell fallback...');
+    const fallbackResult = await generateImageWithNanoBanana(
+      `Professional product photo of ${artistName} ${productType} merchandise. Orange and black branding. White background, 4K quality.`
+    );
+    
+    if (fallbackResult.success && fallbackResult.imageUrl) {
+      return res.json({
+        success: true,
+        imageUrl: fallbackResult.imageUrl,
+        provider: 'fal-flux-schnell-fallback'
+      });
+    }
+    
+    // All FAL fallbacks failed - return error
+    console.log('❌ All image generation attempts failed');
+    return res.status(500).json({
+      success: false,
+      error: 'All image generation attempts failed'
+    });
   } catch (error: any) {
     console.error('Error generating product image:', error);
     return res.status(500).json({
@@ -336,15 +332,15 @@ router.post('/generate-missing-images', async (req: Request, res: Response) => {
         const genre = artist.genres?.[0] || 'music';
         const biography = artist.biography || 'Professional musician';
         
-        // Generar imagen de perfil
+        // Generar imagen de perfil con FAL nano-banana
         const profilePrompt = `Professional artist profile photo: ${artist.artistName}, ${genre} artist. Modern, professional headshot with artistic lighting. Biography: ${biography.substring(0, 200)}. High quality portrait photography, studio lighting, professional artist photograph, centered composition, clean background, artistic and professional aesthetic.`;
         
-        const profileResult = await generateCinematicImage(profilePrompt);
+        const profileResult = await generateImageWithNanoBanana(profilePrompt, { aspectRatio: '1:1' });
         
-        // Generar imagen de banner
+        // Generar imagen de banner con FAL nano-banana
         const bannerPrompt = `Professional artist banner cover image: ${artist.artistName}, ${genre} artist. Cinematic, wide-angle composition. Biography: ${biography.substring(0, 200)}. Wide format banner, 16:9 aspect ratio, cinematic lighting, professional music artist aesthetic, vibrant colors, high quality photography, artistic and dynamic composition.`;
         
-        const bannerResult = await generateCinematicImage(bannerPrompt);
+        const bannerResult = await generateImageWithNanoBanana(bannerPrompt, { aspectRatio: '16:9' });
         
         if (profileResult.success && profileResult.imageUrl && bannerResult.success && bannerResult.imageUrl) {
           // Guardar URLs en PostgreSQL

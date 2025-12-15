@@ -1,15 +1,40 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
 import { polygon, polygonMumbai } from 'wagmi/chains';
 
-export const wagmiConfig = getDefaultConfig({
-  appName: 'Boostify Music',
-  projectId: 'd66803c6-d493-438d-b9d8-2c4637eb1868',
-  chains: [
-    polygon,
-    polygonMumbai,
-  ],
-  ssr: false,
-});
+// WalletConnect Project ID - debe ser válido de https://cloud.walletconnect.com
+// Si el proyecto da error 403, significa que el projectId no está registrado o expiró
+const WALLETCONNECT_PROJECT_ID = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'demo-project-id';
+
+let wagmiConfigInstance: ReturnType<typeof getDefaultConfig> | null = null;
+
+export function getWagmiConfig() {
+  if (!wagmiConfigInstance) {
+    try {
+      wagmiConfigInstance = getDefaultConfig({
+        appName: 'Boostify Music',
+        projectId: WALLETCONNECT_PROJECT_ID,
+        chains: [
+          polygon,
+          polygonMumbai,
+        ],
+        ssr: false,
+      });
+    } catch (error) {
+      console.error('[Web3Config] Error initializing wagmi config:', error);
+      // Crear config mínima sin WalletConnect
+      wagmiConfigInstance = getDefaultConfig({
+        appName: 'Boostify Music',
+        projectId: 'demo',
+        chains: [polygon],
+        ssr: false,
+      });
+    }
+  }
+  return wagmiConfigInstance;
+}
+
+// Para compatibilidad con código existente
+export const wagmiConfig = getWagmiConfig();
 
 export const BOOSTIFY_CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000';
 

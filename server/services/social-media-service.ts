@@ -1,11 +1,12 @@
 /**
  * Social Media Content Generator Service
- * Genera contenido viral para Facebook, Instagram y TikTok usando Gemini
+ * Genera contenido viral para Facebook, Instagram y TikTok usando OpenAI
+ * Migrado de Gemini a OpenAI para mayor eficiencia
  */
-import { GoogleGenAI } from "@google/genai";
+import OpenAI from 'openai';
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY || "",
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY || '',
 });
 
 export interface SocialMediaPost {
@@ -90,19 +91,21 @@ REQUISITOS:
 
 Genera los 3 posts ahora en formato JSON válido:`;
 
-    console.log('🎬 Generating social media content with Gemini...');
+    console.log('🎬 Generating social media content with OpenAI GPT-4o-mini...');
 
     const response = await Promise.race([
-      ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
+      openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 2000,
+        temperature: 0.8,
       }),
       new Promise<never>((_, reject) => 
         setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
       )
     ]);
 
-    const responseText = response.text?.trim() || "";
+    const responseText = response.choices[0]?.message?.content?.trim() || "";
     
     if (!responseText) {
       throw new Error('No content generated');

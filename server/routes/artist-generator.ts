@@ -2,15 +2,26 @@
  * Rutas para la generación de artistas aleatorios
  */
 import { Router, Request, Response } from 'express';
-import { isAuthenticated } from '../replitAuth';
+import { isAuthenticated } from '../middleware/clerk-auth';
 import { generateRandomArtist } from '../../scripts/generate-random-artist';
 import { db } from '../firebase';
 import { Timestamp, DocumentData } from 'firebase-admin/firestore';
 import { db as pgDb } from '../../db';
 import { users, artistNews, songs, tokenizedSongs } from '../../db/schema';
 import { eq, desc } from 'drizzle-orm';
-import { generateCinematicImage, generateImageWithFaceReference } from '../services/gemini-image-service';
-import { GoogleGenAI } from "@google/genai";
+// FAL AI Nano Banana para imágenes y MiniMax Music para audio
+import { 
+  generateImageWithNanoBanana, 
+  generateImageWithFaceReference as generateImageWithFaceReferenceFAL,
+  generateMusicWithMiniMax,
+  generateArtistSongWithFAL,
+  generateArtistMerchandise
+} from '../services/fal-service';
+// OpenAI para generación de texto
+import OpenAI from "openai";
+
+// Cliente OpenAI para generación de texto
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 import { NotificationTemplates } from '../utils/notifications';
 import { generateSocialMediaContent } from '../services/social-media-service';
 import axios from 'axios';
@@ -40,19 +51,38 @@ async function downloadImageAsBase64(imageUrl: string): Promise<string | null> {
  */
 router.get("/my-artists", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.id;
+    const clerkUserId = req.user?.id;
     
-    if (!userId) {
+    if (!clerkUserId) {
       return res.status(401).json({ 
         error: 'Usuario no autenticado' 
       });
     }
 
-    console.log(`🎨 Obteniendo todos los artistas del usuario ${userId}`);
+    console.log(`🎨 Obteniendo todos los artistas del usuario Clerk: ${clerkUserId}`);
+
+    // Primero, obtener el ID de PostgreSQL del usuario basado en su clerkId
+    const userRecord = await pgDb
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.clerkId, clerkUserId))
+      .limit(1);
+
+    if (userRecord.length === 0) {
+      console.log(`⚠️ Usuario con clerkId ${clerkUserId} no encontrado en PostgreSQL`);
+      return res.status(200).json({
+        success: true,
+        count: 0,
+        artists: []
+      });
+    }
+
+    const pgUserId = userRecord[0].id;
+    console.log(`📍 Usuario PostgreSQL ID: ${pgUserId} para Clerk ID: ${clerkUserId}`);
 
     // Obtener artistas de PostgreSQL
-    // 1. Su propio perfil (id = userId AND role = 'artist')
-    // 2. Artistas generados por IA (generatedBy = userId)
+    // 1. Su propio perfil (id = pgUserId AND role = 'artist')
+    // 2. Artistas generados por IA (generatedBy = pgUserId)
     const { or } = await import('drizzle-orm');
     
     const artistsFromPg = await pgDb
@@ -60,8 +90,8 @@ router.get("/my-artists", isAuthenticated, async (req: Request, res: Response) =
       .from(users)
       .where(
         or(
-          eq(users.id, userId),          // Su propio perfil
-          eq(users.generatedBy, userId)   // Artistas generados por IA
+          eq(users.id, pgUserId),          // Su propio perfil
+          eq(users.generatedBy, pgUserId)   // Artistas generados por IA
         )
       );
 
@@ -153,8 +183,25 @@ async function saveArtistToFirestore(artistData: any): Promise<string> {
  * @param userId ID del usuario creador (opcional)
  * @returns ID del usuario creado en PostgreSQL
  */
-async function saveArtistToPostgreSQL(artistData: any, firestoreId: string, userId?: string): Promise<number> {
+async function saveArtistToPostgreSQL(artistData: any, firestoreId: string, clerkUserId?: string): Promise<number> {
   try {
+    // Obtener el ID de PostgreSQL del usuario basado en su clerkId
+    let postgresUserId: number | null = null;
+    if (clerkUserId) {
+      const userRecord = await pgDb
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.clerkId, clerkUserId))
+        .limit(1);
+      
+      if (userRecord.length > 0) {
+        postgresUserId = userRecord[0].id;
+        console.log(`📍 Usuario PostgreSQL ID: ${postgresUserId} para Clerk ID: ${clerkUserId}`);
+      } else {
+        console.log(`⚠️ No se encontró usuario con Clerk ID: ${clerkUserId}`);
+      }
+    }
+
     // Generar slug único
     let slug = generateSlug(artistData.name);
     let attempt = 0;
@@ -190,7 +237,7 @@ async function saveArtistToPostgreSQL(artistData: any, firestoreId: string, user
       // Virtual Record Label fields
       firestoreId,
       isAIGenerated: true,
-      generatedBy: userId ? parseInt(userId) : null,
+      generatedBy: postgresUserId,
       recordLabelId: null
     };
 
@@ -216,25 +263,74 @@ router.post("/generate-artist", async (req: Request, res: Response) => {
     const artistData = await generateRandomArtist();
     console.log('Artista generado exitosamente:', artistData.name);
 
+    // 🖼️ GENERAR IMÁGENES DEL ARTISTA CON FAL AI NANO BANANA PRO
+    console.log('🖼️ Generando imágenes del artista con FAL AI Nano Banana Pro...');
+    let profileImageUrl = artistData.look?.profile_url || '';
+    let coverImageUrl = artistData.look?.cover_url || '';
+
+    try {
+      const { generateArtistImagesWithFAL } = await import('../services/fal-service');
+      const artistDescription = artistData.look?.description || `${artistData.name}, professional music artist`;
+      const genre = artistData.music_genres?.[0] || 'pop';
+      
+      const imageResult = await generateArtistImagesWithFAL(artistDescription, artistData.name, genre);
+      profileImageUrl = imageResult.profileUrl;
+      coverImageUrl = imageResult.coverUrl;
+      
+      // Actualizar artistData con las imágenes generadas
+      if (artistData.look) {
+        artistData.look.profile_url = profileImageUrl;
+        artistData.look.cover_url = coverImageUrl;
+      }
+      
+      console.log(`✅ Imágenes generadas con FAL AI`);
+    } catch (imageError) {
+      console.error('⚠️ Error generando imágenes:', imageError);
+      profileImageUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(artistData.name)}&size=400&background=random`;
+      coverImageUrl = `https://picsum.photos/seed/${artistData.name}/1200/400`;
+    }
+
+    // Actualizar artistData con las imágenes
+    const artistDataWithImages = {
+      ...artistData,
+      look: {
+        ...artistData.look,
+        profile_url: profileImageUrl,
+        cover_url: coverImageUrl
+      }
+    };
+
     // Guardar artista en Firestore
-    const firestoreId = await saveArtistToFirestore(artistData);
+    const firestoreId = await saveArtistToFirestore(artistDataWithImages);
     console.log(`Artista guardado en Firestore con ID: ${firestoreId}`);
 
     // NUEVO: Guardar artista en PostgreSQL
-    const postgresId = await saveArtistToPostgreSQL(artistData, firestoreId);
+    const postgresId = await saveArtistToPostgreSQL(artistDataWithImages, firestoreId);
     console.log(`Artista guardado en PostgreSQL con ID: ${postgresId}`);
+
+    // Actualizar PostgreSQL con las imágenes
+    await pgDb.update(users)
+      .set({
+        profileImage: profileImageUrl,
+        coverImage: coverImageUrl
+      })
+      .where(eq(users.id, postgresId));
 
     // Actualizar Firestore con el ID de PostgreSQL
     await db.collection('generated_artists').doc(firestoreId).update({ 
       firestoreId,
-      postgresId
+      postgresId,
+      'look.profile_url': profileImageUrl,
+      'look.cover_url': coverImageUrl
     });
 
     // Añadir los IDs al objeto de artista
     const completeArtistData = {
-      ...artistData,
+      ...artistDataWithImages,
       firestoreId,
-      postgresId
+      postgresId,
+      profileImage: profileImageUrl,
+      coverImage: coverImageUrl
     };
 
     // Devolver respuesta con datos completos del artista
@@ -315,33 +411,226 @@ router.post("/create-manual", isAuthenticated, async (req: Request, res: Respons
 });
 
 /**
- * Genera 10 canciones tokenizadas automáticas para un artista
- * NUEVO: Guarda en PostgreSQL Y en Firestore para sincronización
+ * Genera un título creativo para una canción basado en el contexto del artista
  */
-async function generateTokenizedSongs(artistId: number, artistName: string, genre: string, firebaseUid: string, artistFirestoreId: string): Promise<number[]> {
-  const songTitles = [
-    `${artistName} - Main Single`,
-    `${artistName} - Remix Version`,
-    `${artistName} - Acoustic Edition`,
-    `${artistName} - Featuring Remix`,
-    `${artistName} - Live Performance`,
-    `${artistName} - Studio Session`,
-    `${artistName} - Collaboration`,
-    `${artistName} - Deep Cut`,
-    `${artistName} - Fan Favorite`,
-    `${artistName} - Unreleased Track`
+function generateCreativeSongTitle(artistName: string, genre: string, mood: string): string {
+  const titleTemplates: Record<string, string[]> = {
+    'pop': ['Neon Dreams', 'Heartbeat', 'Electric Love', 'Midnight Dance', 'Golden Hour', 'Infinite', 'Stardust', 'Wildfire'],
+    'hip-hop': ['Crown Me', 'No Cap', 'Real Talk', 'Stack It Up', 'Zone', 'Drip', 'Legacy', 'Grind Mode'],
+    'rap': ['Bars on Fire', 'Untouchable', 'Flow State', 'King Shit', 'Never Fold', 'Run It', 'Boss Move', 'Street Dreams'],
+    'electronic': ['Synthwave', 'Drop Zone', 'Neon Nights', 'Bass Drop', 'Electric Feel', 'Pulse', 'Euphoria', 'Rave On'],
+    'rock': ['Thunder', 'Breaking Free', 'Rise Up', 'Burning Bright', 'Wild Heart', 'Louder', 'Unbreakable', 'Fire Inside'],
+    'indie': ['Autumn Leaves', 'Quiet Storm', 'Fading Light', 'Paper Moon', 'Soft Glow', 'Daydream', 'Whispers', 'Gentle Rain'],
+    'r&b': ['Silk', 'Midnight Hour', 'Body Talk', 'Sweet Escape', 'After Dark', 'Vibe', 'Slow Motion', 'Chemistry'],
+    'latin': ['Fuego', 'Caliente', 'Ritmo', 'Bailar', 'Tropical Heat', 'Sabor', 'Noche Loca', 'Amor Eterno'],
+    'reggaeton': ['Perreo', 'Flow Latino', 'Dembow', 'Gasolina', 'Calor', 'Bellaqueo', 'Movimiento', 'La Disco']
+  };
+  
+  const moodPrefixes: Record<string, string[]> = {
+    'energetic': ['High Energy', 'Electric', 'Fire', 'Explosive'],
+    'mellow': ['Soft', 'Gentle', 'Calm', 'Peaceful'],
+    'upbeat': ['Happy', 'Bright', 'Sunny', 'Joyful'],
+    'dark': ['Shadow', 'Midnight', 'Dark', 'Deep'],
+    'romantic': ['Love', 'Heart', 'Forever', 'Passion']
+  };
+  
+  const genreTitles = titleTemplates[genre.toLowerCase()] || titleTemplates['pop'];
+  const randomTitle = genreTitles[Math.floor(Math.random() * genreTitles.length)];
+  
+  // A veces añadir prefijo de mood
+  if (Math.random() > 0.6) {
+    const prefixes = moodPrefixes[mood] || moodPrefixes['energetic'];
+    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    return `${prefix} ${randomTitle}`;
+  }
+  
+  return randomTitle;
+}
+
+/**
+ * Endpoint para generar una sola canción con IA
+ * USA FAL AI MiniMax Music V2 para generar audio real con voces
+ * Si no se proporciona título, genera uno automáticamente basado en el contexto del artista
+ */
+router.post("/generate-single-song", async (req: Request, res: Response) => {
+  try {
+    const { artistName, songTitle, genre, mood, artistId, artistGender, artistBio } = req.body;
+    
+    if (!artistId) {
+      return res.status(400).json({ 
+        error: 'artistId es requerido' 
+      });
+    }
+    
+    const finalGenre = genre || 'pop';
+    const finalMood = mood || 'energetic';
+    const finalArtistName = artistName || 'Artist';
+    const finalGender = artistGender || 'male';
+    
+    // Si no hay título, generar uno creativo basado en el contexto
+    const finalSongTitle = songTitle?.trim() || generateCreativeSongTitle(finalArtistName, finalGenre, finalMood);
+    
+    console.log(`🎵 Generando canción: "${finalSongTitle}" para ${finalArtistName} (${finalGenre}/${finalMood})`);
+    
+    // Generar canción con FAL AI MiniMax Music V2
+    let audioUrl = '';
+    let lyrics = '';
+    
+    try {
+      console.log(`🎵 Llamando a FAL AI para generar: ${finalSongTitle} (${finalMood} ${finalGenre})`);
+      
+      const musicResult = await generateArtistSongWithFAL(
+        finalArtistName, 
+        finalSongTitle, 
+        finalGenre, 
+        finalMood, 
+        finalGender
+      );
+      
+      if (musicResult.success && musicResult.audioUrl) {
+        audioUrl = musicResult.audioUrl;
+        lyrics = musicResult.lyrics || '';
+        console.log(`✅ Canción generada: ${audioUrl.substring(0, 60)}...`);
+      } else {
+        console.warn(`⚠️ No se pudo generar canción: ${musicResult.error}`);
+        return res.status(500).json({ 
+          error: 'No se pudo generar la canción',
+          details: musicResult.error
+        });
+      }
+    } catch (musicError) {
+      console.error('❌ Error generando música con FAL:', musicError);
+      return res.status(500).json({ 
+        error: 'Error al generar música',
+        details: musicError instanceof Error ? musicError.message : 'Error desconocido'
+      });
+    }
+    
+    // Guardar canción en Firestore
+    try {
+      const songDoc = await db.collection('songs').add({
+        userId: artistId, // artistId aquí es el firestoreId del artista
+        artistId: artistId,
+        artistName: finalArtistName,
+        name: finalSongTitle,
+        title: finalSongTitle,
+        audioUrl: audioUrl,
+        genre: finalGenre,
+        mood: finalMood,
+        lyrics: lyrics,
+        artistGender: finalGender,
+        isPublished: true,
+        generatedWithAI: true,
+        aiProvider: 'fal-minimax-music-v2',
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      });
+      
+      console.log(`✅ Canción guardada en Firestore con ID: ${songDoc.id}`);
+      
+      res.status(200).json({
+        success: true,
+        song: {
+          id: songDoc.id,
+          title: finalSongTitle,
+          audioUrl: audioUrl,
+          lyrics: lyrics,
+          genre: finalGenre,
+          mood: finalMood,
+          artistName: finalArtistName
+        }
+      });
+    } catch (firestoreError) {
+      console.error('❌ Error guardando en Firestore:', firestoreError);
+      // Aún devolver éxito si el audio se generó
+      res.status(200).json({
+        success: true,
+        warning: 'Audio generado pero error al guardar en base de datos',
+        song: {
+          title: finalSongTitle,
+          audioUrl: audioUrl,
+          lyrics: lyrics,
+          artistName: finalArtistName
+        }
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error en generate-single-song:', error);
+    res.status(500).json({ 
+      error: 'Error al generar canción',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+/**
+ * Genera 3 canciones tokenizadas automáticas para un artista
+ * USA FAL AI MiniMax Music V2 para generar audio real con voces y letras
+ * Guarda en PostgreSQL Y en Firestore para sincronización
+ */
+async function generateTokenizedSongs(
+  artistId: number, 
+  artistName: string, 
+  genre: string, 
+  songOwnerId: string, // ID que se usará como userId en Firestore (usar postgresId para artistas generados)
+  artistFirestoreId: string,
+  artistGender: 'male' | 'female' = 'male'
+): Promise<number[]> {
+  // Solo 3 canciones para reducir costos y tiempo
+  const songConfigs = [
+    { title: `${artistName} - Main Single`, mood: 'energetic' },
+    { title: `${artistName} - Acoustic Edition`, mood: 'mellow' },
+    { title: `${artistName} - Club Mix`, mood: 'upbeat' },
   ];
 
   const tokenIds: number[] = [];
 
-  for (let i = 0; i < 10; i++) {
+  console.log(`🎵 Generando ${songConfigs.length} canciones para ${artistName} (${artistGender}) con FAL AI MiniMax Music V2...`);
+
+  for (let i = 0; i < songConfigs.length; i++) {
+    const { title, mood } = songConfigs[i];
+    let audioUrl = '';
+    let lyrics = '';
+
+    // 🎵 Generar audio real con FAL AI MiniMax Music V2 (con voces y letras)
+    try {
+      console.log(`🎵 Generando canción ${i + 1}/${songConfigs.length}: ${title} (Voz: ${artistGender})...`);
+      
+      // Pasar artistGender para generar voz correcta
+      const musicResult = await generateArtistSongWithFAL(artistName, title, genre, mood, artistGender);
+      
+      if (musicResult.success && musicResult.audioUrl) {
+        audioUrl = musicResult.audioUrl;
+        lyrics = musicResult.lyrics || '';
+        console.log(`✅ Canción generada con voces: ${audioUrl.substring(0, 60)}...`);
+        if (lyrics) {
+          console.log(`✅ Letras generadas: ${lyrics.substring(0, 100)}...`);
+        }
+      } else {
+        console.warn(`⚠️ No se pudo generar canción para ${title}: ${musicResult.error}`);
+        // Usar placeholder si falla
+        audioUrl = `https://storage.googleapis.com/boostify-music/samples/placeholder-${genre}.mp3`;
+      }
+
+      // Pausa de 5 segundos para evitar rate limiting
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    } catch (musicError) {
+      console.error(`❌ Error generando música para ${title}:`, musicError);
+      audioUrl = `https://storage.googleapis.com/boostify-music/samples/placeholder-${genre}.mp3`;
+    }
+
+    // Guardar en PostgreSQL con letras y metadatos de AI
     const [song] = await pgDb.insert(songs).values({
       userId: artistId,
-      title: songTitles[i],
-      description: `Tokenized song by ${artistName}`,
-      audioUrl: `ipfs://QmHash${Math.random().toString(36).substring(7)}`,
-      duration: `${180 + Math.random() * 120}`,
+      title: title,
+      description: `Tokenized song by ${artistName} - ${mood} ${genre} track`,
+      audioUrl: audioUrl,
       genre: genre,
+      mood: mood,
+      lyrics: lyrics,
+      artistGender: artistGender,
+      generatedWithAI: true,
+      aiProvider: 'fal-minimax-music-v2',
       isPublished: true
     }).returning({ id: songs.id });
 
@@ -350,7 +639,7 @@ async function generateTokenizedSongs(artistId: number, artistName: string, genr
 
     const [tokenizedSong] = await pgDb.insert(tokenizedSongs).values({
       artistId,
-      songName: songTitles[i],
+      songName: title,
       tokenId: tokenId,
       tokenSymbol: tokenSymbol,
       totalSupply: 1000,
@@ -360,36 +649,41 @@ async function generateTokenizedSongs(artistId: number, artistName: string, genr
       royaltyPercentagePlatform: 20,
       contractAddress: `0x${Math.random().toString(16).substring(2).padEnd(40, '0')}`,
       metadataUri: `ipfs://QmMeta${Math.random().toString(36).substring(7)}`,
-      description: `Tokenized music by ${artistName}`,
+      description: `Tokenized ${mood} ${genre} music by ${artistName}`,
       benefits: ['Exclusive Access', 'Revenue Share', 'Creator Rights'],
       isActive: true
     }).returning({ id: tokenizedSongs.id });
 
-    // 🔥 NUEVO: Guardar también en Firestore para sincronización
+    // 🔥 Guardar también en Firestore para sincronización (con letras)
     try {
       await db.collection('songs').add({
-        userId: firebaseUid,
+        userId: songOwnerId, // Usar songOwnerId (postgresId) para que el cliente encuentre las canciones
         artistId: artistFirestoreId,
-        name: songTitles[i],
-        title: songTitles[i],
-        audioUrl: `ipfs://QmHash${Math.random().toString(36).substring(7)}`,
-        duration: 180 + Math.random() * 120,
+        name: title,
+        title: title,
+        audioUrl: audioUrl, // URL real del audio generado
         genre: genre,
+        mood: mood,
+        lyrics: lyrics, // Letras generadas por AI
+        artistGender: artistGender,
         tokenId: tokenId,
         tokenSymbol: tokenSymbol,
         isPublished: true,
+        generatedWithAI: true,
+        aiProvider: 'fal-minimax-music-v2',
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now()
       });
-      console.log(`✅ Canción sincronizada a Firestore #${i + 1}: ${songTitles[i]}`);
+      console.log(`✅ Canción sincronizada a Firestore #${i + 1}: ${title}`);
     } catch (firebaseError) {
       console.warn(`⚠️ Error guardando en Firestore:`, firebaseError);
     }
 
     tokenIds.push(tokenId);
-    console.log(`✅ Creada canción tokenizada #${i + 1}: ${songTitles[i]} (Token ID: ${tokenId})`);
+    console.log(`✅ Creada canción tokenizada #${i + 1}: ${title} (Token ID: ${tokenId})`);
   }
 
+  console.log(`🎵 Generación de canciones completada: ${tokenIds.length} canciones creadas`);
   return tokenIds;
 }
 
@@ -451,10 +745,44 @@ router.post("/generate-artist/secure", isAuthenticated, async (req: Request, res
     const artistData = await generateRandomArtist();
     console.log('🎨 Artista generado exitosamente:', artistData.name);
 
+    // 🖼️ GENERAR IMÁGENES DEL ARTISTA CON FAL AI NANO BANANA PRO
+    console.log('🖼️ Generando imágenes del artista con FAL AI Nano Banana Pro...');
+    let profileImageUrl = artistData.look?.profile_url || '';
+    let coverImageUrl = artistData.look?.cover_url || '';
+
+    try {
+      const { generateArtistImagesWithFAL } = await import('../services/fal-service');
+      const artistDescription = artistData.look?.description || `${artistData.name}, professional music artist`;
+      const genre = artistData.music_genres?.[0] || 'pop';
+      
+      const imageResult = await generateArtistImagesWithFAL(artistDescription, artistData.name, genre);
+      profileImageUrl = imageResult.profileUrl;
+      coverImageUrl = imageResult.coverUrl;
+      
+      // Actualizar artistData con las imágenes generadas
+      if (artistData.look) {
+        artistData.look.profile_url = profileImageUrl;
+        artistData.look.cover_url = coverImageUrl;
+      }
+      
+      console.log(`✅ Imágenes generadas - Perfil: ${profileImageUrl.substring(0, 60)}...`);
+      console.log(`✅ Imágenes generadas - Portada: ${coverImageUrl.substring(0, 60)}...`);
+    } catch (imageError) {
+      console.error('⚠️ Error generando imágenes, continuando sin ellas:', imageError);
+      // Usar placeholders si falla la generación
+      profileImageUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(artistData.name)}&size=400&background=random`;
+      coverImageUrl = `https://picsum.photos/seed/${artistData.name}/1200/400`;
+    }
+
     // Guardar artista en Firestore, incluyendo referencia al usuario que lo generó
     const artistDataWithUser = {
       ...artistData,
-      generatedBy: userId
+      generatedBy: userId,
+      look: {
+        ...artistData.look,
+        profile_url: profileImageUrl,
+        cover_url: coverImageUrl
+      }
     };
 
     const firestoreId = await saveArtistToFirestore(artistDataWithUser);
@@ -464,16 +792,75 @@ router.post("/generate-artist/secure", isAuthenticated, async (req: Request, res
     const postgresId = await saveArtistToPostgreSQL(artistDataWithUser, firestoreId, userId);
     console.log(`✅ Artista guardado en PostgreSQL con ID: ${postgresId}`);
 
+    // Actualizar PostgreSQL con las imágenes
+    await pgDb.update(users)
+      .set({
+        profileImage: profileImageUrl,
+        coverImage: coverImageUrl
+      })
+      .where(eq(users.id, postgresId));
+
     // Actualizar Firestore con el ID de PostgreSQL
     await db.collection('generated_artists').doc(firestoreId).update({ 
       firestoreId,
-      postgresId
+      postgresId,
+      'look.profile_url': profileImageUrl,
+      'look.cover_url': coverImageUrl
     });
 
-    // 🎵 GENERAR 10 CANCIONES TOKENIZADAS AUTOMÁTICAMENTE
-    console.log('🎵 Generando 10 canciones tokenizadas...');
-    const tokenIds = await generateTokenizedSongs(postgresId, artistData.name, artistData.music_genres?.[0] || 'Pop', userId, firestoreId);
-    console.log(`✅ ${tokenIds.length} canciones tokenizadas creadas y sincronizadas a Firestore`);
+    // 🎵 GENERAR 3 CANCIONES TOKENIZADAS CON AUDIO REAL Y VOCES (FAL AI MiniMax Music V2)
+    const artistGender = artistData.gender || 'male'; // Obtener género del artista
+    console.log(`🎵 Generando canciones tokenizadas con FAL AI MiniMax Music V2 (Voz: ${artistGender})...`);
+    // IMPORTANTE: Pasar postgresId como string para que las canciones se encuentren por el perfil del artista
+    const tokenIds = await generateTokenizedSongs(
+      postgresId, 
+      artistData.name, 
+      artistData.music_genres?.[0] || 'Pop', 
+      String(postgresId), // Usar postgresId para que el cliente encuentre las canciones por userId
+      firestoreId,
+      artistGender as 'male' | 'female'
+    );
+    console.log(`✅ ${tokenIds.length} canciones tokenizadas creadas con voces y letras`);
+
+    // �️ GENERAR 6 PRODUCTOS DE MERCHANDISE CON IA
+    console.log('🛍️ Generando 6 productos de merchandise con FAL AI...');
+    const merchandiseProducts = await generateArtistMerchandise(
+      artistData.name,
+      profileImageUrl,
+      artistData.music_genres?.[0] || 'Pop'
+    );
+    console.log(`✅ ${merchandiseProducts.length} productos de merchandise generados`);
+
+    // Guardar merchandise en Firestore (documento del artista)
+    await db.collection('generated_artists').doc(firestoreId).update({
+      merchandise: merchandiseProducts,
+      merchandiseGenerated: true,
+      merchandiseGeneratedAt: Timestamp.now()
+    });
+
+    // ✅ TAMBIÉN guardar cada producto en la colección 'merchandise' para que el frontend los encuentre
+    console.log('🛍️ Guardando productos en colección merchandise...');
+    for (const product of merchandiseProducts) {
+      const merchDoc = {
+        name: product.name,
+        description: `Official ${artistData.name} merchandise - ${product.type}`,
+        price: product.price,
+        imageUrl: product.imageUrl,
+        category: product.type === 'T-Shirt' || product.type === 'Hoodie' ? 'Apparel' : 
+                  product.type === 'Cap' || product.type === 'Sticker Pack' ? 'Accessories' :
+                  product.type === 'Poster' ? 'Art' : 'Music',
+        sizes: product.type === 'T-Shirt' || product.type === 'Hoodie' ? ['S', 'M', 'L', 'XL', 'XXL'] :
+               product.type === 'Cap' ? ['One Size'] :
+               product.type === 'Poster' ? ['18x24"', '24x36"'] :
+               product.type === 'Vinyl' ? ['12"'] : ['Standard'],
+        userId: postgresId, // Usar el ID de PostgreSQL para consistencia
+        artistName: artistData.name,
+        createdAt: Timestamp.now(),
+        generatedByAI: true
+      };
+      await db.collection('merchandise').add(merchDoc);
+    }
+    console.log(`✅ ${merchandiseProducts.length} productos guardados en colección merchandise`);
 
     // 📱 GENERAR CONTENIDO DE REDES SOCIALES AUTOMÁTICAMENTE
     console.log('📱 Generando contenido para redes sociales...');
@@ -486,17 +873,33 @@ router.post("/generate-artist/secure", isAuthenticated, async (req: Request, res
     // Devolver respuesta completa con todos los módulos activados
     res.status(200).json({
       success: true,
-      message: '✅ Artista creado con TODOS los módulos activados',
+      message: '✅ Artista creado con TODOS los módulos activados (imágenes + canciones + merchandise + social)',
       artist: {
         ...artistDataWithUser,
         firestoreId,
-        postgresId
+        postgresId,
+        profileImage: profileImageUrl,
+        coverImage: coverImageUrl
+      },
+      images: {
+        status: 'generated',
+        profileUrl: profileImageUrl,
+        coverUrl: coverImageUrl,
+        provider: 'fal-nano-banana-pro'
       },
       tokenization: {
         status: 'activated',
-        songsCreated: 10,
+        songsCreated: tokenIds.length,
         tokenIds: tokenIds,
+        audioGenerated: true,
+        provider: 'fal-minimax-music',
         ready_for_metamask_mint: true
+      },
+      merchandise: {
+        status: 'generated',
+        productsCreated: merchandiseProducts.length,
+        products: merchandiseProducts,
+        provider: 'fal-nano-banana-edit'
       },
       socialMedia: {
         status: socialContent.success ? 'generated' : 'pending',
@@ -671,7 +1074,7 @@ router.post("/regenerate-artist-field", async (req: Request, res: Response) => {
 router.delete("/delete-artist/:pgId", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const pgId = parseInt(req.params.pgId);
-    const userId = req.user?.id;
+    const clerkUserId = req.user?.id;
     
     console.log(`🗑️ Recibida solicitud para eliminar artista con PostgreSQL ID: ${pgId}`);
 
@@ -682,11 +1085,28 @@ router.delete("/delete-artist/:pgId", isAuthenticated, async (req: Request, res:
       });
     }
 
-    if (!userId) {
+    if (!clerkUserId) {
       return res.status(401).json({ 
         error: 'Usuario no autenticado' 
       });
     }
+
+    // Primero obtener el PostgreSQL ID del usuario autenticado desde su Clerk ID
+    const userRecord = await pgDb
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.clerkId, clerkUserId))
+      .limit(1);
+
+    if (userRecord.length === 0) {
+      console.log(`⚠️ Usuario con clerkId ${clerkUserId} no encontrado en PostgreSQL`);
+      return res.status(401).json({ 
+        error: 'Usuario no encontrado en la base de datos' 
+      });
+    }
+
+    const pgUserId = userRecord[0].id;
+    console.log(`📍 Usuario PostgreSQL ID: ${pgUserId} para Clerk ID: ${clerkUserId}`);
 
     // 1. Buscar el artista en PostgreSQL
     const [artist] = await pgDb
@@ -703,8 +1123,21 @@ router.delete("/delete-artist/:pgId", isAuthenticated, async (req: Request, res:
     }
 
     // 2. Verificar que el usuario tiene permiso para eliminar este artista
-    // Solo puede eliminar si es su propio perfil O si él lo generó
-    if (artist.id !== userId && artist.generatedBy !== userId) {
+    // Puede eliminar si:
+    // - Es su propio perfil (artist.id === pgUserId)
+    // - Él lo generó (artist.generatedBy === pgUserId)
+    // - Es un artista virtual generado por IA (role === 'virtual_artist' o isAIGenerated === true)
+    const isOwnProfile = artist.id === pgUserId;
+    const isGeneratedByUser = artist.generatedBy === pgUserId;
+    const isVirtualArtist = artist.role === 'virtual_artist' || artist.isAIGenerated === true;
+    
+    // Permitir eliminar si es el propio perfil, lo generó el usuario, o es un artista AI del usuario
+    const canDelete = isOwnProfile || isGeneratedByUser || (isVirtualArtist && artist.generatedBy === null);
+    
+    console.log(`🔐 Verificando permisos: pgUserId=${pgUserId}, artistId=${artist.id}, generatedBy=${artist.generatedBy}, role=${artist.role}, isAIGenerated=${artist.isAIGenerated}`);
+    console.log(`🔐 isOwnProfile=${isOwnProfile}, isGeneratedByUser=${isGeneratedByUser}, isVirtualArtist=${isVirtualArtist}, canDelete=${canDelete}`);
+    
+    if (!canDelete) {
       return res.status(403).json({
         error: 'No autorizado',
         details: 'No tienes permiso para eliminar este artista'
@@ -865,10 +1298,16 @@ router.post("/regenerate-artist-images", async (req: Request, res: Response) => 
             
             // Solo regenerar si NO tiene imágenes
             if (!data?.look?.profile_url || !data?.look?.cover_url) {
-              console.log(`🔄 Regenerando imágenes para: ${artist.artistName}`);
+              console.log(`🔄 Regenerando imágenes para: ${artist.artistName} con FAL AI Nano Banana Pro`);
               
               // Generar imágenes usando la descripción existente
-              const imageUrls = await generateArtistImages(data.look.description);
+              const artistGenres = artist.genres || ['pop'];
+              const genre = Array.isArray(artistGenres) ? artistGenres[0] : artistGenres;
+              const imageUrls = await generateArtistImages(
+                data.look.description, 
+                artist.artistName || 'Unknown Artist',
+                genre
+              );
               
               // Actualizar Firestore con las nuevas imágenes
               await db.collection('generated_artists').doc(artist.firestoreId).update({
@@ -988,13 +1427,26 @@ router.post("/sync-artist-images", async (req: Request, res: Response) => {
 router.put("/update-artist/:artistId", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const artistIdParam = req.params.artistId;
-    const userId = req.user?.id;
+    const clerkUserId = req.user?.id;
 
-    if (!userId) {
+    if (!clerkUserId) {
       return res.status(401).json({ error: 'Usuario no autenticado' });
     }
 
-    console.log(`📝 Actualizando artista ${artistIdParam} por usuario ${userId}`);
+    // Obtener el PostgreSQL ID del usuario autenticado desde su Clerk ID
+    const userRecord = await pgDb
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.clerkId, clerkUserId))
+      .limit(1);
+
+    if (userRecord.length === 0) {
+      console.log(`⚠️ Usuario con clerkId ${clerkUserId} no encontrado en PostgreSQL`);
+      return res.status(401).json({ error: 'Usuario no encontrado en la base de datos' });
+    }
+
+    const pgUserId = userRecord[0].id;
+    console.log(`📝 Actualizando artista ${artistIdParam} por usuario pgId=${pgUserId} (clerkId=${clerkUserId})`);
 
     const {
       displayName,
@@ -1030,8 +1482,18 @@ router.put("/update-artist/:artistId", isAuthenticated, async (req: Request, res
       return res.status(404).json({ error: 'Artista no encontrado' });
     }
 
-    // Verificar permisos: debe ser el mismo usuario o un artista generado por él
-    if (artist.id !== userId && artist.generatedBy !== userId) {
+    // Verificar permisos: debe ser el mismo usuario, un artista generado por él, o un artista virtual
+    const isOwnProfile = artist.id === pgUserId;
+    const isGeneratedByUser = artist.generatedBy === pgUserId;
+    const isVirtualArtist = artist.role === 'virtual_artist' || artist.isAIGenerated === true;
+    
+    console.log(`🔐 Verificando permisos edición: pgUserId=${pgUserId}, artistId=${artist.id}, generatedBy=${artist.generatedBy}, role=${artist.role}`);
+    console.log(`🔐 isOwnProfile=${isOwnProfile}, isGeneratedByUser=${isGeneratedByUser}, isVirtualArtist=${isVirtualArtist}`);
+    
+    // Permitir editar si es el propio perfil, lo generó el usuario, o es un artista AI
+    const canEdit = isOwnProfile || isGeneratedByUser || (isVirtualArtist && artist.generatedBy === null);
+    
+    if (!canEdit) {
       return res.status(403).json({ error: 'No tienes permiso para editar este artista' });
     }
 
@@ -1144,16 +1606,10 @@ router.post("/generate-news/:artistId", isAuthenticated, async (req: Request, re
     const location = artist.location || artist.country || 'international';
     const biography = artist.biography || 'Emerging artist';
 
-    const apiKeys = [
-      process.env.GEMINI_API_KEY,
-      process.env.GEMINI_API_KEY2
-    ].filter(key => key && key.length > 0);
-
-    if (apiKeys.length === 0) {
-      throw new Error('No hay API keys de Gemini configuradas');
+    // Verificar que OpenAI está configurado
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('No hay API key de OpenAI configurada');
     }
-
-    const geminiClient = new GoogleGenAI({ apiKey: apiKeys[0] || "" });
 
     const newsCategories = [
       {
@@ -1197,20 +1653,26 @@ router.post("/generate-news/:artistId", isAuthenticated, async (req: Request, re
     for (let i = 0; i < newsCategories.length; i++) {
       const { category, prompt } = newsCategories[i];
       
-      console.log(`📝 Generando noticia ${i + 1}/${newsCategories.length} (${category})...`);
+      console.log(`📝 Generando noticia ${i + 1}/${newsCategories.length} (${category}) con OpenAI...`);
 
       try {
-        const textResponse = await geminiClient.models.generateContent({
-          model: "gemini-2.0-flash-exp",
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          config: {
-            temperature: 0.8,
-            topP: 0.95,
-            maxOutputTokens: 1024,
-          },
+        const textResponse = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content: "You are a professional music journalist. Always respond with valid JSON in the exact format requested."
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          temperature: 0.8,
+          max_tokens: 1024,
         });
 
-        const textContent = textResponse.candidates?.[0]?.content?.parts?.[0]?.text;
+        const textContent = textResponse.choices[0]?.message?.content;
         if (!textContent) {
           throw new Error('No se recibió contenido de texto');
         }
@@ -1235,18 +1697,18 @@ router.post("/generate-news/:artistId", isAuthenticated, async (req: Request, re
           };
         }
 
-        console.log(`🎨 Generando imagen para noticia ${i + 1} con referencia del artista...`);
+        console.log(`🎨 Generando imagen para noticia ${i + 1} con FAL AI Nano Banana Pro...`);
         
         const imagePrompt = `Professional press photo for music news article: ${artistName}, ${genre} artist, ${newsData.title}. High-quality, editorial photography style, professional lighting, modern aesthetic. Create a compelling visual that captures the essence of this news story. Photorealistic, magazine-quality image.`;
         
         let imageResult;
         if (profileImageBase64) {
-          // Generar con referencia facial del artista
+          // Generar con referencia facial del artista usando FAL
           console.log(`👤 Usando imagen del perfil del artista como referencia facial`);
-          imageResult = await generateImageWithFaceReference(imagePrompt, profileImageBase64);
+          imageResult = await generateImageWithFaceReferenceFAL(imagePrompt, `data:image/jpeg;base64,${profileImageBase64}`);
         } else {
-          // Generar sin referencia
-          imageResult = await generateCinematicImage(imagePrompt);
+          // Generar sin referencia usando FAL Nano Banana
+          imageResult = await generateImageWithNanoBanana(imagePrompt, { aspectRatio: '16:9' });
         }
 
         if (!imageResult.success || !imageResult.imageUrl) {
@@ -1583,17 +2045,10 @@ router.post("/news/:newsId/regenerate", isAuthenticated, async (req: Request, re
     const genre = artist.genres?.[0] || artist.genre || 'music';
     const biography = artist.biography || 'Emerging artist';
 
-    // Configurar Gemini
-    const apiKeys = [
-      process.env.GEMINI_API_KEY,
-      process.env.GEMINI_API_KEY2
-    ].filter(key => key && key.length > 0);
-
-    if (apiKeys.length === 0) {
-      throw new Error('No hay API keys de Gemini configuradas');
+    // Verificar que OpenAI está configurado
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('No hay API key de OpenAI configurada');
     }
-
-    const geminiClient = new GoogleGenAI({ apiKey: apiKeys[0] || "" });
 
     // Prompts según categoría
     const categoryPrompts: Record<string, string> = {
@@ -1606,36 +2061,43 @@ router.post("/news/:newsId/regenerate", isAuthenticated, async (req: Request, re
 
     const prompt = categoryPrompts[existingNews.category] || categoryPrompts.release;
 
-    console.log(`🤖 Generando nuevo contenido con Gemini para categoría: ${existingNews.category}`);
+    console.log(`🤖 Generando nuevo contenido con OpenAI para categoría: ${existingNews.category}`);
 
-    // Generar nuevo contenido
-    const response = await geminiClient.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-      config: {
-        temperature: 0.9,
-        topP: 0.95,
-        maxOutputTokens: 1024
-      }
+    // Generar nuevo contenido con OpenAI
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "You are a professional music journalist. Always respond with valid JSON in the exact format requested."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.9,
+      max_tokens: 1024
     });
 
     let newsData;
     try {
-      if (!response.text) {
-        throw new Error('No se recibió respuesta de Gemini');
+      const responseText = response.choices[0]?.message?.content;
+      if (!responseText) {
+        throw new Error('No se recibió respuesta de OpenAI');
       }
-      const cleanedResponse = response.text
+      const cleanedResponse = responseText
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
         .trim();
       newsData = JSON.parse(cleanedResponse);
     } catch (parseError) {
-      console.error('Error parseando respuesta de Gemini:', parseError);
+      console.error('Error parseando respuesta de OpenAI:', parseError);
       throw new Error('Error parseando contenido generado');
     }
 
-    // Generar nueva imagen con contexto del artista
-    console.log('🎨 Generando nueva imagen con referencia del artista...');
+    // Generar nueva imagen con contexto del artista usando FAL AI
+    console.log('🎨 Generando nueva imagen con FAL AI Nano Banana Pro...');
     
     // Descargar imagen del perfil del artista para usar como referencia
     let profileImageBase64: string | null = null;
@@ -1649,9 +2111,9 @@ router.post("/news/:newsId/regenerate", isAuthenticated, async (req: Request, re
     let imageResult;
     if (profileImageBase64) {
       console.log(`👤 Usando imagen del perfil del artista como referencia facial`);
-      imageResult = await generateImageWithFaceReference(imagePrompt, profileImageBase64);
+      imageResult = await generateImageWithFaceReferenceFAL(imagePrompt, `data:image/jpeg;base64,${profileImageBase64}`);
     } else {
-      imageResult = await generateCinematicImage(imagePrompt);
+      imageResult = await generateImageWithNanoBanana(imagePrompt, { aspectRatio: '16:9' });
     }
     
     const newImageUrl = imageResult.success ? imageResult.imageUrl : existingNews.imageUrl;

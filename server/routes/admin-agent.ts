@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 
 const router = Router();
 
@@ -18,10 +18,10 @@ router.post("/analyze", async (req: Request, res: Response) => {
       transactionCount: 47
     };
 
-    const geminiKey = process.env.GEMINI_API_KEY;
+    const openaiKey = process.env.OPENAI_API_KEY;
     
-    if (!geminiKey) {
-      // Return mock analysis without Gemini
+    if (!openaiKey) {
+      // Return mock analysis without OpenAI
       return res.json({
         success: true,
         analysis: `**Financial Health Score**
@@ -54,7 +54,7 @@ No critical alerts detected.
       });
     }
 
-    const genai = new GoogleGenerativeAI(geminiKey);
+    const openai = new OpenAI({ apiKey: openaiKey });
     const prompt = `You are a financial analysis expert. Analyze this business data and provide insights:
 
 **Financial Summary (Last ${daysNum} days):**
@@ -75,9 +75,16 @@ Provide:
 
 Keep it concise and actionable.`;
 
-    const model = genai.getGenerativeModel({ model: "gemini-1.5-pro" });
-    const result = await model.generateContent(prompt);
-    const analysis = result.response.text();
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: "You are a financial analysis expert." },
+        { role: "user", content: prompt }
+      ],
+      max_tokens: 1500,
+      temperature: 0.7
+    });
+    const analysis = completion.choices[0]?.message?.content || "Unable to generate analysis.";
 
     res.json({
       success: true,

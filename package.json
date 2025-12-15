@@ -1,20 +1,24 @@
 {
-  "name": "rest-express",
+  "name": "boostify-music",
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
     "start": "node dist/server/index.js",
     "build": "node build-for-deploy.js",
     "server:dev": "npx tsx watch server/index.ts",
     "client:dev": "cd client && vite",
-    "prebuild": "rm -rf dist && mkdir dist",
-    "postbuild": "cp -r client/dist dist/client",
+    "db:migrate": "npx drizzle-kit push",
     "build:deploy": "node build-for-deploy.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.36.3",
+    "@clerk/clerk-react": "^5.58.1",
+    "@clerk/express": "^1.7.57",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@faker-js/faker": "^9.5.0",

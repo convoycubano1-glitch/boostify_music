@@ -1,4 +1,4 @@
-import { initializeApp, cert, ServiceAccount } from 'firebase-admin/app';
+import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
@@ -9,19 +9,21 @@ let auth: any;
 let storage: any;
 
 try {
-  // Leer credenciales desde el secreto de Replit
-  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
-  
-  if (!serviceAccountJson) {
-    throw new Error('FIREBASE_SERVICE_ACCOUNT secret not found');
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+  if (!projectId || !clientEmail || !privateKey) {
+    throw new Error('Missing Firebase Admin env vars: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY');
   }
 
-  const serviceAccount: ServiceAccount = JSON.parse(serviceAccountJson);
-
-  // Inicializar Firebase Admin SDK
   app = initializeApp({
-    credential: cert(serviceAccount),
-    storageBucket: 'artist-boost.firebasestorage.app'
+    credential: cert({
+      projectId,
+      clientEmail,
+      privateKey,
+    }),
+    storageBucket: `${projectId}.firebasestorage.app`
   });
 
   db = getFirestore(app);

@@ -17,7 +17,9 @@ export const sessions = pgTable(
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  // Campos para Replit Auth (opcional para retrocompatibilidad)
+  // Clerk Auth
+  clerkId: varchar("clerk_id").unique(), // Clerk user ID (primary auth)
+  // Campos para Replit Auth (deprecated - keeping for backwards compat)
   replitId: varchar("replit_id").unique(), // ID de Replit Auth
   firstName: text("first_name"),
   lastName: text("last_name"),
@@ -108,7 +110,12 @@ export const songs = pgTable("songs", {
   duration: text("duration"),
   releaseDate: timestamp("release_date"),
   genre: text("genre"),
+  mood: text("mood"), // Estado de ánimo de la canción
+  lyrics: text("lyrics"), // Letras de la canción (generadas por AI o personalizadas)
   coverArt: text("cover_art"),
+  artistGender: text("artist_gender", { enum: ["male", "female"] }), // Género del artista para voz
+  generatedWithAI: boolean("generated_with_ai").default(false), // Si fue generada con IA
+  aiProvider: text("ai_provider"), // fal-minimax-music-v2, etc.
   isPublished: boolean("is_published").default(true).notNull(),
   plays: integer("plays").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
