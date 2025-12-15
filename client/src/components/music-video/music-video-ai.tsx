@@ -469,7 +469,8 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   
   // Estados para sistema de pago y FAL
   const [isPaidVideo, setIsPaidVideo] = useState(false);
-  const [selectedFalModel, setSelectedFalModel] = useState<string>(FAL_VIDEO_MODELS.KLING_2_1_PRO_I2V.id);
+  // KLING O1 Reference-to-Video: Mantiene identidad consistente del artista en todas las escenas
+  const [selectedFalModel, setSelectedFalModel] = useState<string>(FAL_VIDEO_MODELS.KLING_O1_STANDARD_REF2V.id);
   const [isGeneratingFullVideo, setIsGeneratingFullVideo] = useState(false);
   const [showMyVideos, setShowMyVideos] = useState(false);
 
@@ -489,8 +490,8 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
 
-  // Estados para generación de videos
-  const [selectedVideoModel, setSelectedVideoModel] = useState<string>(FAL_VIDEO_MODELS.KLING_2_1_PRO_I2V.id);
+  // Estados para generación de videos - KLING O1 para consistencia de personajes
+  const [selectedVideoModel, setSelectedVideoModel] = useState<string>(FAL_VIDEO_MODELS.KLING_O1_STANDARD_REF2V.id);
   const [isGeneratingVideos, setIsGeneratingVideos] = useState(false);
   const [videoGenerationProgress, setVideoGenerationProgress] = useState({ current: 0, total: 0 });
   
@@ -2629,9 +2630,12 @@ DESIGN REQUIREMENTS:
       });
       
       // Step 3: Generate videos with FAL
+      const isReferenceModel = selectedFalModel.includes('reference-to-video');
       toast({
         title: "Generating videos",
-        description: `Converting ${imageUrls.length} images to video with ${selectedFalModel}...`,
+        description: isReferenceModel && artistReferenceImages.length > 0
+          ? `Converting ${imageUrls.length} images to video with O1 Reference-to-Video (consistent artist identity)...`
+          : `Converting ${imageUrls.length} images to video with ${selectedFalModel}...`,
       });
       
       const scenesWithImages = fullScript.scenes.map((scene, index) => ({
@@ -2639,9 +2643,11 @@ DESIGN REQUIREMENTS:
         imageUrl: imageUrls[index]
       }));
       
+      // Pasar imágenes de referencia del artista para modelos O1
       const videoResults = await generateMultipleVideos(
         selectedFalModel,
-        scenesWithImages
+        scenesWithImages,
+        isReferenceModel && artistReferenceImages.length > 0 ? artistReferenceImages : undefined
       );
       
       const successCount = videoResults.filter(r => r.success).length;
@@ -3232,10 +3238,17 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       // Use FAL AI to generate video from image
       const videoPrompt = item.imagePrompt || item.title || 'Dynamic camera movement';
       
+      // Para modelos O1 reference-to-video, pasar las imágenes de referencia del artista
+      const isReferenceModel = selectedFalModel.includes('reference-to-video');
+      
       const response = await generateVideoWithFAL(selectedFalModel, {
         imageUrl: imageUrl as string,
         prompt: videoPrompt,
-        duration: String(Math.floor(item.duration || 3)) as "5" | "10"
+        duration: String(Math.floor(item.duration || 3)) as "5" | "10",
+        // Pasar imágenes de referencia del artista para consistencia (solo O1 reference-to-video)
+        referenceImages: isReferenceModel && artistReferenceImages.length > 0 
+          ? artistReferenceImages 
+          : undefined
       });
 
       if (response && response.videoUrl) {

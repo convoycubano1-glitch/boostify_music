@@ -16,6 +16,7 @@ if (import.meta.env.FAL_API_KEY) {
 export interface VideoGenerationOptions {
   prompt: string;
   imageUrl?: string;
+  referenceImages?: string[]; // Para O1 reference-to-video (imágenes del artista)
   duration?: "5" | "10";
   aspectRatio?: "16:9" | "9:16" | "1:1";
   negativePrompt?: string;
@@ -129,6 +130,53 @@ export const FAL_VIDEO_MODELS = {
     pricing: "$0.25/5seg"
   },
   
+  // KLING O1 - NEW! Reference-to-Video (mejor consistencia de personajes)
+  KLING_O1_STANDARD_REF2V: {
+    id: "fal-ai/kling-video/o1/standard/reference-to-video",
+    name: "KLING O1 Reference-to-Video ⭐",
+    description: "Mantiene identidad consistente de personajes, objetos y entornos - IDEAL para Music Videos",
+    type: "reference-to-video",
+    maxDuration: 10,
+    pricing: "$0.30/5seg"
+  },
+  
+  KLING_O1_STANDARD_I2V: {
+    id: "fal-ai/kling-video/o1/standard/image-to-video",
+    name: "KLING O1 Image-to-Video",
+    description: "Genera video animando transición entre frames con guía de texto",
+    type: "image-to-video",
+    maxDuration: 10,
+    pricing: "$0.30/5seg"
+  },
+  
+  KLING_O1_V2V_REFERENCE: {
+    id: "fal-ai/kling-video/o1/standard/video-to-video/reference",
+    name: "KLING O1 Video Reference",
+    description: "Genera nuevos planos guiados por video de referencia preservando continuidad",
+    type: "video-to-video",
+    maxDuration: 10,
+    pricing: "$0.35/5seg"
+  },
+  
+  // KLING 2.6 Pro - Newest tier with audio
+  KLING_2_6_PRO_T2V: {
+    id: "fal-ai/kling-video/v2.6/pro/text-to-video",
+    name: "KLING 2.6 Pro (Text-to-Video)",
+    description: "Top-tier con visuales cinematográficos, movimiento fluido y audio nativo",
+    type: "text-to-video",
+    maxDuration: 10,
+    pricing: "Premium+"
+  },
+  
+  KLING_2_6_PRO_I2V: {
+    id: "fal-ai/kling-video/v2.6/pro/image-to-video",
+    name: "KLING 2.6 Pro (Image-to-Video)",
+    description: "Top-tier image-to-video con audio nativo generado",
+    type: "image-to-video",
+    maxDuration: 10,
+    pricing: "Premium+"
+  },
+  
   // Hunyuan Video (Tencent) - Open-source de alta calidad
   HUNYUAN_VIDEO: {
     id: "fal-ai/hunyuan-video",
@@ -196,7 +244,16 @@ export async function generateVideoWithFAL(
       duration: options.duration || "5"
     };
 
-    // Agregar imageUrl si es image-to-video
+    // Detectar si es un modelo reference-to-video (O1)
+    const isReferenceToVideo = modelId.includes('reference-to-video');
+    
+    // Para modelos reference-to-video, usar reference_images
+    if (isReferenceToVideo && options.referenceImages && options.referenceImages.length > 0) {
+      input.reference_images = options.referenceImages;
+      logger.info(`🎨 Usando ${options.referenceImages.length} imágenes de referencia para consistencia de personajes`);
+    }
+    
+    // Para image-to-video tradicional, usar image_url
     if (options.imageUrl) {
       input.image_url = options.imageUrl;
     }
@@ -257,19 +314,30 @@ export async function generateVideoWithFAL(
 
 /**
  * Generar múltiples videos en paralelo
+ * @param modelId - ID del modelo FAL a usar
+ * @param scenes - Array de escenas con prompt e imagen
+ * @param referenceImages - Imágenes de referencia del artista para O1 reference-to-video
  */
 export async function generateMultipleVideos(
   modelId: string,
-  scenes: Array<{ prompt: string; imageUrl?: string }>
+  scenes: Array<{ prompt: string; imageUrl?: string }>,
+  referenceImages?: string[]
 ): Promise<VideoGenerationResult[]> {
   logger.info(`🎬 Generando ${scenes.length} videos en paralelo...`);
+  
+  const isReferenceModel = modelId.includes('reference-to-video');
+  if (isReferenceModel && referenceImages?.length) {
+    logger.info(`🎨 Usando modelo O1 reference-to-video con ${referenceImages.length} imágenes de referencia`);
+  }
   
   const promises = scenes.map((scene, index) => 
     generateVideoWithFAL(modelId, {
       prompt: scene.prompt,
       imageUrl: scene.imageUrl,
       duration: "5", // 5 segundos por defecto
-      aspectRatio: "16:9"
+      aspectRatio: "16:9",
+      // Pasar imágenes de referencia para consistencia de personajes
+      referenceImages: isReferenceModel ? referenceImages : undefined
     }).then(result => {
       logger.info(`✅ Video ${index + 1}/${scenes.length} completado`);
       return result;
@@ -281,14 +349,39 @@ export async function generateMultipleVideos(
 
 /**
  * Obtener modelos recomendados según el tipo de generación
+ * @param type - Tipo de generación: 'text-to-video', 'image-to-video', 'reference-to-video', 'video-to-video'
  */
-export function getRecommendedModels(type: 'text-to-video' | 'image-to-video' = 'image-to-video') {
+export function getRecommendedModels(type: 'text-to-video' | 'image-to-video' | 'reference-to-video' | 'video-to-video' = 'image-to-video') {
   return Object.values(FAL_VIDEO_MODELS)
-    .filter(model => model.type === type || model.type === 'text-to-video')
+    .filter(model => {
+      // Para reference-to-video y image-to-video, incluir ambos tipos
+      if (type === 'image-to-video' || type === 'reference-to-video') {
+        return model.type === 'image-to-video' || model.type === 'reference-to-video';
+      }
+      return model.type === type || model.type === 'text-to-video';
+    })
     .sort((a, b) => {
-      // Ordenar por calidad (premium primero)
-      const order = { 'Premium': 0, 'Premium+': 1, 'Medio': 2, '$0.25/5seg': 3 };
+      // Ordenar: O1 reference-to-video primero (mejor para music videos), luego por calidad
+      const isAReference = a.type === 'reference-to-video' ? -1 : 0;
+      const isBReference = b.type === 'reference-to-video' ? -1 : 0;
+      if (isAReference !== isBReference) return isAReference - isBReference;
+      
+      const order = { 'Premium': 0, 'Premium+': 1, 'Medio': 2, '$0.25/5seg': 3, '$0.30/5seg': 4 };
       return (order[a.pricing as keyof typeof order] || 99) - (order[b.pricing as keyof typeof order] || 99);
+    });
+}
+
+/**
+ * Obtener modelos recomendados para Music Videos (prioriza reference-to-video)
+ */
+export function getMusicVideoModels() {
+  return Object.values(FAL_VIDEO_MODELS)
+    .filter(model => model.type === 'image-to-video' || model.type === 'reference-to-video')
+    .sort((a, b) => {
+      // O1 Reference-to-video primero (mantiene consistencia del artista)
+      if (a.type === 'reference-to-video' && b.type !== 'reference-to-video') return -1;
+      if (b.type === 'reference-to-video' && a.type !== 'reference-to-video') return 1;
+      return 0;
     });
 }
 
@@ -299,10 +392,19 @@ export function getModelById(id: string) {
   return Object.values(FAL_VIDEO_MODELS).find(model => model.id === id);
 }
 
+/**
+ * Verificar si un modelo es de tipo reference-to-video
+ */
+export function isReferenceToVideoModel(modelId: string): boolean {
+  return modelId.includes('reference-to-video');
+}
+
 export default {
   models: FAL_VIDEO_MODELS,
   generate: generateVideoWithFAL,
   generateMultiple: generateMultipleVideos,
   getRecommended: getRecommendedModels,
-  getById: getModelById
+  getMusicVideo: getMusicVideoModels,
+  getById: getModelById,
+  isReferenceModel: isReferenceToVideoModel
 };
