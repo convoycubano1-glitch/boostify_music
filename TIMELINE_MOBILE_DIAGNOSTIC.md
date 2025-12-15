@@ -253,11 +253,11 @@ Las imágenes de escenas no tienen skeleton/placeholder
 9. ✅ Gestos touch (swipe izq/der para navegar)
 10. ✅ Botones skip anterior/siguiente
 
-### Fase 3: Pulido UX (Opcional/Futuro)
-11. ⏳ Double tap para zoom
-12. ⏳ Pinch to zoom
-13. ⏳ Precargar imágenes adyacentes
-14. ⏳ Animaciones de entrada/salida
+### Fase 3: Pulido UX ✅ COMPLETADA
+11. ✅ Double tap para play/pause
+12. ✅ Pinch to zoom en preview (con botón reset)
+13. ✅ Precargar imágenes adyacentes (±2 escenas)
+14. ✅ Animaciones de entrada suave (fade + scale)
 
 ---
 
@@ -317,6 +317,63 @@ Las imágenes de escenas no tienen skeleton/placeholder
 
 ---
 
+## ✅ FASE 3 - IMPLEMENTACIÓN COMPLETADA
+
+### 🔍 Pinch to Zoom (Preview)
+- Detecta 2 dedos en el preview
+- Zoom de 1x a 3x máximo
+- Transición suave de 200ms
+- Botón "Reset zoom" aparece cuando está zoomed
+- Muestra porcentaje actual (ej: "150%")
+
+### 👆 Double Tap
+- Detección de doble tap (< 300ms entre taps)
+- Toggle play/pause al hacer doble tap
+- No interfiere con gestos de swipe
+
+### 🖼️ Precargar Imágenes Adyacentes
+- Precarga automática de ±2 escenas
+- `preloadImages()` utility function
+- Se ejecuta cada vez que cambia la escena
+- Mejora fluidez al navegar
+
+### ✨ Animaciones de Entrada
+- Editor aparece con fade-in + scale
+- Transición de 300ms
+- `opacity-0 scale-[0.98]` → `opacity-100 scale-100`
+- Trigger automático al montar componente
+
+### Código añadido:
+```tsx
+// Estado para zoom
+const [previewScale, setPreviewScale] = useState(1);
+const [isZoomed, setIsZoomed] = useState(false);
+const initialPinchDistance = useRef<number>(0);
+const initialScale = useRef<number>(1);
+
+// Handlers de pinch
+handlePinchStart, handlePinchMove, handlePinchEnd
+
+// Detección double tap
+lastTapTime.current, 300ms threshold
+
+// Preload utility
+const preloadImages = (urls: string[]) => {
+  urls.forEach(url => {
+    const img = new Image();
+    img.src = url;
+  });
+};
+
+// Animación entrada
+const [isEntering, setIsEntering] = useState(true);
+useEffect(() => {
+  requestAnimationFrame(() => setIsEntering(false));
+}, []);
+```
+
+---
+
 ## 📝 NOTAS TÉCNICAS ADICIONALES
 
 ### Incompatibilidad de Interfaces Detectada
@@ -359,4 +416,4 @@ interface TimelineClip {
 ---
 
 *Diagnóstico generado: 15 Diciembre 2025*
-*Versión: 1.0*
+*Versión: 1.2 - Fase 3 completada*

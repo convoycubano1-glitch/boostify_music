@@ -4,13 +4,14 @@
  * 
  * MOBILE-OPTIMIZED: Diseñado para iPhone/Android con controles táctiles
  * FASE 2: Lazy loading, transiciones, gestos touch
+ * FASE 3: Pinch-to-zoom, double-tap, preload, animaciones
  */
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { 
   Play, Pause, Volume2, VolumeX, ZoomIn, ZoomOut, 
   Download, Settings, Undo2, Redo2, Trash2, Copy, X,
   Music, Wand2, Scissors, Hand, ChevronLeft, Menu, Layers,
-  ChevronRight, SkipBack, SkipForward
+  ChevronRight, SkipBack, SkipForward, Maximize2, Minimize2
 } from 'lucide-react';
 import { TimelineLayers } from './TimelineLayers';
 import { Button } from '@/components/ui/button';
@@ -30,13 +31,14 @@ interface TimelineEditorCapCutProps {
   exportStatus?: string;
 }
 
-// 🖼️ Lazy Image Component with placeholder and fade-in
+// 🖼️ Lazy Image Component with placeholder, fade-in and preloading
 const LazyImage: React.FC<{
   src: string;
   alt: string;
   className?: string;
   onLoad?: () => void;
-}> = ({ src, alt, className = '', onLoad }) => {
+  priority?: boolean; // If true, load immediately (no lazy)
+}> = ({ src, alt, className = '', onLoad, priority = false }) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
   
@@ -59,7 +61,8 @@ const LazyImage: React.FC<{
         src={src}
         alt={alt}
         className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-        loading="lazy"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : 'auto'}
         onLoad={() => {
           setLoaded(true);
           onLoad?.();
@@ -68,6 +71,16 @@ const LazyImage: React.FC<{
       />
     </div>
   );
+};
+
+// 🔍 Image preloader utility
+const preloadImages = (urls: string[]) => {
+  urls.forEach(url => {
+    if (url) {
+      const img = new Image();
+      img.src = url;
+    }
+  });
 };
 
 export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
@@ -97,6 +110,19 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [previousSceneUrl, setPreviousSceneUrl] = useState<string | null>(null);
   
+  // � FASE 3: Pinch-to-zoom state
+  const [previewScale, setPreviewScale] = useState(1);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const initialPinchDistance = useRef<number>(0);
+  const initialScale = useRef<number>(1);
+  
+  // 👆 FASE 3: Double-tap state
+  const lastTapTime = useRef<number>(0);
+  const doubleTapTimeout = useRef<NodeJS.Timeout | null>(null);
+  
+  // 🎭 FASE 3: UI Animation state
+  const [isEntering, setIsEntering] = useState(true);
+  
   // 📱 Mobile detection
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -104,6 +130,12 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  // 🎭 FASE 3: Entry animation
+  useEffect(() => {
+    const timer = setTimeout(() => setIsEntering(false), 100);
+    return () => clearTimeout(timer);
   }, []);
   
   // 📱 Sidebar hidden by default on mobile
@@ -177,15 +209,107 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
     }
   }, [currentSceneIndex, scenes]);
   
+  // � FASE 3: Preload adjacent images when scene changes
+  useEffect(() => {
+    if (!currentScene || scenes.length === 0) return;
+    
+    const currentIdx = scenes.findIndex(s => s.id === currentScene.id);
+    const urlsToPreload: string[] = [];
+    
+    // Preload next 2 scenes
+    if (currentIdx + 1 < scenes.length) urlsToPreload.push(scenes[currentIdx + 1].imageUrl);
+    if (currentIdx + 2 < scenes.length) urlsToPreload.push(scenes[currentIdx + 2].imageUrl);
+    
+    // Preload previous scene
+    if (currentIdx - 1 >= 0) urlsToPreload.push(scenes[currentIdx - 1].imageUrl);
+    
+    preloadImages(urlsToPreload);
+  }, [currentScene, scenes]);
+  
+  // 👆👆 FASE 3: Double-tap handler for play/pause
+  const handleDoubleTap = useCallback(() => {
+    setIsPlaying(prev => !prev);
+  }, []);
+  
+  // 🔍 FASE 3: Pinch-to-zoom handlers
+  const handlePinchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      initialPinchDistance.current = Math.sqrt(dx * dx + dy * dy);
+      initialScale.current = previewScale;
+    }
+  }, [previewScale]);
+  
+  const handlePinchMove = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2 && initialPinchDistance.current > 0) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const currentDistance = Math.sqrt(dx * dx + dy * dy);
+      const scale = (currentDistance / initialPinchDistance.current) * initialScale.current;
+      
+      // Clamp scale between 1 and 3
+      const clampedScale = Math.max(1, Math.min(3, scale));
+      setPreviewScale(clampedScale);
+      setIsZoomed(clampedScale > 1.1);
+    }
+  }, []);
+  
+  const handlePinchEnd = useCallback(() => {
+    initialPinchDistance.current = 0;
+    // Snap back to 1 if close
+    if (previewScale < 1.2) {
+      setPreviewScale(1);
+      setIsZoomed(false);
+    }
+  }, [previewScale]);
+  
+  // 🔍 FASE 3: Reset zoom
+  const resetZoom = useCallback(() => {
+    setPreviewScale(1);
+    setIsZoomed(false);
+  }, []);
+  
   // 👆 Touch gesture handlers for swipe navigation
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    // Check for pinch (2 fingers)
+    if (e.touches.length === 2) {
+      handlePinchStart(e);
+      return;
+    }
+    
+    // Single touch - check for double tap
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+    
+    if (now - lastTapTime.current < DOUBLE_TAP_DELAY) {
+      // Double tap detected!
+      if (doubleTapTimeout.current) {
+        clearTimeout(doubleTapTimeout.current);
+        doubleTapTimeout.current = null;
+      }
+      handleDoubleTap();
+      lastTapTime.current = 0;
+      return;
+    }
+    
+    lastTapTime.current = now;
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
     isSwiping.current = false;
-  }, []);
+  }, [handleDoubleTap, handlePinchStart]);
   
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    // Handle pinch zoom
+    if (e.touches.length === 2) {
+      handlePinchMove(e);
+      return;
+    }
+    
     if (!touchStartX.current) return;
+    
+    // Don't swipe if zoomed
+    if (isZoomed) return;
     
     const deltaX = e.touches[0].clientX - touchStartX.current;
     const deltaY = e.touches[0].clientY - touchStartY.current;
@@ -194,9 +318,15 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 30) {
       isSwiping.current = true;
     }
-  }, []);
+  }, [handlePinchMove, isZoomed]);
   
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    // Handle pinch end
+    if (initialPinchDistance.current > 0) {
+      handlePinchEnd();
+      return;
+    }
+    
     if (!isSwiping.current) return;
     
     const deltaX = e.changedTouches[0].clientX - touchStartX.current;
@@ -215,7 +345,7 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
     touchStartX.current = 0;
     touchStartY.current = 0;
     isSwiping.current = false;
-  }, [goToNextScene, goToPrevScene]);
+  }, [goToNextScene, goToPrevScene, handlePinchEnd]);
 
   // Play loop
   useEffect(() => {
@@ -280,14 +410,14 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col touch-manipulation">
+    <div className={`min-h-screen bg-black flex flex-col touch-manipulation transition-all duration-300 ${isEntering ? 'opacity-0 scale-[0.98]' : 'opacity-100 scale-100'}`}>
       {/* Top Bar - Mobile Optimized */}
       <div className="bg-gradient-to-r from-zinc-900 to-black border-b border-orange-500/20 px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between safe-area-inset-top">
         {/* Left: Back button + Title */}
         <div className="flex items-center gap-2 sm:gap-3">
           <Button 
             variant="ghost" 
-            size="sm" 
+            size="sm"
             className="text-white hover:bg-white/10 p-2 min-w-[44px] min-h-[44px]"
             onClick={handleClose}
             aria-label="Cerrar editor"
@@ -427,7 +557,7 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
 
         {/* Center - Video Preview Area */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Large Preview with touch gestures */}
+          {/* Large Preview with touch gestures - 🔍 Phase 3: Pinch to Zoom */}
           <div 
             ref={previewRef}
             className="flex-1 bg-black relative group overflow-hidden flex items-center justify-center min-h-[200px]"
@@ -435,82 +565,103 @@ export const TimelineEditorCapCut: React.FC<TimelineEditorCapCutProps> = ({
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            {videoPreviewUrl ? (
-              <video
-                ref={videoRef}
-                src={videoPreviewUrl}
-                className="w-full h-full object-contain"
-              />
-            ) : scenes.length > 0 && currentScene ? (
-              <div className="relative w-full h-full">
-                {/* 🎬 Previous scene (for crossfade transition) */}
-                {isTransitioning && previousSceneUrl && (
-                  <img
-                    src={previousSceneUrl}
-                    alt="Previous scene"
-                    className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 opacity-0"
-                  />
-                )}
-                
-                {/* 🎬 Current scene image with fade transition */}
-                <LazyImage
-                  src={currentScene.imageUrl}
-                  alt={currentScene.description || `Escena ${currentSceneIndex}`}
-                  className={`w-full h-full transition-opacity duration-300 ${isTransitioning ? 'opacity-100' : ''}`}
+            {/* 🔍 Zoomable container with scale transform */}
+            <div 
+              className="w-full h-full transition-transform duration-200 origin-center"
+              style={{ transform: `scale(${previewScale})` }}
+            >
+              {videoPreviewUrl ? (
+                <video
+                  ref={videoRef}
+                  src={videoPreviewUrl}
+                  className="w-full h-full object-contain"
                 />
-                
-                {/* 👆 Swipe hint indicators (mobile) */}
-                {isMobile && !isPlaying && (
-                  <>
-                    {/* Left arrow - previous scene */}
-                    {currentSceneIndex > 1 && (
-                      <button
-                        onClick={goToPrevScene}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center active:bg-black/60"
-                        aria-label="Escena anterior"
-                      >
-                        <ChevronLeft className="w-6 h-6 text-white" />
-                      </button>
-                    )}
-                    {/* Right arrow - next scene */}
-                    {currentSceneIndex < scenes.length && (
-                      <button
-                        onClick={goToNextScene}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center active:bg-black/60"
-                        aria-label="Siguiente escena"
-                      >
-                        <ChevronRight className="w-6 h-6 text-white" />
-                      </button>
-                    )}
-                  </>
-                )}
-                
-                {/* 📝 Scene info overlay (bottom) */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 sm:p-4 pointer-events-none">
-                  {/* Lyrics segment as subtitle */}
-                  {currentScene.lyricsSegment && (
-                    <p className="text-white text-center text-sm sm:text-lg font-medium mb-2 drop-shadow-lg line-clamp-2">
-                      "{currentScene.lyricsSegment}"
-                    </p>
+              ) : scenes.length > 0 && currentScene ? (
+                <div className="relative w-full h-full">
+                  {/* 🎬 Previous scene (for crossfade transition) */}
+                  {isTransitioning && previousSceneUrl && (
+                    <img
+                      src={previousSceneUrl}
+                      alt="Previous scene"
+                      className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 opacity-0"
+                    />
                   )}
+                  
+                  {/* 🎬 Current scene image with fade transition */}
+                  <LazyImage
+                    src={currentScene.imageUrl}
+                    alt={currentScene.description || `Escena ${currentSceneIndex}`}
+                    className={`w-full h-full transition-opacity duration-300 ${isTransitioning ? 'opacity-100' : ''}`}
+                    priority={true}
+                  />
+                  
+                  {/* 👆 Swipe hint indicators (mobile) - hide when zoomed */}
+                  {isMobile && !isPlaying && !isZoomed && (
+                    <>
+                      {/* Left arrow - previous scene */}
+                      {currentSceneIndex > 1 && (
+                        <button
+                          onClick={goToPrevScene}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center active:bg-black/60"
+                          aria-label="Escena anterior"
+                        >
+                          <ChevronLeft className="w-6 h-6 text-white" />
+                        </button>
+                      )}
+                      {/* Right arrow - next scene */}
+                      {currentSceneIndex < scenes.length && (
+                        <button
+                          onClick={goToNextScene}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center active:bg-black/60"
+                          aria-label="Siguiente escena"
+                        >
+                          <ChevronRight className="w-6 h-6 text-white" />
+                        </button>
+                      )}
+                    </>
+                  )}
+                  
+                  {/* 📝 Scene info overlay (bottom) - hide when zoomed */}
+                  {!isZoomed && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 sm:p-4 pointer-events-none">
+                      {/* Lyrics segment as subtitle */}
+                      {currentScene.lyricsSegment && (
+                        <p className="text-white text-center text-sm sm:text-lg font-medium mb-2 drop-shadow-lg line-clamp-2">
+                          "{currentScene.lyricsSegment}"
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* 🔢 Scene counter (top left) */}
+                  <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm px-2 sm:px-3 py-1 rounded-full">
+                    <span className="text-white text-xs sm:text-sm font-bold">
+                      {currentSceneIndex} / {scenes.length}
+                    </span>
+                  </div>
                 </div>
-                
-                {/* 🔢 Scene counter (top left) */}
-                <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm px-2 sm:px-3 py-1 rounded-full">
-                  <span className="text-white text-xs sm:text-sm font-bold">
-                    {currentSceneIndex} / {scenes.length}
-                  </span>
-                </div>
-              </div>
-            ) : (
+              ) : (
               <div className="flex flex-col items-center justify-center text-zinc-500 p-8">
                 <Music className="w-12 h-12 sm:w-16 sm:h-16 mb-4 opacity-50" />
                 <p className="text-sm sm:text-base">Sin contenido aún</p>
               </div>
             )}
+            </div>{/* End zoomable container */}
+
+            {/* 🔍 Zoom reset button (Phase 3) - shows when zoomed */}
+            {isZoomed && (
+              <button
+                onClick={resetZoom}
+                className="absolute top-3 right-14 bg-black/70 backdrop-blur-sm px-3 py-2 rounded-full flex items-center gap-2 z-10 active:bg-black/90 transition-all animate-in fade-in duration-200"
+                aria-label="Resetear zoom"
+              >
+                <Minimize2 className="w-4 h-4 text-white" />
+                <span className="text-white text-xs font-medium">{Math.round(previewScale * 100)}%</span>
+              </button>
+            )}
 
             {/* Play Button Overlay - Always visible on mobile */}
-            {!isPlaying && (
+            {!isPlaying && !isZoomed && (
               <button
                 onClick={() => setIsPlaying(true)}
                 className={`absolute inset-0 flex items-center justify-center bg-black/40 transition-colors 

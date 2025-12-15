@@ -1,9 +1,16 @@
 /**
  * Rutas para generación de conceptos de videos musicales usando OpenAI + FAL
+ * 
+ * 🎵 Integración con Audio Analysis:
+ * - El script se enriquece automáticamente con análisis de audio
+ * - Timestamps basados en beats musicales
+ * - Transiciones según energía de la sección
  */
 import { Router, Request, Response } from 'express';
 import OpenAI from 'openai';
 import { generateImageWithNanoBanana } from '../services/fal-service';
+import { analyzeAudio, generateEditingRecommendations, AudioAnalysisResult } from '../services/audio-analysis-service';
+import { logger } from '../utils/logger';
 
 const router = Router();
 
@@ -213,10 +220,17 @@ Style: High-quality Hollywood-level cinematography, 4K poster design`;
 /**
  * POST /api/music-video/generate-script
  * Genera el guión completo del video musical con todas las escenas
+ * 
+ * 🎵 INTEGRACIÓN AUDIO ANALYSIS:
+ * Si se proporciona audioUrl, el script se enriquece automáticamente con:
+ * - Timestamps alineados a beats musicales
+ * - Información de sección musical (verso, coro, etc.)
+ * - Transiciones recomendadas según energía
+ * - Instrumento dominante para matching con músicos
  */
 router.post("/generate-script", async (req: Request, res: Response) => {
   try {
-    const { lyrics, concept, directorName, audioDuration, editingStyle, sceneCount } = req.body;
+    const { lyrics, concept, directorName, audioDuration, editingStyle, sceneCount, audioUrl } = req.body;
 
     if (!lyrics) {
       return res.status(400).json({ error: 'Lyrics are required' });
@@ -228,6 +242,18 @@ router.post("/generate-script", async (req: Request, res: Response) => {
 
     console.log(`🎬 Generando script completo de video musical con OpenAI...`);
     console.log(`📝 Duración: ${audioDuration}s, Escenas: ${sceneCount || 'auto'}`);
+
+    // 🎵 AUDIO ANALYSIS: Analizar audio en paralelo si se proporciona URL
+    let audioAnalysis: AudioAnalysisResult | null = null;
+    let audioAnalysisPromise: Promise<AudioAnalysisResult> | null = null;
+    
+    if (audioUrl) {
+      logger.log(`[generate-script] 🎵 Iniciando análisis de audio en paralelo...`);
+      audioAnalysisPromise = analyzeAudio(audioUrl).catch(err => {
+        logger.warn(`[generate-script] ⚠️ Audio analysis failed, continuing without: ${err.message}`);
+        return null as any;
+      });
+    }
 
     const targetScenes = sceneCount || (audioDuration ? Math.ceil(audioDuration / 4) : 12);
 
@@ -406,9 +432,102 @@ REMEMBER: Mix PERFORMANCE, B-ROLL, and STORY shots. Use artist reference creativ
 
     console.log(`✅ Script generado con ${script.scenes?.length || 0} escenas`);
 
+    // 🎵 AUDIO ENRICHMENT: Esperar y aplicar análisis de audio si está disponible
+    if (audioAnalysisPromise) {
+      try {
+        audioAnalysis = await audioAnalysisPromise;
+        
+        if (audioAnalysis && script.scenes) {
+          logger.log(`[generate-script] 🎵 Enriqueciendo script con análisis de audio...`);
+          
+          const recommendations = generateEditingRecommendations(audioAnalysis);
+          
+          // Enriquecer cada escena con información musical
+          script.scenes = script.scenes.map((scene: any, index: number) => {
+            const startTime = scene.start_time || (index * (audioDuration / script.scenes.length));
+            const endTime = scene.start_time + (scene.duration || 3);
+            
+            // Encontrar sección musical
+            const section = audioAnalysis!.sections.find(
+              s => startTime >= s.startTime && startTime < s.endTime
+            );
+            
+            // Encontrar beat más cercano para snap
+            const nearestBeat = audioAnalysis!.beats.reduce((prev, curr) => 
+              Math.abs(curr - startTime) < Math.abs(prev - startTime) ? curr : prev
+            , audioAnalysis!.beats[0] || startTime);
+            
+            // Verificar si es un key moment
+            const keyMoment = audioAnalysis!.keyMoments.find(
+              km => Math.abs(km.timestamp - startTime) < 1.5
+            );
+            
+            // Encontrar instrumento dominante
+            let dominantInstrument: string | null = null;
+            for (const inst of audioAnalysis!.instruments) {
+              const activeSegment = inst.segments.find(
+                seg => startTime >= seg.startTime && startTime < seg.endTime && seg.prominence === 'lead'
+              );
+              if (activeSegment) {
+                dominantInstrument = inst.name;
+                break;
+              }
+            }
+            
+            return {
+              ...scene,
+              // 🎵 Timestamps alineados a música
+              beat_aligned_start: nearestBeat,
+              original_start_time: scene.start_time,
+              
+              // 🎵 Sección musical
+              audio_section: section?.type || 'unknown',
+              audio_energy: section?.energy || 'medium',
+              
+              // 🎵 Transición recomendada según energía
+              suggested_transition: recommendations.transitionsByEnergy[section?.energy || 'medium'],
+              
+              // 🎵 Instrumento dominante (para matching con músicos)
+              dominant_instrument: dominantInstrument,
+              
+              // 🎵 Key moment info
+              is_key_moment: !!keyMoment,
+              key_moment_type: keyMoment?.type,
+              key_moment_effect: keyMoment?.suggestedEffect,
+            };
+          });
+          
+          // Añadir metadata de audio al script
+          script.audioAnalysis = {
+            bpm: audioAnalysis.bpm,
+            key: audioAnalysis.key,
+            duration: audioAnalysis.duration,
+            sectionsCount: audioAnalysis.sections.length,
+            sections: audioAnalysis.sections.map(s => ({
+              type: s.type,
+              startTime: s.startTime,
+              endTime: s.endTime,
+              energy: s.energy,
+            })),
+            keyMomentsCount: audioAnalysis.keyMoments.length,
+          };
+          
+          logger.log(`[generate-script] ✅ Script enriquecido con:
+            - BPM: ${audioAnalysis.bpm}
+            - Secciones: ${audioAnalysis.sections.length}
+            - Key Moments: ${audioAnalysis.keyMoments.length}
+          `);
+        }
+      } catch (enrichError: any) {
+        logger.warn(`[generate-script] ⚠️ Error enriching script: ${enrichError.message}`);
+        // Continuar sin enriquecimiento
+      }
+    }
+
     res.status(200).json({
       success: true,
-      script: script
+      script: script,
+      audioAnalyzed: !!audioAnalysis,
     });
 
   } catch (error) {
