@@ -217,7 +217,21 @@ app.use((req, res, next) => {
     if (process.env.NODE_ENV === "production") {
       log('🚀 Running in production mode');
 
-      const distPath = path.resolve(process.cwd(), 'dist', 'client');
+      // Try multiple possible dist paths (in order of preference)
+      const possiblePaths = [
+        path.resolve(process.cwd(), 'dist', 'client'),
+        path.resolve(process.cwd(), 'dist', 'public'),
+        path.resolve(__dirname, '..', 'client'),
+      ];
+
+      let distPath = possiblePaths[0];
+      for (const p of possiblePaths) {
+        if (fs.existsSync(p)) {
+          distPath = p;
+          break;
+        }
+      }
+
       log(`📁 Serving static files from: ${distPath}`);
 
       // Serve static files
