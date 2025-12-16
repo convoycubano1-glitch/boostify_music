@@ -10,6 +10,9 @@ const router = Router();
 const saveProjectSchema = z.object({
   userEmail: z.string().email(),
   projectName: z.string().min(1),
+  artistName: z.string().optional(),
+  songName: z.string().optional(),
+  thumbnail: z.string().optional(),
   audioUrl: z.string().optional(),
   audioDuration: z.number().optional(),
   transcription: z.string().optional(),
@@ -38,6 +41,8 @@ router.post('/save', async (req, res) => {
     logger.log('✅ [SAVE PROJECT] Datos validados:', {
       userEmail: validatedData.userEmail,
       projectName: validatedData.projectName,
+      artistName: validatedData.artistName,
+      songName: validatedData.songName,
       timelineItemsCount: validatedData.timelineItems?.length || 0
     });
     
@@ -48,6 +53,11 @@ router.post('/save', async (req, res) => {
       projectName: validatedData.projectName,
       status: validatedData.status
     };
+    
+    // Artist info and thumbnail
+    if (validatedData.artistName) dbData.artistName = validatedData.artistName;
+    if (validatedData.songName) dbData.songName = validatedData.songName;
+    if (validatedData.thumbnail) dbData.thumbnail = validatedData.thumbnail;
     
     // Only include optional fields if they have truthy values
     if (validatedData.audioUrl) dbData.audioUrl = validatedData.audioUrl;

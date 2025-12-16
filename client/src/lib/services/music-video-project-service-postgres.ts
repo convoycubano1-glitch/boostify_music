@@ -8,6 +8,9 @@ export interface MusicVideoProjectPostgres {
   id: number;
   userEmail: string;
   projectName: string;
+  artistName?: string;
+  songName?: string;
+  thumbnail?: string;
   audioUrl?: string;
   audioDuration?: number;
   transcription?: string;
@@ -63,6 +66,9 @@ class MusicVideoProjectServicePostgres {
   async saveProject(projectData: {
     userEmail: string;
     projectName: string;
+    artistName?: string;
+    songName?: string;
+    thumbnail?: string;
     audioUrl?: string;
     audioDuration?: number;
     transcription?: string;

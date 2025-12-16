@@ -244,13 +244,88 @@ router.post('/transcribe', requireAuth, async (req: Request, res: Response) => {
 
       } catch (error: any) {
         falError = error;
-        console.error('❌ FAL falló:', error.message);
+        console.error('❌ FAL Wizper falló:', error.message);
         console.error('📝 Error type:', error.constructor.name);
-        console.error('🔄 Intentando fallback con OpenAI Whisper...');
+        console.error('🔄 Intentando fallback con FAL Audio Understanding...');
+      }
+      
+      // INTENTO 1.5: FAL Audio Understanding como fallback de Wizper
+      if (falError) {
+        try {
+          console.log('🎧 Intentando con fal-ai/audio-understanding...');
+          const audioBuffer = fs.readFileSync(tempPathWithExtension);
+          const audioBase64 = audioBuffer.toString('base64');
+          
+          let mimeType = 'audio/mpeg';
+          if (fileExtension === '.wav') mimeType = 'audio/wav';
+          else if (fileExtension === '.m4a') mimeType = 'audio/mp4';
+          else if (fileExtension === '.aac') mimeType = 'audio/aac';
+          else if (fileExtension === '.flac') mimeType = 'audio/flac';
+          else if (fileExtension === '.ogg') mimeType = 'audio/ogg';
+          
+          const falAudioResult = await fal.subscribe('fal-ai/audio-understanding', {
+            input: {
+              audio_url: `data:${mimeType};base64,${audioBase64}`,
+              task: 'transcription'
+            },
+            logs: true
+          });
+
+          console.log('✅ Transcripción FAL Audio Understanding exitosa');
+          
+          // Limpiar el archivo temporal
+          if (fs.existsSync(tempPathWithExtension)) {
+            fs.unlinkSync(tempPathWithExtension);
+          }
+
+          // Extraer texto de la respuesta (puede variar según el modelo)
+          const transcribedText = falAudioResult.data.text || 
+                                  falAudioResult.data.transcription || 
+                                  falAudioResult.data.output || 
+                                  JSON.stringify(falAudioResult.data);
+
+          return res.json({
+            success: true,
+            transcription: {
+              text: transcribedText,
+              duration: null,
+              language: 'es',
+              provider: 'fal-audio-understanding'
+            }
+          });
+
+        } catch (audioError: any) {
+          console.error('❌ FAL Audio Understanding también falló:', audioError.message);
+          console.error('🔄 Intentando fallback final con OpenAI Whisper...');
+        }
       }
     }
 
     // INTENTO 2: OpenAI como fallback (con reintentos)
+    // Verificar tamaño del archivo antes de intentar con OpenAI (límite 25MB)
+    const fileStats = fs.statSync(tempPathWithExtension);
+    const fileSizeInMB = fileStats.size / (1024 * 1024);
+    const openAiMaxSize = 25; // MB
+    
+    if (fileSizeInMB > openAiMaxSize) {
+      console.warn(`⚠️ Archivo demasiado grande para OpenAI: ${fileSizeInMB.toFixed(2)}MB (límite: ${openAiMaxSize}MB)`);
+      
+      // Limpiar archivo temporal
+      if (fs.existsSync(tempPathWithExtension)) {
+        fs.unlinkSync(tempPathWithExtension);
+      }
+      
+      return res.status(413).json({
+        success: false,
+        error: `El archivo de audio (${fileSizeInMB.toFixed(2)}MB) excede el límite de ${openAiMaxSize}MB de OpenAI Whisper.`,
+        hint: 'Por favor, comprime el archivo de audio o usa un archivo más corto. FAL también falló como alternativa.',
+        providers: {
+          fal: falError ? 'failed' : 'not configured',
+          openai: 'skipped (file too large)'
+        }
+      });
+    }
+    
     let retries = 5;
     let lastOpenaiError;
     
@@ -338,13 +413,23 @@ router.post('/transcribe', requireAuth, async (req: Request, res: Response) => {
       }
     }
 
+    // Determinar el estado de los providers basado en el error
+    const falStatus = !process.env.FAL_KEY ? 'not configured' : 
+                      (errorMessage.includes('FAL') ? 'failed' : 'skipped');
+    const openaiStatus = errorMessage.includes('413') || errorMessage.includes('exceeded') 
+                        ? 'file too large (max 25MB for OpenAI)' 
+                        : 'failed';
+
     return res.status(500).json({
       success: false,
       error: errorMessage,
       providers: {
-        fal: falError ? 'failed' : 'not configured',
-        openai: 'failed (fallback)'
-      }
+        fal: falStatus,
+        openai: openaiStatus
+      },
+      hint: errorMessage.includes('exceeded') 
+        ? 'El archivo excede el límite de 25MB de OpenAI. Intenta comprimir el audio o usar un archivo más pequeño.'
+        : undefined
     });
   }
 });

@@ -794,6 +794,7 @@ export const musicVideoProjects = pgTable("music_video_projects", {
   artistReferenceImages: json("artist_reference_images").$type<string[]>(),
   artistName: text("artist_name"),
   songName: text("song_name"),
+  thumbnail: text("thumbnail"),
   
   // Editing style
   selectedEditingStyle: json("selected_editing_style"),

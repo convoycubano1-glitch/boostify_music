@@ -503,6 +503,8 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
 
   // Estados para gestión de proyectos
   const [projectName, setProjectName] = useState<string>("Untitled Project");
+  const [artistName, setArtistName] = useState<string>("");
+  const [songName, setSongName] = useState<string>("");
   const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(undefined);
   const [isSavingProject, setIsSavingProject] = useState(false);
   
@@ -1318,6 +1320,13 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                 
                 if (itemSceneNumber === sceneIndex) {
                   logger.info(`🖼️ [IMG ${sceneIndex}] ✅ Actualizando timeline item ${item.id}`);
+                  
+                  // Determinar valores de metadata basados en el contexto
+                  const itemIsPerformanceScene = item.metadata?.role === 'performance' || 
+                                                  item.shotType?.toLowerCase().includes('performance') ||
+                                                  shotCategory === 'PERFORMANCE';
+                  const itemUsesMasterCharacter = !!shouldUseReference && !!masterCharacter;
+                  
                   return {
                     ...item,
                     imageUrl: permanentImageUrl,
@@ -1327,9 +1336,9 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                     metadata: {
                       ...item.metadata,
                       isGeneratedImage: true,
-                      isPerformanceScene: isPerformanceScene,
-                      usesMasterCharacter: usesMasterCharacter,
-                      masterCharacterUrl: usesMasterCharacter ? masterCharacter.imageUrl : undefined,
+                      isPerformanceScene: itemIsPerformanceScene,
+                      usesMasterCharacter: itemUsesMasterCharacter,
+                      masterCharacterUrl: itemUsesMasterCharacter ? masterCharacter.imageUrl : undefined,
                       imageGeneratedAt: new Date().toISOString(),
                       scene_id: sceneIndex,
                       shot_type: item.shotType || item.metadata?.shot_type,
@@ -3739,9 +3748,20 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       const imagesGenerated = timelineItems.filter(item => item.generatedImage || item.firebaseUrl).length;
       const videosGenerated = timelineItems.filter(item => item.videoUrl || item.lipsyncVideoUrl).length;
       
+      // Generar thumbnail desde la primera imagen generada
+      const firstImageItem = timelineItems.find(item => item.generatedImage || item.firebaseUrl);
+      const thumbnail = firstImageItem?.generatedImage || firstImageItem?.firebaseUrl || undefined;
+      
+      // Extraer artistName y songName del projectName si no están definidos
+      const extractedArtistName = artistName || projectName.split(' - ')[0] || 'Unknown Artist';
+      const extractedSongName = songName || selectedFile?.name?.replace(/\.[^/.]+$/, '') || projectName.split(' - ')[1] || 'Untitled Song';
+      
       const result = await musicVideoProjectServicePostgres.saveProject({
         userEmail: userEmail,
         projectName,
+        artistName: extractedArtistName,
+        songName: extractedSongName,
+        thumbnail,
         audioUrl: audioUrl || undefined,
         audioDuration: audioBuffer?.duration,
         transcription: transcription || undefined,
@@ -3817,6 +3837,8 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       }
 
       setProjectName(project.projectName);
+      setArtistName(project.artistName || '');
+      setSongName(project.songName || '');
       setCurrentProjectId(String(project.id));
       setAudioUrl(project.audioUrl || null);
       setTranscription(project.transcription || "");
@@ -3865,9 +3887,20 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       const imagesGenerated = timelineItems.filter(item => item.generatedImage || item.firebaseUrl).length;
       const videosGenerated = timelineItems.filter(item => item.videoUrl || item.lipsyncVideoUrl).length;
       
+      // Generar thumbnail desde la primera imagen generada
+      const firstImageItem = timelineItems.find(item => item.generatedImage || item.firebaseUrl);
+      const thumbnail = firstImageItem?.generatedImage || firstImageItem?.firebaseUrl || undefined;
+      
+      // Extraer artistName y songName del projectName si no están definidos
+      const extractedArtistName = artistName || projectName.split(' - ')[0] || 'Unknown Artist';
+      const extractedSongName = songName || selectedFile?.name?.replace(/\.[^/.]+$/, '') || projectName.split(' - ')[1] || 'Untitled Song';
+      
       const result = await musicVideoProjectServicePostgres.saveProject({
         userEmail: userEmail,
         projectName,
+        artistName: extractedArtistName,
+        songName: extractedSongName,
+        thumbnail,
         audioUrl: audioUrl || undefined,
         audioDuration: audioBuffer?.duration,
         transcription: transcription || undefined,
@@ -6126,6 +6159,13 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
               audioPreviewUrl={selectedFile?.url || audioUrl}
               generatedImages={generationProgress.generatedImages}
               onChange={(clips) => setTimelineItems(clips)}
+              projectContext={{
+                scriptContent: scriptContent,
+                selectedConcept: selectedConcept,
+                videoStyle: videoStyle,
+                artistReferenceImages: artistReferenceImages,
+                masterCharacter: masterCharacter || undefined,
+              }}
             />
           )}
         </div>
@@ -8020,6 +8060,13 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                       audioPreviewUrl={selectedFile ? URL.createObjectURL(selectedFile) : undefined}
                       generatedImages={generationProgress.generatedImages}
                       onChange={handleClipUpdate || (() => {})}
+                      projectContext={{
+                        scriptContent: scriptContent,
+                        selectedConcept: selectedConcept,
+                        videoStyle: videoStyle,
+                        artistReferenceImages: artistReferenceImages,
+                        masterCharacter: masterCharacter || undefined,
+                      }}
                     />
                   </div>
 
@@ -8128,31 +8175,51 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                 {savedProjects.map((project) => (
                   <div
                     key={project.id}
-                    className="p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors"
+                    className="p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors flex gap-4"
                     onClick={async () => {
                       await handleLoadProject(project.id);
                       setShowLoadProjectDialog(false);
                     }}
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-lg">{project.projectName}</h3>
-                      <Badge variant={
-                        project.status === 'completed' ? 'default' :
-                        project.status === 'generating_images' ? 'secondary' :
-                        'outline'
-                      }>
-                        {project.status}
-                      </Badge>
-                    </div>
+                    {/* Thumbnail */}
+                    {project.thumbnail && (
+                      <div className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-muted">
+                        <img 
+                          src={project.thumbnail} 
+                          alt={project.projectName}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
                     
-                    <div className="text-sm text-muted-foreground space-y-1">
-                      {project.progress && (
-                        <p>
-                          Images: {project.progress.imagesGenerated || 0}/{project.progress.totalImages || 0} • 
-                          Videos: {project.progress.videosGenerated || 0}/{project.progress.totalVideos || 0}
-                        </p>
-                      )}
-                      <p>Last updated: {new Date(project.updatedAt).toLocaleDateString()}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="font-semibold text-lg truncate">{project.projectName}</h3>
+                          <div className="text-sm text-muted-foreground">
+                            {project.artistName && <span className="font-medium">{project.artistName}</span>}
+                            {project.artistName && project.songName && <span> • </span>}
+                            {project.songName && <span>{project.songName}</span>}
+                          </div>
+                        </div>
+                        <Badge variant={
+                          project.status === 'completed' ? 'default' :
+                          project.status === 'generating_images' ? 'secondary' :
+                          'outline'
+                        }>
+                          {project.status}
+                        </Badge>
+                      </div>
+                    
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        {project.progress && (
+                          <p>
+                            Images: {project.progress.imagesGenerated || 0}/{project.progress.totalImages || 0} • 
+                            Videos: {project.progress.videosGenerated || 0}/{project.progress.totalVideos || 0}
+                          </p>
+                        )}
+                        <p>Last updated: {new Date(project.updatedAt).toLocaleDateString()}</p>
+                      </div>
                     </div>
                   </div>
                 ))}

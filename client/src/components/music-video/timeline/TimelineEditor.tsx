@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Editor de timeline principal
  * Componente principal para la edición de videos con timeline multiples capas
  * 
@@ -20,6 +20,7 @@ import { ImageEditorModal } from '../ImageEditorModal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useAudioAnalysis } from '@/hooks/useAudioAnalysis';
 import { 
   Play as PlayIcon, Pause as PauseIcon, 
   Scissors as ScissorIcon, Hand as HandIcon,
@@ -74,6 +75,30 @@ export interface SavedProject {
   updatedAt: Date;
 }
 
+// Contexto del proyecto para regeneración coherente
+export interface ProjectContext {
+  scriptContent?: string;
+  selectedConcept?: {
+    title?: string;
+    story_concept?: string;
+    visual_style?: string;
+    mood?: string;
+    color_palette?: string;
+  };
+  videoStyle?: {
+    selectedDirector?: {
+      name: string;
+      style?: string;
+    };
+    style?: string;
+    mood?: string;
+  };
+  artistReferenceImages?: string[];
+  masterCharacter?: {
+    imageUrl: string;
+  };
+}
+
 interface TimelineEditorProps {
   initialClips: TimelineClip[];
   duration: number;
@@ -87,6 +112,8 @@ interface TimelineEditorProps {
   genreHint?: string;
   generatedImages?: GeneratedImage[];
   onAddImageToTimeline?: (image: GeneratedImage) => void;
+  // 🔗 Contexto del proyecto para regeneración coherente
+  projectContext?: ProjectContext;
 }
 
 export const TimelineEditor: React.FC<TimelineEditorProps> = ({
@@ -102,6 +129,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   genreHint,
   generatedImages = [],
   onAddImageToTimeline,
+  projectContext,
 }) => {
   const [clips, setClips] = useState<TimelineClip[]>(() => normalizeClips(initialClips));
   const [zoom, setZoom] = useState(initialZoom);
@@ -127,7 +155,16 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
-  // 🎬 Motion Control & Video Generation
+  // � Audio Analysis para sincronización con beats
+  const { 
+    analysis: audioAnalysis, 
+    isAnalyzing: isAnalyzingAudio, 
+    analyzeAudio, 
+    snapToBeat,
+    getNearestBeat 
+  } = useAudioAnalysis();
+  
+  // �🎬 Motion Control & Video Generation
   const [motionPanelOpen, setMotionPanelOpen] = useState(false);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [selectedScene, setSelectedScene] = useState<MusicVideoScene | null>(null);
@@ -143,11 +180,179 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   // 📁 Proyectos Guardados
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>(() => {
     if (typeof window === 'undefined') return [];
-    const saved = localStorage.getItem('boostify_timeline_projects');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('boostify_timeline_projects');
+      const parsed = saved ? JSON.parse(saved) : [];
+      console.log('📁 [INIT] Proyectos cargados de localStorage:', parsed?.length || 0, parsed);
+      return parsed;
+    } catch (error) {
+      console.error('❌ Error cargando proyectos de localStorage:', error);
+      return [];
+    }
   });
   const [showProjectsPanel, setShowProjectsPanel] = useState(false);
   const [projectName, setProjectName] = useState('');
+  
+  // 🔄 CRITICAL: Sincronizar clips cuando initialClips cambian (ej: cuando se generan imágenes)
+  useEffect(() => {
+    if (initialClips && initialClips.length > 0) {
+      const normalizedClips = normalizeClips(initialClips);
+      
+      // Verificar si hay cambios reales (comparar URLs de imágenes)
+      const currentHasImages = clips.some(c => c.url || c.imageUrl || c.thumbnailUrl);
+      const newHasImages = normalizedClips.some(c => c.url || c.imageUrl || c.thumbnailUrl);
+      
+      // Si los nuevos clips tienen imágenes que los actuales no tienen, actualizar
+      if (newHasImages || normalizedClips.length !== clips.length) {
+        logger.info(`🔄 [SYNC] Actualizando clips internos: ${normalizedClips.length} clips, imágenes: ${newHasImages}`);
+        
+        // Preservar las imágenes existentes y actualizar con las nuevas
+        setClips(prevClips => {
+          return normalizedClips.map(newClip => {
+            const existingClip = prevClips.find(c => c.id === newClip.id);
+            if (existingClip) {
+              // Merge: priorizar imágenes nuevas, pero mantener datos existentes
+              return {
+                ...existingClip,
+                ...newClip,
+                // Priorizar URL no vacía
+                url: newClip.url || newClip.imageUrl || existingClip.url || existingClip.imageUrl || '',
+                imageUrl: newClip.imageUrl || newClip.url || existingClip.imageUrl || existingClip.url || '',
+                thumbnailUrl: newClip.thumbnailUrl || existingClip.thumbnailUrl || newClip.url || newClip.imageUrl || '',
+              };
+            }
+            return newClip;
+          });
+        });
+      }
+    }
+  }, [initialClips]);
+  
+  // 🖼️ CRITICAL: Auto-sincronizar imágenes generadas con clips del timeline
+  useEffect(() => {
+    if (generatedImages && generatedImages.length > 0) {
+      logger.info(`🖼️ [AUTO-SYNC] ${generatedImages.length} imágenes generadas detectadas, sincronizando con timeline...`);
+      
+      setClips(prevClips => {
+        let updated = false;
+        const newClips = prevClips.map(clip => {
+          const sceneNumber = typeof clip.id === 'number' ? clip.id : 
+                              parseInt(String(clip.id).match(/(\d+)$/)?.[1] || '0');
+          
+          const matchingImage = generatedImages.find(img => {
+            const imgSceneNumber = parseInt(String(img.id).match(/(\d+)$/)?.[1] || '0');
+            return imgSceneNumber === sceneNumber;
+          });
+          
+          if (matchingImage && matchingImage.url && !clip.url && !clip.imageUrl) {
+            updated = true;
+            logger.info(`🖼️ [AUTO-SYNC] Clip ${clip.id} → Imagen ${matchingImage.id}`);
+            return {
+              ...clip,
+              layerId: clip.layerId || 1, // Asegurar layerId para capa de imágenes
+              url: matchingImage.url,
+              imageUrl: matchingImage.url,
+              thumbnailUrl: matchingImage.url,
+            };
+          }
+          
+          // Asegurar layerId incluso si no hay imagen nueva
+          return {
+            ...clip,
+            layerId: clip.layerId || (clip.type === ClipType.AUDIO ? 2 : 1),
+          };
+        });
+        
+        if (updated) {
+          logger.info(`✅ [AUTO-SYNC] Timeline actualizado con imágenes generadas`);
+        }
+        
+        return updated ? newClips : prevClips;
+      });
+    }
+  }, [generatedImages]);
+  
+  // 🎵 AUTO-ADD: Crear clip de audio automáticamente cuando hay audioPreviewUrl
+  useEffect(() => {
+    if (audioPreviewUrl && duration > 0) {
+      setClips(prevClips => {
+        // Verificar si ya hay un clip de audio
+        const hasAudioClip = prevClips.some(c => c.layerId === 2 || c.type === ClipType.AUDIO);
+        
+        if (!hasAudioClip) {
+          logger.info(`🎵 [AUTO-ADD] Creando clip de audio: ${audioPreviewUrl.substring(0, 50)}...`);
+          const audioClip: TimelineClip = {
+            id: 99999, // ID especial para audio
+            layerId: 2,
+            type: ClipType.AUDIO,
+            start: 0,
+            duration: duration,
+            url: audioPreviewUrl,
+            title: 'Audio Track',
+            in: 0,
+            out: duration,
+            sourceStart: 0,
+          };
+          console.log(`🎵 [AUTO-ADD] Audio clip creado:`, audioClip);
+          return [...prevClips, audioClip];
+        }
+        return prevClips;
+      });
+    }
+  }, [audioPreviewUrl, duration]);
+  
+  // 🎵 AUTO-ANALYZE: Analizar audio para obtener beats cuando se carga
+  useEffect(() => {
+    if (audioPreviewUrl && !audioAnalysis && !isAnalyzingAudio) {
+      console.log('🎵 [AUTO-ANALYZE] Iniciando análisis de audio para beats...');
+      analyzeAudio(audioPreviewUrl).then(() => {
+        console.log('🎵 [AUTO-ANALYZE] Análisis de audio completado:', audioAnalysis);
+      }).catch((err) => {
+        console.warn('⚠️ [AUTO-ANALYZE] Error analizando audio:', err);
+      });
+    }
+  }, [audioPreviewUrl, audioAnalysis, isAnalyzingAudio, analyzeAudio]);
+  
+  // Generar marcadores de beat para el timeline
+  const beatGuides = useMemo(() => {
+    if (!audioAnalysis?.beats) return [];
+    // Usar beats o downbeats para las guías visuales
+    const beatsToUse = audioAnalysis.downbeats?.length > 0 
+      ? audioAnalysis.downbeats 
+      : audioAnalysis.beats.filter((_, i) => i % 4 === 0); // Cada 4 beats si no hay downbeats
+    return beatsToUse.slice(0, 200); // Limitar para performance
+  }, [audioAnalysis]);
+  
+  // ⏱️ CRITICAL: Constante de duración máxima de clip (generaciones de video = 5s)
+  const MAX_CLIP_DURATION = 5;
+  
+  // 🎬 CRITICAL: Calcular clip activo basado en currentTime para sincronización exacta
+  const activeClip = useMemo(() => {
+    // Buscar clip de imagen (layerId 1) que esté en el tiempo actual
+    const imageClips = clips.filter(c => c.layerId === 1 || c.type === ClipType.IMAGE || c.type === ClipType.GENERATED_IMAGE);
+    
+    for (const clip of imageClips) {
+      const clipEnd = clip.start + clip.duration;
+      // currentTime debe estar >= start y < end para estar "dentro" del clip
+      if (currentTime >= clip.start && currentTime < clipEnd) {
+        return clip;
+      }
+    }
+    return null;
+  }, [clips, currentTime]);
+  
+  // 🖼️ Función helper para obtener URL de imagen de un clip
+  const getClipImageUrl = useCallback((clip: TimelineClip | null): string | null => {
+    if (!clip) return null;
+    return clip.imageUrl || clip.thumbnailUrl || clip.url || 
+           (typeof clip.generatedImage === 'string' ? clip.generatedImage : null) ||
+           clip.image_url || clip.publicUrl || clip.firebaseUrl || null;
+  }, []);
+  
+  // URL de imagen activa para el visor
+  const activeClipImageUrl = useMemo(() => {
+    return getClipImageUrl(activeClip);
+  }, [activeClip, getClipImageUrl]);
   
   // 🖱️ Menú Contextual (click derecho)
   const [contextMenu, setContextMenu] = useState<{
@@ -267,8 +472,8 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   const playingRaf = useRef<number | null>(null);
   const lastFrameTime = useRef<number>(0);
 
-  // Beats como array simple (segundos) y otras guías para snap
-  const beatGuides = useMemo(() => markers.filter(m => m.type === 'beat').map(m => m.time), [markers]);
+  // Beats como array simple - ahora usa audioAnalysis si está disponible, sino markers
+  // (beatGuides ya está definido arriba con audioAnalysis)
   const sectionGuides = useMemo(() => markers.filter(m => m.type === 'section').map(m => m.time), [markers]);
 
   // Play loop con tiempo real y exacto basado en framerate
@@ -281,35 +486,41 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
       return;
     }
     
-    // Calcular duración exacta de un frame
-    const frameDuration = 1000 / framerate; // ms por frame
-    let lastTime = performance.now();
-    let accumulator = 0;
+    // 🎯 CRITICAL: Usar el audio como fuente de tiempo real para sincronización exacta
+    // El audio es la única fuente de verdad para el tiempo
+    const startPlaybackTime = performance.now();
+    const startCurrentTime = currentTime;
     
-    const tick = (now: number) => {
-      const deltaTime = now - lastTime;
-      lastTime = now;
-      accumulator += deltaTime;
-      
-      // Avanzar solo cuando ha pasado el tiempo de un frame completo
-      if (accumulator >= frameDuration) {
-        const framesToAdvance = Math.floor(accumulator / frameDuration);
-        accumulator = accumulator % frameDuration;
+    const tick = () => {
+      // Método 1: Si hay audio, usar su tiempo como referencia (más preciso)
+      if (audioRef.current && !audioRef.current.paused) {
+        const audioTime = audioRef.current.currentTime;
+        // Snap al frame más cercano para display
+        const snappedTime = Math.round(audioTime * framerate) / framerate;
         
-        setCurrentTime(prev => {
-          // Avanzar exactamente N frames
-          const frameAdvance = framesToAdvance / framerate;
-          let next = prev + frameAdvance;
-          
-          // Snap al frame exacto para evitar drift
-          next = Math.round(next * framerate) / framerate;
-          
-          if (next >= duration) {
-            setIsPlaying(false);
-            return 0;
-          }
-          return next;
-        });
+        if (snappedTime >= duration) {
+          setIsPlaying(false);
+          setCurrentTime(0);
+          return;
+        }
+        
+        setCurrentTime(snappedTime);
+      } else {
+        // Método 2: Sin audio, usar performance.now() para tiempo real
+        const elapsedMs = performance.now() - startPlaybackTime;
+        const elapsedSeconds = elapsedMs / 1000;
+        let newTime = startCurrentTime + elapsedSeconds;
+        
+        // Snap al frame exacto
+        newTime = Math.round(newTime * framerate) / framerate;
+        
+        if (newTime >= duration) {
+          setIsPlaying(false);
+          setCurrentTime(0);
+          return;
+        }
+        
+        setCurrentTime(newTime);
       }
       
       playingRaf.current = requestAnimationFrame(tick);
@@ -317,7 +528,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     
     playingRaf.current = requestAnimationFrame(tick);
     
-    // Sincronizar media con el tiempo actual
+    // Sincronizar media con el tiempo actual al iniciar
     if (videoRef.current) {
       videoRef.current.currentTime = currentTime;
       videoRef.current.playbackRate = 1;
@@ -435,11 +646,45 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     const name = projectName.trim() || `Proyecto ${new Date().toLocaleDateString()}`;
     const thumbnail = generatedImages.length > 0 ? generatedImages[0].url : undefined;
     
+    // Log detallado de clips antes de guardar
+    console.log('💾 [SAVE] Clips actuales antes de guardar:', clips.map(c => ({
+      id: c.id,
+      start: c.start,
+      duration: c.duration,
+      layerId: c.layerId,
+      type: c.type,
+      hasImage: !!(c.url || c.imageUrl)
+    })));
+    
+    // Normalizar clips antes de guardar para asegurar layerId, URLs y formato correcto
+    const clipsToSave: TimelineClip[] = clips.map(clip => {
+      const typeStr = String(clip.type || 'IMAGE').toUpperCase();
+      const normalizedType = (typeStr === 'AUDIO' ? ClipType.AUDIO : 
+                              typeStr === 'VIDEO' ? ClipType.VIDEO :
+                              typeStr === 'GENERATED_IMAGE' ? ClipType.GENERATED_IMAGE :
+                              ClipType.IMAGE);
+      return {
+        ...clip,
+        // Asegurar que guardamos en formato TimelineClip (segundos)
+        id: typeof clip.id === 'number' ? clip.id : parseInt(String(clip.id), 10) || 0,
+        layerId: clip.layerId || (normalizedType === ClipType.AUDIO ? 2 : 1),
+        start: clip.start ?? 0,
+        duration: clip.duration ?? 3,
+        type: normalizedType,
+        url: clip.url || clip.imageUrl || '',
+        imageUrl: clip.imageUrl || clip.url || '',
+      };
+    });
+    
+    console.log('💾 [SAVE] Clips normalizados a guardar:', clipsToSave.map(c => ({
+      id: c.id, start: c.start, duration: c.duration, layerId: c.layerId
+    })));
+    
     const newProject: SavedProject = {
       id: `project_${Date.now()}`,
       name,
       thumbnail,
-      clips: clips,
+      clips: clipsToSave,
       generatedImages: generatedImages,
       duration: duration,
       createdAt: new Date(),
@@ -450,15 +695,60 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     setSavedProjects(updated);
     localStorage.setItem('boostify_timeline_projects', JSON.stringify(updated));
     setProjectName('');
-    logger.info('✅ Proyecto guardado:', name);
-  }, [clips, generatedImages, duration, projectName, savedProjects]);
+    logger.info('✅ Proyecto guardado:', name, `${clipsToSave.length} clips con layerId asignado`);
+    toast({
+      title: "✅ Proyecto guardado",
+      description: `"${name}" guardado con ${clips.length} clips y ${generatedImages.length} imágenes`,
+    });
+  }, [clips, generatedImages, duration, projectName, savedProjects, toast]);
 
   const handleLoadProject = useCallback((project: SavedProject) => {
-    setClips(project.clips);
-    pushHistory(project.clips);
-    logger.info('✅ Proyecto cargado:', project.name);
+    logger.info(`📂 Cargando proyecto: ${project.name}`);
+    logger.info(`📊 Clips: ${project.clips?.length || 0}, Imágenes: ${project.generatedImages?.length || 0}`);
+    
+    // Log para debug - ver estructura de clips guardados
+    console.log('📂 [DEBUG] Clips del proyecto (raw):', JSON.stringify(project.clips, null, 2));
+    console.log('📂 [DEBUG] Imágenes del proyecto:', project.generatedImages);
+    
+    // Usar normalizeClips para manejar la conversión de formato
+    const normalizedClips = normalizeClips(project.clips || []);
+    
+    // Asociar imágenes generadas a los clips normalizados
+    const loadedClips = normalizedClips.map((clip, index) => {
+      // Buscar si hay una imagen generada correspondiente
+      const matchingImage = (project.generatedImages || []).find(img => {
+        const clipSceneNumber = typeof clip.id === 'number' ? clip.id : 
+                                parseInt(String(clip.id).match(/(\d+)$/)?.[1] || '0');
+        const imgSceneNumber = parseInt(String(img.id).match(/(\d+)$/)?.[1] || '0');
+        return imgSceneNumber === clipSceneNumber;
+      });
+      
+      // Si el clip no tiene imagen pero hay una matching, asignarla
+      const finalImageUrl = clip.url || clip.imageUrl || matchingImage?.url || '';
+      
+      console.log(`📍 [LOAD] Clip ${clip.id}: start=${clip.start?.toFixed(2)}s, dur=${clip.duration?.toFixed(2)}s, layerId=${clip.layerId}, img=${!!finalImageUrl}`);
+      
+      return {
+        ...clip,
+        url: finalImageUrl,
+        imageUrl: finalImageUrl,
+        thumbnailUrl: clip.thumbnailUrl || finalImageUrl,
+      };
+    });
+    
+    logger.info(`✅ ${loadedClips.filter(c => c.url || c.imageUrl).length} clips con imágenes cargados`);
+    logger.info(`📊 Clips por capa: Capa 1: ${loadedClips.filter(c => c.layerId === 1).length}, Capa 2: ${loadedClips.filter(c => c.layerId === 2).length}`);
+    console.log('📂 [DEBUG] Clips finales a setear:', loadedClips.map(c => ({id: c.id, start: c.start, duration: c.duration, layerId: c.layerId, hasImg: !!(c.url || c.imageUrl)})));
+    
+    setClips(loadedClips);
+    pushHistory(loadedClips);
     setShowProjectsPanel(false);
-  }, [pushHistory]);
+    
+    toast({
+      title: "✅ Proyecto cargado",
+      description: `"${project.name}" con ${loadedClips.length} clips`,
+    });
+  }, [pushHistory, toast]);
 
   const handleDeleteProject = useCallback((projectId: string) => {
     const updated = savedProjects.filter(p => p.id !== projectId);
@@ -547,7 +837,46 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     }
   }, [clips, duration, audioPreviewUrl, projectName, toast]);
 
-  // 🖱️ Funciones del Menú Contextual
+  //  CRITICAL: Auto-sincronizar imágenes generadas con clips del timeline
+  useEffect(() => {
+    if (generatedImages && generatedImages.length > 0) {
+      logger.info(` [AUTO-SYNC] ${generatedImages.length} imágenes generadas detectadas, sincronizando con timeline...`);
+      
+      setClips(prevClips => {
+        let updated = false;
+        const newClips = prevClips.map(clip => {
+          const sceneNumber = typeof clip.id === 'number' ? clip.id : 
+                              parseInt(String(clip.id).match(/(\d+)$/)?.[1] || '0');
+          
+          const matchingImage = generatedImages.find(img => {
+            const imgSceneNumber = parseInt(String(img.id).match(/(\d+)$/)?.[1] || '0');
+            return imgSceneNumber === sceneNumber;
+          });
+          
+          if (matchingImage && matchingImage.url && !clip.url && !clip.imageUrl) {
+            updated = true;
+            logger.info(` [AUTO-SYNC] Clip ${clip.id}  Imagen ${matchingImage.id}`);
+            return {
+              ...clip,
+              url: matchingImage.url,
+              imageUrl: matchingImage.url,
+              thumbnail: matchingImage.url,
+            };
+          }
+          
+          return clip;
+        });
+        
+        if (updated) {
+          logger.info(` [AUTO-SYNC] Timeline actualizado con imágenes generadas`);
+        }
+        
+        return updated ? newClips : prevClips;
+      });
+    }
+  }, [generatedImages]);
+  
+  //  Menú Contextual
   const handleContextMenu = useCallback((e: React.MouseEvent, clipId?: number) => {
     e.preventDefault();
     const rect = containerRef.current?.getBoundingClientRect();
@@ -647,27 +976,35 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     return () => window.removeEventListener('click', handleClickOutside);
   }, [contextMenu.visible, closeContextMenu]);
 
+  // Ref para acceder al estado actual de clips sin closures obsoletas
+  const clipsRef = useRef(clips);
+  useEffect(() => {
+    clipsRef.current = clips;
+  }, [clips]);
+
   const doUndo = useCallback(() => {
     setHistory(h => {
       if (h.past.length === 0) return h;
+      const currentClips = clipsRef.current;
       const newPast = h.past.slice(0, -1);
-      const newFuture = [clips, ...h.future];
+      const newFuture = [currentClips, ...h.future];
       const restored = h.past[h.past.length - 1];
       setClips(restored);
       return { past: newPast, future: newFuture };
     });
-  }, [clips]);
+  }, []);
 
   const doRedo = useCallback(() => {
     setHistory(h => {
       if (h.future.length === 0) return h;
-      const newPast = [...h.past, clips];
+      const currentClips = clipsRef.current;
+      const newPast = [...h.past, currentClips];
       const newFuture = h.future.slice(1);
       const restored = h.future[0];
       setClips(restored);
       return { past: newPast, future: newFuture };
     });
-  }, [clips]);
+  }, []);
 
   const handleSelectClip = useCallback((id: number | null) => {
     setSelectedClipId(id);
@@ -693,8 +1030,58 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     pushHistory(newClips);
   }, [clips, pushHistory, readOnly, rippleEnabled]);
 
+  // Ref para guardar el estado antes de empezar a mover/redimensionar
+  const operationStartClipsRef = useRef<TimelineClip[] | null>(null);
+
+  // Al comenzar un drag o resize, guardamos el estado inicial
+  const handleDragStart = useCallback(() => {
+    if (!operationStartClipsRef.current) {
+      operationStartClipsRef.current = [...clipsRef.current];
+    }
+  }, []);
+
+  const handleResizeStart = useCallback(() => {
+    if (!operationStartClipsRef.current) {
+      operationStartClipsRef.current = [...clipsRef.current];
+    }
+  }, []);
+
+  // Al terminar un drag, guardamos en el historial
+  const handleDragEnd = useCallback(() => {
+    if (operationStartClipsRef.current) {
+      // Solo guardar si hubo cambios
+      const startClips = operationStartClipsRef.current;
+      const currentClips = clipsRef.current;
+      const hasChanges = JSON.stringify(startClips) !== JSON.stringify(currentClips);
+      if (hasChanges) {
+        setHistory(h => ({
+          past: [...h.past, startClips],
+          future: [],
+        }));
+      }
+      operationStartClipsRef.current = null;
+    }
+  }, []);
+
+  // Al terminar un resize, guardamos en el historial
+  const handleResizeEnd = useCallback(() => {
+    if (operationStartClipsRef.current) {
+      const startClips = operationStartClipsRef.current;
+      const currentClips = clipsRef.current;
+      const hasChanges = JSON.stringify(startClips) !== JSON.stringify(currentClips);
+      if (hasChanges) {
+        setHistory(h => ({
+          past: [...h.past, startClips],
+          future: [],
+        }));
+      }
+      operationStartClipsRef.current = null;
+    }
+  }, []);
+
   const handleMoveClip = useCallback((id: number, newStart: number) => {
     if (readOnly) return;
+    const currentClips = clipsRef.current;
     const snap = (t: number) => {
       if (!snapEnabled) return t;
       const snapDist = 5 / zoom; // 5px
@@ -702,7 +1089,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
       for (const guide of allGuides) {
         if (Math.abs(t - guide) < snapDist) return guide;
       }
-      for (const clip of clips) {
+      for (const clip of currentClips) {
         if (clip.id === id) continue;
         if (Math.abs(t - clip.start) < snapDist) return clip.start;
         if (Math.abs(t - (clip.start + clip.duration)) < snapDist) return clip.start + clip.duration;
@@ -710,9 +1097,9 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
       return t;
     };
     const snappedStart = snap(newStart);
-    const newClips = clips.map(c => c.id === id ? { ...c, start: Math.max(0, snappedStart) } : c);
+    const newClips = currentClips.map(c => c.id === id ? { ...c, start: Math.max(0, snappedStart) } : c);
     setClips(newClips);
-  }, [clips, readOnly, snapEnabled, beatGuides, sectionGuides, duration, zoom]);
+  }, [readOnly, snapEnabled, beatGuides, sectionGuides, duration, zoom]);
 
   const handleSplitClip = useCallback((id: number, timeAtClip: number) => {
     if (readOnly) return;
@@ -735,21 +1122,22 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
 
   const handleResizeClip = useCallback((id: number, newStart: number, newDuration: number, edge?: string) => {
     if (readOnly) return;
-    const clip = clips.find(c => c.id === id);
+    const currentClips = clipsRef.current;
+    const clip = currentClips.find(c => c.id === id);
     if (!clip) return;
-    const maxDuration = (clip.sourceStart || 0) + newDuration <= clip.duration ? newDuration : clip.duration - (clip.sourceStart || 0);
-    const newClips = clips.map(c => {
+    // Permitir redimensionar hasta duración mínima de 0.1s
+    const newClips = currentClips.map(c => {
       if (c.id === id) {
         return {
           ...c,
           start: Math.max(0, newStart),
-          duration: Math.max(0.1, Math.min(maxDuration, newDuration)),
+          duration: Math.max(0.1, newDuration),
         };
       }
       return c;
     });
     setClips(newClips);
-  }, [clips, readOnly]);
+  }, [readOnly]);
 
   const handleRazorClick = useCallback((clipId: number, timeAtClipGlobal: number) => {
     handleSplitClip(clipId, timeAtClipGlobal);
@@ -853,28 +1241,103 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     }
   }, [cameraAnglesModalClip, updateClip, toast]);
 
-  // 🔄 Regenerar Imagen - Usando FAL Nano-Banana
+  // 🔄 Regenerar Imagen - Usando FAL Nano-Banana CON CONTEXTO DEL PROYECTO
   const [isRegenerating, setIsRegenerating] = useState<number | null>(null);
   
   const handleRegenerateImage = useCallback(async (clip: TimelineClip) => {
-    logger.info(`🔄 [Timeline] Regenerando imagen para clip ${clip.id}`);
+    logger.info(`🔄 [Timeline] Regenerando imagen para clip ${clip.id} CON CONTEXTO`);
     setIsRegenerating(clip.id);
     
     toast({
       title: "Regenerando imagen...",
-      description: "Generando nueva imagen con FAL Nano-Banana AI",
+      description: "Generando nueva imagen coherente con el concepto del video",
     });
 
     try {
-      const prompt = clip.metadata?.imagePrompt || clip.title || 'cinematic music video scene';
+      // 🎯 Construir prompt ENRIQUECIDO con contexto del proyecto
+      const basePrompt = clip.metadata?.imagePrompt || clip.title || '';
       
-      const response = await fetch('/api/fal/nano-banana/generate', {
+      // Extraer contexto del proyecto
+      const concept = projectContext?.selectedConcept;
+      const director = projectContext?.videoStyle?.selectedDirector;
+      const hasReferenceImages = (projectContext?.artistReferenceImages?.length ?? 0) > 0 || 
+                                  !!projectContext?.masterCharacter;
+      
+      // Intentar extraer info de la escena desde el script
+      let sceneContext = '';
+      if (projectContext?.scriptContent) {
+        try {
+          const parsedScript = JSON.parse(projectContext.scriptContent);
+          const scenes = parsedScript.scenes || parsedScript;
+          // Buscar la escena que corresponde al clip por timing o índice
+          const clipIndex = clips.findIndex(c => c.id === clip.id);
+          const scene = scenes[clipIndex];
+          
+          if (scene) {
+            sceneContext = `
+SCENE CONTEXT:
+Visual: ${scene.visual_description || scene.description || ''}
+Narrative: ${scene.narrative_context || ''}
+Lyrics: ${scene.lyric_connection || ''}
+Emotion: ${scene.emotion || scene.mood || ''}
+Shot Type: ${scene.shot_type || 'medium-shot'}
+Camera: ${scene.camera_movement || 'static'}
+Location: ${scene.location || ''}
+Lighting: ${scene.lighting || 'cinematic lighting'}`;
+          }
+        } catch (e) {
+          logger.warn('Could not parse script for context');
+        }
+      }
+      
+      // Construir el prompt completo con todo el contexto
+      const enrichedPrompt = `MUSIC VIDEO FRAME:
+${concept?.story_concept ? `Concept: ${concept.story_concept}` : ''}
+${concept?.visual_style ? `Visual Style: ${concept.visual_style}` : ''}
+${concept?.mood ? `Mood: ${concept.mood}` : ''}
+${director?.name ? `Director Style: ${director.name}` : ''}
+${sceneContext}
+
+SCENE DESCRIPTION:
+${basePrompt || 'Professional music video scene'}
+
+TECHNICAL:
+High production quality, cinematic, 16:9 aspect ratio, professional lighting, cohesive with music video narrative.
+${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim();
+      
+      logger.info(`🎬 [Timeline] Prompt enriquecido:`, enrichedPrompt.substring(0, 200) + '...');
+      
+      // Determinar si usar referencia del artista
+      const shouldUseReference = hasReferenceImages && 
+        (clip.metadata?.shotCategory === 'PERFORMANCE' || !clip.metadata?.shotCategory);
+      
+      const referenceImages = shouldUseReference 
+        ? (projectContext?.masterCharacter 
+            ? [projectContext.masterCharacter.imageUrl] 
+            : projectContext?.artistReferenceImages)
+        : undefined;
+      
+      const endpoint = shouldUseReference
+        ? '/api/fal/nano-banana/generate-with-face'
+        : '/api/fal/nano-banana/generate';
+      
+      const requestBody = shouldUseReference
+        ? { 
+            prompt: enrichedPrompt,
+            referenceImages: referenceImages,
+            aspectRatio: '16:9'
+          }
+        : { 
+            prompt: enrichedPrompt,
+            aspectRatio: '16:9'
+          };
+      
+      logger.info(`🔄 [Timeline] Usando endpoint: ${endpoint}, con referencia: ${shouldUseReference}`);
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: `${prompt}, high quality, cinematic, professional music video`,
-          aspectRatio: '16:9',
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -883,25 +1346,28 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
 
       const data = await response.json();
       
-      if (data.imageUrl) {
+      if (data.imageUrl || data.success) {
+        const newImageUrl = data.imageUrl || data.url;
         updateClip(clip.id, {
-          imageUrl: data.imageUrl,
-          url: data.imageUrl,
-          thumbnailUrl: data.imageUrl,
+          imageUrl: newImageUrl,
+          url: newImageUrl,
+          thumbnailUrl: newImageUrl,
           metadata: {
             ...clip.metadata,
-            imagePrompt: prompt,
+            imagePrompt: enrichedPrompt,
             regeneratedAt: new Date().toISOString(),
             isGeneratedImage: true,
             generatedWith: 'fal-nano-banana',
+            usedProjectContext: true,
+            usedArtistReference: shouldUseReference,
           },
         });
 
         toast({
           title: "✅ Imagen regenerada",
-          description: "Nueva imagen generada con FAL Nano-Banana",
+          description: "Nueva imagen generada coherente con el concepto",
         });
-        logger.info(`✅ [Timeline] Imagen regenerada para clip ${clip.id}`);
+        logger.info(`✅ [Timeline] Imagen regenerada para clip ${clip.id} con contexto del proyecto`);
       }
     } catch (error) {
       logger.error(`❌ [Timeline] Error regenerando imagen:`, error);
@@ -913,7 +1379,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     } finally {
       setIsRegenerating(null);
     }
-  }, [toast, updateClip]);
+  }, [toast, updateClip, projectContext, clips]);
 
   // 🎬 Generar Video desde Imagen - Usando FAL KLING
   const [isGeneratingVideo, setIsGeneratingVideo] = useState<number | null>(null);
@@ -1540,6 +2006,25 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
                   </div>
                 )}
               </div>
+            ) : activeClipImageUrl ? (
+              // 🎬 CRITICAL: Mostrar imagen del clip activo basado en currentTime
+              <div className="relative w-full h-full">
+                <img 
+                  src={activeClipImageUrl} 
+                  alt={activeClip?.title || 'Preview'} 
+                  className="w-full h-full object-contain transition-opacity duration-75"
+                  key={activeClip?.id} // Forzar re-render cuando cambia el clip
+                />
+                {/* Indicador de clip activo */}
+                <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 rounded text-[9px] text-white/80 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                  {activeClip?.title || `Escena ${activeClip?.id}`}
+                </div>
+                {/* Timecode */}
+                <div className="absolute top-2 right-2 px-2 py-0.5 bg-black/60 rounded font-mono text-[10px] text-orange-400">
+                  {formatTimecode(currentTime)}
+                </div>
+              </div>
             ) : videoPreviewUrl ? (
               <video
                 ref={videoRef}
@@ -1727,6 +2212,10 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
             selectedClipId={selectedClipId}
             onMoveClip={handleMoveClip}
             onResizeClip={handleResizeClip}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onResizeStart={handleResizeStart}
+            onResizeEnd={handleResizeEnd}
             onRazorClick={handleRazorClick}
             onTimelineClick={handleTimelineClick}
             onDeleteClip={handleDeleteClip}
@@ -1746,6 +2235,18 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
             <span>Clips: {clips.length}</span>
             <span className="hidden sm:inline">|</span>
             <span className="hidden sm:inline">Duración: {formatTime(duration)}</span>
+            {/* BPM y estado de análisis */}
+            {isAnalyzingAudio && (
+              <span className="text-blue-400 flex items-center gap-1">
+                <Loader2 size={10} className="animate-spin" /> Analizando...
+              </span>
+            )}
+            {audioAnalysis?.bpm && (
+              <span className="text-green-400">♪ {Math.round(audioAnalysis.bpm)} BPM</span>
+            )}
+            {beatGuides.length > 0 && (
+              <span className="hidden md:inline text-purple-400">{beatGuides.length} beats</span>
+            )}
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <span className="hidden md:inline text-orange-400/60">Space: Play</span>
@@ -1948,13 +2449,111 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
 };
 
 /** ---------- Helpers ---------- */
-function normalizeClips(clips: TimelineClip[]): TimelineClip[] {
-  return clips.map(c => ({
-    ...c,
-    in: c.in ?? 0,
-    out: c.out ?? c.duration,
-    sourceStart: c.sourceStart ?? 0,
-  }));
+// ⚠️ CRITICAL: Máxima duración de clip (generaciones de video = 5 segundos)
+const MAX_CLIP_DURATION_SECONDS = 5;
+
+// Función que acepta clips en cualquier formato (TimelineClip o TimelineItem) y los normaliza
+// También segmenta clips mayores de 5 segundos para compatibilidad con generación de video
+function normalizeClips(clips: any[]): TimelineClip[] {
+  if (!clips || !Array.isArray(clips)) return [];
+  
+  console.log('📊 [normalizeClips] Input clips:', clips?.length, clips);
+  
+  const normalizedClips: TimelineClip[] = [];
+  let globalId = 1;
+  
+  clips.forEach((c, index) => {
+    // Priorizar URLs de imagen en este orden
+    const imageUrl = c.url || c.imageUrl || c.image_url || c.generatedImageUrl || 
+                     c.publicUrl || c.firebaseUrl || c.thumbnailUrl || '';
+    
+    // CRITICAL: Asignar layerId por defecto basado en el tipo de clip
+    // Capa 1 = Imágenes Generadas, Capa 2 = Audio
+    const typeStr = typeof c.type === 'string' ? c.type.toUpperCase() : 'IMAGE';
+    const normalizedType = (typeStr === 'AUDIO' ? ClipType.AUDIO : 
+                            typeStr === 'VIDEO' ? ClipType.VIDEO :
+                            typeStr === 'GENERATED_IMAGE' ? ClipType.GENERATED_IMAGE :
+                            ClipType.IMAGE) as ClipType;
+    const layerId = c.layerId || (normalizedType === ClipType.AUDIO ? 2 : 1);
+    
+    // CRITICAL: Convertir start_time/end_time (ms) a start/duration (segundos)
+    // TimelineItem usa start_time en ms, TimelineClip usa start en segundos
+    let startSeconds: number;
+    let durationSeconds: number;
+    
+    if (typeof c.start_time === 'number') {
+      // Es un TimelineItem - convertir de ms a segundos
+      startSeconds = c.start_time / 1000;
+      if (typeof c.end_time === 'number') {
+        durationSeconds = (c.end_time - c.start_time) / 1000;
+      } else if (typeof c.duration === 'number' && c.duration > 100) {
+        // duration en ms
+        durationSeconds = c.duration / 1000;
+      } else {
+        durationSeconds = c.duration || 3;
+      }
+    } else {
+      // Ya es TimelineClip format
+      startSeconds = typeof c.start === 'number' ? c.start : 0;
+      durationSeconds = typeof c.duration === 'number' ? c.duration : 3;
+    }
+    
+    // 🔥 CRITICAL: Segmentar clips mayores de MAX_CLIP_DURATION_SECONDS
+    // Las generaciones de video solo soportan hasta 5 segundos
+    if (durationSeconds > MAX_CLIP_DURATION_SECONDS && normalizedType !== ClipType.AUDIO) {
+      const segmentCount = Math.ceil(durationSeconds / MAX_CLIP_DURATION_SECONDS);
+      console.log(`⚡ [normalizeClips] Segmentando clip ${c.id} de ${durationSeconds.toFixed(2)}s en ${segmentCount} partes`);
+      
+      for (let i = 0; i < segmentCount; i++) {
+        const segmentStart = startSeconds + (i * MAX_CLIP_DURATION_SECONDS);
+        const remainingDuration = durationSeconds - (i * MAX_CLIP_DURATION_SECONDS);
+        const segmentDuration = Math.min(MAX_CLIP_DURATION_SECONDS, remainingDuration);
+        
+        normalizedClips.push({
+          ...c,
+          id: globalId++,
+          layerId: layerId,
+          in: 0,
+          out: segmentDuration,
+          sourceStart: 0,
+          type: normalizedType,
+          start: segmentStart,
+          duration: segmentDuration,
+          url: imageUrl,
+          imageUrl: imageUrl,
+          thumbnailUrl: c.thumbnailUrl || imageUrl,
+          title: c.title ? `${c.title} (${i + 1}/${segmentCount})` : `Escena ${globalId - 1}`,
+          // Marcar como segmento para posible regeneración
+          isSegment: true,
+          originalDuration: durationSeconds,
+          segmentIndex: i,
+        } as TimelineClip);
+        
+        console.log(`   📍 Segmento ${i + 1}: start=${segmentStart.toFixed(2)}s, duration=${segmentDuration.toFixed(2)}s`);
+      }
+    } else {
+      // Clip dentro de límites - agregar normalmente
+      console.log(`📍 [normalizeClips] Clip ${index}: id=${c.id}, start=${startSeconds.toFixed(2)}s, duration=${durationSeconds.toFixed(2)}s, layerId=${layerId}, hasImage=${!!imageUrl}`);
+      
+      normalizedClips.push({
+        ...c,
+        id: typeof c.id === 'number' ? c.id : globalId++,
+        layerId: layerId,
+        in: c.in ?? 0,
+        out: c.out ?? durationSeconds,
+        sourceStart: c.sourceStart ?? 0,
+        type: normalizedType,
+        start: startSeconds,
+        duration: durationSeconds,
+        url: imageUrl,
+        imageUrl: imageUrl,
+        thumbnailUrl: c.thumbnailUrl || imageUrl,
+      } as TimelineClip);
+    }
+  });
+  
+  console.log(`📊 [normalizeClips] Output: ${normalizedClips.length} clips (segmentados de ${clips.length} originales)`);
+  return normalizedClips;
 }
 
 function clamp(n: number, min: number, max: number) {
@@ -2125,3 +2724,4 @@ const Ruler: React.FC<{ zoom: number; duration: number; labelWidth: number; onRu
 };
 
 export default TimelineEditor;
+

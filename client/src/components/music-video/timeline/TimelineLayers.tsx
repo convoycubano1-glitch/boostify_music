@@ -35,6 +35,10 @@ interface TimelineLayersProps extends ClipActionHandlers {
   selectedClipId: number | null;
   onMoveClip?: (clipId: number, newStart: number, newLayerId: number) => void;
   onResizeClip?: (clipId: number, newStart: number, newDuration: number) => void;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
+  onResizeStart?: () => void;
+  onResizeEnd?: () => void;
   onTimelineClick?: (time: number) => void;
   onRazorClick?: (clipId: number, time: number) => void;
   onDeleteClip?: (clipId: number) => void;
@@ -59,6 +63,10 @@ export const TimelineLayers: React.FC<TimelineLayersProps> = ({
   selectedClipId,
   onMoveClip,
   onResizeClip,
+  onDragStart,
+  onDragEnd,
+  onResizeStart,
+  onResizeEnd,
   onTimelineClick,
   onRazorClick,
   onDeleteClip,
@@ -172,10 +180,16 @@ export const TimelineLayers: React.FC<TimelineLayersProps> = ({
             zoom={zoom}
             currentTime={currentTime}
             duration={duration}
+            tool={tool}
             onSelectClip={onSelectClip}
             selectedClipId={selectedClipId}
             onMoveClip={onMoveClip}
             onResizeClip={onResizeClip}
+            onRazorClick={onRazorClick}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onResizeStart={onResizeStart}
+            onResizeEnd={onResizeEnd}
             layerLabelWidth={layerLabelWidth}
             onMuteLayer={onMuteLayer}
             onConvertAllToVideo={onConvertAllToVideo}

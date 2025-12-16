@@ -22,6 +22,8 @@ import {
   Lock, Unlock, Eye, EyeOff, GripVertical 
 } from 'lucide-react';
 
+type Tool = 'select' | 'razor' | 'trim' | 'hand';
+
 // Props de acciones para clips
 interface ClipActionHandlers {
   onEditImage?: (clip: TimelineClip) => void;
@@ -37,10 +39,16 @@ interface LayerRowProps extends ClipActionHandlers {
   zoom: number;
   currentTime: number;
   duration: number;
+  tool?: Tool;
   onSelectClip: (clipId: number | null) => void;
   selectedClipId: number | null;
   onMoveClip?: (clipId: number, newStart: number, newLayerId: number) => void;
   onResizeClip?: (clipId: number, newStart: number, newDuration: number) => void;
+  onRazorClick?: (clipId: number, time: number) => void;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
+  onResizeStart?: () => void;
+  onResizeEnd?: () => void;
   layerLabelWidth?: number;
   onMuteLayer?: (layerId: number, muted: boolean) => void;
   onConvertAllToVideo?: (layerId: number) => void;
@@ -55,10 +63,16 @@ export const LayerRow: React.FC<LayerRowProps> = ({
   zoom,
   currentTime,
   duration,
+  tool = 'select',
   onSelectClip,
   selectedClipId,
   onMoveClip,
   onResizeClip,
+  onRazorClick,
+  onDragStart: onDragStartCallback,
+  onDragEnd: onDragEndCallback,
+  onResizeStart: onResizeStartCallback,
+  onResizeEnd: onResizeEndCallback,
   layerLabelWidth = 100,
   // Acciones de clip
   onEditImage,
@@ -82,9 +96,31 @@ export const LayerRow: React.FC<LayerRowProps> = ({
   
   // Estado para el arrastre de clips
   const [draggedClipId, setDraggedClipId] = React.useState<number | null>(null);
-  const [dragStartX, setDragStartX] = React.useState<number>(0);
-  const [dragStartY, setDragStartY] = React.useState<number>(0);
-  const [clipOffset, setClipOffset] = React.useState<{x: number, y: number}>({x: 0, y: 0});
+  const [resizingClipId, setResizingClipId] = React.useState<number | null>(null);
+  const [resizeDirection, setResizeDirection] = React.useState<'start' | 'end' | null>(null);
+  
+  // Refs para evitar closures obsoletos
+  const dragStateRef = React.useRef({
+    clipId: null as number | null,
+    startX: 0,
+    originalStart: 0,
+    currentDeltaX: 0, // Para tracking del delta actual
+    clipElement: null as HTMLElement | null, // Referencia al elemento DOM
+    rafId: null as number | null // Para requestAnimationFrame
+  });
+  
+  const resizeStateRef = React.useRef({
+    clipId: null as number | null,
+    direction: null as 'start' | 'end' | null,
+    startX: 0,
+    originalData: null as { start: number; duration: number } | null,
+    clipElement: null as HTMLElement | null,
+    rafId: null as number | null,
+    currentDeltaX: 0 // Para tracking del delta actual
+  });
+  
+  // Referencia al contenedor para calcular posiciones
+  const containerRef = React.useRef<HTMLDivElement>(null);
   
   // Validaciones específicas para esta capa
   const validateClipPlacement = (clip: TimelineClip, newStart: number, newDuration?: number): boolean => {
@@ -99,74 +135,279 @@ export const LayerRow: React.FC<LayerRowProps> = ({
       return false;
     }
     
-    // Comprobar superposición con otros clips en la misma capa
-    const overlapping = layerClips.some(c => {
-      if (c.id === clip.id) return false; // Ignorar el clip actual
-      
-      // Calcular si hay superposición
-      const clipEnd = newStart + clipDuration;
-      const otherClipEnd = c.start + c.duration;
-      
-      return (
-        (newStart >= c.start && newStart < otherClipEnd) ||
-        (clipEnd > c.start && clipEnd <= otherClipEnd) ||
-        (newStart <= c.start && clipEnd >= otherClipEnd)
-      );
-    });
-    
-    return !overlapping;
-  };
-  
-  // Manejadores de eventos para arrastrar clips
-  const handleDragStart = (clipId: number, e: React.MouseEvent) => {
-    setDraggedClipId(clipId);
-    setDragStartX(e.clientX);
-    setDragStartY(e.clientY);
-    
-    const clipElement = e.currentTarget as HTMLElement;
-    const rect = clipElement.getBoundingClientRect();
-    setClipOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    });
-    
-    document.addEventListener('mousemove', handleDragMove);
-    document.addEventListener('mouseup', handleDragEnd);
-  };
-  
-  const handleDragMove = (e: MouseEvent) => {
-    if (!draggedClipId) return;
-    
-    const draggingClip = clips.find(clip => clip.id === draggedClipId);
-    if (!draggingClip) return;
-    
-    // Calcular nueva posición
-    const deltaX = e.clientX - dragStartX;
-    const calculatedStart = draggingClip.start + (deltaX / zoom);
-    const newStart = Math.max(0, Math.min(duration - draggingClip.duration, calculatedStart));
-    
-    // Validar si la nueva posición es válida
-    if (validateClipPlacement(draggingClip, newStart)) {
-      onMoveClip?.(draggedClipId, newStart, layer.id);
+    // Comprobar duración mínima
+    if (clipDuration < 0.1) {
+      return false;
     }
+    
+    // Comprobar límites del timeline
+    if (newStart < 0 || newStart + clipDuration > duration) {
+      return false;
+    }
+    
+    return true;
   };
   
-  const handleDragEnd = () => {
+  // ====== ARRASTRAR CLIPS (OPTIMIZADO CON RAF) ======
+  const handleDragMove = React.useCallback((e: MouseEvent) => {
+    const state = dragStateRef.current;
+    if (!state.clipId) return;
+    
+    // Guardar el delta actual
+    state.currentDeltaX = e.clientX - state.startX;
+    
+    // Usar requestAnimationFrame para rendimiento fluido
+    if (state.rafId) {
+      cancelAnimationFrame(state.rafId);
+    }
+    
+    state.rafId = requestAnimationFrame(() => {
+      const clipElement = state.clipElement;
+      if (!clipElement) return;
+      
+      // Aplicar transform CSS directamente (sin re-render React)
+      clipElement.style.transform = `translateX(${state.currentDeltaX}px)`;
+      clipElement.style.transition = 'none';
+      clipElement.style.zIndex = '100';
+    });
+  }, []);
+  
+  const handleDragEnd = React.useCallback(() => {
+    const state = dragStateRef.current;
+    const clipId = state.clipId;
+    const deltaX = state.currentDeltaX;
+    const originalStart = state.originalStart;
+    const clipElement = state.clipElement;
+    
+    // Cancelar cualquier RAF pendiente
+    if (state.rafId) {
+      cancelAnimationFrame(state.rafId);
+    }
+    
+    // Restaurar estilos del elemento
+    if (clipElement) {
+      clipElement.style.transform = '';
+      clipElement.style.transition = '';
+      clipElement.style.zIndex = '';
+    }
+    
+    // Calcular posición final y actualizar estado React UNA sola vez
+    if (clipId && deltaX !== 0) {
+      const deltaTime = deltaX / zoom;
+      const newStart = Math.max(0, Math.min(duration - (clips.find(c => c.id === clipId)?.duration || 0), originalStart + deltaTime));
+      onMoveClip?.(clipId, newStart, layer.id);
+    }
+    
+    // Limpiar estado
+    dragStateRef.current = { 
+      clipId: null, 
+      startX: 0, 
+      originalStart: 0, 
+      currentDeltaX: 0, 
+      clipElement: null, 
+      rafId: null 
+    };
     setDraggedClipId(null);
     document.removeEventListener('mousemove', handleDragMove);
     document.removeEventListener('mouseup', handleDragEnd);
-  };
+    document.body.style.cursor = '';
+    
+    // Notificar al editor que terminó el drag para guardar en historial
+    onDragEndCallback?.();
+  }, [clips, zoom, duration, layer.id, onMoveClip, handleDragMove, onDragEndCallback]);
   
-  // Manejador para redimensionar clips
-  const handleResizeClip = (clipId: number, newStart: number, newDuration: number) => {
+  const handleDragStart = React.useCallback((clipId: number, e: React.MouseEvent) => {
+    if (isLocked) return;
+    e.preventDefault();
+    e.stopPropagation();
+    
     const clip = clips.find(c => c.id === clipId);
     if (!clip) return;
     
-    // Validar si la nueva dimensión es válida
-    if (validateClipPlacement(clip, newStart, newDuration)) {
+    // Notificar al editor que empieza un drag para guardar estado inicial
+    onDragStartCallback?.();
+    
+    // Buscar el elemento DOM del clip
+    const clipElement = (e.target as HTMLElement).closest('[data-clip-id]') as HTMLElement;
+    
+    // Guardar estado en ref para evitar closures obsoletos
+    dragStateRef.current = {
+      clipId: clipId,
+      startX: e.clientX,
+      originalStart: clip.start,
+      currentDeltaX: 0,
+      clipElement: clipElement,
+      rafId: null
+    };
+    setDraggedClipId(clipId);
+    
+    // Añadir listeners globales
+    document.addEventListener('mousemove', handleDragMove);
+    document.addEventListener('mouseup', handleDragEnd);
+    document.body.style.cursor = 'grabbing';
+  }, [clips, isLocked, handleDragMove, handleDragEnd, onDragStartCallback]);
+  
+  // ====== REDIMENSIONAR CLIPS (OPTIMIZADO CON RAF) ======
+  const handleResizeMove = React.useCallback((e: MouseEvent) => {
+    const state = resizeStateRef.current;
+    if (!state.clipId || !state.originalData || !state.direction) return;
+    
+    const deltaX = e.clientX - state.startX;
+    
+    // Guardar el delta actual en el ref
+    state.currentDeltaX = deltaX;
+    
+    // Usar requestAnimationFrame para rendimiento fluido
+    if (state.rafId) {
+      cancelAnimationFrame(state.rafId);
+    }
+    
+    state.rafId = requestAnimationFrame(() => {
+      const clipElement = state.clipElement;
+      if (!clipElement || !state.originalData) return;
+      
+      const originalWidthPx = state.originalData.duration * zoom;
+      
+      if (state.direction === 'start') {
+        // Redimensionar desde el inicio: mover y cambiar ancho
+        let clampedDelta = deltaX;
+        const minWidthPx = 0.5 * zoom;
+        const maxDeltaX = originalWidthPx - minWidthPx;
+        const minDeltaX = -(state.originalData.start * zoom);
+        
+        clampedDelta = Math.max(minDeltaX, Math.min(maxDeltaX, deltaX));
+        
+        clipElement.style.transform = `translateX(${clampedDelta}px)`;
+        clipElement.style.width = `${originalWidthPx - clampedDelta}px`;
+      } else {
+        // Redimensionar desde el final: solo cambiar ancho
+        let newWidth = originalWidthPx + deltaX;
+        const minWidthPx = 0.5 * zoom;
+        const maxWidthPx = (duration - state.originalData.start) * zoom;
+        
+        newWidth = Math.max(minWidthPx, Math.min(maxWidthPx, newWidth));
+        
+        clipElement.style.width = `${newWidth}px`;
+      }
+      
+      clipElement.style.transition = 'none';
+      clipElement.style.zIndex = '100';
+    });
+  }, [zoom, duration]);
+  
+  const handleResizeEnd = React.useCallback(() => {
+    const state = resizeStateRef.current;
+    const clipId = state.clipId;
+    const direction = state.direction;
+    const originalData = state.originalData;
+    const clipElement = state.clipElement;
+    const currentDeltaX = state.currentDeltaX;
+    
+    // Cancelar cualquier RAF pendiente
+    if (state.rafId) {
+      cancelAnimationFrame(state.rafId);
+    }
+    
+    // Restaurar estilos del elemento
+    if (clipElement) {
+      clipElement.style.transform = '';
+      clipElement.style.width = '';
+      clipElement.style.transition = '';
+      clipElement.style.zIndex = '';
+    }
+    
+    // Calcular valores finales y actualizar estado React UNA sola vez
+    if (clipId && originalData && currentDeltaX !== 0) {
+      const deltaTime = currentDeltaX / zoom;
+      
+      let newStart = originalData.start;
+      let newDuration = originalData.duration;
+      
+      if (direction === 'start') {
+        newStart = originalData.start + deltaTime;
+        newDuration = originalData.duration - deltaTime;
+        
+        if (newStart < 0) {
+          newStart = 0;
+          newDuration = originalData.start + originalData.duration;
+        }
+        if (newDuration < 0.5) {
+          newDuration = 0.5;
+          newStart = originalData.start + originalData.duration - 0.5;
+        }
+      } else {
+        newDuration = originalData.duration + deltaTime;
+        if (newDuration < 0.5) newDuration = 0.5;
+        if (newStart + newDuration > duration) newDuration = duration - newStart;
+      }
+      
       onResizeClip?.(clipId, newStart, newDuration);
     }
-  };
+    
+    // Limpiar estado
+    resizeStateRef.current = { 
+      clipId: null, 
+      direction: null, 
+      startX: 0, 
+      originalData: null,
+      clipElement: null,
+      rafId: null,
+      currentDeltaX: 0
+    };
+    setResizingClipId(null);
+    document.removeEventListener('mousemove', handleResizeMove);
+    document.removeEventListener('mouseup', handleResizeEnd);
+    document.body.style.cursor = '';
+    onResizeEndCallback?.();
+  }, [zoom, duration, onResizeClip, handleResizeMove, onResizeEndCallback]);
+  
+  const handleResizeStart = React.useCallback((clipId: number, direction: 'start' | 'end', e: React.MouseEvent) => {
+    if (isLocked) return;
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const clip = clips.find(c => c.id === clipId);
+    if (!clip) return;
+    
+    // Notificar al editor que empieza un resize para guardar estado inicial
+    onResizeStartCallback?.();
+    
+    // Buscar el elemento DOM del clip
+    const clipElement = (e.target as HTMLElement).closest('[data-clip-id]') as HTMLElement;
+    
+    // Guardar estado en ref
+    resizeStateRef.current = {
+      clipId: clipId,
+      direction: direction,
+      startX: e.clientX,
+      originalData: { start: clip.start, duration: clip.duration },
+      clipElement: clipElement,
+      rafId: null,
+      currentDeltaX: 0
+    };
+    setResizingClipId(clipId);
+    
+    document.addEventListener('mousemove', handleResizeMove);
+    document.addEventListener('mouseup', handleResizeEnd);
+    document.body.style.cursor = 'ew-resize';
+  }, [clips, isLocked, handleResizeMove, handleResizeEnd, onResizeStartCallback]);
+  
+  // Cleanup en unmount
+  React.useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleDragMove);
+      document.removeEventListener('mouseup', handleDragEnd);
+      document.removeEventListener('mousemove', handleResizeMove);
+      document.removeEventListener('mouseup', handleResizeEnd);
+      // Cancelar cualquier RAF pendiente
+      if (dragStateRef.current.rafId) {
+        cancelAnimationFrame(dragStateRef.current.rafId);
+      }
+      if (resizeStateRef.current.rafId) {
+        cancelAnimationFrame(resizeStateRef.current.rafId);
+      }
+    };
+  }, [handleDragMove, handleDragEnd, handleResizeMove, handleResizeEnd]);
   
   // Estilo para la línea de tiempo actual
   const currentTimeIndicatorStyle = {
@@ -431,13 +672,13 @@ export const LayerRow: React.FC<LayerRowProps> = ({
               clip={clip}
               timeScale={zoom}
               isSelected={selectedClipId === clip.id}
+              tool={tool}
               onSelect={(id) => !isLocked && onSelectClip(id)}
               onMoveStart={(id, e) => !isLocked && handleDragStart(id, e)}
-              onResizeStart={(id, direction, e) => {
-                e.stopPropagation();
-              }}
+              onResizeStart={(id, direction, e) => !isLocked && handleResizeStart(id, direction, e)}
+              onRazorClick={onRazorClick}
               isDragging={draggedClipId === clip.id}
-              isResizing={false}
+              isResizing={resizingClipId === clip.id}
               onEditImage={onEditImage}
               onAddMusician={onAddMusician}
               onCameraAngles={onCameraAngles}
