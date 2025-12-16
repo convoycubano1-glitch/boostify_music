@@ -12,7 +12,7 @@ import { Link } from "wouter";
 import type { DirectorProfile } from "../data/directors";
 
 export default function MusicVideoCreator() {
-  const [activeTab, setActiveTab] = useState<'directors' | 'ai' | 'editor'>('directors');
+  const [activeTab, setActiveTab] = useState<'directors' | 'ai' | 'editor'>('ai');
   const [selectedDirector, setSelectedDirector] = useState<DirectorProfile | null>(null);
 
   const handleDirectorSelected = (director: DirectorProfile) => {
@@ -151,6 +151,19 @@ const ContentSection = ({ activeTab, setActiveTab, selectedDirector, onDirectorS
       </p>
       <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 w-full sm:w-auto">
         <Button
+          variant={activeTab === 'ai' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('ai')}
+          className={`w-full sm:w-auto min-h-[40px] sm:min-h-[44px] text-sm sm:text-base py-1 px-3 sm:py-2 sm:px-4 ${
+            activeTab === 'ai' 
+              ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-lg shadow-orange-500/30' 
+              : 'border-orange-500/50 hover:bg-orange-500/10'
+          }`}
+          size="default"
+        >
+          <Bot className="h-4 w-4 mr-1 sm:mr-2" />
+          <span className="whitespace-nowrap">AI Video Creation</span>
+        </Button>
+        <Button
           variant={activeTab === 'directors' ? 'default' : 'outline'}
           onClick={() => setActiveTab('directors')}
           className="w-full sm:w-auto min-h-[40px] sm:min-h-[44px] text-sm sm:text-base py-1 px-3 sm:py-2 sm:px-4"
@@ -158,15 +171,6 @@ const ContentSection = ({ activeTab, setActiveTab, selectedDirector, onDirectorS
         >
           <Users className="h-4 w-4 mr-1 sm:mr-2" />
           <span className="whitespace-nowrap">Work with Directors</span>
-        </Button>
-        <Button
-          variant={activeTab === 'ai' ? 'default' : 'outline'}
-          onClick={() => setActiveTab('ai')}
-          className="w-full sm:w-auto min-h-[40px] sm:min-h-[44px] text-sm sm:text-base py-1 px-3 sm:py-2 sm:px-4"
-          size="default"
-        >
-          <Bot className="h-4 w-4 mr-1 sm:mr-2" />
-          <span className="whitespace-nowrap">AI Video Creation</span>
         </Button>
         <Link href="/professional-editor">
           <Button

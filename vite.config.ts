@@ -14,7 +14,22 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, 'client', 'src'),
       "@db": path.resolve(__dirname, "db"),
+      "@shared": path.resolve(__dirname, "shared"),
     },
+  },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      '@radix-ui/react-collapsible',
+      '@radix-ui/react-use-controllable-state',
+      '@radix-ui/react-primitive',
+      '@radix-ui/react-slot',
+      '@radix-ui/react-compose-refs',
+      '@radix-ui/react-context',
+      '@radix-ui/react-id',
+    ],
+    exclude: [],
   },
   root: path.resolve(__dirname, "client"),
   server: {

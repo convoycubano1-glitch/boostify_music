@@ -91,11 +91,13 @@ export const EditorAgentPanel: React.FC<EditorAgentPanelProps> = ({
     <>
       <Button
         onClick={() => setIsOpen(true)}
-        className="gap-2"
+        className="h-6 px-2 gap-1 text-[10px] bg-orange-500 hover:bg-orange-600"
         variant="default"
+        size="sm"
+        title="AI Editor Agent"
       >
-        <Wand2 className="w-4 h-4" />
-        AI Editor Agent
+        <Wand2 className="w-3 h-3" />
+        <span className="hidden lg:inline">AI Agent</span>
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>

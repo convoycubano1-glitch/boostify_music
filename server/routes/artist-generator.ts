@@ -7,7 +7,7 @@ import { generateRandomArtist } from '../../scripts/generate-random-artist';
 import { db } from '../firebase';
 import { Timestamp, DocumentData } from 'firebase-admin/firestore';
 import { db as pgDb } from '../../db';
-import { users, artistNews, songs, tokenizedSongs } from '../../db/schema';
+import { users, artistNews, songs, tokenizedSongs, userRoles, subscriptions } from '../../db/schema';
 import { eq, desc } from 'drizzle-orm';
 // FAL AI Nano Banana para imágenes y MiniMax Music para audio
 import { 
@@ -1160,7 +1160,48 @@ router.delete("/delete-artist/:pgId", isAuthenticated, async (req: Request, res:
       }
     }
 
-    // 4. Eliminar de PostgreSQL
+    // 4. Eliminar registros relacionados antes de eliminar el usuario
+    // Eliminar de user_roles
+    try {
+      await pgDb
+        .delete(userRoles)
+        .where(eq(userRoles.userId, pgId));
+      console.log(`✅ Roles de usuario eliminados para: ${pgId}`);
+    } catch (roleError) {
+      console.log(`⚠️ No se encontraron roles para eliminar o error: ${roleError}`);
+    }
+
+    // Eliminar de subscriptions (si existe)
+    try {
+      await pgDb
+        .delete(subscriptions)
+        .where(eq(subscriptions.userId, pgId));
+      console.log(`✅ Suscripciones eliminadas para: ${pgId}`);
+    } catch (subError) {
+      console.log(`⚠️ No se encontraron suscripciones para eliminar o error: ${subError}`);
+    }
+
+    // Eliminar canciones tokenizadas asociadas
+    try {
+      await pgDb
+        .delete(tokenizedSongs)
+        .where(eq(tokenizedSongs.artistId, pgId));
+      console.log(`✅ Canciones tokenizadas eliminadas para artista: ${pgId}`);
+    } catch (tokenError) {
+      console.log(`⚠️ No se encontraron canciones tokenizadas para eliminar: ${tokenError}`);
+    }
+
+    // Eliminar noticias del artista
+    try {
+      await pgDb
+        .delete(artistNews)
+        .where(eq(artistNews.artistId, pgId));
+      console.log(`✅ Noticias eliminadas para artista: ${pgId}`);
+    } catch (newsError) {
+      console.log(`⚠️ No se encontraron noticias para eliminar: ${newsError}`);
+    }
+
+    // 5. Eliminar de PostgreSQL
     await pgDb
       .delete(users)
       .where(eq(users.id, pgId));

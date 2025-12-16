@@ -8,7 +8,7 @@ import { Header } from '../components/layout/header';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../hooks/use-auth';
-import { isAdminEmail, ADMIN_EMAILS } from '@shared/constants';
+import { isAdminEmail, ADMIN_EMAILS } from '../../../shared/constants';
 import { 
   BarChart3, Users, DollarSign, Music, FileVideo, Target, 
   Shield, RefreshCw, Activity, Upload, Sparkles, Link as LinkIcon,

@@ -12,13 +12,15 @@ export type { LayerType, ClipType };
 
 /**
  * Ancho en píxeles de la cabecera de cada capa
+/**
+ * Ancho en píxeles de la cabecera de cada capa (responsive: 50-140px)
  */
-export const LAYER_HEADER_WIDTH = 160;
+export const LAYER_HEADER_WIDTH = 140;
 
 /**
- * Altura por defecto en píxeles de cada capa en el timeline
+ * Altura por defecto en píxeles de cada capa en el timeline (responsive: 35-50px)
  */
-export const DEFAULT_LAYER_HEIGHT = 50;
+export const DEFAULT_LAYER_HEIGHT = 45;
 
 /**
  * Duración máxima en segundos para los clips (restricción de 5 segundos)

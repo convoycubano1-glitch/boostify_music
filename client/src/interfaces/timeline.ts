@@ -84,6 +84,11 @@ export interface TimelineClip {
   locked?: boolean;         // Si el clip está bloqueado
   generated?: boolean;      // Si fue generado automáticamente
   generatedImage?: boolean; // Si es una imagen generada por IA
+  
+  // Propiedades de edición/recorte de video
+  sourceStart?: number;     // Punto de inicio dentro del clip fuente (para recortar)
+  in?: number;              // Punto de entrada (alias de sourceStart, segundos)
+  out?: number;             // Punto de salida del clip fuente (segundos)
 }
 
 /**

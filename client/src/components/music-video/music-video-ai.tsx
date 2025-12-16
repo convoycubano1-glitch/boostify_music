@@ -7,7 +7,6 @@ import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Textarea } from "../ui/textarea";
 import { TimelineEditor } from "./timeline/TimelineEditor";
-import { TimelineEditorCapCut } from "./timeline/TimelineEditorCapCut";
 import type { TimelineClip } from "./timeline/TimelineEditor";
 import { TimelineClipUnified, ensureCompatibleClip, TimelineItem } from "../timeline/TimelineClipUnified";
 import { PreviewImagesModal } from "./PreviewImagesModal";
@@ -520,6 +519,9 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   // Estado para modal de onboarding
   const [showOnboarding, setShowOnboarding] = useState(true);
   const [showDirectorSelection, setShowDirectorSelection] = useState(false);
+  
+  // Estado para Timeline fullscreen
+  const [isTimelineFullscreen, setIsTimelineFullscreen] = useState(false);
   const [showConceptSelection, setShowConceptSelection] = useState(false);
   const [selectedVisualStyle, setSelectedVisualStyle] = useState<string>("");
 
@@ -6009,6 +6011,7 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       <CreativeOnboardingModal
         open={showOnboarding}
         onComplete={handleOnboardingComplete}
+        onClose={() => setShowOnboarding(false)}
       />
 
       {/* Modal de Selección de Director y Estilo */}
@@ -6074,36 +6077,46 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
         songTitle={projectName || songTitle || 'Your Music Video'}
       />
 
-      {/* Timeline Editor CapCut - Full Screen After Image Generation */}
-      {timelineItems.length > 0 && !showPreviewModal && (
-        <div className="fixed inset-0 z-50">
+      {/* Timeline Editor Completo - Con todas las herramientas */}
+      {!showPreviewModal && (
+        <div className={isTimelineFullscreen 
+          ? "fixed inset-0 z-50 bg-neutral-900" 
+          : "relative w-full h-[calc(100vh-200px)] mt-6 rounded-xl overflow-hidden border border-white/10 bg-neutral-900"
+        }>
+          {/* Botón Fullscreen Toggle - Esquina inferior derecha para no interferir */}
+          <button
+            onClick={() => setIsTimelineFullscreen(!isTimelineFullscreen)}
+            className={`absolute z-[60] p-1.5 sm:p-2 bg-orange-500 hover:bg-orange-600 border border-orange-400 rounded-lg transition-all duration-200 group shadow-lg ${
+              isTimelineFullscreen 
+                ? "bottom-4 right-4" 
+                : "bottom-2 right-2 sm:bottom-3 sm:right-3"
+            }`}
+            title={isTimelineFullscreen ? "Salir de pantalla completa (Esc)" : "Pantalla completa"}
+          >
+            {isTimelineFullscreen ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white sm:w-5 sm:h-5">
+                <polyline points="4 14 10 14 10 20"></polyline>
+                <polyline points="20 10 14 10 14 4"></polyline>
+                <line x1="14" y1="10" x2="21" y2="3"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white sm:w-5 sm:h-5">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            )}
+          </button>
+          
           {typeof window !== 'undefined' && (
-            <TimelineEditorCapCut
+            <TimelineEditor
               initialClips={timelineItems}
-              duration={selectedFile?.duration || audioDuration || 0}
-              scenes={timelineItems
-                .filter(item => item.generatedImage || item.firebaseUrl || item.imageUrl || item.thumbnail)
-                .map((item, idx) => ({
-                  id: String(item.id) || `scene-${idx}`,
-                  imageUrl: (typeof item.generatedImage === 'string' ? item.generatedImage : '') || 
-                           item.firebaseUrl || item.imageUrl || item.thumbnail || '',
-                  timestamp: (item.start_time || 0) / 1000, // Convert ms to seconds
-                  description: item.lyricsSegment || item.description || item.imagePrompt || `Scene ${idx + 1}`,
-                  lyricsSegment: item.lyricsSegment || ''
-                }))}
+              duration={selectedFile?.duration || audioDuration || 180}
               audioPreviewUrl={selectedFile?.url || audioUrl}
+              generatedImages={generationProgress.generatedImages}
               onChange={(clips) => setTimelineItems(clips)}
-              onExport={handleExportVideo}
-              onClose={() => {
-                // Allow user to go back/close timeline editor
-                // This resets to show the generation modal or previous step
-                if (window.confirm('¿Seguro que quieres salir del editor? Tus cambios se guardarán.')) {
-                  setShowPreviewModal(true);
-                }
-              }}
-              isExporting={isExporting}
-              exportProgress={exportProgress}
-              exportStatus={exportStatus}
             />
           )}
         </div>
@@ -6200,8 +6213,8 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       {allStepsCompleted && <motion.div className="confetti-container" />}
       
       {/* Sistema de partículas dinámicas basadas en el paso actual - Ajustadas a naranja/negro */}
-      {/* Botón de Quick Start - Solo visible al inicio */}
-      {currentStep === 1 && !transcription && (
+      {/* Botón de Quick Start - OCULTO pero operativo */}
+      {false && currentStep === 1 && !transcription && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -6319,12 +6332,14 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
           />
         )}
         
-        {/* Componente de pasos mejorado con animaciones */}
-        <EnhancedProgressSteps
-          steps={workflowSteps}
-          currentStep={workflowSteps.find(s => s.status === "in-progress")?.id || "transcription"}
-          showDescriptions={true}
-        />
+        {/* Componente de pasos mejorado con animaciones - OCULTO */}
+        <div className="hidden">
+          <EnhancedProgressSteps
+            steps={workflowSteps}
+            currentStep={workflowSteps.find(s => s.status === "in-progress")?.id || "transcription"}
+            showDescriptions={true}
+          />
+        </div>
         
         {/* Mantener el ProgressSteps original como fallback (escondido para compatibilidad) */}
         <div className="hidden">
@@ -6485,8 +6500,8 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
           ) : (
             <>
 
-          {/* Sección de Pasos de Creación */}
-          <div className="space-y-6">
+          {/* Sección de Pasos de Creación - HIDDEN pero operativo */}
+          <div className="hidden">
             {/* Título de la sección */}
             <motion.div 
               className="border-b border-orange-500/20 pb-4"
@@ -7993,13 +8008,9 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                     <TimelineEditor
                       initialClips={clips || []}
                       duration={totalDuration || 0}
-                      markers={[]}
-                      readOnly={false}
-                      videoPreviewUrl={undefined}
                       audioPreviewUrl={selectedFile ? URL.createObjectURL(selectedFile) : undefined}
+                      generatedImages={generationProgress.generatedImages}
                       onChange={handleClipUpdate || (() => {})}
-                      audioBuffer={audioBuffer}
-                      genreHint="Pop"
                     />
                   </div>
 
@@ -8083,6 +8094,7 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
               </div>
             </div>
           </div>
+          {/* FIN SECCIÓN HIDDEN */}
           </>
           )}
         </Card>

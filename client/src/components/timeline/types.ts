@@ -28,6 +28,12 @@ export interface TimelineClip {
   isIsolated?: boolean; // Indica si el clip está aislado y no puede mezclarse
   maxDuration?: number; // Duración máxima en segundos (5s para clips IA)
   
+  // Propiedades de edición avanzada
+  sourceStart?: number; // Tiempo de inicio dentro del clip fuente (para recortar)
+  in?: number;          // Punto de entrada (alias de sourceStart para compatibilidad)
+  out?: number;         // Punto de salida del clip fuente
+  duration?: number;    // Duración total del clip (calculada como endTime - startTime)
+  
   // Metadatos adicionales dependiendo del tipo
   metadata?: {
     // Para clips de audio

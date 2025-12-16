@@ -8,11 +8,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
 import { ScrollArea } from '../ui/scroll-area';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { useToast } from '../../hooks/use-toast';
 import { 
   Users, Search, Shield, Crown, UserCog, Mail, Calendar, 
   ChevronLeft, ChevronRight, RefreshCw, Edit2, Trash2,
-  CheckCircle, XCircle, Star, Zap
+  CheckCircle, XCircle, Star, Zap, UserPlus, AlertTriangle
 } from 'lucide-react';
 
 interface User {
@@ -78,6 +79,8 @@ export function UserManagement() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
   
   // Role editing
   const [newRole, setNewRole] = useState('user');
@@ -86,6 +89,12 @@ export function UserManagement() {
   // Subscription editing
   const [newPlan, setNewPlan] = useState('creator');
   const [newDuration, setNewDuration] = useState('30');
+  
+  // New user form
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserFirstName, setNewUserFirstName] = useState('');
+  const [newUserLastName, setNewUserLastName] = useState('');
+  const [newUserRole, setNewUserRole] = useState('user');
   
   // Stats
   const [roleStats, setRoleStats] = useState<RoleStats | null>(null);
@@ -108,7 +117,9 @@ export function UserManagement() {
         ...(subscriptionFilter && { subscription: subscriptionFilter }),
       });
       
-      const res = await fetch(`/api/admin/users?${params}`);
+      const res = await fetch(`/api/admin/users?${params}`, {
+        credentials: 'include'
+      });
       const data = await res.json();
       
       if (data.success) {
@@ -126,7 +137,9 @@ export function UserManagement() {
 
   const loadRoleStats = async () => {
     try {
-      const res = await fetch('/api/admin/roles');
+      const res = await fetch('/api/admin/roles', {
+        credentials: 'include'
+      });
       const data = await res.json();
       
       if (data.success) {
@@ -165,6 +178,7 @@ export function UserManagement() {
       const res = await fetch(`/api/admin/users/${selectedUser.id}/role`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ role: newRole, permissions: newPermissions })
       });
       
@@ -188,7 +202,8 @@ export function UserManagement() {
     
     try {
       const res = await fetch(`/api/admin/users/${selectedUser.id}/role`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include'
       });
       
       const data = await res.json();
@@ -213,6 +228,7 @@ export function UserManagement() {
       const res = await fetch(`/api/admin/users/${selectedUser.id}/subscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ 
           plan: newPlan, 
           status: 'active',
@@ -234,6 +250,74 @@ export function UserManagement() {
     }
   };
 
+  const openDeleteModal = (user: User) => {
+    setSelectedUser(user);
+    setShowDeleteModal(true);
+  };
+
+  const deleteUser = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      const res = await fetch(`/api/admin/users/${selectedUser.id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        toast({ title: 'Success', description: data.message });
+        setShowDeleteModal(false);
+        setSelectedUser(null);
+        loadUsers();
+        loadRoleStats();
+      } else {
+        toast({ title: 'Error', description: data.error, variant: 'destructive' });
+      }
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete user', variant: 'destructive' });
+    }
+  };
+
+  const addUser = async () => {
+    if (!newUserEmail) {
+      toast({ title: 'Error', description: 'Email is required', variant: 'destructive' });
+      return;
+    }
+    
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          email: newUserEmail,
+          firstName: newUserFirstName,
+          lastName: newUserLastName,
+          role: newUserRole
+        })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        toast({ title: 'Success', description: data.message });
+        setShowAddUserModal(false);
+        setNewUserEmail('');
+        setNewUserFirstName('');
+        setNewUserLastName('');
+        setNewUserRole('user');
+        loadUsers();
+        loadRoleStats();
+      } else {
+        toast({ title: 'Error', description: data.error, variant: 'destructive' });
+      }
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to add user', variant: 'destructive' });
+    }
+  };
+
   const togglePermission = (permission: string) => {
     setNewPermissions(prev => 
       prev.includes(permission)
@@ -241,6 +325,7 @@ export function UserManagement() {
         : [...prev, permission]
     );
   };
+
 
   return (
     <div className="space-y-6">
@@ -313,15 +398,25 @@ export function UserManagement() {
               <CardDescription>Manage users, roles, and permissions</CardDescription>
             </div>
             
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => { loadUsers(); loadRoleStats(); }}
-              className="border-orange-500/30"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => { loadUsers(); loadRoleStats(); }}
+                className="border-orange-500/30"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+              <Button 
+                size="sm"
+                onClick={() => setShowAddUserModal(true)}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add User
+              </Button>
+            </div>
           </div>
         </CardHeader>
         
@@ -339,12 +434,12 @@ export function UserManagement() {
               />
             </div>
             
-            <Select value={roleFilter} onValueChange={(v) => { setRoleFilter(v); setPage(1); }}>
+            <Select value={roleFilter || 'all'} onValueChange={(v) => { setRoleFilter(v === 'all' ? '' : v); setPage(1); }}>
               <SelectTrigger className="w-[150px] bg-slate-800 border-slate-700">
                 <SelectValue placeholder="All Roles" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Roles</SelectItem>
+                <SelectItem value="all">All Roles</SelectItem>
                 <SelectItem value="user">User</SelectItem>
                 <SelectItem value="moderator">Moderator</SelectItem>
                 <SelectItem value="support">Support</SelectItem>
@@ -352,12 +447,12 @@ export function UserManagement() {
               </SelectContent>
             </Select>
             
-            <Select value={subscriptionFilter} onValueChange={(v) => { setSubscriptionFilter(v); setPage(1); }}>
+            <Select value={subscriptionFilter || 'all'} onValueChange={(v) => { setSubscriptionFilter(v === 'all' ? '' : v); setPage(1); }}>
               <SelectTrigger className="w-[150px] bg-slate-800 border-slate-700">
                 <SelectValue placeholder="All Plans" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Plans</SelectItem>
+                <SelectItem value="all">All Plans</SelectItem>
                 <SelectItem value="none">No Subscription</SelectItem>
                 <SelectItem value="free">Discover (Free)</SelectItem>
                 <SelectItem value="creator">Elevate</SelectItem>
@@ -445,6 +540,14 @@ export function UserManagement() {
                       >
                         <Star className="h-4 w-4 mr-1" />
                         Plan
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openDeleteModal(user)}
+                        className="border-red-500/30 hover:bg-red-500/10 text-red-400"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
@@ -612,6 +715,120 @@ export function UserManagement() {
             </Button>
             <Button onClick={saveSubscription} className="bg-purple-500 hover:bg-purple-600">
               Assign Plan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <AlertDialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <AlertDialogContent className="bg-slate-900 border-red-500/20">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-400 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              Delete User
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <span className="text-white font-semibold">{selectedUser?.email}</span>?
+              <br /><br />
+              This action will permanently remove the user and all associated data including:
+              <ul className="list-disc list-inside mt-2 text-slate-400">
+                <li>User profile and account</li>
+                <li>Assigned roles and permissions</li>
+                <li>Subscription data</li>
+              </ul>
+              <br />
+              <span className="text-red-400 font-semibold">This action cannot be undone.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-slate-700">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={deleteUser}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete User
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Add User Modal */}
+      <Dialog open={showAddUserModal} onOpenChange={setShowAddUserModal}>
+        <DialogContent className="bg-slate-900 border-orange-500/20">
+          <DialogHeader>
+            <DialogTitle className="text-orange-400 flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Add New User
+            </DialogTitle>
+            <DialogDescription>
+              Create a new user account manually
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Email <span className="text-red-400">*</span></Label>
+              <Input
+                type="email"
+                placeholder="user@example.com"
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
+                className="bg-slate-800 border-slate-700"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>First Name</Label>
+                <Input
+                  placeholder="John"
+                  value={newUserFirstName}
+                  onChange={(e) => setNewUserFirstName(e.target.value)}
+                  className="bg-slate-800 border-slate-700"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Last Name</Label>
+                <Input
+                  placeholder="Doe"
+                  value={newUserLastName}
+                  onChange={(e) => setNewUserLastName(e.target.value)}
+                  className="bg-slate-800 border-slate-700"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Initial Role</Label>
+              <Select value={newUserRole} onValueChange={setNewUserRole}>
+                <SelectTrigger className="bg-slate-800 border-slate-700">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="moderator">Moderator</SelectItem>
+                  <SelectItem value="support">Support</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <p className="text-sm text-blue-300">
+                ℹ️ The user will be created without a password. They will need to use 
+                Clerk authentication (Google, email link, etc.) to access their account.
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddUserModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={addUser} className="bg-green-600 hover:bg-green-700">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add User
             </Button>
           </DialogFooter>
         </DialogContent>

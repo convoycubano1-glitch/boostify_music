@@ -38,9 +38,10 @@ interface CreativeOnboardingModalProps {
     videoStyle: string,
     conceptBrief?: string
   ) => void;
+  onClose?: () => void;
 }
 
-export function CreativeOnboardingModal({ open, onComplete }: CreativeOnboardingModalProps) {
+export function CreativeOnboardingModal({ open, onComplete, onClose }: CreativeOnboardingModalProps) {
   const { toast } = useToast();
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
@@ -199,8 +200,18 @@ export function CreativeOnboardingModal({ open, onComplete }: CreativeOnboarding
   };
 
   return (
-    <Dialog open={open} modal={true}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose?.()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-background via-background to-orange-950/20" data-testid="modal-onboarding">
+        {/* Botón de cerrar */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none z-50"
+            aria-label="Cerrar"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
         <DialogHeader>
           <DialogTitle className="text-3xl font-bold text-center flex items-center justify-center gap-3">
             <Sparkles className="h-8 w-8 text-orange-500" />

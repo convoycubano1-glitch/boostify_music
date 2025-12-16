@@ -276,6 +276,22 @@ export default function ProducerToolsPage() {
   const { toast } = useToast();
   const [showNewServiceDialog, setShowNewServiceDialog] = useState(false);
   const { hasAccess: hasBasicPlanAccess } = useSubscriptionFeature({ requiredPlan: 'basic' });
+  
+  // Move ALL useState hooks to the top - before any conditional returns
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [isGeneratingMusic, setIsGeneratingMusic] = useState(false);
+  const [isMastering, setIsMastering] = useState(false);
+  const [isGeneratingCover, setIsGeneratingCover] = useState(false);
+  const [musicPrompt, setMusicPrompt] = useState("");
+  const [coverPrompt, setCoverPrompt] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [generatedCoverUrl, setGeneratedCoverUrl] = useState<string | null>(null);
+  const [musiciansState, setMusiciansState] = useState(musicians);
+  const [isLoadingImages, setIsLoadingImages] = useState(true);
+  const [showAddMusicianDialog, setShowAddMusicianDialog] = useState(false);
+  const [useModernUI, setUseModernUI] = useState(false);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
 
   // Check if user is authenticated - redirect if not
   useEffect(() => {
@@ -303,20 +319,6 @@ export default function ProducerToolsPage() {
       </div>
     );
   }
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [isGeneratingMusic, setIsGeneratingMusic] = useState(false);
-  const [isMastering, setIsMastering] = useState(false);
-  const [isGeneratingCover, setIsGeneratingCover] = useState(false);
-  const [musicPrompt, setMusicPrompt] = useState("");
-  const [coverPrompt, setCoverPrompt] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [imagesLoaded, setImagesLoaded] = useState(false);
-  const [generatedCoverUrl, setGeneratedCoverUrl] = useState<string | null>(null);
-  const [musiciansState, setMusiciansState] = useState(musicians);
-  const [isLoadingImages, setIsLoadingImages] = useState(true);
-  const [showAddMusicianDialog, setShowAddMusicianDialog] = useState(false);
-  const [useModernUI, setUseModernUI] = useState(false);
-  const [isTermsOpen, setIsTermsOpen] = useState(false);
 
   const loadFirestoreMusicians = async () => {
     try {
@@ -607,7 +609,7 @@ export default function ProducerToolsPage() {
       <Header />
 
       {/* Hero Section with Video Background */}
-      <div className="relative w-full h-[70vh] md:h-[90vh] overflow-hidden">
+      <div className="relative w-full h-[50vh] sm:h-[60vh] md:h-[80vh] overflow-hidden">
         <video
           autoPlay
           loop
@@ -622,32 +624,32 @@ export default function ProducerToolsPage() {
         >
           <source src="/assets/Standard_Mode_Generated_Video (3).mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 bg-black/60 md:bg-black/50" />
         <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
 
-        <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-end md:justify-end pb-12 md:pb-12 pt-48 md:pt-96">
+        <div className="relative z-10 container mx-auto px-3 sm:px-4 h-full flex flex-col justify-end pb-6 sm:pb-8 md:pb-12 pt-24 sm:pt-32 md:pt-48">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="text-center md:text-left mb-12"
           >
-            <div className="inline-block bg-orange-500/20 backdrop-blur-sm border border-orange-500/30 rounded-full px-4 py-2 mb-6">
-              <span className="text-orange-500 text-sm font-medium flex items-center">
-                <Music2 className="h-4 w-4 mr-2" /> Next-Gen Production Suite
+            <div className="inline-block bg-orange-500/20 backdrop-blur-sm border border-orange-500/30 rounded-full px-3 py-1.5 sm:px-4 sm:py-2 mb-3 sm:mb-6">
+              <span className="text-orange-500 text-xs sm:text-sm font-medium flex items-center">
+                <Music2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" /> Next-Gen Production Suite
               </span>
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
+            <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 md:mb-6 leading-tight">
               Your Creative <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">Music Hub</span>
             </h1>
-            <p className="text-lg md:text-xl text-white/90 max-w-2xl mb-8">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/90 max-w-2xl mb-4 sm:mb-6 md:mb-8">
               Connect with musicians worldwide or use our AI tools to enhance your production workflow
             </p>
-            <div className="flex flex-wrap gap-3 items-center">
-              <Button size="lg" className="bg-orange-600 hover:bg-orange-700 text-white">
-                Start Creating <Wand2 className="ml-2 h-5 w-5" />
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center">
+              <Button size="default" className="bg-orange-600 hover:bg-orange-700 text-white w-full sm:w-auto text-sm sm:text-base">
+                Start Creating <Wand2 className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
-              <Button variant="outline" size="lg" className="border-white/30 bg-black/30 backdrop-blur-sm text-white hover:bg-black/40">
+              <Button variant="outline" size="default" className="border-white/30 bg-black/30 backdrop-blur-sm text-white hover:bg-black/40 w-full sm:w-auto text-sm sm:text-base">
                 Watch Demo <PlayCircle className="ml-2 h-4 w-4" />
               </Button>
             </div>
@@ -656,17 +658,17 @@ export default function ProducerToolsPage() {
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex justify-between items-center mb-8">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-6 sm:mb-8">
             <div>
-              <h2 className="text-3xl font-bold">Musician Services</h2>
-              <p className="text-muted-foreground mt-2">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">Musician Services</h2>
+              <p className="text-muted-foreground text-sm sm:text-base mt-1 sm:mt-2">
                 Connect with musicians and producers worldwide
               </p>
             </div>
             <Dialog open={showAddMusicianDialog} onOpenChange={setShowAddMusicianDialog}>
               <DialogTrigger asChild>
-                <Button className="bg-orange-500 hover:bg-orange-600">
+                <Button className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto text-sm">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Musician
                 </Button>
@@ -686,25 +688,28 @@ export default function ProducerToolsPage() {
             </Dialog>
           </div>
 
-          {/* Service Categories */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-            {["all", "Guitar", "Drums", "Piano", "Vocals", "Production", "Other"].map((category) => (
-              <Card
-                key={category}
-                className={`p-4 text-center cursor-pointer transition-colors backdrop-blur-sm ${
-                  selectedCategory.toLowerCase() === category.toLowerCase() ? 'bg-orange-500/10 border-orange-500' : 'hover:bg-orange-500/5'
-                }`}
-                onClick={() => setSelectedCategory(category)}
-              >
-                {category === "Guitar" && <Guitar className="h-8 w-8 mx-auto mb-2 text-orange-500" />}
-                {category === "Drums" && <Drum className="h-8 w-8 mx-auto mb-2 text-orange-500" />}
-                {category === "Piano" && <Piano className="h-8 w-8 mx-auto mb-2 text-orange-500" />}
-                {category === "Vocals" && <Mic2 className="h-8 w-8 mx-auto mb-2 text-orange-500" />}
-                {category === "Production" && <Music4 className="h-8 w-8 mx-auto mb-2 text-orange-500" />}
-                {category === "Other" && <Music2 className="h-8 w-8 mx-auto mb-2 text-orange-500" />}
-                <p className="font-medium">{category !== "all" ? category : "All Categories"}</p>
-              </Card>
-            ))}
+          {/* Service Categories - Horizontal scroll on mobile */}
+          <div className="mb-6 sm:mb-8 -mx-3 sm:mx-0 px-3 sm:px-0">
+            <div className="flex sm:grid sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3 overflow-x-auto pb-2 sm:pb-0 snap-x snap-mandatory sm:snap-none scrollbar-hide">
+              {["all", "Guitar", "Drums", "Piano", "Vocals", "Production", "Other"].map((category) => (
+                <Card
+                  key={category}
+                  className={`flex-shrink-0 w-20 sm:w-auto p-2 sm:p-3 md:p-4 text-center cursor-pointer transition-colors backdrop-blur-sm snap-center ${
+                    selectedCategory.toLowerCase() === category.toLowerCase() ? 'bg-orange-500/10 border-orange-500' : 'hover:bg-orange-500/5'
+                  }`}
+                  onClick={() => setSelectedCategory(category)}
+                >
+                  {category === "Guitar" && <Guitar className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 mx-auto mb-1 sm:mb-2 text-orange-500" />}
+                  {category === "Drums" && <Drum className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 mx-auto mb-1 sm:mb-2 text-orange-500" />}
+                  {category === "Piano" && <Piano className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 mx-auto mb-1 sm:mb-2 text-orange-500" />}
+                  {category === "Vocals" && <Mic2 className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 mx-auto mb-1 sm:mb-2 text-orange-500" />}
+                  {category === "Production" && <Music4 className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 mx-auto mb-1 sm:mb-2 text-orange-500" />}
+                  {category === "Other" && <Music2 className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 mx-auto mb-1 sm:mb-2 text-orange-500" />}
+                  {category === "all" && <Music2 className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 mx-auto mb-1 sm:mb-2 text-orange-500" />}
+                  <p className="font-medium text-xs sm:text-sm md:text-base truncate">{category !== "all" ? category : "All"}</p>
+                </Card>
+              ))}
+            </div>
           </div>
 
           {/* Musicians Grid */}
@@ -714,13 +719,13 @@ export default function ProducerToolsPage() {
             transition={{ duration: 0.5 }}
             className="mb-12"
           >
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
               {isLoadingImages ? (
                 // Loading skeleton
                 Array.from({ length: 6 }).map((_, i) => (
                   <Card key={`skeleton-${i}`} className="overflow-hidden animate-pulse backdrop-blur-sm border border-orange-500/10 shadow-xl shadow-orange-500/5">
-                    <div className="aspect-[4/3] bg-muted" />
-                    <div className="p-6 space-y-4">
+                    <div className="aspect-[4/3] sm:aspect-[4/3] bg-muted" />
+                    <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
                       <div className="h-4 bg-muted rounded w-3/4" />
                       <div className="h-4 bg-muted rounded w-1/2" />
                       <div className="flex justify-between items-center">
@@ -740,46 +745,47 @@ export default function ProducerToolsPage() {
                     transition={{ duration: 0.3, delay: index * 0.05 }}
                   >
                     <Card className="overflow-hidden backdrop-blur-sm bg-background/80 border border-orange-500/10 shadow-lg hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 group">
-                      <div className="aspect-[4/3] bg-orange-500/10 relative overflow-hidden">
+                      <div className="aspect-[16/10] sm:aspect-[4/3] bg-orange-500/10 relative overflow-hidden">
                         <img
                           src={musician.photo || "/assets/musician-placeholder.jpg"}
                           alt={musician.title}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          loading="lazy"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        <div className="absolute top-3 right-3 z-10">
-                          <Badge variant="outline" className="bg-black/50 backdrop-blur-md border-orange-500/20 text-white px-2.5 py-1">
+                        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10">
+                          <Badge variant="outline" className="bg-black/50 backdrop-blur-md border-orange-500/20 text-white px-1.5 py-0.5 sm:px-2.5 sm:py-1 text-xs sm:text-sm">
                             {musician.instrument}
                           </Badge>
                         </div>
                       </div>
-                      <div className="p-6">
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-xl font-semibold group-hover:text-orange-500 transition-colors">{musician.title}</h3>
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 text-orange-500 fill-orange-500" />
-                            <span className="font-medium">{musician.rating.toFixed(1)}</span>
+                      <div className="p-3 sm:p-4 md:p-6">
+                        <div className="flex items-center justify-between mb-2 sm:mb-3">
+                          <h3 className="text-base sm:text-lg md:text-xl font-semibold group-hover:text-orange-500 transition-colors truncate mr-2">{musician.title}</h3>
+                          <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+                            <Star className="h-3 w-3 sm:h-4 sm:w-4 text-orange-500 fill-orange-500" />
+                            <span className="font-medium text-xs sm:text-sm">{musician.rating.toFixed(1)}</span>
                           </div>
                         </div>
-                        <p className="text-muted-foreground mb-4 line-clamp-2">{musician.description}</p>
-                        <div className="flex flex-wrap gap-2 mb-4">
+                        <p className="text-muted-foreground mb-2 sm:mb-4 line-clamp-2 text-xs sm:text-sm">{musician.description}</p>
+                        <div className="flex flex-wrap gap-1 sm:gap-2 mb-2 sm:mb-4">
                           {musician.genres?.slice(0, 3).map(genre => (
-                            <Badge key={genre} variant="secondary" className="bg-orange-500/10 text-orange-500 hover:bg-orange-500/20">
+                            <Badge key={genre} variant="secondary" className="bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">
                               {genre}
                             </Badge>
                           ))}
                         </div>
-                        <div className="flex justify-between items-center mb-4">
-                          <div className="text-muted-foreground text-sm">
+                        <div className="flex justify-between items-center mb-3 sm:mb-4">
+                          <div className="text-muted-foreground text-xs sm:text-sm">
                             {musician.totalReviews} valoraciones
                           </div>
-                          <div className="flex items-center gap-2 text-base font-semibold text-orange-500">
-                            <DollarSign className="h-4 w-4" />
+                          <div className="flex items-center gap-1 sm:gap-2 text-sm sm:text-base font-semibold text-orange-500">
+                            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
                             ${musician.price}/sesión
                           </div>
                         </div>
                         <Button
-                          className="w-full bg-orange-500 hover:bg-orange-600 shadow-md hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300"
+                          className="w-full bg-orange-500 hover:bg-orange-600 shadow-md hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300 text-sm sm:text-base h-9 sm:h-10"
                           asChild
                         >
                           <BookingDialog musician={musician} />
@@ -798,26 +804,26 @@ export default function ProducerToolsPage() {
           </div>
 
           {/* Production Tools Section */}
-          <div className="mb-12">
-            <div className="flex flex-col md:flex-row items-center justify-between mb-8">
+          <div className="mb-8 sm:mb-12">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 sm:mb-6 md:mb-8 gap-2 sm:gap-3">
               <div>
-                <h2 className="text-3xl font-bold text-gradient-primary mb-2">Production Workflow Tools</h2>
-                <p className="text-muted-foreground max-w-2xl">Collaborate seamlessly with professional tools designed for musicians and producers.</p>
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gradient-primary mb-1 sm:mb-2">Production Workflow Tools</h2>
+                <p className="text-muted-foreground text-sm sm:text-base max-w-2xl">Collaborate seamlessly with professional tools designed for musicians and producers.</p>
               </div>
-              <Badge variant="outline" className="mt-2 md:mt-0 bg-orange-500/10 text-orange-500 border-orange-500/20 px-3 py-1">
-                <span className="animate-pulse mr-2">●</span> {!hasBasicPlanAccess ? 'BASIC Plan+' : 'Live Collaboration'}
+              <Badge variant="outline" className="mt-1 md:mt-0 bg-orange-500/10 text-orange-500 border-orange-500/20 px-2 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-sm">
+                <span className="animate-pulse mr-1 sm:mr-2">●</span> {!hasBasicPlanAccess ? 'BASIC Plan+' : 'Live Collaboration'}
               </Badge>
             </div>
             
             {!hasBasicPlanAccess ? (
-              <Card className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/30 p-12 text-center">
-                <h3 className="text-2xl font-bold mb-3">Upgrade to Access Production Tools</h3>
-                <p className="text-white/70 mb-6 max-w-2xl mx-auto">
+              <Card className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/30 p-4 sm:p-8 md:p-12 text-center">
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-2 sm:mb-3">Upgrade to Access Production Tools</h3>
+                <p className="text-white/70 mb-4 sm:mb-6 max-w-2xl mx-auto text-sm sm:text-base">
                   Production Workflow Tools including File Exchange, Video Studio, Progress Tracking, and Version Control require at least a BASIC subscription plan ($59.99/month).
                 </p>
                 <Button 
                   onClick={() => setLocation('/signup')}
-                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-lg hover:shadow-orange-500/20"
+                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-lg hover:shadow-orange-500/20 text-sm sm:text-base"
                 >
                   View Subscription Plans
                 </Button>
@@ -921,27 +927,27 @@ export default function ProducerToolsPage() {
           </div> */}
 
           {/* Terms and Conditions Section */}
-          <div className="mt-16 mb-8 max-w-6xl mx-auto">
+          <div className="mt-8 sm:mt-12 md:mt-16 mb-6 sm:mb-8 max-w-6xl mx-auto">
             <Collapsible open={isTermsOpen} onOpenChange={setIsTermsOpen}>
               <CollapsibleTrigger asChild>
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full flex items-center justify-between p-6 hover:bg-muted/50 transition-colors border-2"
+                  className="w-full flex items-center justify-between p-3 sm:p-4 md:p-6 hover:bg-muted/50 transition-colors border-2"
                 >
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-base font-semibold">Booking Terms & Conditions</span>
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+                    <span className="text-sm sm:text-base font-semibold">Booking Terms & Conditions</span>
                   </div>
                   <ChevronDown
-                    className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${
+                    className={`h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground transition-transform duration-200 ${
                       isTermsOpen ? "rotate-180" : ""
                     }`}
                   />
                 </Button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="px-6 pb-6">
-                <div className="space-y-6 text-sm text-muted-foreground mt-6 max-h-[500px] overflow-y-auto border rounded-lg p-6 bg-muted/20">
+              <CollapsibleContent className="px-3 sm:px-6 pb-4 sm:pb-6">
+                <div className="space-y-4 sm:space-y-6 text-xs sm:text-sm text-muted-foreground mt-4 sm:mt-6 max-h-[400px] sm:max-h-[500px] overflow-y-auto border rounded-lg p-3 sm:p-6 bg-muted/20">
                   
                   <div>
                     <h4 className="font-semibold text-foreground mb-3 text-base">1. Service Agreement</h4>

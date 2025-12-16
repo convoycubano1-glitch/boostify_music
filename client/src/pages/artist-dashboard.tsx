@@ -24,6 +24,9 @@ import { RightsManagementCard } from "../components/rights/rights-management-car
 import { DistributionCard } from "../components/distribution/distribution-card";
 import { useAuth } from "../hooks/use-auth";
 
+// Import video as module for proper bundling
+import heroVideo from "../images/videos/Standard_Mode_Generated_Video.mp4";
+
 export default function DistributionTools() {
   const { user } = useAuth();
   
@@ -32,15 +35,21 @@ export default function DistributionTools() {
       <main className="flex-1 pt-0">
         {/* Hero Section */}
         <div className="relative w-full h-[65vh] md:h-[75vh] overflow-hidden">
+          {/* Fallback background image */}
+          <div 
+            className="absolute inset-0 w-full h-full bg-cover bg-center"
+            style={{ backgroundImage: `url('/images/music_industry_abstract_art.png')` }}
+          />
           <video
             autoPlay
             loop
             muted
             playsInline
             className="absolute inset-0 w-full h-full object-cover"
+            poster="/images/music_industry_abstract_art.png"
           >
             <source
-              src="/src/images/videos/Standard_Mode_Generated_Video.mp4"
+              src={heroVideo}
               type="video/mp4"
             />
           </video>

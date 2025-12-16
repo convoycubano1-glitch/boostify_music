@@ -169,41 +169,96 @@ const SocialMediaGeneratorPage = lazy(() => import("./pages/social-media-generat
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
+  retryCount: number;
 }
 
 interface ErrorBoundaryProps {
   children: ReactNode;
 }
 
+// Función helper para crear imports con retry
+const lazyWithRetry = (importFn: () => Promise<any>, retries = 3, interval = 1000) => {
+  return lazy(() => {
+    return new Promise((resolve, reject) => {
+      const attemptLoad = (retriesLeft: number) => {
+        importFn()
+          .then(resolve)
+          .catch((error: Error) => {
+            if (retriesLeft > 0) {
+              console.warn(`[LazyLoad] Retrying import... (${retries - retriesLeft + 1}/${retries})`);
+              setTimeout(() => attemptLoad(retriesLeft - 1), interval);
+            } else {
+              console.error('[LazyLoad] Failed after all retries:', error);
+              reject(error);
+            }
+          });
+      };
+      attemptLoad(retries);
+    });
+  });
+};
+
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, retryCount: 0 };
   }
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     console.error('React Error Boundary caught an error:', error, errorInfo);
+    
+    // Si es un error de carga de módulo, intentar recargar automáticamente
+    const isChunkLoadError = error.message?.includes('Loading chunk') || 
+                             error.message?.includes('Failed to fetch') ||
+                             error.message?.includes('importing a module') ||
+                             error.message?.includes('dynamically imported module') ||
+                             error.name === 'ChunkLoadError';
+    
+    if (isChunkLoadError && this.state.retryCount < 2) {
+      console.log('[ErrorBoundary] Chunk load error detected, auto-retrying...');
+      this.setState(prev => ({ retryCount: prev.retryCount + 1, hasError: false, error: null }));
+    }
   }
+
+  handleRetry = () => {
+    this.setState({ hasError: false, error: null, retryCount: 0 });
+  };
 
   render(): React.ReactNode {
     if (this.state.hasError) {
+      const isModuleError = this.state.error?.message?.includes('module') || 
+                           this.state.error?.message?.includes('chunk') ||
+                           this.state.error?.message?.includes('fetch');
+      
       return (
-        <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="max-w-md p-8 rounded-lg bg-card border text-center">
-            <h2 className="text-2xl font-bold text-destructive mb-4">Something went wrong</h2>
-            <p className="text-muted-foreground mb-4">
-              {this.state.error?.message || 'An unexpected error occurred'}
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+          <div className="max-w-md p-6 sm:p-8 rounded-lg bg-card border text-center">
+            <h2 className="text-xl sm:text-2xl font-bold text-destructive mb-4">
+              {isModuleError ? 'Error de conexión' : 'Algo salió mal'}
+            </h2>
+            <p className="text-sm sm:text-base text-muted-foreground mb-4">
+              {isModuleError 
+                ? 'No se pudo cargar el contenido. Esto puede deberse a una conexión lenta. Por favor, inténtalo de nuevo.'
+                : (this.state.error?.message || 'Ha ocurrido un error inesperado')}
             </p>
-            <button
-              className="bg-primary text-primary-foreground px-4 py-2 rounded"
-              onClick={() => window.location.reload()}
-            >
-              Reload Page
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                className="bg-primary text-primary-foreground px-4 py-2 rounded text-sm sm:text-base"
+                onClick={this.handleRetry}
+              >
+                Reintentar
+              </button>
+              <button
+                className="bg-secondary text-secondary-foreground px-4 py-2 rounded text-sm sm:text-base"
+                onClick={() => window.location.reload()}
+              >
+                Recargar página
+              </button>
+            </div>
           </div>
         </div>
       );
@@ -372,8 +427,9 @@ const Router = () => {
 
   return (
     <>
-      <Suspense fallback={<PageLoader />}>
-        <Switch>
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Switch>
           {/* Rutas públicas - accesibles sin autenticación */}
           {getRouteComponent("/", WrappedHomePage, null)}
           {getRouteComponent("/auth", WrappedAuthPage, null)}
@@ -497,7 +553,8 @@ const Router = () => {
           {/* Página de error 404 */}
           <Route component={WrappedNotFound} />
         </Switch>
-      </Suspense>
+        </Suspense>
+      </ErrorBoundary>
       <BottomNav />
       {showRadio && <BoostifyRadio onClose={() => setShowRadio(false)} />}
       {/* CustomerServiceAgent - Temporarily disabled */}

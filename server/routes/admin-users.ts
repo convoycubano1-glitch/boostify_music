@@ -5,7 +5,7 @@
  * Solo accesible por administradores
  */
 
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { db } from '../db';
 import { users, userRoles, subscriptions } from '../db/schema';
 import { eq, desc, sql, like, or, and, isNull } from 'drizzle-orm';
@@ -16,17 +16,41 @@ const router = Router();
 /**
  * Middleware para verificar acceso de admin
  */
-function requireAdmin(req: Request, res: Response, next: Function) {
-  const userEmail = req.user?.email;
-  
-  if (!userEmail || !isAdminEmail(userEmail)) {
-    return res.status(403).json({ 
-      success: false, 
-      error: 'Admin access required' 
+async function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  try {
+    // Obtener email del usuario autenticado (de Clerk)
+    const userEmail = (req as any).auth?.sessionClaims?.email || 
+                      (req as any).user?.email ||
+                      (req as any).auth?.email;
+    
+    console.log('[Admin Users] Auth check:', { 
+      hasAuth: !!(req as any).auth,
+      hasUser: !!(req as any).user,
+      email: userEmail 
     });
+    
+    if (!userEmail) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Authentication required' 
+      });
+    }
+    
+    if (!isAdminEmail(userEmail)) {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Admin access required' 
+      });
+    }
+    
+    // Attach user info to request
+    (req as any).adminEmail = userEmail;
+    
+    next();
+  } catch (error) {
+    console.error('[Admin Users] Auth error:', error);
+    res.status(500).json({ success: false, error: 'Authentication error' });
   }
-  
-  next();
 }
 
 // Aplicar middleware a todas las rutas
@@ -70,7 +94,7 @@ router.get('/users', async (req: Request, res: Response) => {
       .leftJoin(subscriptions, eq(users.id, subscriptions.userId));
     
     // Aplicar filtros
-    const conditions = [];
+    const conditions: any[] = [];
     
     if (search) {
       conditions.push(
@@ -83,14 +107,16 @@ router.get('/users', async (req: Request, res: Response) => {
     }
     
     if (role) {
-      conditions.push(eq(userRoles.role, role as string));
+      // Use sql template for flexible role matching
+      conditions.push(sql`${userRoles.role} = ${role}`);
     }
     
     if (subscription) {
       if (subscription === 'none') {
         conditions.push(isNull(subscriptions.plan));
       } else {
-        conditions.push(eq(subscriptions.plan, subscription as string));
+        // Use sql template for flexible plan matching
+        conditions.push(sql`${subscriptions.plan} = ${subscription}`);
       }
     }
     
@@ -183,7 +209,8 @@ router.post('/users/:id/role', async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.id);
     const { role, permissions = [] } = req.body;
-    const adminUserId = req.user?.id;
+    
+    console.log('[Admin Users] Saving role:', { userId, role, permissions });
     
     // Validar rol
     const validRoles = ['user', 'moderator', 'support', 'admin'];
@@ -219,7 +246,6 @@ router.post('/users/:id/role', async (req: Request, res: Response) => {
         .set({
           role,
           permissions,
-          grantedBy: adminUserId,
           updatedAt: new Date()
         })
         .where(eq(userRoles.userId, userId));
@@ -231,11 +257,12 @@ router.post('/users/:id/role', async (req: Request, res: Response) => {
           userId,
           role,
           permissions,
-          grantedBy: adminUserId,
           grantedAt: new Date(),
           updatedAt: new Date()
         });
     }
+    
+    console.log('[Admin Users] Role saved successfully:', { userId, role });
     
     res.json({
       success: true,
@@ -430,6 +457,128 @@ router.get('/subscriptions/stats', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching subscription stats:', error);
     res.status(500).json({ success: false, error: 'Error fetching subscription stats' });
+  }
+});
+
+/**
+ * POST /api/admin/users - Crear nuevo usuario manualmente
+ */
+router.post('/users', async (req: Request, res: Response) => {
+  try {
+    const { email, firstName, lastName, role = 'user' } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email is required' });
+    }
+    
+    // Verificar si el email ya existe
+    const existingUser = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+    
+    if (existingUser.length > 0) {
+      return res.status(400).json({ success: false, error: 'User with this email already exists' });
+    }
+    
+    // Crear usuario
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        email,
+        firstName: firstName || null,
+        lastName: lastName || null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning({ id: users.id });
+    
+    // Si se especificó un rol diferente a 'user', asignarlo
+    if (role && role !== 'user') {
+      const validRoles = ['user', 'moderator', 'support', 'admin'];
+      if (validRoles.includes(role)) {
+        await db
+          .insert(userRoles)
+          .values({
+            userId: newUser.id,
+            role: role as 'user' | 'moderator' | 'support' | 'admin',
+            permissions: [],
+            grantedAt: new Date(),
+            updatedAt: new Date()
+          });
+      }
+    }
+    
+    console.log('[Admin Users] User created:', { id: newUser.id, email, role });
+    
+    res.json({
+      success: true,
+      message: `User ${email} created successfully`,
+      userId: newUser.id
+    });
+    
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({ success: false, error: 'Error creating user' });
+  }
+});
+
+/**
+ * DELETE /api/admin/users/:id - Eliminar usuario y datos asociados
+ */
+router.delete('/users/:id', async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.id);
+    
+    console.log('[Admin Users] Deleting user:', userId);
+    
+    // Verificar que el usuario existe
+    const userExists = await db
+      .select({ id: users.id, email: users.email })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    
+    if (userExists.length === 0) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    
+    const userEmail = userExists[0].email;
+    
+    // No permitir eliminar admins desde aquí (protección adicional)
+    if (userEmail && isAdminEmail(userEmail)) {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Cannot delete admin users from this interface' 
+      });
+    }
+    
+    // Eliminar rol del usuario si existe
+    await db
+      .delete(userRoles)
+      .where(eq(userRoles.userId, userId));
+    
+    // Eliminar suscripción del usuario si existe
+    await db
+      .delete(subscriptions)
+      .where(eq(subscriptions.userId, userId));
+    
+    // Eliminar usuario
+    await db
+      .delete(users)
+      .where(eq(users.id, userId));
+    
+    console.log('[Admin Users] User deleted:', { userId, email: userEmail });
+    
+    res.json({
+      success: true,
+      message: `User ${userEmail} deleted successfully`
+    });
+    
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ success: false, error: 'Error deleting user' });
   }
 });
 

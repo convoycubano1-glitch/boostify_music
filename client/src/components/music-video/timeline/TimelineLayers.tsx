@@ -1,5 +1,4 @@
 /**
-import { logger } from "../../lib/logger";
  * Componente TimelineLayers - Gestiona y muestra las capas del timeline
  * 
  * Este componente es responsable de renderizar las diferentes capas del timeline
@@ -14,62 +13,78 @@ import {
   LAYER_COLORS 
 } from '../../../constants/timeline-constants';
 
-interface TimelineLayersProps {
+// Props de acciones para clips
+interface ClipActionHandlers {
+  onEditImage?: (clip: TimelineClip) => void;
+  onAddMusician?: (clip: TimelineClip) => void;
+  onCameraAngles?: (clip: TimelineClip) => void;
+  onRegenerateImage?: (clip: TimelineClip) => void;
+  onGenerateVideo?: (clip: TimelineClip) => void;
+}
+
+type Tool = 'select' | 'razor' | 'trim' | 'hand';
+
+interface TimelineLayersProps extends ClipActionHandlers {
   clips: TimelineClip[];
   currentTime: number;
   duration: number;
   zoom: number;
+  tool?: Tool;
+  snapEnabled?: boolean;
   onSelectClip: (clipId: number | null) => void;
   selectedClipId: number | null;
   onMoveClip?: (clipId: number, newStart: number, newLayerId: number) => void;
   onResizeClip?: (clipId: number, newStart: number, newDuration: number) => void;
+  onTimelineClick?: (time: number) => void;
+  onRazorClick?: (clipId: number, time: number) => void;
+  onDeleteClip?: (clipId: number) => void;
   showBeatGrid?: boolean;
   beatMarkers?: { time: number }[];
+  layerLabelWidth?: number;
+  onMuteLayer?: (layerId: number, muted: boolean) => void;
+  onConvertAllToVideo?: (layerId: number) => void;
 }
 
 /**
- * Componente para mostrar las capas del timeline
+ * Professional Timeline Layers Component
  */
 export const TimelineLayers: React.FC<TimelineLayersProps> = ({
   clips,
   currentTime,
   duration,
   zoom,
+  tool = 'select',
+  snapEnabled = false,
   onSelectClip,
   selectedClipId,
   onMoveClip,
   onResizeClip,
+  onTimelineClick,
+  onRazorClick,
+  onDeleteClip,
   showBeatGrid = false,
-  beatMarkers = []
+  beatMarkers = [],
+  layerLabelWidth = 100,
+  onMuteLayer,
+  onConvertAllToVideo,
+  // Acciones de clip
+  onEditImage,
+  onAddMusician,
+  onCameraAngles,
+  onRegenerateImage,
+  onGenerateVideo,
 }) => {
   // Estado para las configuraciones de capas
   const [layers, setLayers] = useState<LayerConfig[]>([]);
   
   // Inicializa las capas al montar el componente
+  // BOOSTIFY: Solo 2 capas - Imágenes Generadas y Audio (todo viene pre-editado)
   useEffect(() => {
-    // Crear configuración predeterminada para cada tipo de capa
+    // Solo 2 capas: Imágenes generadas por IA y Audio
     const defaultLayers: LayerConfig[] = [
       {
         id: 1,
-        name: LAYER_NAMES[LayerType.VIDEO_PRINCIPAL],
-        type: LayerType.VIDEO_PRINCIPAL,
-        locked: false,
-        visible: true,
-        height: DEFAULT_LAYER_HEIGHT,
-        color: LAYER_COLORS[LayerType.VIDEO_PRINCIPAL]
-      },
-      {
-        id: 2,
-        name: LAYER_NAMES[LayerType.VIDEO_SECUNDARIO],
-        type: LayerType.VIDEO_SECUNDARIO,
-        locked: false,
-        visible: true,
-        height: DEFAULT_LAYER_HEIGHT,
-        color: LAYER_COLORS[LayerType.VIDEO_SECUNDARIO]
-      },
-      {
-        id: 3,
-        name: LAYER_NAMES[LayerType.IMAGEN],
+        name: 'Imágenes Generadas',
         type: LayerType.IMAGEN,
         locked: false,
         visible: true,
@@ -77,54 +92,29 @@ export const TimelineLayers: React.FC<TimelineLayersProps> = ({
         color: LAYER_COLORS[LayerType.IMAGEN]
       },
       {
-        id: 4,
-        name: LAYER_NAMES[LayerType.TEXTO],
-        type: LayerType.TEXTO,
-        locked: false,
-        visible: true,
-        height: DEFAULT_LAYER_HEIGHT,
-        color: LAYER_COLORS[LayerType.TEXTO]
-      },
-      {
-        id: 5,
-        name: LAYER_NAMES[LayerType.AUDIO],
+        id: 2,
+        name: 'Audio',
         type: LayerType.AUDIO,
         locked: false,
         visible: true,
         height: DEFAULT_LAYER_HEIGHT,
         color: LAYER_COLORS[LayerType.AUDIO]
-      },
-      {
-        id: 6,
-        name: LAYER_NAMES[LayerType.EFECTOS],
-        type: LayerType.EFECTOS,
-        locked: false,
-        visible: true,
-        height: DEFAULT_LAYER_HEIGHT,
-        color: LAYER_COLORS[LayerType.EFECTOS]
-      },
-      {
-        id: 7,
-        name: LAYER_NAMES[LayerType.IA_GENERADA],
-        type: LayerType.IA_GENERADA,
-        locked: false,
-        visible: true,
-        height: DEFAULT_LAYER_HEIGHT,
-        color: LAYER_COLORS[LayerType.IA_GENERADA]
-      },
-      {
-        id: 8,
-        name: LAYER_NAMES[LayerType.TRANSICIONES],
-        type: LayerType.TRANSICIONES,
-        locked: false,
-        visible: true,
-        height: DEFAULT_LAYER_HEIGHT,
-        color: LAYER_COLORS[LayerType.TRANSICIONES]
       }
     ];
     
     setLayers(defaultLayers);
   }, []);
+
+  // Handler para click en el timeline (mover playhead)
+  const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!onTimelineClick) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left - layerLabelWidth;
+    if (clickX >= 0) {
+      const time = clickX / zoom;
+      onTimelineClick(Math.max(0, Math.min(duration, time)));
+    }
+  };
 
   return (
     <div 
@@ -133,8 +123,12 @@ export const TimelineLayers: React.FC<TimelineLayersProps> = ({
         position: 'relative',
         width: '100%',
         height: '100%',
-        overflow: 'auto'
+        overflow: 'auto',
+        background: 'linear-gradient(180deg, #0d0d0d 0%, #111111 50%, #0a0a0a 100%)',
+        cursor: 'pointer',
+        borderRadius: '6px',
       }}
+      onClick={handleContainerClick}
     >
       {/* Grid de marcadores de tiempo (beats) */}
       {showBeatGrid && beatMarkers && beatMarkers.length > 0 && (
@@ -143,8 +137,8 @@ export const TimelineLayers: React.FC<TimelineLayersProps> = ({
           style={{
             position: 'absolute',
             top: 0,
-            left: 0,
-            width: '100%',
+            left: `${layerLabelWidth}px`,
+            width: `calc(100% - ${layerLabelWidth}px)`,
             height: '100%',
             pointerEvents: 'none',
             zIndex: 1
@@ -160,7 +154,7 @@ export const TimelineLayers: React.FC<TimelineLayersProps> = ({
                 top: 0,
                 width: '1px',
                 height: '100%',
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                backgroundColor: 'rgba(249, 115, 22, 0.15)',
                 pointerEvents: 'none'
               }}
             />
@@ -168,46 +162,66 @@ export const TimelineLayers: React.FC<TimelineLayersProps> = ({
         </div>
       )}
       
-      {/* Renderizar capas de timeline */}
-      {layers.map(layer => (
-        <LayerRow 
-          key={layer.id}
-          layer={layer}
-          clips={clips}
-          zoom={zoom}
-          currentTime={currentTime}
-          duration={duration}
-          onSelectClip={onSelectClip}
-          selectedClipId={selectedClipId}
-          onMoveClip={onMoveClip}
-          onResizeClip={onResizeClip}
-        />
-      ))}
+      {/* Render timeline layers */}
+      <div className="layers-container" style={{ minHeight: '100%' }}>
+        {layers.map(layer => (
+          <LayerRow 
+            key={layer.id}
+            layer={layer}
+            clips={clips}
+            zoom={zoom}
+            currentTime={currentTime}
+            duration={duration}
+            onSelectClip={onSelectClip}
+            selectedClipId={selectedClipId}
+            onMoveClip={onMoveClip}
+            onResizeClip={onResizeClip}
+            layerLabelWidth={layerLabelWidth}
+            onMuteLayer={onMuteLayer}
+            onConvertAllToVideo={onConvertAllToVideo}
+            // Clip actions
+            onEditImage={onEditImage}
+            onAddMusician={onAddMusician}
+            onCameraAngles={onCameraAngles}
+            onRegenerateImage={onRegenerateImage}
+            onGenerateVideo={onGenerateVideo}
+          />
+        ))}
+      </div>
       
       <style jsx>
         {`
           .timeline-layers {
-            background-color: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 4px;
+            border-radius: 6px;
+            scrollbar-width: thin;
+            scrollbar-color: #3f3f46 #18181b;
+            background: linear-gradient(180deg, #0a0a0a 0%, #141414 100%);
           }
           
           .timeline-layers::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
           }
           
           .timeline-layers::-webkit-scrollbar-track {
             background: #2a2a2a;
+            border-radius: 4px;
           }
           
           .timeline-layers::-webkit-scrollbar-thumb {
             background: #555;
-            border-radius: 5px;
+            border-radius: 4px;
           }
           
           .timeline-layers::-webkit-scrollbar-thumb:hover {
-            background: #777;
+            background: #666;
+          }
+          
+          @media (max-width: 640px) {
+            .timeline-layers::-webkit-scrollbar {
+              width: 4px;
+              height: 4px;
+            }
           }
         `}
       </style>
