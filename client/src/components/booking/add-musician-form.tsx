@@ -158,16 +158,17 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
           ? referenceImagePreview.split(',')[1] 
           : referenceImagePreview;
         
-        logger.info("Sending reference image to Gemini, base64 length:", base64Data.length);
+        logger.info("Sending reference image to FAL, base64 length:", base64Data.length);
         
-        const response = await fetch('/api/gemini-image/generate-with-face', {
+        const response = await fetch('/api/fal/nano-banana/generate-with-face', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             prompt,
-            referenceImageBase64: base64Data
+            referenceImages: [referenceImagePreview], // FAL accepts full data URL
+            aspectRatio: '1:1' // Square for portraits
           }),
         });
         
@@ -177,31 +178,51 @@ export function AddMusicianForm({ onClose, onSuccess }: AddMusicianFormProps) {
         }
         
         result = await response.json();
-        logger.info("Gemini response received, success:", result.success);
+        // Convert FAL response format
+        if (result.imageUrl) {
+          result.success = true;
+        }
+        logger.info("FAL response received, success:", result.success);
       } else {
-        // Generate without reference image
+        // Generate without reference image using FAL
         toast({
-          title: "Generating with Gemini",
+          title: "Generating with FAL AI",
           description: "Creating professional musician portrait...",
         });
         
-        result = await generateImageFromPrompt(prompt);
+        const response = await fetch('/api/fal/nano-banana/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt,
+            aspectRatio: '1:1'
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`);
+        }
+        
+        result = await response.json();
+        if (result.imageUrl) {
+          result.success = true;
+        }
       }
 
-      if (result.success && result.imageBase64) {
-        // Convert base64 to data URL for display
-        const imageDataUrl = `data:image/png;base64,${result.imageBase64}`;
+      if (result.success && (result.imageUrl || result.imageBase64)) {
+        // Use imageUrl directly or convert base64 to data URL for display
+        const imageDataUrl = result.imageUrl || `data:image/png;base64,${result.imageBase64}`;
         setGeneratedImageUrl(imageDataUrl);
-        logger.info("Generated image set successfully, length:", result.imageBase64.length);
+        logger.info("Generated image set successfully");
         toast({
           title: "Success!",
-          description: `Professional ${formData.category} photo generated with Gemini Imagen 3`,
+          description: `Professional ${formData.category} photo generated with FAL AI`,
         });
       } else {
         throw new Error(result.error || "No image data in response");
       }
     } catch (error) {
-      logger.error("Error generating image with Gemini:", error);
+      logger.error("Error generating image with FAL:", error);
       toast({
         title: "Generation Failed",
         description: error instanceof Error ? error.message : "Failed to generate profile image. Please try again.",

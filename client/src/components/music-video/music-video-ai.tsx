@@ -1136,8 +1136,8 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       });
       
       // Usar generación SECUENCIAL - una imagen a la vez
-      // 🎬 CRITICAL: Siempre usar el endpoint con múltiples referencias (funciona con array vacío también)
-      const endpoint = '/api/gemini-image/generate-single-with-multiple-faces';
+      // 🎬 CRITICAL: Siempre usar FAL nano-banana con soporte de referencias faciales
+      const endpoint = '/api/fal/nano-banana/generate-with-face';
       
       let generatedCount = 0;
       
@@ -1211,8 +1211,8 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
           const requestBody = { 
             prompt: prompt,
             sceneId: sceneIndex,
-            referenceImagesBase64: referenceToUse || [],
-            seed: seed + sceneIndex
+            referenceImages: referenceToUse || [],
+            aspectRatio: '16:9'
           };
           
           // 🔄 RETRY: Usar retry con exponential backoff para mayor robustez
@@ -2073,16 +2073,13 @@ DESIGN REQUIREMENTS:
 - Commercial music video aesthetics
 - Catchy and memorable visual`;
           
-          const response = await fetch('/api/gemini-image/generate-hollywood-poster', {
+          const response = await fetch('/api/fal/nano-banana/generate-with-face', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-              conceptTitle: concept.title || `Concepto ${index + 1}`,
-              conceptDescription: posterPrompt,
-              artistReferenceImages: characterReference || [],
-              directorName: director.name,
-              conceptIndex: index + 1,
-              totalConcepts: concepts.length
+              prompt: posterPrompt,
+              referenceImages: characterReference || [],
+              aspectRatio: '9:16' // Portrait for posters
             })
           });
           
@@ -3185,19 +3182,15 @@ ${transcription}`;
       // Usar el endpoint correcto según si hay referencias
       let result;
       if (referenceImages && referenceImages.length > 0) {
-        // Usar endpoint con referencias faciales
-        const response = await fetch('/api/gemini-image/generate-single-with-multiple-faces', {
+        // Usar endpoint FAL con referencias faciales
+        const response = await fetch('/api/fal/nano-banana/generate-with-face', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             prompt: richPrompt,
-            referenceImagesBase64: referenceImages,
+            referenceImages: referenceImages,
             sceneId: item.id,
-            scene: {
-              shotCategory: item.shotCategory,
-              referenceUsage: item.referenceUsage,
-              emotion: item.emotion
-            }
+            aspectRatio: '16:9'
           })
         });
         
@@ -3207,8 +3200,21 @@ ${transcription}`;
         result = await response.json();
         result = { success: !!result.imageUrl, imageUrl: result.imageUrl, error: result.error };
       } else {
-        // Generar sin referencias (B-roll puro)
-        result = await generateSceneImageWithGemini(geminiParams);
+        // Generar sin referencias (B-roll puro) usando FAL nano-banana
+        const response = await fetch('/api/fal/nano-banana/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: richPrompt,
+            aspectRatio: '16:9'
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        result = await response.json();
+        result = { success: !!result.imageUrl, imageUrl: result.imageUrl, error: result.error };
       }
 
       if (!result.success || !result.imageUrl) {
@@ -3533,17 +3539,20 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       logger.info(`🔄 [REGENERATE ${sceneNumber}] Reference Usage: ${referenceUsage}, Using Reference: ${!!referenceToUse}`);
       
       const endpoint = shouldUseReference
-        ? '/api/gemini-image/generate-single-with-multiple-faces'
-        : '/api/gemini-image/generate-batch';
+        ? '/api/fal/nano-banana/generate-with-face'
+        : '/api/fal/nano-banana/generate';
 
       const requestBody = shouldUseReference
         ? { 
             prompt: prompt,
             sceneId: sceneNumber,
-            referenceImagesBase64: referenceToUse,
-            seed: seed + sceneNumber
+            referenceImages: referenceToUse,
+            aspectRatio: '16:9'
           }
-        : { scenes: [{ scene: prompt, camera: '', lighting: '', style: '' }] };
+        : { 
+            prompt: prompt,
+            aspectRatio: '16:9'
+          };
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -3990,12 +3999,12 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
           
           const promptToUse = item.imagePrompt || item.description || `Scene ${clipId}`;
           
-          const response = await fetch('/api/gemini-image/generate-simple', {
+          const response = await fetch('/api/fal/nano-banana/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               prompt: promptToUse,
-              seed: Math.floor(Math.random() * 1000000)
+              aspectRatio: '16:9'
             })
           });
 

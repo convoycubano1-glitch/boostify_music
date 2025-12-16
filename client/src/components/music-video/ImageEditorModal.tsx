@@ -56,13 +56,12 @@ export function ImageEditorModal({
     setIsProcessing(true);
 
     try {
-      const response = await fetch('/api/gemini-image/edit-image', {
+      const response = await fetch('/api/fal/nano-banana/edit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           imageUrl,
-          editInstructions,
-          originalPrompt,
+          prompt: editInstructions,
         }),
       });
 

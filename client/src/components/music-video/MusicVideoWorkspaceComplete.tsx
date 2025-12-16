@@ -374,25 +374,26 @@ export function MusicVideoWorkspaceComplete({
           : `Generando ${scenes.length} cortes...`
       });
 
-      const endpoint = selectedReference 
-        ? '/api/gemini-image/generate-batch-with-face'
-        : '/api/gemini-image/generate-batch';
-
-      const response = await fetch(endpoint, {
+      // Usar FAL nano-banana para generación de imágenes
+      const prompts = scenes.map(scene => scene.description || scene.prompt || `Scene ${scene.id}`);
+      
+      const response = await fetch('/api/fal/nano-banana/generate-batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          scenes: scenes,
-          ...(selectedReference && { referenceImageBase64: selectedReference.base64 })
+          prompts: prompts,
+          aspectRatio: '16:9',
+          ...(selectedReference && { referenceImages: [selectedReference.base64 || selectedReference.url] })
         }),
       });
 
       const data = await response.json();
       
       if (data.success) {
-        const updatedScenes = scenes.map(scene => {
-          const result = data.results[scene.id];
+        // FAL batch returns results as an array with index property
+        const updatedScenes = scenes.map((scene, index) => {
+          const result = data.results?.find((r: any) => r.index === index) || data.results?.[index];
           if (result?.success && result.imageUrl) {
             return { ...scene, imageUrl: result.imageUrl };
           }
@@ -402,7 +403,7 @@ export function MusicVideoWorkspaceComplete({
         setScenes(updatedScenes);
         setGenerationProgress(100);
 
-        const successCount = Object.values(data.results).filter((r: any) => r.success).length;
+        const successCount = data.successCount || data.results?.filter((r: any) => r.success).length || 0;
         
         toast({
           title: "Video generado",

@@ -853,7 +853,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     }
   }, [cameraAnglesModalClip, updateClip, toast]);
 
-  // 🔄 Regenerar Imagen - Usando Gemini Nano Banana
+  // 🔄 Regenerar Imagen - Usando FAL Nano-Banana
   const [isRegenerating, setIsRegenerating] = useState<number | null>(null);
   
   const handleRegenerateImage = useCallback(async (clip: TimelineClip) => {
@@ -862,13 +862,13 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     
     toast({
       title: "Regenerando imagen...",
-      description: "Generando nueva imagen con Gemini Nano Banana AI",
+      description: "Generando nueva imagen con FAL Nano-Banana AI",
     });
 
     try {
       const prompt = clip.metadata?.imagePrompt || clip.title || 'cinematic music video scene';
       
-      const response = await fetch('/api/gemini-image/generate-simple', {
+      const response = await fetch('/api/fal/nano-banana/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -893,12 +893,13 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
             imagePrompt: prompt,
             regeneratedAt: new Date().toISOString(),
             isGeneratedImage: true,
+            generatedWith: 'fal-nano-banana',
           },
         });
 
         toast({
           title: "✅ Imagen regenerada",
-          description: "Nueva imagen generada con Gemini Nano Banana",
+          description: "Nueva imagen generada con FAL Nano-Banana",
         });
         logger.info(`✅ [Timeline] Imagen regenerada para clip ${clip.id}`);
       }
@@ -941,16 +942,16 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     try {
       const prompt = clip.metadata?.imagePrompt || clip.title || 'cinematic motion, smooth camera movement';
       
-      // Usar PiAPI para image-to-video (i2v-01)
-      const response = await fetch('/api/video/generate', {
+      // Usar FAL Kling para image-to-video (O1 Standard)
+      const response = await fetch('/api/fal/kling-video/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: `${prompt}, smooth cinematic motion, professional music video`,
-          apiProvider: 'piapi',
-          piapiModel: 'i2v-01', // Image-to-Video model
-          image_url: imageUrl,
-          duration: Math.min(clip.duration, 5),
+          imageUrl: imageUrl,
+          model: 'o1-standard-i2v', // KLING O1 Image-to-Video
+          duration: clip.duration <= 5 ? '5' : '10',
+          aspectRatio: '16:9',
         }),
       });
 
@@ -961,36 +962,41 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
 
       const data = await response.json();
       
-      if (data.url) {
-        // Video generado directamente
+      if (data.videoUrl) {
+        // Video generado directamente (síncrono)
         updateClip(clip.id, {
           metadata: {
             ...clip.metadata,
-            videoUrl: data.url,
+            videoUrl: data.videoUrl,
             videoGeneratedAt: new Date().toISOString(),
             hasVideo: true,
+            generatedWith: 'fal-kling-o1',
           },
         });
 
         toast({
           title: "✅ Video generado",
-          description: "Video creado exitosamente con PiAPI",
+          description: "Video creado exitosamente con FAL KLING AI",
         });
-        logger.info(`✅ [Timeline] Video generado para clip ${clip.id}: ${data.url}`);
-      } else if (data.taskId) {
-        // Es asíncrono, guardar el taskId para polling
+        logger.info(`✅ [Timeline] Video generado para clip ${clip.id}: ${data.videoUrl}`);
+      } else if (data.requestId) {
+        // Es asíncrono, guardar el requestId para polling
         updateClip(clip.id, {
           metadata: {
             ...clip.metadata,
-            videoTaskId: data.taskId,
+            videoRequestId: data.requestId,
+            videoModel: data.model,
             videoGenerating: true,
           },
         });
         toast({
           title: "⏳ Video en proceso",
-          description: `Task ID: ${data.taskId}. La generación está en curso.`,
+          description: `${data.estimatedTime}. Request ID: ${data.requestId}`,
         });
-        logger.info(`⏳ [Timeline] Video en proceso para clip ${clip.id}, taskId: ${data.taskId}`);
+        logger.info(`⏳ [Timeline] Video en proceso para clip ${clip.id}, requestId: ${data.requestId}`);
+        
+        // Iniciar polling automático
+        pollVideoStatus(clip.id, data.requestId, data.model);
       }
     } catch (error) {
       logger.error(`❌ [Timeline] Error generando video:`, error);
@@ -1003,6 +1009,68 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
       setIsGeneratingVideo(null);
     }
   }, [toast, updateClip]);
+  
+  // Polling para videos asíncronos de FAL Kling
+  const pollVideoStatus = useCallback(async (clipId: number, requestId: string, model: string) => {
+    const maxAttempts = 60; // 5 minutos máximo (cada 5 segundos)
+    let attempts = 0;
+    
+    const checkStatus = async () => {
+      try {
+        const response = await fetch(`/api/fal/kling-video/${requestId}?model=${model}`);
+        const data = await response.json();
+        
+        if (data.status === 'completed' && data.videoUrl) {
+          updateClip(clipId, {
+            metadata: {
+              videoUrl: data.videoUrl,
+              videoGeneratedAt: new Date().toISOString(),
+              hasVideo: true,
+              videoGenerating: false,
+              generatedWith: `fal-kling-${model}`,
+            },
+          });
+          toast({
+            title: "✅ Video listo",
+            description: "Tu video ha sido generado exitosamente",
+          });
+          return;
+        }
+        
+        if (data.status === 'failed') {
+          updateClip(clipId, {
+            metadata: {
+              videoGenerating: false,
+              videoError: data.error,
+            },
+          });
+          toast({
+            title: "❌ Error en video",
+            description: data.error || 'La generación de video falló',
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Aún procesando
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(checkStatus, 5000); // Revisar cada 5 segundos
+        } else {
+          toast({
+            title: "⏰ Tiempo excedido",
+            description: "La generación está tomando más tiempo del esperado. Revisa más tarde.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        logger.error('Error polling video status:', error);
+      }
+    };
+    
+    // Iniciar después de 10 segundos
+    setTimeout(checkStatus, 10000);
+  }, [updateClip, toast]);
 
   return (
     <>

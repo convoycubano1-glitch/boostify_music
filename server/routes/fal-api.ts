@@ -605,4 +605,688 @@ router.get('/stable-audio/:requestId', async (req: Request, res: Response) => {
   }
 });
 
+// ============================================================================
+// 🖼️ NANO-BANANA IMAGE GENERATION (fal-ai/nano-banana)
+// ============================================================================
+
+interface NanoBananaRequest {
+  prompt: string;
+  aspectRatio?: '16:9' | '9:16' | '1:1' | '4:3' | '3:4';
+  negativePrompt?: string;
+  numImages?: number;
+}
+
+/**
+ * POST /api/fal/nano-banana/generate
+ * Genera imágenes usando FAL nano-banana (reemplaza Gemini)
+ */
+router.post('/nano-banana/generate', async (req: Request, res: Response) => {
+  try {
+    if (!FAL_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: 'FAL_KEY not configured on server'
+      });
+    }
+
+    const { prompt, aspectRatio = '16:9', negativePrompt, numImages = 1 } = req.body as NanoBananaRequest;
+
+    if (!prompt) {
+      return res.status(400).json({
+        success: false,
+        error: 'prompt is required'
+      });
+    }
+
+    console.log('🍌 [FAL-BACKEND] Starting Nano-Banana image generation...');
+    console.log('📝 Prompt:', prompt.substring(0, 80));
+
+    const startTime = Date.now();
+
+    // Llamar a FAL nano-banana
+    const response = await fetchWithFailover(
+      'https://fal.run/fal-ai/nano-banana',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          prompt,
+          negative_prompt: negativePrompt || 'blurry, low quality, distorted, deformed',
+          image_size: aspectRatio === '16:9' ? 'landscape_16_9' : 
+                      aspectRatio === '9:16' ? 'portrait_16_9' :
+                      aspectRatio === '4:3' ? 'landscape_4_3' :
+                      aspectRatio === '3:4' ? 'portrait_4_3' : 'square',
+          num_images: numImages,
+          enable_safety_checker: true
+        })
+      },
+      'Nano-Banana Generate'
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('❌ [FAL-BACKEND] Nano-Banana error:', errorData);
+      await logFalUsage('nano-banana', 0, JSON.stringify(errorData));
+      return res.status(500).json({
+        success: false,
+        error: `Error generating image: ${response.statusText}`,
+        details: errorData
+      });
+    }
+
+    const data = await response.json();
+    const processingTime = (Date.now() - startTime) / 1000;
+
+    console.log(`✅ [FAL-BACKEND] Nano-Banana completed in ${processingTime.toFixed(1)}s!`);
+    await logFalUsage('nano-banana', data.images?.length || 1);
+
+    // Devolver la primera imagen o todas
+    const imageUrl = data.images?.[0]?.url;
+    
+    res.json({
+      success: true,
+      imageUrl,
+      images: data.images,
+      processingTime,
+      seed: data.seed
+    });
+
+  } catch (error) {
+    console.error('❌ [FAL-BACKEND] Error in nano-banana:', error);
+    await logFalUsage('nano-banana', 0, error instanceof Error ? error.message : 'Unknown error');
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * POST /api/fal/nano-banana/edit
+ * Edita imágenes usando FAL nano-banana/edit
+ */
+router.post('/nano-banana/edit', async (req: Request, res: Response) => {
+  try {
+    if (!FAL_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: 'FAL_KEY not configured on server'
+      });
+    }
+
+    const { imageUrl, prompt, maskUrl } = req.body;
+
+    if (!imageUrl || !prompt) {
+      return res.status(400).json({
+        success: false,
+        error: 'imageUrl and prompt are required'
+      });
+    }
+
+    console.log('🍌✏️ [FAL-BACKEND] Starting Nano-Banana image edit...');
+
+    const startTime = Date.now();
+
+    const response = await fetchWithFailover(
+      'https://fal.run/fal-ai/nano-banana/edit',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          image_url: imageUrl,
+          prompt,
+          mask_url: maskUrl,
+          enable_safety_checker: true
+        })
+      },
+      'Nano-Banana Edit'
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('❌ [FAL-BACKEND] Nano-Banana edit error:', errorData);
+      return res.status(500).json({
+        success: false,
+        error: `Error editing image: ${response.statusText}`,
+        details: errorData
+      });
+    }
+
+    const data = await response.json();
+    const processingTime = (Date.now() - startTime) / 1000;
+
+    console.log(`✅ [FAL-BACKEND] Nano-Banana edit completed in ${processingTime.toFixed(1)}s!`);
+    await logFalUsage('nano-banana-edit', 1);
+
+    res.json({
+      success: true,
+      imageUrl: data.images?.[0]?.url,
+      images: data.images,
+      processingTime
+    });
+
+  } catch (error) {
+    console.error('❌ [FAL-BACKEND] Error in nano-banana edit:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// ============================================================================
+// 🎬 KLING VIDEO GENERATION (fal-ai/kling-video)
+// ============================================================================
+
+interface KlingVideoRequest {
+  prompt: string;
+  imageUrl?: string;
+  referenceImages?: string[];
+  duration?: '5' | '10';
+  aspectRatio?: '16:9' | '9:16' | '1:1';
+  model?: 'o1-standard-i2v' | 'o1-standard-ref2v' | 'v2.1-pro-i2v' | 'v2.1-standard-i2v';
+}
+
+/**
+ * POST /api/fal/kling-video/generate
+ * Genera video desde imagen usando FAL Kling (reemplaza PiAPI)
+ */
+router.post('/kling-video/generate', async (req: Request, res: Response) => {
+  try {
+    if (!FAL_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: 'FAL_KEY not configured on server'
+      });
+    }
+
+    const { 
+      prompt, 
+      imageUrl, 
+      referenceImages,
+      duration = '5', 
+      aspectRatio = '16:9',
+      model = 'o1-standard-i2v'
+    } = req.body as KlingVideoRequest;
+
+    if (!prompt) {
+      return res.status(400).json({
+        success: false,
+        error: 'prompt is required'
+      });
+    }
+
+    // Determinar el endpoint FAL según el modelo
+    let falEndpoint: string;
+    let requestBody: any = {
+      prompt,
+      duration,
+      aspect_ratio: aspectRatio
+    };
+
+    switch (model) {
+      case 'o1-standard-ref2v':
+        // Reference-to-Video: mantiene identidad de personajes
+        falEndpoint = 'https://queue.fal.run/fal-ai/kling-video/o1/standard/reference-to-video';
+        if (!referenceImages || referenceImages.length === 0) {
+          return res.status(400).json({
+            success: false,
+            error: 'referenceImages are required for reference-to-video model'
+          });
+        }
+        requestBody.reference_images = referenceImages.map(url => ({ image_url: url }));
+        break;
+        
+      case 'o1-standard-i2v':
+        // Image-to-Video O1
+        falEndpoint = 'https://queue.fal.run/fal-ai/kling-video/o1/standard/image-to-video';
+        if (!imageUrl) {
+          return res.status(400).json({
+            success: false,
+            error: 'imageUrl is required for image-to-video model'
+          });
+        }
+        requestBody.image_url = imageUrl;
+        break;
+        
+      case 'v2.1-pro-i2v':
+        // Image-to-Video v2.1 Pro
+        falEndpoint = 'https://queue.fal.run/fal-ai/kling-video/v2.1/pro/image-to-video';
+        if (!imageUrl) {
+          return res.status(400).json({
+            success: false,
+            error: 'imageUrl is required for image-to-video model'
+          });
+        }
+        requestBody.image_url = imageUrl;
+        break;
+        
+      case 'v2.1-standard-i2v':
+      default:
+        // Image-to-Video v2.1 Standard (más económico)
+        falEndpoint = 'https://queue.fal.run/fal-ai/kling-video/v2.1/standard/image-to-video';
+        if (!imageUrl) {
+          return res.status(400).json({
+            success: false,
+            error: 'imageUrl is required for image-to-video model'
+          });
+        }
+        requestBody.image_url = imageUrl;
+        break;
+    }
+
+    console.log(`🎬 [FAL-BACKEND] Starting Kling Video generation (${model})...`);
+    console.log('📝 Prompt:', prompt.substring(0, 80));
+    console.log('🔗 Endpoint:', falEndpoint);
+
+    const startTime = Date.now();
+
+    // Submit job a FAL (queue mode para videos)
+    const submitResponse = await fetchWithFailover(
+      falEndpoint,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      },
+      `Kling Video ${model}`
+    );
+
+    if (!submitResponse.ok) {
+      const errorData = await submitResponse.json().catch(() => ({}));
+      console.error('❌ [FAL-BACKEND] Kling Video submit error:', errorData);
+      await logFalUsage(`kling-video-${model}`, 0, JSON.stringify(errorData));
+      return res.status(500).json({
+        success: false,
+        error: `Error submitting video job: ${submitResponse.statusText}`,
+        details: errorData
+      });
+    }
+
+    const submitData = await submitResponse.json();
+    const requestId = submitData.request_id;
+
+    console.log(`⏳ [FAL-BACKEND] Kling Video job submitted: ${requestId}`);
+
+    // Si hay request_id, es asíncrono - retornar para polling
+    if (requestId) {
+      await logFalUsage(`kling-video-${model}`, 1);
+      return res.json({
+        success: true,
+        requestId,
+        model,
+        message: 'Video generation started',
+        estimatedTime: duration === '5' ? '60-120 seconds' : '120-180 seconds'
+      });
+    }
+
+    // Si no hay request_id pero hay video, es síncrono
+    if (submitData.video?.url) {
+      const processingTime = (Date.now() - startTime) / 1000;
+      console.log(`✅ [FAL-BACKEND] Kling Video completed in ${processingTime.toFixed(1)}s!`);
+      await logFalUsage(`kling-video-${model}`, 1);
+      
+      return res.json({
+        success: true,
+        videoUrl: submitData.video.url,
+        processingTime,
+        model
+      });
+    }
+
+    // Si llegamos aquí, algo salió mal
+    return res.status(500).json({
+      success: false,
+      error: 'Unexpected response from FAL',
+      data: submitData
+    });
+
+  } catch (error) {
+    console.error('❌ [FAL-BACKEND] Error in kling-video:', error);
+    await logFalUsage('kling-video', 0, error instanceof Error ? error.message : 'Unknown error');
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * GET /api/fal/kling-video/:requestId
+ * Obtiene el estado/resultado de una generación de video
+ */
+router.get('/kling-video/:requestId', async (req: Request, res: Response) => {
+  try {
+    if (!FAL_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: 'FAL_KEY not configured'
+      });
+    }
+
+    const { requestId } = req.params;
+    const { model = 'o1-standard-i2v' } = req.query;
+
+    // Determinar el endpoint base según el modelo
+    let baseEndpoint: string;
+    switch (model) {
+      case 'o1-standard-ref2v':
+        baseEndpoint = 'fal-ai/kling-video/o1/standard/reference-to-video';
+        break;
+      case 'o1-standard-i2v':
+        baseEndpoint = 'fal-ai/kling-video/o1/standard/image-to-video';
+        break;
+      case 'v2.1-pro-i2v':
+        baseEndpoint = 'fal-ai/kling-video/v2.1/pro/image-to-video';
+        break;
+      default:
+        baseEndpoint = 'fal-ai/kling-video/v2.1/standard/image-to-video';
+    }
+
+    console.log(`🔍 [FAL-BACKEND] Checking Kling Video status: ${requestId}`);
+
+    // Check status
+    const statusResponse = await fetchWithFailover(
+      `https://queue.fal.run/${baseEndpoint}/requests/${requestId}/status`,
+      { headers: {} },
+      'Kling Video Status'
+    );
+
+    if (!statusResponse.ok) {
+      const errorText = await statusResponse.text();
+      console.error(`❌ [FAL-BACKEND] Kling Video status check failed:`, errorText);
+      return res.status(500).json({
+        success: false,
+        error: 'Error checking video status',
+        details: errorText
+      });
+    }
+
+    const statusData = await statusResponse.json();
+    console.log(`✅ [FAL-BACKEND] Kling Video status:`, statusData.status);
+
+    // If completed, get result
+    if (statusData.status === 'COMPLETED') {
+      const resultResponse = await fetchWithFailover(
+        `https://queue.fal.run/${baseEndpoint}/requests/${requestId}`,
+        { headers: {} },
+        'Kling Video Result'
+      );
+
+      if (resultResponse.ok) {
+        const resultData = await resultResponse.json();
+        return res.json({
+          success: true,
+          status: 'completed',
+          videoUrl: resultData.video?.url,
+          duration: resultData.duration,
+          data: resultData
+        });
+      }
+    }
+
+    // If failed
+    if (statusData.status === 'FAILED') {
+      return res.json({
+        success: false,
+        status: 'failed',
+        error: statusData.error || 'Video generation failed'
+      });
+    }
+
+    // Still processing
+    res.json({
+      success: true,
+      status: statusData.status?.toLowerCase() || 'processing',
+      message: statusData.status
+    });
+
+  } catch (error) {
+    console.error('❌ [FAL-BACKEND] Error checking Kling Video status:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// ============================================================================
+// 🎭 IMAGE GENERATION WITH FACE REFERENCE (fal-ai/pulid for face consistency)
+// ============================================================================
+
+/**
+ * POST /api/fal/nano-banana/generate-with-face
+ * Genera imágenes manteniendo consistencia facial usando PuLID
+ */
+router.post('/nano-banana/generate-with-face', async (req: Request, res: Response) => {
+  try {
+    if (!FAL_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: 'FAL_KEY not configured on server'
+      });
+    }
+
+    const { prompt, referenceImages, aspectRatio = '16:9', sceneId } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({
+        success: false,
+        error: 'prompt is required'
+      });
+    }
+
+    console.log(`🎭 [FAL-BACKEND] Starting image generation with face reference...`);
+    console.log(`📝 Prompt: ${prompt.substring(0, 80)}...`);
+    console.log(`🖼️ Reference images: ${referenceImages?.length || 0}`);
+
+    const startTime = Date.now();
+
+    // Si hay referencias faciales, usar PuLID para mantener consistencia
+    let endpoint = 'https://fal.run/fal-ai/nano-banana';
+    let requestBody: any = {
+      prompt,
+      negative_prompt: 'blurry, low quality, distorted, deformed, ugly, bad anatomy',
+      image_size: aspectRatio === '16:9' ? 'landscape_16_9' : 
+                  aspectRatio === '9:16' ? 'portrait_16_9' : 'square',
+      num_images: 1,
+      enable_safety_checker: true
+    };
+
+    // Si hay referencias, usar flux-pulid para consistencia facial
+    if (referenceImages && referenceImages.length > 0) {
+      endpoint = 'https://fal.run/fal-ai/flux-pulid';
+      const firstReference = referenceImages[0];
+      
+      // La referencia puede ser URL o base64
+      const referenceUrl = firstReference.startsWith('data:') 
+        ? firstReference  // Ya es base64
+        : firstReference; // Es URL
+      
+      requestBody = {
+        prompt: `${prompt}, same person as in reference image, consistent facial features, same identity`,
+        reference_image_url: referenceUrl,
+        num_images: 1,
+        guidance_scale: 4,
+        true_cfg: 1,
+        id_weight: 1,
+        max_sequence_length: 128,
+        enable_safety_checker: true
+      };
+      
+      console.log(`🎭 [FAL-BACKEND] Using PuLID for face consistency`);
+    }
+
+    const response = await fetchWithFailover(
+      endpoint,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      },
+      'Image Generation with Face'
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('❌ [FAL-BACKEND] Image generation error:', errorData);
+      await logFalUsage('nano-banana-face', 0, JSON.stringify(errorData));
+      return res.status(500).json({
+        success: false,
+        error: `Error generating image: ${response.statusText}`,
+        details: errorData
+      });
+    }
+
+    const data = await response.json();
+    const processingTime = (Date.now() - startTime) / 1000;
+
+    console.log(`✅ [FAL-BACKEND] Image with face completed in ${processingTime.toFixed(1)}s!`);
+    await logFalUsage('nano-banana-face', 1);
+
+    const imageUrl = data.images?.[0]?.url;
+
+    res.json({
+      success: true,
+      imageUrl,
+      images: data.images,
+      sceneId,
+      processingTime,
+      usedFaceReference: !!(referenceImages && referenceImages.length > 0)
+    });
+
+  } catch (error) {
+    console.error('❌ [FAL-BACKEND] Error in generate-with-face:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * POST /api/fal/nano-banana/generate-batch
+ * Genera múltiples imágenes en batch
+ */
+router.post('/nano-banana/generate-batch', async (req: Request, res: Response) => {
+  try {
+    if (!FAL_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: 'FAL_KEY not configured on server'
+      });
+    }
+
+    const { prompts, aspectRatio = '16:9', referenceImages } = req.body;
+
+    if (!prompts || !Array.isArray(prompts) || prompts.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'prompts array is required'
+      });
+    }
+
+    console.log(`🍌 [FAL-BACKEND] Starting batch generation for ${prompts.length} images...`);
+
+    const startTime = Date.now();
+    const results: any[] = [];
+    const useFaceRef = referenceImages && referenceImages.length > 0;
+
+    // Generar imágenes secuencialmente para evitar rate limits
+    for (let i = 0; i < prompts.length; i++) {
+      const prompt = prompts[i];
+      console.log(`🖼️ [${i + 1}/${prompts.length}] Generating...`);
+
+      try {
+        let endpoint = 'https://fal.run/fal-ai/nano-banana';
+        let requestBody: any = {
+          prompt,
+          negative_prompt: 'blurry, low quality, distorted',
+          image_size: aspectRatio === '16:9' ? 'landscape_16_9' : 'square',
+          num_images: 1,
+          enable_safety_checker: true
+        };
+
+        if (useFaceRef) {
+          endpoint = 'https://fal.run/fal-ai/flux-pulid';
+          requestBody = {
+            prompt: `${prompt}, same person as in reference, consistent identity`,
+            reference_image_url: referenceImages[0],
+            num_images: 1,
+            guidance_scale: 4,
+            id_weight: 1,
+            enable_safety_checker: true
+          };
+        }
+
+        const response = await fetchWithFailover(
+          endpoint,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+          },
+          `Batch Image ${i + 1}`
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          results.push({
+            success: true,
+            imageUrl: data.images?.[0]?.url,
+            index: i
+          });
+        } else {
+          results.push({
+            success: false,
+            error: `HTTP ${response.status}`,
+            index: i
+          });
+        }
+
+        // Pequeña pausa entre requests para evitar rate limiting
+        if (i < prompts.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } catch (error) {
+        results.push({
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          index: i
+        });
+      }
+    }
+
+    const processingTime = (Date.now() - startTime) / 1000;
+    const successCount = results.filter(r => r.success).length;
+
+    console.log(`✅ [FAL-BACKEND] Batch completed: ${successCount}/${prompts.length} in ${processingTime.toFixed(1)}s`);
+    await logFalUsage('nano-banana-batch', successCount);
+
+    res.json({
+      success: true,
+      results,
+      totalProcessed: prompts.length,
+      successCount,
+      failCount: prompts.length - successCount,
+      processingTime
+    });
+
+  } catch (error) {
+    console.error('❌ [FAL-BACKEND] Error in batch generation:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router;
