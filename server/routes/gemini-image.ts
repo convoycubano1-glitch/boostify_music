@@ -563,4 +563,70 @@ router.post('/generate-hollywood-poster', async (req: Request, res: Response) =>
   }
 });
 
+/**
+ * Genera Casting Headshot para miembros del elenco
+ * Usado por master-character-generator para generar headshots de casting
+ */
+router.post('/generate-casting-headshot', async (req: Request, res: Response) => {
+  try {
+    const { prompt, role } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere un prompt para el casting headshot'
+      });
+    }
+
+    console.log(`🎬 Generando Casting Headshot con FAL Nano Banana`);
+    console.log(`👤 Role: ${role || 'unknown'}`);
+    console.log(`📝 Prompt: ${prompt.substring(0, 100)}...`);
+
+    // Construir prompt optimizado para headshots de casting
+    const headsthotPrompt = `PROFESSIONAL CASTING HEADSHOT:
+
+${prompt}
+
+CRITICAL REQUIREMENTS:
+- Professional studio headshot
+- Clean neutral/white background
+- 3/4 or front-facing pose
+- Professional wardrobe (black/neutral clothing)
+- Cinematic studio lighting (key, fill, back light)
+- Sharp focus on face
+- 8K resolution photorealistic quality
+- Movie production casting style`;
+
+    // Generar con FAL nano-banana
+    const result = await generateImageWithNanoBanana(headsthotPrompt, {
+      aspectRatio: '1:1' // Square format for headshots
+    });
+
+    if (!result.success) {
+      console.error('❌ Error generando Casting Headshot:', result.error);
+      return res.status(500).json({
+        success: false,
+        error: result.error || 'Error generando Casting Headshot'
+      });
+    }
+
+    console.log(`✅ Casting Headshot generado exitosamente para role: ${role || 'unknown'}`);
+
+    return res.json({
+      success: true,
+      imageUrl: result.imageUrl,
+      imageBase64: result.imageBase64,
+      role: role,
+      provider: 'fal-nano-banana'
+    });
+
+  } catch (error: any) {
+    console.error('❌ Error en /generate-casting-headshot:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error interno al generar Casting Headshot'
+    });
+  }
+});
+
 export default router;
