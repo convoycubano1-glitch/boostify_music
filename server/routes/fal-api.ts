@@ -1478,7 +1478,19 @@ router.get('/kling-video/:requestId', async (req: Request, res: Response) => {
  * Este modelo es más potente que flux-pulid para mantener identidad facial
  */
 router.post('/nano-banana/generate-with-face', async (req: Request, res: Response) => {
+  // Handle client abort gracefully
+  let isAborted = false;
+  req.on('aborted', () => {
+    isAborted = true;
+    console.log('⚠️ [FAL-BACKEND] Client aborted nano-banana/generate-with-face request');
+  });
+  
   try {
+    // Check if already aborted before processing
+    if (isAborted) {
+      return; // Don't process if client already disconnected
+    }
+    
     if (!FAL_API_KEY) {
       return res.status(500).json({
         success: false,
@@ -1577,7 +1589,13 @@ router.post('/nano-banana/generate-with-face', async (req: Request, res: Respons
       usedFaceReference: !!(referenceImages && referenceImages.length > 0)
     });
 
-  } catch (error) {
+  } catch (error: any) {
+    // Ignore aborted requests - client disconnected
+    if (isAborted || error?.code === 'ECONNABORTED' || error?.message?.includes('aborted')) {
+      console.log('⚠️ [FAL-BACKEND] generate-with-face request was aborted by client');
+      return; // Don't send response to aborted client
+    }
+    
     console.error('❌ [FAL-BACKEND] Error in generate-with-face:', error);
     return res.status(500).json({
       success: false,
@@ -1591,7 +1609,16 @@ router.post('/nano-banana/generate-with-face', async (req: Request, res: Respons
  * Genera múltiples imágenes en batch
  */
 router.post('/nano-banana/generate-batch', async (req: Request, res: Response) => {
+  // Handle client abort gracefully
+  let isAborted = false;
+  req.on('aborted', () => {
+    isAborted = true;
+    console.log('⚠️ [FAL-BACKEND] Client aborted nano-banana/generate-batch request');
+  });
+  
   try {
+    if (isAborted) return;
+    
     if (!FAL_API_KEY) {
       return res.status(500).json({
         success: false,
@@ -1697,7 +1724,13 @@ router.post('/nano-banana/generate-batch', async (req: Request, res: Response) =
       processingTime
     });
 
-  } catch (error) {
+  } catch (error: any) {
+    // Ignore aborted requests
+    if (isAborted || error?.code === 'ECONNABORTED' || error?.message?.includes('aborted')) {
+      console.log('⚠️ [FAL-BACKEND] generate-batch request was aborted by client');
+      return;
+    }
+    
     console.error('❌ [FAL-BACKEND] Error in batch generation:', error);
     return res.status(500).json({
       success: false,
