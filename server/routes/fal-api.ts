@@ -910,7 +910,8 @@ router.post('/nano-banana/generate', async (req: Request, res: Response) => {
 
     const startTime = Date.now();
 
-    // Llamar a FAL nano-banana
+    // Llamar a FAL nano-banana (text-to-image)
+    // IMPORTANTE: nano-banana usa 'aspect_ratio' con valores como '16:9', NO 'image_size'
     const response = await fetchWithFailover(
       'https://fal.run/fal-ai/nano-banana',
       {
@@ -920,13 +921,9 @@ router.post('/nano-banana/generate', async (req: Request, res: Response) => {
         },
         body: JSON.stringify({
           prompt,
-          negative_prompt: negativePrompt || 'blurry, low quality, distorted, deformed',
-          image_size: aspectRatio === '16:9' ? 'landscape_16_9' : 
-                      aspectRatio === '9:16' ? 'portrait_16_9' :
-                      aspectRatio === '4:3' ? 'landscape_4_3' :
-                      aspectRatio === '3:4' ? 'portrait_4_3' : 'square',
+          aspect_ratio: aspectRatio, // Valores válidos: '16:9', '9:16', '1:1', '4:3', '3:4', etc.
           num_images: numImages,
-          enable_safety_checker: true
+          output_format: 'png'
         })
       },
       'Nano-Banana Generate'
@@ -1510,6 +1507,7 @@ router.post('/nano-banana/generate-with-face', async (req: Request, res: Respons
     console.log(`🎭 [FAL-BACKEND] Starting image generation with face reference...`);
     console.log(`📝 Prompt: ${prompt.substring(0, 80)}...`);
     console.log(`🖼️ Reference images: ${referenceImages?.length || 0}`);
+    console.log(`📐 Aspect ratio: ${aspectRatio}`);
 
     const startTime = Date.now();
 
@@ -1517,11 +1515,9 @@ router.post('/nano-banana/generate-with-face', async (req: Request, res: Respons
     let endpoint = 'https://fal.run/fal-ai/nano-banana';
     let requestBody: any = {
       prompt,
-      negative_prompt: 'blurry, low quality, distorted, deformed, ugly, bad anatomy',
-      image_size: aspectRatio === '16:9' ? 'landscape_16_9' : 
-                  aspectRatio === '9:16' ? 'portrait_16_9' : 'square',
+      aspect_ratio: aspectRatio, // CORRECTO: nano-banana usa 'aspect_ratio' con valores '16:9', '9:16', etc.
       num_images: 1,
-      enable_safety_checker: true
+      output_format: 'png'
     };
 
     // Si hay referencias, usar nano-banana/edit para consistencia facial
@@ -1541,12 +1537,12 @@ router.post('/nano-banana/generate-with-face', async (req: Request, res: Respons
         prompt: enhancedPrompt,
         image_urls: imageUrls, // ARRAY de URLs - nano-banana/edit acepta múltiples
         num_images: 1,
-        aspect_ratio: aspectRatio === '16:9' ? '16:9' : 
-                      aspectRatio === '9:16' ? '9:16' : '1:1',
+        aspect_ratio: aspectRatio, // Usar el aspect ratio exacto: '16:9', '9:16', '1:1'
         output_format: 'png'
       };
       
       console.log(`🎭 [FAL-BACKEND] Using nano-banana/edit for face consistency with ${imageUrls.length} reference(s)`);
+      console.log(`🎭 [FAL-BACKEND] nano-banana/edit requestBody:`, JSON.stringify(requestBody, null, 2));
     }
 
     const response = await fetchWithFailover(
@@ -1650,10 +1646,9 @@ router.post('/nano-banana/generate-batch', async (req: Request, res: Response) =
         let endpoint = 'https://fal.run/fal-ai/nano-banana';
         let requestBody: any = {
           prompt,
-          negative_prompt: 'blurry, low quality, distorted',
-          image_size: aspectRatio === '16:9' ? 'landscape_16_9' : 'square',
+          aspect_ratio: aspectRatio, // CORRECTO: usar 'aspect_ratio' con '16:9', '9:16', etc.
           num_images: 1,
-          enable_safety_checker: true
+          output_format: 'png'
         };
 
         if (useFaceRef) {
@@ -1666,7 +1661,7 @@ router.post('/nano-banana/generate-batch', async (req: Request, res: Response) =
             prompt: enhancedPrompt,
             image_urls: referenceImages, // Array de referencias
             num_images: 1,
-            aspect_ratio: aspectRatio === '16:9' ? '16:9' : '1:1',
+            aspect_ratio: aspectRatio, // Usar el aspect ratio exacto
             output_format: 'png'
           };
         }

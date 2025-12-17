@@ -1126,7 +1126,14 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       // Decidir qué endpoint usar basado en si hay imágenes de referencia
       const hasReferenceImages = artistReferenceImages && artistReferenceImages.length > 0;
       
-      logger.info(`📸 [IMG] Generación SECUENCIAL iniciada. Total escenas: ${totalScenes}, Referencias: ${hasReferenceImages ? artistReferenceImages.length : 0}`);
+      logger.info(`📸 [IMG] Generación SECUENCIAL iniciada. Total escenas: ${totalScenes}`);
+      logger.info(`📸 [IMG] Referencias faciales: ${hasReferenceImages ? artistReferenceImages.length : 0}`);
+      logger.info(`📸 [IMG] Master Character: ${masterCharacter ? 'Sí' : 'No'}`);
+      logger.info(`📐 [IMG] Aspect Ratio configurado: ${videoAspectRatio}`);
+      
+      if (hasReferenceImages) {
+        logger.info(`🖼️ [IMG] URLs de referencia:`, artistReferenceImages.map((url, i) => `[${i}] ${url.substring(0, 80)}...`));
+      }
       
       // 🆕 MASTER SCENE VARIATIONS SYSTEM
       let masterImageUrls = new Map<string, string>();
@@ -1211,13 +1218,15 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
             }
           }
           
+          
           logger.info(`🎭 [SCENE ${sceneIndex}] Category: ${shotCategory}, Reference Usage: ${referenceUsage}, References: ${referenceToUse.length}`);
+          logger.info(`📐 [SCENE ${sceneIndex}] Using aspect ratio: ${videoAspectRatio}`);
           
           const requestBody = { 
             prompt: prompt,
             sceneId: sceneIndex,
             referenceImages: referenceToUse,
-            aspectRatio: '16:9'
+            aspectRatio: videoAspectRatio // Use the videoAspectRatio from state
           };
           
           // 🔄 RETRY: Usar retry con exponential backoff para mayor robustez
