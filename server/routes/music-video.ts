@@ -625,15 +625,38 @@ REMEMBER: Mix PERFORMANCE, B-ROLL, and STORY shots. Use artist reference creativ
           
           const recommendations = generateEditingRecommendations(audioAnalysis);
           
+          // 🎵 DURACIONES INTELIGENTES basadas en sección musical
+          const durationsBySection: Record<string, { min: number; max: number }> = {
+            'intro': { min: 3, max: 5 },      // Intro: clips más largos, establecen la escena
+            'verse': { min: 2, max: 3.5 },    // Verso: storytelling, ritmo moderado
+            'pre-chorus': { min: 1.5, max: 2.5 }, // Pre-coro: building tension, cortes más rápidos
+            'chorus': { min: 1.5, max: 2.5 }, // Coro: energía alta, cortes rápidos
+            'bridge': { min: 3, max: 4.5 },   // Bridge: pausa dramática, clips más largos
+            'breakdown': { min: 2, max: 4 },  // Breakdown: variado
+            'outro': { min: 3, max: 5 },      // Outro: desaceleración, clips largos
+            'solo': { min: 2.5, max: 4 },     // Solo: spotlight musical
+            'instrumental': { min: 2, max: 4 }, // Instrumental: B-roll variado
+          };
+          
           // Enriquecer cada escena con información musical
           script.scenes = script.scenes.map((scene: any, index: number) => {
             const startTime = scene.start_time || (index * (audioDuration / script.scenes.length));
-            const endTime = scene.start_time + (scene.duration || 3);
             
             // Encontrar sección musical
             const section = audioAnalysis!.sections.find(
               s => startTime >= s.startTime && startTime < s.endTime
             );
+            
+            // 🎵 DURACIÓN INTELIGENTE basada en sección
+            const sectionType = section?.type || 'verse';
+            const durationRange = durationsBySection[sectionType] || { min: 2, max: 4 };
+            const smartDuration = durationRange.min + Math.random() * (durationRange.max - durationRange.min);
+            const originalDuration = scene.duration || 3;
+            
+            // Usar la duración inteligente si es significativamente diferente
+            const finalDuration = Math.round(smartDuration * 10) / 10; // Redondear a 1 decimal
+            
+            const endTime = startTime + finalDuration;
             
             // Encontrar beat más cercano para snap
             const nearestBeat = audioAnalysis!.beats.reduce((prev, curr) => 
@@ -659,6 +682,10 @@ REMEMBER: Mix PERFORMANCE, B-ROLL, and STORY shots. Use artist reference creativ
             
             return {
               ...scene,
+              // 🎵 DURACIÓN INTELIGENTE
+              duration: finalDuration,
+              original_duration: originalDuration,
+              
               // 🎵 Timestamps alineados a música
               beat_aligned_start: nearestBeat,
               original_start_time: scene.start_time,
@@ -680,6 +707,17 @@ REMEMBER: Mix PERFORMANCE, B-ROLL, and STORY shots. Use artist reference creativ
             };
           });
           
+          // Recalcular start_times basados en nuevas duraciones
+          let cumulativeTime = 0;
+          script.scenes = script.scenes.map((scene: any) => {
+            const adjustedScene = {
+              ...scene,
+              start_time: Math.round(cumulativeTime * 10) / 10,
+            };
+            cumulativeTime += scene.duration;
+            return adjustedScene;
+          });
+          
           // Añadir metadata de audio al script
           script.audioAnalysis = {
             bpm: audioAnalysis.bpm,
@@ -695,10 +733,17 @@ REMEMBER: Mix PERFORMANCE, B-ROLL, and STORY shots. Use artist reference creativ
             keyMomentsCount: audioAnalysis.keyMoments.length,
           };
           
-          logger.log(`[generate-script] ✅ Script enriquecido con:
+          // Log de duraciones variadas
+          const durations = script.scenes.map((s: any) => s.duration);
+          const minDur = Math.min(...durations);
+          const maxDur = Math.max(...durations);
+          const avgDur = durations.reduce((a: number, b: number) => a + b, 0) / durations.length;
+          
+          logger.log(`[generate-script] ✅ Script enriquecido con DURACIONES INTELIGENTES:
             - BPM: ${audioAnalysis.bpm}
             - Secciones: ${audioAnalysis.sections.length}
             - Key Moments: ${audioAnalysis.keyMoments.length}
+            - Duraciones: min=${minDur.toFixed(1)}s, max=${maxDur.toFixed(1)}s, avg=${avgDur.toFixed(1)}s
           `);
         }
       } catch (enrichError: any) {

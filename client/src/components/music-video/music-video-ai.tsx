@@ -1506,6 +1506,26 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         });
       }, 500);
       
+      // 🎬 AUTO-OPEN VIDEO PROCESSING MODAL
+      // Después de generar todas las imágenes, abrir automáticamente el modal
+      // para que el usuario confirme y empiece la generación de video
+      const finalGeneratedCount = timelineItems.filter(item => 
+        item.generatedImage || item.firebaseUrl
+      ).length;
+      
+      if (finalGeneratedCount >= 5 && currentProjectId) {
+        logger.info('🎬 [AUTO-VIDEO] Abriendo modal de procesamiento de video automáticamente...');
+        
+        // Esperar un momento para que el usuario vea el resultado
+        setTimeout(() => {
+          setShowVideoProcessingModal(true);
+          toast({
+            title: "🎬 ¡Listo para crear tu video!",
+            description: "Confirma tus datos para empezar la generación del video",
+          });
+        }, 2000);
+      }
+      
     } catch (error) {
       logger.error("❌ [IMG] Error generating images:", error);
       toast({
