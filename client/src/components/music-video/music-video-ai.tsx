@@ -2360,6 +2360,38 @@ DESIGN REQUIREMENTS:
       setCurrentTime(0);
       setIsPlaying(false);
 
+      // 🎵 SUBIR AUDIO A FIREBASE STORAGE inmediatamente
+      // Esto es necesario para que audioUrl sea una URL HTTP válida (no blob:)
+      // que pueda ser usada por el servidor para análisis y lipsync
+      try {
+        logger.info('📤 [AUDIO UPLOAD] Subiendo audio a Firebase Storage...');
+        const storage = getStorage();
+        const timestamp = Date.now();
+        const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const audioRef = ref(storage, `music-videos/audio/${user?.uid || 'anonymous'}/${timestamp}_${sanitizedFileName}`);
+        
+        // Subir archivo
+        const snapshot = await uploadBytes(audioRef, file);
+        const firebaseAudioUrl = await getDownloadURL(snapshot.ref);
+        
+        // ✅ Guardar URL de Firebase para usar en todo el flujo
+        setAudioUrl(firebaseAudioUrl);
+        logger.info('✅ [AUDIO UPLOAD] Audio subido a Firebase:', firebaseAudioUrl.substring(0, 80) + '...');
+        
+        toast({
+          title: "Audio uploaded",
+          description: "Your audio file has been uploaded successfully",
+        });
+      } catch (uploadError) {
+        logger.error('❌ [AUDIO UPLOAD] Error subiendo audio a Firebase:', uploadError);
+        toast({
+          title: "Upload warning",
+          description: "Audio uploaded locally. Some features may be limited.",
+          variant: "default",
+        });
+        // Continuar sin URL de Firebase - algunas funciones no funcionarán
+      }
+
       const reader = new FileReader();
       reader.onload = async (e) => {
         if (e.target?.result instanceof ArrayBuffer) {
@@ -6375,8 +6407,8 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
           {typeof window !== 'undefined' && (
             <TimelineEditor
               initialClips={timelineItems}
-              duration={selectedFile?.duration || audioDuration || 180}
-              audioPreviewUrl={selectedFile?.url || audioUrl}
+              duration={audioDuration || 180}
+              audioPreviewUrl={audioUrl || undefined}
               generatedImages={generationProgress.generatedImages}
               onChange={(clips) => setTimelineItems(clips)}
               projectContext={{
@@ -8305,7 +8337,7 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                     <TimelineEditor
                       initialClips={clips || []}
                       duration={totalDuration || 0}
-                      audioPreviewUrl={selectedFile ? URL.createObjectURL(selectedFile) : undefined}
+                      audioPreviewUrl={audioUrl || undefined}
                       generatedImages={generationProgress.generatedImages}
                       onChange={handleClipUpdate || (() => {})}
                       projectContext={{

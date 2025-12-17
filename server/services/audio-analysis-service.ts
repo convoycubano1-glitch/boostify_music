@@ -215,22 +215,47 @@ export async function analyzeAudio(audioUrl: string): Promise<AudioAnalysisResul
 /**
  * 🎤 Transcribe audio usando OpenAI Whisper
  * Devuelve letra con timestamps para identificar secciones PERFORMANCE
+ * 
+ * IMPORTANTE: Requiere URL HTTP(S) accesible - NO soporta blob: URLs
  */
 async function transcribeWithWhisper(audioUrl: string): Promise<TranscriptionResult> {
   if (!openai) {
     throw new Error('OpenAI client not initialized');
   }
 
+  // Validar que NO sea una URL blob (estas son URLs del navegador, no accesibles desde servidor)
+  if (audioUrl.startsWith('blob:')) {
+    throw new Error('blob: URLs are not supported. Audio must be uploaded to Firebase or a public URL first.');
+  }
+
+  // Validar que sea una URL HTTP válida
+  if (!audioUrl.startsWith('http://') && !audioUrl.startsWith('https://')) {
+    throw new Error(`Invalid audio URL protocol. Expected http:// or https://, got: ${audioUrl.substring(0, 20)}...`);
+  }
+
   try {
+    logger.log(`[Whisper] Descargando audio desde: ${audioUrl.substring(0, 80)}...`);
+    
     // Descargar el audio desde la URL
     const audioResponse = await axios.get(audioUrl, {
       responseType: 'arraybuffer',
-      timeout: 60000,
+      timeout: 120000, // 2 minutos para archivos grandes
+      headers: {
+        'User-Agent': 'Boostify-Music/1.0',
+      },
     });
+    
+    logger.log(`[Whisper] Audio descargado: ${audioResponse.data.byteLength} bytes`);
+    
+    // Determinar el tipo de archivo por extensión o content-type
+    const contentType = audioResponse.headers['content-type'] || 'audio/mpeg';
+    const extension = audioUrl.includes('.wav') ? 'wav' : 
+                      audioUrl.includes('.m4a') ? 'm4a' :
+                      audioUrl.includes('.webm') ? 'webm' : 'mp3';
     
     // Crear un File-like object para Whisper
     const audioBuffer = Buffer.from(audioResponse.data);
-    const audioFile = new File([audioBuffer], 'audio.mp3', { type: 'audio/mpeg' });
+    const audioFile = new File([audioBuffer], `audio.${extension}`, { type: contentType });
 
     // Llamar a Whisper con timestamps
     const transcription = await openai.audio.transcriptions.create({

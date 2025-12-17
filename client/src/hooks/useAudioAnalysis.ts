@@ -95,8 +95,23 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
 
   /**
    * Analiza un archivo de audio
+   * IMPORTANTE: Requiere URL HTTP(S) - NO soporta blob: URLs
    */
   const analyzeAudio = useCallback(async (audioUrl: string, projectId?: string) => {
+    // ⚠️ Validar que NO sea una URL blob
+    if (audioUrl.startsWith('blob:')) {
+      console.error('[useAudioAnalysis] blob: URLs are not supported. Audio must be uploaded to Firebase first.');
+      setError('Audio must be uploaded before analysis. Please wait for upload to complete.');
+      return;
+    }
+
+    // Validar que sea una URL HTTP válida
+    if (!audioUrl.startsWith('http://') && !audioUrl.startsWith('https://')) {
+      console.error('[useAudioAnalysis] Invalid audio URL protocol:', audioUrl.substring(0, 30));
+      setError('Invalid audio URL. Must be a valid HTTP/HTTPS URL.');
+      return;
+    }
+
     // Verificar cache
     const cacheKey = projectId || audioUrl;
     if (cacheRef.current.has(cacheKey)) {
@@ -110,6 +125,8 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
     setError(null);
 
     try {
+      console.log('[useAudioAnalysis] Analyzing audio:', audioUrl.substring(0, 60));
+      
       const response = await fetch('/api/audio-analysis/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -117,7 +134,8 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
       });
 
       if (!response.ok) {
-        throw new Error(`Analysis failed: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Analysis failed: ${response.statusText}`);
       }
 
       const data = await response.json();
