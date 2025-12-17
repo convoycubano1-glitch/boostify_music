@@ -110,6 +110,7 @@ import boostiswapRouter from './routes/boostiswap'; // Import BoostiSwap Marketp
 import socialMediaRouter from './routes/social-media'; // Import Social Media Content Generator router
 import { seedTokenizedSongs } from './seed-tokenized-songs'; // Import seed function
 import educationGeminiRouter from './routes/education-gemini'; // Import Education Gemini AI router for course generation
+import renderQueueRouter from './routes/render-queue'; // Import Render Queue for video pipeline processing
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -341,6 +342,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   app.use('/api/auto-edit', autoEditRouter); // Auto-edit engine with genre-based intelligent cuts
   app.use('/api/artist-profiles', artistProfilesRouter);
   app.use('/api/video-rendering', videoRenderingRouter);
+  app.use('/api/render-queue', renderQueueRouter); // Video pipeline queue for full video generation
   app.use('/api/diagnostics', diagnosticsRouter); // System health check endpoints
   console.log('✅ Router de proyectos de music video registrado');
   console.log('✅ Router de perfiles de artista auto-generados registrado');

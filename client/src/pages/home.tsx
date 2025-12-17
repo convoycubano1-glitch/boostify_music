@@ -3,13 +3,15 @@ import { logger } from "../lib/logger";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import { ScrollArea } from "../components/ui/scroll-area";
 import { SiGoogle } from "react-icons/si";
 import {
   Music2, Users2, TrendingUp, FileText, Star, Home, Youtube, Globe,
   MessageCircle, BarChart2, Calendar, UserCircle2, Video, Sparkles, Wand2, 
   Play, Volume2, ChevronRight, ArrowRight, Headphones, MoveRight, MousePointer,
   Zap, LucideIcon, Check, ExternalLink, CloudLightning, Pause, PlaySquare,
-  DollarSign, Share2, Users, CheckCircle2
+  DollarSign, Share2, Users, CheckCircle2, Coins, FileCode, X, Layers, Shield, Scale
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion, useAnimation } from "framer-motion";
@@ -313,6 +315,7 @@ export default function HomePage() {
   const [viewCount, setViewCount] = useState(0);
   const [progress, setProgress] = useState(0);
   const [showEarlyAccessModal, setShowEarlyAccessModal] = useState(false);
+  const [showWhitepaperModal, setShowWhitepaperModal] = useState(false);
   const statsRef = useRef<HTMLDivElement>(null);
   const statsControls = useAnimation();
   const introVideoRef = useRef<HTMLVideoElement>(null);
@@ -1110,10 +1113,10 @@ export default function HomePage() {
                     </div>
                     <div>
                       <h3 className="text-2xl font-bold text-white">BoostiSwap</h3>
-                      <p className="text-purple-400 text-sm">Music NFT Marketplace</p>
+                      <p className="text-purple-400 text-sm">BTF-2300 Marketplace</p>
                     </div>
                     <Badge className="ml-auto bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs">
-                      HOT 🔥
+                      NEW 🚀
                     </Badge>
                   </div>
                   
@@ -1123,8 +1126,8 @@ export default function HomePage() {
                         <TrendingUp className="h-4 w-4 text-purple-400" />
                       </div>
                       <div>
-                        <span className="font-bold text-white">Buy & Sell Music NFTs</span>
-                        <p className="text-white/60 text-sm">Trade tokenized songs on our marketplace</p>
+                        <span className="font-bold text-white">Trade BTF-2300 Tokens</span>
+                        <p className="text-white/60 text-sm">Buy & sell artist smart contracts on our marketplace</p>
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
@@ -1132,8 +1135,8 @@ export default function HomePage() {
                         <BarChart2 className="h-4 w-4 text-purple-400" />
                       </div>
                       <div>
-                        <span className="font-bold text-white">Real-Time Analytics</span>
-                        <p className="text-white/60 text-sm">Track sales, trends, and market activity</p>
+                        <span className="font-bold text-white">Automated Royalties</span>
+                        <p className="text-white/60 text-sm">Smart contract manages royalty distribution automatically</p>
                       </div>
                     </li>
                     <li className="flex items-start gap-3">
@@ -1141,19 +1144,28 @@ export default function HomePage() {
                         <Globe className="h-4 w-4 text-purple-400" />
                       </div>
                       <div>
-                        <span className="font-bold text-white">Global Community</span>
-                        <p className="text-white/60 text-sm">Connect with collectors worldwide</p>
+                        <span className="font-bold text-white">Complete Artist Catalog</span>
+                        <p className="text-white/60 text-sm">Music, videos, images — all in one token</p>
                       </div>
                     </li>
                   </ul>
                   
-                  <Link href="/boostiswap">
-                    <Button className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-bold py-6 shadow-lg shadow-purple-500/20 group">
-                      <Zap className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
-                      Explore BoostiSwap
-                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  <div className="flex gap-3">
+                    <Link href="/boostiswap" className="flex-1">
+                      <Button className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-bold py-6 shadow-lg shadow-purple-500/20 group">
+                        <Zap className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
+                        Explore BoostiSwap
+                        <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                      </Button>
+                    </Link>
+                    <Button 
+                      onClick={() => setShowWhitepaperModal(true)}
+                      variant="outline" 
+                      className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10 hover:border-purple-500 py-6 px-4 group"
+                    >
+                      <FileCode className="h-5 w-5 group-hover:scale-110 transition-transform" />
                     </Button>
-                  </Link>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -1207,10 +1219,148 @@ export default function HomePage() {
                   transition={{ delay: 0.8 }}
                   className="bg-black/60 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/10 hidden sm:block"
                 >
-                  <p className="text-xs text-white/60">NFTs Minted</p>
+                  <p className="text-xs text-white/60">BTF-2300 Tokens</p>
                   <p className="text-lg font-bold text-white">50K+</p>
                 </motion.div>
               </div>
+            </div>
+          </motion.div>
+
+          {/* BTF-2300 3-Step Process */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="mt-20"
+          >
+            <div className="text-center mb-12">
+              <Badge className="mb-4 bg-purple-500/20 text-purple-400 border-purple-500/30 px-4 py-1 text-sm">
+                BTF-2300 STANDARD
+              </Badge>
+              <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                3-Step <span className="text-purple-400">Artist Tokenization</span>
+              </h3>
+              <p className="text-white/60 max-w-2xl mx-auto">
+                Transform your entire creative catalog into a programmable digital entity with our revolutionary BTF-2300 smart contract
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {/* Step 1 */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 }}
+                className="bg-zinc-900/80 backdrop-blur-sm border border-purple-500/20 rounded-2xl p-6 hover:border-purple-500/40 transition-all"
+              >
+                <div className="rounded-full bg-purple-500/20 w-14 h-14 flex items-center justify-center mb-5">
+                  <Music2 className="w-7 h-7 text-purple-400" />
+                </div>
+                <h4 className="text-xl font-bold text-white mb-2">1. Upload Your Catalog</h4>
+                <p className="text-white/60 text-sm mb-4">Upload your music, videos, images and more. All your creative assets in one place.</p>
+                
+                {/* Animation */}
+                <div className="relative w-full h-24 bg-zinc-800 rounded-lg overflow-hidden">
+                  <motion.div
+                    initial={{ x: -100 }}
+                    animate={{ x: 180 }}
+                    transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
+                    className="absolute top-1/2 -translate-y-1/2 h-1 w-20 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"
+                  />
+                  <motion.div
+                    initial={{ opacity: 0.4 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ repeat: Infinity, duration: 1.5, repeatType: "reverse" }}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <Play className="h-10 w-10 text-purple-400" />
+                  </motion.div>
+                </div>
+              </motion.div>
+
+              {/* Step 2 */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+                className="bg-zinc-900/80 backdrop-blur-sm border border-purple-500/20 rounded-2xl p-6 hover:border-purple-500/40 transition-all"
+              >
+                <div className="rounded-full bg-purple-500/20 w-14 h-14 flex items-center justify-center mb-5">
+                  <Coins className="w-7 h-7 text-purple-400" />
+                </div>
+                <h4 className="text-xl font-bold text-white mb-2">2. Deploy BTF-2300</h4>
+                <p className="text-white/60 text-sm mb-4">One-click deployment of your artist smart contract on Polygon blockchain.</p>
+                
+                {/* Animation */}
+                <div className="relative w-full h-24 bg-zinc-800 rounded-lg overflow-hidden flex items-center justify-center">
+                  <motion.div
+                    initial={{ scale: 1, rotate: 0 }}
+                    animate={{ scale: [1, 1.1, 1], rotate: 360 }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                    className="w-14 h-14 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center"
+                  >
+                    <Coins className="h-7 w-7 text-white" />
+                  </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: [0, 1, 0], scale: [0.8, 1.3, 1.5] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeOut", delay: 0.5 }}
+                    className="absolute inset-0 m-auto w-14 h-14 border-2 border-purple-500 rounded-full"
+                  />
+                </div>
+              </motion.div>
+
+              {/* Step 3 */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3 }}
+                className="bg-zinc-900/80 backdrop-blur-sm border border-purple-500/20 rounded-2xl p-6 hover:border-purple-500/40 transition-all"
+              >
+                <div className="rounded-full bg-purple-500/20 w-14 h-14 flex items-center justify-center mb-5">
+                  <Zap className="w-7 h-7 text-purple-400" />
+                </div>
+                <h4 className="text-xl font-bold text-white mb-2">3. Earn & License</h4>
+                <p className="text-white/60 text-sm mb-4">Automated royalties (80/20 split) and on-chain licensing for every transaction.</p>
+                
+                {/* Animation */}
+                <div className="relative w-full h-24 bg-zinc-800 rounded-lg overflow-hidden">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <motion.div
+                      initial={{ y: 40, opacity: 0 }}
+                      animate={{ y: [40, 0, -40], opacity: [0, 1, 0] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+                      className="flex flex-col items-center"
+                    >
+                      <Star className="h-6 w-6 text-yellow-400 mb-1" />
+                      <span className="text-white font-bold text-lg">+$150</span>
+                    </motion.div>
+                  </div>
+                  <motion.div
+                    initial={{ width: "10%" }}
+                    animate={{ width: "90%" }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", repeatType: "reverse" }}
+                    className="absolute bottom-3 left-3 right-3 h-3 bg-gradient-to-r from-green-500 to-green-300 rounded-full"
+                  />
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Whitepaper CTA */}
+            <div className="text-center mt-10">
+              <Button 
+                onClick={() => setShowWhitepaperModal(true)}
+                variant="outline" 
+                className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10 hover:border-purple-500 px-8 py-6 text-lg group"
+              >
+                <FileCode className="mr-2 h-5 w-5" />
+                Read BTF-2300 Whitepaper
+                <ExternalLink className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </Button>
             </div>
           </motion.div>
 
@@ -2318,6 +2468,212 @@ export default function HomePage() {
         open={showEarlyAccessModal} 
         onClose={() => setShowEarlyAccessModal(false)} 
       />
+
+      {/* BTF-2300 Whitepaper Modal */}
+      <Dialog open={showWhitepaperModal} onOpenChange={setShowWhitepaperModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] bg-zinc-900 border-purple-500/30">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-purple-500/20">
+                <FileCode className="h-6 w-6 text-purple-400" />
+              </div>
+              BTF-2300 Whitepaper
+              <Badge className="ml-2 bg-purple-500/20 text-purple-300 border-purple-500/30">
+                NFT 3.0
+              </Badge>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <ScrollArea className="h-[70vh] pr-4">
+            <div className="space-y-8 text-white/80">
+              {/* Header */}
+              <div className="text-center py-6 border-b border-purple-500/20">
+                <h1 className="text-3xl font-bold text-white mb-2">BTF-2300</h1>
+                <p className="text-purple-400 text-lg">Boostify Token Framework 2300</p>
+                <p className="text-white/60 italic mt-2">The Artist as a Programmable Digital Entity</p>
+              </div>
+
+              {/* Abstract */}
+              <div>
+                <h2 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
+                  <Layers className="h-5 w-5 text-purple-400" />
+                  Abstract
+                </h2>
+                <p className="leading-relaxed">
+                  BTF-2300 (Boostify Token Framework 2300) is a next-generation blockchain standard designed to represent a <strong className="text-purple-400">complete digital artist</strong> as a single programmable on-chain entity. Unlike traditional NFTs that encapsulate a single asset, BTF-2300 introduces a modular architecture where an artist's <strong className="text-white">identity, catalog, licenses, revenues, and legal permissions</strong> are unified under one interoperable framework.
+                </p>
+                <p className="mt-3 leading-relaxed">
+                  This standard redefines digital ownership in the creative economy, enabling artists, platforms, and enterprises to operate at scale with <strong className="text-white">automation, transparency, and composability</strong>.
+                </p>
+                <p className="mt-3 text-purple-400 font-semibold">
+                  BTF-2300 can be understood as the NFT 3.0 standard.
+                </p>
+              </div>
+
+              {/* Problem Statement */}
+              <div>
+                <h2 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
+                  <X className="h-5 w-5 text-red-400" />
+                  Problem Statement
+                </h2>
+                <p className="mb-3">The current NFT ecosystem suffers from structural limitations:</p>
+                <ul className="space-y-2 ml-4">
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">•</span>
+                    NFTs represent <strong>individual assets</strong>, not creators
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">•</span>
+                    Fragmented ownership across multiple tokens
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">•</span>
+                    No native representation of <strong>artist identity</strong>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">•</span>
+                    Royalties depend on marketplace goodwill
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">•</span>
+                    Licensing is handled <strong>off-chain</strong>, legally weak, and unverifiable
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400">•</span>
+                    No standard for managing an artist's full digital lifecycle
+                  </li>
+                </ul>
+              </div>
+
+              {/* Vision */}
+              <div className="bg-purple-500/10 rounded-xl p-6 border border-purple-500/20">
+                <h2 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-purple-400" />
+                  Vision
+                </h2>
+                <blockquote className="text-xl text-center italic text-purple-300 my-4">
+                  "An artist is not a file.<br/>
+                  An artist is a programmable digital entity."
+                </blockquote>
+                <p className="leading-relaxed">
+                  The framework transforms artists into <strong className="text-white">on-chain digital objects</strong> that can: Own assets, Issue licenses, Receive revenues, Enforce rules, and Interact with platforms autonomously.
+                </p>
+              </div>
+
+              {/* Core Architecture */}
+              <div>
+                <h2 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
+                  <Layers className="h-5 w-5 text-purple-400" />
+                  Core Architecture
+                </h2>
+                <p className="mb-4">BTF-2300 is a <strong>multi-contract standard</strong> composed of four core layers:</p>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-zinc-800/50 rounded-lg p-4 border border-purple-500/10">
+                    <h4 className="font-bold text-purple-400 mb-1">Identity Layer</h4>
+                    <p className="text-sm">ERC-721 artist token - One token = One artist</p>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded-lg p-4 border border-purple-500/10">
+                    <h4 className="font-bold text-purple-400 mb-1">Asset Layer</h4>
+                    <p className="text-sm">ERC-1155 assets & licenses (music, videos, stems)</p>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded-lg p-4 border border-purple-500/10">
+                    <h4 className="font-bold text-purple-400 mb-1">Revenue Layer</h4>
+                    <p className="text-sm">Royalty splitter contracts (80% Artist / 20% Platform)</p>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded-lg p-4 border border-purple-500/10">
+                    <h4 className="font-bold text-purple-400 mb-1">Legal Layer</h4>
+                    <p className="text-sm">EIP-712 signed licensing - On-chain legal contracts</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Comparison Table */}
+              <div>
+                <h2 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
+                  <Scale className="h-5 w-5 text-purple-400" />
+                  Comparison with Traditional NFTs
+                </h2>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-purple-500/20">
+                        <th className="text-left py-2 text-white">Feature</th>
+                        <th className="text-center py-2 text-red-400">NFT (ERC-721)</th>
+                        <th className="text-center py-2 text-green-400">BTF-2300</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-white/70">
+                      <tr className="border-b border-zinc-800"><td className="py-2">Represents artist</td><td className="text-center">❌</td><td className="text-center">✅</td></tr>
+                      <tr className="border-b border-zinc-800"><td className="py-2">Multiple assets</td><td className="text-center">❌</td><td className="text-center">✅</td></tr>
+                      <tr className="border-b border-zinc-800"><td className="py-2">Native licensing</td><td className="text-center">❌</td><td className="text-center">✅</td></tr>
+                      <tr className="border-b border-zinc-800"><td className="py-2">On-chain revenue split</td><td className="text-center">❌</td><td className="text-center">✅</td></tr>
+                      <tr className="border-b border-zinc-800"><td className="py-2">Legal enforceability</td><td className="text-center">❌</td><td className="text-center">✅</td></tr>
+                      <tr className="border-b border-zinc-800"><td className="py-2">One-click creation</td><td className="text-center">❌</td><td className="text-center">✅</td></tr>
+                      <tr><td className="py-2">Platform automation</td><td className="text-center">❌</td><td className="text-center">✅</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Why Polygon */}
+              <div>
+                <h2 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-purple-400" />
+                  Why Polygon
+                </h2>
+                <p className="mb-3">BTF-2300 is deployed on <strong className="text-purple-400">Polygon PoS</strong> because it offers:</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {['Ultra-low gas fees', 'High throughput', 'Ethereum compatibility', 'Enterprise adoption', 'Marketplace support', 'Long-term scalability'].map((item, i) => (
+                    <div key={i} className="bg-zinc-800/50 rounded-lg p-3 text-center text-sm border border-purple-500/10">
+                      <CheckCircle2 className="h-4 w-4 text-green-400 mx-auto mb-1" />
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Security */}
+              <div>
+                <h2 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-purple-400" />
+                  Security Design
+                </h2>
+                <ul className="grid grid-cols-2 gap-2">
+                  {['OpenZeppelin audited primitives', 'Role-based access control', 'Reentrancy protection', 'Anti-replay license enforcement', 'Explicit upgrade path', 'Emergency pause supported'].map((item, i) => (
+                    <li key={i} className="flex items-center gap-2 bg-zinc-800/30 rounded-lg p-2 text-sm">
+                      <CheckCircle2 className="h-4 w-4 text-green-400 flex-shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Conclusion */}
+              <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-xl p-6 border border-purple-500/20">
+                <h2 className="text-xl font-bold text-white mb-3">Conclusion</h2>
+                <p className="mb-4">BTF-2300 is not just a smart contract. It is:</p>
+                <ul className="space-y-2 mb-4">
+                  <li className="flex items-center gap-2"><Zap className="h-4 w-4 text-purple-400" /> A <strong>new digital standard</strong></li>
+                  <li className="flex items-center gap-2"><Zap className="h-4 w-4 text-purple-400" /> A <strong>creator operating system</strong></li>
+                  <li className="flex items-center gap-2"><Zap className="h-4 w-4 text-purple-400" /> A <strong>legal-financial bridge</strong></li>
+                  <li className="flex items-center gap-2"><Zap className="h-4 w-4 text-purple-400" /> A <strong>scalable artist economy engine</strong></li>
+                </ul>
+                <blockquote className="text-lg text-center italic text-purple-300 border-t border-purple-500/20 pt-4">
+                  "NFTs represented files.<br/>
+                  <strong>BTF-2300 represents creators.</strong>"
+                </blockquote>
+              </div>
+
+              {/* Footer */}
+              <div className="text-center text-white/50 text-sm border-t border-purple-500/20 pt-4">
+                <p>BTF-2300 is an <strong className="text-white">original framework</strong> developed by Boostify.</p>
+                <p className="mt-1">© 2025 Boostify. All rights reserved.</p>
+              </div>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -30,7 +30,12 @@ const saveProjectSchema = z.object({
     videosGenerated: z.number(),
     totalVideos: z.number()
   }).optional(),
-  tags: z.array(z.string()).default([])
+  tags: z.array(z.string()).default([]),
+  // Payment fields
+  isPaid: z.boolean().optional(),
+  paidAt: z.string().datetime().optional(),
+  paidAmount: z.number().optional(),
+  stripePaymentId: z.string().optional()
 });
 
 router.post('/save', async (req, res) => {
@@ -75,6 +80,12 @@ router.post('/save', async (req, res) => {
     if (validatedData.videoStyle) dbData.videoStyle = validatedData.videoStyle;
     if (validatedData.selectedEditingStyle) dbData.selectedEditingStyle = validatedData.selectedEditingStyle;
     if (validatedData.progress) dbData.progress = validatedData.progress;
+    
+    // Payment fields
+    if (validatedData.isPaid !== undefined) dbData.isPaid = validatedData.isPaid;
+    if (validatedData.paidAt) dbData.paidAt = new Date(validatedData.paidAt);
+    if (validatedData.paidAmount !== undefined) dbData.paidAmount = String(validatedData.paidAmount);
+    if (validatedData.stripePaymentId) dbData.stripePaymentId = validatedData.stripePaymentId;
     
     const existingProject = await db
       .select()
@@ -424,6 +435,131 @@ router.post('/update-timeline', async (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: error instanceof Error ? error.message : 'Error desconocido' 
+    });
+  }
+});
+
+/**
+ * POST /mark-paid
+ * Mark a project as paid after successful Stripe payment
+ */
+router.post('/mark-paid', async (req, res) => {
+  try {
+    const { projectId, userEmail, paidAmount, stripePaymentId } = req.body;
+    
+    if (!projectId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'projectId es requerido' 
+      });
+    }
+
+    logger.log('💳 [MARK PAID] Marcando proyecto como pagado:', projectId);
+    
+    const updateData: any = {
+      isPaid: true,
+      paidAt: new Date(),
+      status: 'full_generation',
+      lastModified: new Date()
+    };
+    
+    if (paidAmount !== undefined) {
+      updateData.paidAmount = String(paidAmount);
+    }
+    
+    if (stripePaymentId) {
+      updateData.stripePaymentId = stripePaymentId;
+    }
+
+    const [updated] = await db
+      .update(musicVideoProjects)
+      .set(updateData)
+      .where(eq(musicVideoProjects.id, parseInt(projectId)))
+      .returning();
+    
+    if (!updated) {
+      logger.log('❌ [MARK PAID] Proyecto no encontrado');
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Proyecto no encontrado' 
+      });
+    }
+
+    logger.log('✅ [MARK PAID] Proyecto marcado como pagado exitosamente');
+    res.json({ success: true, project: updated });
+  } catch (error) {
+    logger.error('❌ [MARK PAID] Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error desconocido' 
+    });
+  }
+});
+
+/**
+ * GET /by-artist/:artistSlug
+ * Obtiene todos los proyectos de música de un artista por su slug
+ * Usado para mostrar videos completados en el perfil del artista
+ */
+router.get('/by-artist/:artistSlug', async (req, res) => {
+  try {
+    const { artistSlug } = req.params;
+    logger.log(`🎬 [BY-ARTIST] Buscando proyectos para artista: ${artistSlug}`);
+    
+    if (!artistSlug) {
+      return res.status(400).json({
+        success: false,
+        error: 'Artist slug es requerido'
+      });
+    }
+    
+    // Buscar proyectos que coincidan con el artistName transformado a slug
+    // O que tengan un slug directo almacenado
+    const allProjects = await db
+      .select({
+        id: musicVideoProjects.id,
+        artistName: musicVideoProjects.artistName,
+        songName: musicVideoProjects.songName,
+        finalVideoUrl: musicVideoProjects.finalVideoUrl,
+        thumbnail: musicVideoProjects.thumbnail,
+        status: musicVideoProjects.status,
+        createdAt: musicVideoProjects.createdAt
+      })
+      .from(musicVideoProjects)
+      .where(eq(musicVideoProjects.status, 'completed'))
+      .orderBy(desc(musicVideoProjects.createdAt));
+    
+    // Filtrar por slug generado del artistName
+    const generateSlug = (name: string): string => {
+      return name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim();
+    };
+    
+    const matchingProjects = allProjects.filter(project => {
+      if (!project.artistName) return false;
+      const projectSlug = generateSlug(project.artistName);
+      return projectSlug === artistSlug || 
+             project.artistName.toLowerCase() === artistSlug.toLowerCase();
+    });
+    
+    logger.log(`✅ [BY-ARTIST] Encontrados ${matchingProjects.length} proyectos para ${artistSlug}`);
+    
+    res.json({
+      success: true,
+      projects: matchingProjects
+    });
+    
+  } catch (error) {
+    logger.error('❌ [BY-ARTIST] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido'
     });
   }
 });

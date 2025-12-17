@@ -55,11 +55,11 @@ const TokenizationHero = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <Badge className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30 px-4 py-1 text-sm">
-              WEB3 TECHNOLOGY
+            <Badge className="mb-4 bg-purple-500/20 text-purple-400 border-purple-500/30 px-4 py-1 text-sm">
+              BTF-2300 • NFT 3.0 STANDARD
             </Badge>
-            <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-red-500 to-orange-500 leading-tight mb-6">
-              Web3 Music Tokenization
+            <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-blue-500 to-purple-500 leading-tight mb-6">
+              BTF-2300: The Artist Token
             </h1>
           </motion.div>
           
@@ -69,7 +69,7 @@ const TokenizationHero = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="mt-4 text-xl text-gray-300 max-w-3xl mx-auto"
           >
-            Revolutionize the way you monetize your music. Turn your songs into digital assets and connect directly with your fans.
+            Transform your entire creative catalog into a programmable digital entity. One smart contract that represents you as an artist — your music, videos, licenses, and royalties, all unified on-chain.
           </motion.p>
           
           <motion.div
@@ -81,18 +81,18 @@ const TokenizationHero = () => {
             <Link href="/boostiswap">
               <Button 
                 size="lg"
-                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
+                className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white"
               >
-                Get Started
+                Deploy Your BTF-2300
               </Button>
             </Link>
             <Link href="/boostiswap">
               <Button 
                 size="lg"
                 variant="outline"
-                className="border-orange-500/30 bg-black/30 backdrop-blur-sm text-white hover:bg-black/50"
+                className="border-purple-500/30 bg-black/30 backdrop-blur-sm text-white hover:bg-black/50"
               >
-                Discover Benefits
+                Read Whitepaper
               </Button>
             </Link>
           </motion.div>
@@ -106,34 +106,34 @@ const TokenizationHero = () => {
 const BenefitsSection = () => {
   const benefits = [
     {
-      icon: <DollarSign className="h-10 w-10 text-orange-500" />,
-      title: "Direct Income",
-      description: "Receive payments directly from your fans without intermediaries reducing your earnings."
+      icon: <DollarSign className="h-10 w-10 text-purple-500" />,
+      title: "80/20 Revenue Split",
+      description: "Automated royalty distribution: 80% to you, 20% platform fee. No intermediaries, no delays."
     },
     {
-      icon: <User className="h-10 w-10 text-orange-500" />,
-      title: "Verifiable Ownership",
-      description: "Secure your copyright with immutable and transparent blockchain technology."
+      icon: <User className="h-10 w-10 text-purple-500" />,
+      title: "Artist Identity Token",
+      description: "One ERC-721 token represents your complete digital identity as an artist on-chain."
     },
     {
-      icon: <Users className="h-10 w-10 text-orange-500" />,
-      title: "Fan Community",
-      description: "Build a community of engaged followers who invest directly in your success."
+      icon: <Users className="h-10 w-10 text-purple-500" />,
+      title: "Complete Catalog",
+      description: "Music, videos, images, stems — all your creative assets unified under one smart contract."
     },
     {
-      icon: <Share2 className="h-10 w-10 text-orange-500" />,
-      title: "Automatic Royalties",
-      description: "Set up perpetual royalties that pay you automatically with each resale."
+      icon: <Share2 className="h-10 w-10 text-purple-500" />,
+      title: "On-Chain Licensing",
+      description: "EIP-712 signed licenses for sync rights, advertising, and commercial use — legally enforceable."
     },
     {
-      icon: <Shield className="h-10 w-10 text-orange-500" />,
-      title: "Rights Protection",
-      description: "Protect your creative work with immutable proof of ownership on the blockchain."
+      icon: <Shield className="h-10 w-10 text-purple-500" />,
+      title: "OpenZeppelin Security",
+      description: "Audited smart contracts with role-based access, reentrancy protection, and emergency pause."
     },
     {
-      icon: <Globe className="h-10 w-10 text-orange-500" />,
-      title: "Global Reach",
-      description: "Reach fans and collectors from around the world without geographical restrictions."
+      icon: <Globe className="h-10 w-10 text-purple-500" />,
+      title: "Polygon Deployment",
+      description: "Ultra-low gas fees, high throughput, and Ethereum compatibility for global artist adoption."
     }
   ];
 
@@ -141,14 +141,14 @@ const BenefitsSection = () => {
     <section id="benefits" className="py-20 bg-gray-900">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <Badge variant="outline" className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30 px-3 py-1">
-            BENEFITS
+          <Badge variant="outline" className="mb-4 bg-purple-500/20 text-purple-400 border-purple-500/30 px-3 py-1">
+            BTF-2300 BENEFITS
           </Badge>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Why tokenize your music with <span className="text-orange-500">Boostify</span>
+            Why deploy your artist token with <span className="text-purple-500">BTF-2300</span>
           </h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Music tokenization offers revolutionary advantages for both independent and established artists.
+            The next-generation smart contract standard designed to represent complete digital artists on-chain.
           </p>
         </div>
 
@@ -181,26 +181,26 @@ const HowItWorksSection = () => {
     {
       number: 1,
       title: "Connect Your Wallet",
-      description: "Connect your digital wallet to securely start the music tokenization process.",
-      icon: <Wallet className="h-10 w-10 text-orange-500" />
+      description: "Connect your Polygon-compatible wallet to start deploying your BTF-2300 artist contract.",
+      icon: <Wallet className="h-10 w-10 text-purple-500" />
     },
     {
       number: 2,
-      title: "Upload Your Music",
-      description: "Upload your audio files, add metadata and configure the royalties you'll receive on each transaction.",
-      icon: <Music2 className="h-10 w-10 text-orange-500" />
+      title: "Upload Your Catalog",
+      description: "Upload your music, videos, images, and stems. All assets are linked to your artist identity token.",
+      icon: <Music2 className="h-10 w-10 text-purple-500" />
     },
     {
       number: 3,
-      title: "Create Your Token",
-      description: "Define your token's offering, pricing, and exclusivity. You can create multiple access tiers.",
-      icon: <DollarSign className="h-10 w-10 text-orange-500" />
+      title: "Deploy BTF-2300",
+      description: "One-click deployment creates your ERC-721 identity, royalty splitter, and ERC-1155 asset tokens.",
+      icon: <DollarSign className="h-10 w-10 text-purple-500" />
     },
     {
       number: 4,
-      title: "Promote and Sell",
-      description: "Share with your audience and start selling your music tokens directly to your fans.",
-      icon: <TrendingUp className="h-10 w-10 text-orange-500" />
+      title: "Trade & License",
+      description: "Your tokens are live on BoostiSwap. Fans can trade, and brands can license your work on-chain.",
+      icon: <TrendingUp className="h-10 w-10 text-purple-500" />
     }
   ];
 
@@ -208,14 +208,14 @@ const HowItWorksSection = () => {
     <section id="how-it-works" className="py-20 bg-gray-800 text-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <Badge variant="outline" className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30 px-3 py-1">
-            SIMPLE PROCESS
+          <Badge variant="outline" className="mb-4 bg-purple-500/20 text-purple-400 border-purple-500/30 px-3 py-1">
+            ONE-CLICK DEPLOYMENT
           </Badge>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            How <span className="text-orange-500">tokenization</span> works
+            How <span className="text-purple-500">BTF-2300</span> works
           </h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            An intuitive process designed to help you tokenize your music without complications.
+            Deploy your complete artist identity on Polygon blockchain in four simple steps.
           </p>
         </div>
 
@@ -259,28 +259,28 @@ const FAQSection = () => {
 
   const faqs = [
     {
-      question: "What is Web3 music tokenization?",
-      answer: "Web3 music tokenization is the process of converting your music rights into unique digital tokens (NFTs) on the blockchain. This allows artists to sell directly to their fans, establish automatic royalties, and create new income models without relying on traditional intermediaries."
+      question: "What is BTF-2300?",
+      answer: "BTF-2300 (Boostify Token Framework 2300) is a next-generation blockchain standard that represents a complete digital artist as a single programmable on-chain entity. Unlike traditional NFTs that represent individual files, BTF-2300 unifies your identity, catalog, licenses, revenues, and legal permissions under one interoperable smart contract. It's the NFT 3.0 standard."
     },
     {
-      question: "How do artists benefit from tokenization?",
-      answer: "Artists receive direct income without intermediaries, earn automatic royalties on each resale, maintain full control over their rights, can monetize their music in innovative ways, and build more direct relationships with their fans by turning them into investors in their career."
+      question: "How is BTF-2300 different from regular NFTs?",
+      answer: "Traditional NFTs represent individual assets. BTF-2300 represents YOU as an artist. It includes: an ERC-721 identity token, ERC-1155 assets for your catalog (music, videos, stems), an automated royalty splitter (80/20), and EIP-712 on-chain licensing. All deployed in one transaction."
     },
     {
-      question: "What types of music tokens can I create?",
-      answer: "You can create exclusive access tokens for your music, partial ownership tokens that grant royalties, VIP experience tokens like private concerts, membership tokens for exclusive content, and limited collectible tokens that can increase in value."
+      question: "What can I include in my BTF-2300 token?",
+      answer: "Your BTF-2300 can include: music tracks, albums, music videos, images, stems, commercial licenses, sync rights, advertising usage rights, and any digital asset you create. Each asset has its own supply configuration and royalty settings."
     },
     {
-      question: "Do I need technical knowledge to tokenize my music?",
-      answer: "No. Boostify simplifies the entire technical process so you can focus on your creativity. Our intuitive platform handles all the blockchain complexity, allowing you to tokenize your music without specialized technical knowledge."
+      question: "How do royalties work with BTF-2300?",
+      answer: "Each artist automatically gets a dedicated royalty splitter contract. The default split is 80% to the artist and 20% to the platform. All distributions happen on-chain with transparent accounting. This is trustless monetization — no intermediaries needed."
     },
     {
-      question: "How does Boostify ensure the security of my musical assets?",
-      answer: "We use cutting-edge blockchain technology with audited smart contracts, decentralized storage for your music files, identity verification systems to protect copyright, and multiple layers of security to protect both artists and buyers."
+      question: "What about licensing my music?",
+      answer: "BTF-2300 introduces on-chain legal licensing using EIP-712 cryptographic signatures. Licenses include asset ID, licensee, usage scope, territory, media channel, expiration, and maximum uses. Each license is verified on-chain, registered immutably, and auditable by third parties."
     },
     {
-      question: "Which blockchain does Boostify use for tokenization?",
-      answer: "Boostify operates on multiple blockchains, including Ethereum, Polygon, Solana, and Binance Smart Chain, allowing you to choose the one that best suits your needs in terms of transaction costs, speed, and accessibility for your specific audience."
+      question: "Why is BTF-2300 deployed on Polygon?",
+      answer: "Polygon PoS offers ultra-low gas fees, high throughput, Ethereum compatibility, enterprise adoption, and marketplace support. This enables global artist adoption without cost barriers — you can deploy your entire artist identity for just a few cents."
     }
   ];
 
@@ -292,14 +292,14 @@ const FAQSection = () => {
     <section className="py-20 bg-gray-900 text-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <Badge className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/20 px-3 py-1">
-            FREQUENTLY ASKED QUESTIONS
+          <Badge className="mb-4 bg-purple-500/20 text-purple-400 border-purple-500/20 px-3 py-1">
+            BTF-2300 FAQ
           </Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Everything you need to know
+            Everything about BTF-2300
           </h2>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            Answers to the most common questions about music tokenization with Boostify.
+            Answers to the most common questions about the Boostify Token Framework.
           </p>
         </div>
 
@@ -342,22 +342,22 @@ const FAQSection = () => {
 // Call to Action section
 const CTASection = () => {
   return (
-    <section className="py-20 bg-gradient-to-r from-orange-500 to-red-500 text-white">
+    <section className="py-20 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Revolutionize your music career with tokenization
+            Become a Programmable Digital Entity
           </h2>
           <p className="text-xl mb-10 text-white/90">
-            Join the music industry revolution. Tokenize your music, connect directly with your fans, and maximize your income.
+            Join the BTF-2300 revolution. Deploy your artist smart contract, automate your royalties, and license your work globally — all in one click.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/boostiswap">
               <Button 
                 size="lg"
-                className="bg-white text-orange-600 hover:bg-gray-100"
+                className="bg-white text-purple-600 hover:bg-gray-100"
               >
-                Start Tokenizing
+                Deploy BTF-2300 Now
               </Button>
             </Link>
             <Button 
@@ -365,7 +365,7 @@ const CTASection = () => {
               variant="outline"
               className="border-white text-white hover:bg-white/10"
             >
-              Contact Us
+              Read Whitepaper
             </Button>
           </div>
         </div>

@@ -143,13 +143,13 @@ export default function AccountPage() {
                     <div>
                       <h3 className="text-sm font-medium text-muted-foreground">Current Plan</h3>
                       <p className="text-xl font-bold">
-                        {subscription.active 
+                        {subscription?.active && subscription?.plan
                           ? subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1) 
                           : 'Free'}
                       </p>
                     </div>
                     
-                    {subscription.active && subscription.currentPeriodEnd && (
+                    {subscription?.active && subscription?.currentPeriodEnd && (
                       <div>
                         <h3 className="text-sm font-medium text-muted-foreground">Renewal Date</h3>
                         <p className="flex items-center text-lg">
@@ -159,7 +159,7 @@ export default function AccountPage() {
                       </div>
                     )}
                     
-                    {subscription.active && subscription.cancelAtPeriodEnd && (
+                    {subscription?.active && subscription?.cancelAtPeriodEnd && (
                       <div className="bg-amber-100 dark:bg-amber-950 p-4 rounded-md">
                         <p className="text-amber-800 dark:text-amber-200">
                           Your subscription is set to cancel at the end of the current billing period.
@@ -178,7 +178,7 @@ export default function AccountPage() {
                   Refresh
                 </Button>
                 
-                {subscription.active && !subscription.cancelAtPeriodEnd && (
+                {subscription?.active && !subscription?.cancelAtPeriodEnd && (
                   <Button 
                     variant="destructive" 
                     onClick={handleCancelSubscription}
@@ -188,7 +188,7 @@ export default function AccountPage() {
                   </Button>
                 )}
                 
-                {(!subscription.active || subscription.cancelAtPeriodEnd) && (
+                {(!subscription?.active || subscription?.cancelAtPeriodEnd) && (
                   <Button onClick={() => window.location.href = '/pricing'}>
                     View Plans
                   </Button>
@@ -196,7 +196,7 @@ export default function AccountPage() {
               </CardFooter>
             </Card>
             
-            {subscription.active && (
+            {subscription?.active && (
               <div className="mt-8">
                 <h2 className="text-xl font-bold mb-4">Upgrade Your Plan</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -234,7 +234,7 @@ export default function AccountPage() {
               </div>
             )}
 
-            {((!subscription.active || subscription.cancelAtPeriodEnd)) && (
+            {((!subscription?.active || subscription?.cancelAtPeriodEnd)) && (
               <div className="mt-8">
                 <h2 className="text-xl font-bold mb-4">Available Plans</h2>
                 <PricingPlans simplified />

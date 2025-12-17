@@ -53,7 +53,7 @@ async function generateTextWithOpenAI(prompt: string, options: {
  * 🎬 PREMIUM CINEMATOGRAPHIC POSTER PROMPTS
  * Genera prompts de alta calidad estilo Hollywood/Cinema
  */
-function buildPremiumPosterPrompt(concept: any, directorName: string, songInfo?: { artist?: string; title?: string }): string {
+function buildPremiumPosterPrompt(concept: any, directorName: string, songInfo?: { artist?: string; title?: string }, artistGender?: string): string {
   // Director-specific visual styles
   const directorStyles: Record<string, string> = {
     'Spike Jonze': 'Whimsical surrealism, intimate close-ups, warm nostalgic tones, dreamlike sequences with practical effects, indie film aesthetic',
@@ -61,6 +61,11 @@ function buildPremiumPosterPrompt(concept: any, directorName: string, songInfo?:
     'Michel Gondry': 'Handcrafted DIY aesthetic, stop-motion elements, paper craft textures, vintage camera effects, playful inventiveness',
     'David Fincher': 'Dark atmospheric shadows, desaturated color palette, meticulous symmetry, noir thriller mood, clinical precision',
     'Edgar Wright': 'Dynamic kinetic framing, bold color blocking, rhythmic visual comedy, British wit aesthetic, pop culture homage',
+    'Denis Villeneuve': 'Epic scale compositions, vast landscapes, minimalist elegance, sci-fi grandeur, contemplative atmosphere',
+    'Baz Luhrmann': 'Extravagant visual spectacle, bold saturated colors, theatrical glamour, musical rhythm in editing',
+    'Wes Anderson': 'Symmetrical framing, pastel color palette, storybook aesthetic, meticulous production design',
+    'Christopher Nolan': 'IMAX grandeur, practical effects, non-linear storytelling hints, cerebral intensity',
+    'Quentin Tarantino': 'Bold retro aesthetic, grindhouse vibes, dynamic angles, pop culture references',
     'default': 'Professional cinematic composition, dramatic lighting, movie poster quality'
   };
 
@@ -71,37 +76,57 @@ function buildPremiumPosterPrompt(concept: any, directorName: string, songInfo?:
   const mood = concept.mood || 'intense emotional';
   const visualTheme = concept.visual_theme || 'cinematic storytelling';
   
-  // Build premium prompt
-  return `MASTERPIECE CINEMA POSTER DESIGN - Award-winning theatrical release quality
+  // 🎭 Descripción de género para el artista principal
+  const genderDesc = artistGender === 'masculine' ? 'male protagonist'
+    : artistGender === 'feminine' ? 'female protagonist'
+    : artistGender === 'androgynous' ? 'androgynous lead character'
+    : 'lead protagonist';
+  
+  // Build premium Hollywood blockbuster poster prompt
+  return `HOLLYWOOD BLOCKBUSTER MOVIE POSTER - Premium theatrical one-sheet design
 
-VISUAL DIRECTION by ${directorName}:
+🎬 DIRECTOR VISION: ${directorName}
 ${directorStyle}
 
-POSTER CONCEPT: "${concept.title}"
-ATMOSPHERE: ${mood}
-VISUAL THEME: ${visualTheme}
-COLOR GRADING: ${colors}
+🎭 MAIN CHARACTER: ${genderDesc} - The star of this music video
+IMPORTANT: Accurately depict the artist's gender and appearance from reference images.
 
-TECHNICAL REQUIREMENTS:
-- Ultra-high resolution 4K movie poster composition
-- Hollywood blockbuster theatrical one-sheet design
-- Professional key art with dramatic hero shot composition
-- Cinematic lighting: rim lights, volumetric fog, lens flares
-- IMAX/Dolby Cinema presentation quality
-- Award season campaign aesthetic (Oscar/Golden Globe caliber)
+📽️ POSTER CONCEPT: "${concept.title}"
+🌟 VISUAL THEME: ${visualTheme}
+🎨 COLOR PALETTE: ${colors}
+😮 MOOD: ${mood}
 
-ARTISTIC STYLE:
-- Drew Struzan-inspired painted realism mixed with photography
-- Deep atmospheric depth with layered composition
-- Dramatic chiaroscuro lighting with saturated accents
-- Film grain texture for authentic cinema feel
-- Premium theatrical poster typography space (leave top 15% for title)
+📐 PROFESSIONAL POSTER LAYOUT:
+- TOP ZONE (15%): Clean space for movie title/logo placement
+- HERO ZONE (60%): Dramatic central composition featuring the ${genderDesc}
+- BILLING BLOCK ZONE (25%): Space for credits, production logos, release date
 
-MOOD & EMOTION:
-${concept.story_concept?.substring(0, 200) || 'Powerful emotional narrative captured in a single iconic frame'}
+🎥 CINEMATIC REQUIREMENTS:
+- 4K theatrical one-sheet quality (27x40 inch ratio)
+- Drew Struzan / Olly Moss inspired painted realism
+- Epic hero shot with dramatic backlighting
+- Volumetric lighting, lens flares, atmospheric depth
+- IMAX/Dolby Cinema presentation aesthetic
+- Award campaign quality (Oscar-worthy key art)
 
-DO NOT include any text, titles, or typography - PURE VISUAL IMAGERY ONLY
-Create an iconic, memorable key art image that could win a Key Art Award`;
+🖼️ COMPOSITION ELEMENTS:
+- Central heroic figure pose (dramatic silhouette or portrait)
+- Layered depth with foreground/midground/background elements
+- Secondary characters or story elements in supporting positions
+- Environmental storytelling matching the song's narrative
+- Professional film grain texture
+- Cinematic color grading with rich blacks and vibrant highlights
+
+📖 STORY CAPTURED:
+${concept.story_concept?.substring(0, 300) || 'A powerful emotional journey captured in a single iconic frame'}
+
+⚠️ TEXT HANDLING:
+- Leave TOP 15% completely clear for title treatment
+- Leave BOTTOM 20% for billing block credits
+- The visual composition should frame naturally around these text zones
+- NO actual text/typography in the image - just leave appropriate negative space
+
+Create an ICONIC, COLLECTIBLE movie poster that fans would want to frame on their wall.`;
 }
 
 /**
@@ -111,7 +136,7 @@ Create an iconic, memorable key art image that could win a Key Art Award`;
 async function generateConceptImage(
   prompt: string, 
   conceptIndex: number,
-  options?: { concept?: any; directorName?: string; songInfo?: { artist?: string; title?: string } }
+  options?: { concept?: any; directorName?: string; songInfo?: { artist?: string; title?: string }; artistGender?: string }
 ): Promise<{ success: boolean; imageUrl?: string; error?: string; provider?: string }> {
   try {
     console.log(`🎨 [Concept #${conceptIndex + 1}] Generando póster PREMIUM con FAL nano-banana...`);
@@ -122,7 +147,8 @@ async function generateConceptImage(
       enhancedPrompt = buildPremiumPosterPrompt(
         options.concept, 
         options.directorName || 'Creative Director',
-        options.songInfo
+        options.songInfo,
+        options.artistGender // 🎭 Pasar género del artista
       );
     }
     
@@ -157,7 +183,7 @@ async function generateConceptImage(
  */
 router.post("/generate-concepts", async (req: Request, res: Response) => {
   try {
-    const { lyrics, directorName, characterReference, audioDuration } = req.body;
+    const { lyrics, directorName, characterReference, audioDuration, artistGender } = req.body;
 
     if (!lyrics) {
       return res.status(400).json({ error: 'Lyrics are required' });
@@ -167,9 +193,16 @@ router.post("/generate-concepts", async (req: Request, res: Response) => {
       return res.status(500).json({ error: 'OpenAI API key not configured' });
     }
 
+    // 🎭 Mapear género detectado a descripción para el prompt
+    const genderDescription = artistGender === 'masculine' ? 'male artist/performer'
+      : artistGender === 'feminine' ? 'female artist/performer'
+      : artistGender === 'androgynous' ? 'androgynous artist/performer'
+      : 'artist/performer';
+
     console.log(`🎬 Generando 3 conceptos de video musical con OpenAI...`);
     console.log(`📝 Letra: ${lyrics.substring(0, 100)}...`);
     console.log(`🎭 Director: ${directorName || 'Unknown'}`);
+    console.log(`👤 Género del artista: ${artistGender || 'no especificado'} → ${genderDescription}`);
 
     const prompt = `Based on these lyrics and director style, create three distinct, creative music video concepts. Each concept should showcase a different visual and narrative approach to the same song.
 
@@ -178,7 +211,10 @@ ${lyrics}
 
 DIRECTOR: ${directorName || 'Creative Director'}
 ${audioDuration ? `DURATION: ${Math.floor(audioDuration)} seconds` : ''}
-${characterReference && characterReference.length > 0 ? `NOTE: The artist has ${characterReference.length} reference images provided for visual consistency.` : ''}
+
+🎭 CRITICAL - ARTIST IDENTITY:
+The main performer is a ${genderDescription}. ALL visual descriptions, wardrobe, and character references MUST accurately represent this gender. Do NOT describe the artist with incorrect gender characteristics.
+${characterReference && characterReference.length > 0 ? `NOTE: The artist has ${characterReference.length} reference images provided for visual consistency. Use these to inform accurate character depiction.` : ''}
 
 Create three complete concepts, each with:
 1. A unique title (creative, catchy, cinema-style)
@@ -258,7 +294,8 @@ ${prompt}`;
           songInfo: {
             artist: req.body.artistName,
             title: req.body.songTitle
-          }
+          },
+          artistGender: artistGender // 🎭 Pasar género del artista para consistencia
         }
       );
       return {
@@ -354,12 +391,86 @@ Key Narrative Moments: ${JSON.stringify(concept.key_narrative_moments || [])}
     
     console.log(`📝 Letra: ${lyricsLines.length} líneas, ~${linesPerScene} líneas por escena`);
 
+    // 🎬 DIRECTOR STYLES - Influencia específica de cada director en el guión
+    const directorStylesForScript: Record<string, string> = {
+      'Spike Jonze': `SPIKE JONZE SIGNATURE STYLE:
+- Intimate, emotionally raw close-ups that capture vulnerability
+- Whimsical surrealism blended with grounded reality
+- Warm nostalgic color tones, golden hour lighting
+- Practical effects over CGI, handmade quality
+- Long takes that let emotions breathe
+- Unexpected transitions and dreamlike sequences
+- Music synced to subtle character movements`,
+      'Hype Williams': `HYPE WILLIAMS SIGNATURE STYLE:
+- Ultra-wide fisheye lens distortion in key scenes
+- Opulent, maximalist set design with bling aesthetic
+- Slow-motion glamour shots with high contrast lighting
+- Neon colors, chrome surfaces, luxury brand placement
+- Low angle power shots emphasizing dominance
+- Quick cuts synced to beats, rhythmic editing
+- Excess and spectacle in every frame`,
+      'Michel Gondry': `MICHEL GONDRY SIGNATURE STYLE:
+- Handcrafted DIY aesthetic with visible creativity
+- Stop-motion elements and paper craft textures
+- Vintage camera effects, Super 8 film grain
+- Playful visual inventiveness and optical illusions
+- Seamless in-camera transitions
+- Recursive visual loops and patterns
+- Childlike wonder meets sophisticated technique`,
+      'David Fincher': `DAVID FINCHER SIGNATURE STYLE:
+- Dark atmospheric shadows with precise lighting
+- Desaturated, cold color palette with green/blue tints
+- Meticulous symmetry and geometric framing
+- Noir thriller mood, clinical precision
+- Slow, deliberate camera movements
+- High contrast with deep blacks
+- Uncomfortable intimacy in close-ups`,
+      'Edgar Wright': `EDGAR WRIGHT SIGNATURE STYLE:
+- Dynamic kinetic framing with whip pans
+- Bold color blocking and pop art palette
+- Rhythmic visual comedy synced perfectly to music
+- Quick zooms and snap cuts on beats
+- Creative scene transitions (match cuts, wipes)
+- British wit and pop culture homages
+- Every frame packed with visual information`,
+      'Denis Villeneuve': `DENIS VILLENEUVE SIGNATURE STYLE:
+- Epic scale compositions with vast landscapes
+- Minimalist elegance, space and silence
+- Slow, contemplative camera movements
+- Sci-fi grandeur even in intimate moments
+- Muted earth tones with occasional color pops
+- Atmospheric fog and haze
+- Existential weight in every shot`,
+      'Wes Anderson': `WES ANDERSON SIGNATURE STYLE:
+- Perfectly symmetrical, centered framing
+- Pastel color palette with bold accents
+- Storybook aesthetic and whimsical production design
+- Flat, lateral camera movements
+- Precise, choreographed character blocking
+- Nostalgic, handcrafted world-building
+- Quirky typography and chapter cards`,
+      'default': `PROFESSIONAL CINEMATIC STYLE:
+- Balanced shot composition with rule of thirds
+- Dynamic camera movements that serve the story
+- Rich color grading with cinematic contrast
+- Mix of wide establishing shots and intimate close-ups
+- Smooth transitions between scenes
+- Professional lighting setups`
+    };
+
+    const directorStyleSection = directorStylesForScript[directorName] || directorStylesForScript['default'];
+
     const prompt = `You are an award-winning music video director creating a COHESIVE NARRATIVE with visual variety. Generate a complete music video script for these lyrics. Return ONLY valid JSON, no markdown.
 
 📜 SONG LYRICS (THIS IS THE FOUNDATION - EVERY SCENE MUST CONNECT TO THESE LYRICS):
 ${lyrics}
 ${conceptSection}
-DIRECTOR: ${directorName || 'Creative Director'}
+
+🎬 DIRECTOR: ${directorName || 'Creative Director'}
+${directorStyleSection}
+
+⚠️ CRITICAL: Every scene MUST reflect the director's signature visual style described above. The camera work, lighting, color grading, and overall aesthetic should be unmistakably ${directorName}'s work.
+
 DURATION: ${audioDuration || 180} seconds
 TARGET SCENES: ${targetScenes}
 EDITING STYLE: ${editingStyle?.name || 'Dynamic'}

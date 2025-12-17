@@ -97,6 +97,7 @@ import { generateImagesInParallel, createParallelBatches } from "../../lib/api/p
 import { EnhancedScenesGallery } from "./EnhancedScenesGallery";
 import { SequentialImageGallery } from "./SequentialImageGallery";
 import { ensureArtistProfile, saveSongToProfile, updateProfileImages } from "../../lib/auto-profile-service";
+import { VideoProcessingModal, type ProcessingConfirmation } from "./VideoProcessingModal";
 
 // Fal.ai configuration
 fal.config({
@@ -572,6 +573,11 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
   // Preview states
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewImages, setPreviewImages] = useState<Array<{ id: string; url: string; prompt: string }>>([]);
+
+  // Video Processing Modal states - para confirmar renderizado con email
+  const [showVideoProcessingModal, setShowVideoProcessingModal] = useState(false);
+  const [videoProcessingComplete, setVideoProcessingComplete] = useState(false);
+  const [queuedVideoId, setQueuedVideoId] = useState<number | null>(null);
 
   // Retry states
   const [retryAttempt, setRetryAttempt] = useState(0);
@@ -1107,15 +1113,15 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         };
       });
 
-      // LIMIT TO 10 IMAGES FOR TESTING - Faster iteration on narrative quality
-      const MAX_IMAGES_FOR_TESTING = 10;
-      const totalScenes = Math.min(geminiScenes.length, MAX_IMAGES_FOR_TESTING);
+      // 🎯 BUSINESS LOGIC: Free tier gets FREE_SCENES_LIMIT, paid users get all scenes
+      const maxScenesForUser = hasUserPaid ? geminiScenes.length : FREE_SCENES_LIMIT;
+      const totalScenes = Math.min(geminiScenes.length, maxScenesForUser);
       
-      // Always generate only 10 images for testing
-      const imagesToGenerate = Math.min(10, totalScenes);
-      const endAt = Math.min(10, totalScenes);
+      // Calculate how many images to generate based on payment status
+      const imagesToGenerate = totalScenes;
+      const endAt = totalScenes;
       
-      logger.info(`📸 [IMG] Generation settings (TESTING MODE): startFrom=${startFrom}, endAt=${endAt}, total=${totalScenes}, maxAllowed=${MAX_IMAGES_FOR_TESTING}`);
+      logger.info(`📸 [IMG] Generation settings (isPaid=${hasUserPaid}): startFrom=${startFrom}, endAt=${endAt}, total=${totalScenes}, maxAllowed=${maxScenesForUser}`);
       
       // Decidir qué endpoint usar basado en si hay imágenes de referencia
       const hasReferenceImages = artistReferenceImages && artistReferenceImages.length > 0;
@@ -1154,43 +1160,21 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
           // Obtener la escena original del JSON con todos los campos narrativos
           const originalScene = scenes[i];
           
-          // Construir prompt RICO EN NARRATIVA usando los nuevos campos
+          // Construir prompt CONCISO Y CINEMATOGRÁFICO
           const shotCategory = originalScene.shot_category || 'STORY';
           const narrativeContext = originalScene.narrative_context || '';
-          const lyricConnection = originalScene.lyric_connection || '';
           const visualDescription = originalScene.visual_description || originalScene.description || scene.scene;
-          const emotion = originalScene.emotion || originalScene.mood || '';
-          const storyProgression = originalScene.story_progression || '';
+          const emotion = originalScene.emotion || originalScene.mood || 'emotional';
+          const shotType = originalScene.shot_type || 'medium-shot';
           
-          // Construir prompt cinematográfico COMPLETO con narrativa y contexto global
-          const prompt = `MUSIC VIDEO CONTEXT:
-${narrativeSummaryText ? `Overall Story: ${narrativeSummaryText}` : ''}
-${conceptStory ? `Concept: ${conceptStory}` : ''}
-Director Style: ${directorName}
-
-SCENE ${sceneIndex} - ${shotCategory} SHOT:
-${visualDescription}
-
-NARRATIVE:
-${narrativeContext}
-
-LYRIC CONNECTION:
-${lyricConnection}
-
-STORY ARC:
-${storyProgression}
-
-EMOTION: ${emotion}
-
-TECHNICAL SPECS:
-Camera: ${scene.camera}
-Lighting: ${scene.lighting}
-Style: ${scene.style}
-Shot Type: ${originalScene.shot_type || 'medium-shot'}
-Color Grading: ${originalScene.color_grading || 'cinematic'}
-Location: ${originalScene.location || 'performance space'}
-
-Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring the artist performing/singing' : shotCategory === 'B-ROLL' ? 'cinematic b-roll visual WITHOUT the artist visible' : 'narrative story scene with characters/elements'}, high production quality, ${directorName} directorial style, cohesive with overall music video narrative.`;
+          // ⚡ PROMPT SIMPLIFICADO - máximo 3-4 líneas para evitar el "collage de 4 imágenes"
+          // Los modelos AI interpretan prompts largos como instrucciones para múltiples imágenes
+          const shotTypeDescription = 
+            shotCategory === 'PERFORMANCE' ? 'Artist performing/singing, facing camera' :
+            shotCategory === 'B-ROLL' ? 'Cinematic establishing shot, no people' :
+            'Narrative scene';
+          
+          const prompt = `${shotTypeDescription}. ${visualDescription}. ${emotion} mood, ${scene.lighting} lighting, ${shotType}, ${directorName} style, professional music video frame, 8K quality.`;
           
           logger.info(`📝 [IMG ${sceneIndex}] Shot Category: ${shotCategory}, Emotion: ${emotion}`);
           
@@ -1204,16 +1188,35 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                                     (referenceUsage !== 'none') &&
                                     (masterCharacter || hasReferenceImages);
           
-          const referenceToUse = shouldUseReference 
-            ? (masterCharacter ? [masterCharacter.imageUrl] : artistReferenceImages)
-            : undefined;
+          // 🎭 MÚLTIPLES ÁNGULOS: Usar todos los ángulos disponibles del masterCharacter
+          // nano-banana/edit acepta múltiples imágenes de referencia para mejor consistencia
+          let referenceToUse: string[] = [];
           
-          logger.info(`🎭 [SCENE ${sceneIndex}] Category: ${shotCategory}, Reference Usage: ${referenceUsage}, Using Reference: ${!!referenceToUse}`);
+          if (shouldUseReference) {
+            if (masterCharacter) {
+              // Priorizar los ángulos del mainCharacter si existen
+              if (masterCharacter.mainCharacter?.angles && masterCharacter.mainCharacter.angles.length > 0) {
+                // Usar todos los ángulos disponibles (frontal, left, right, three-quarter)
+                referenceToUse = masterCharacter.mainCharacter.angles
+                  .filter((angle: any) => angle.imageUrl)
+                  .map((angle: any) => angle.imageUrl);
+                logger.info(`🎭 [SCENE ${sceneIndex}] Using ${referenceToUse.length} angle references from masterCharacter`);
+              } else if (masterCharacter.imageUrl) {
+                // Fallback a la imagen principal
+                referenceToUse = [masterCharacter.imageUrl];
+              }
+            } else if (artistReferenceImages && artistReferenceImages.length > 0) {
+              // Usar las imágenes de referencia del artista
+              referenceToUse = artistReferenceImages.slice(0, 4); // Máximo 4 referencias
+            }
+          }
+          
+          logger.info(`🎭 [SCENE ${sceneIndex}] Category: ${shotCategory}, Reference Usage: ${referenceUsage}, References: ${referenceToUse.length}`);
           
           const requestBody = { 
             prompt: prompt,
             sceneId: sceneIndex,
-            referenceImages: referenceToUse || [],
+            referenceImages: referenceToUse,
             aspectRatio: '16:9'
           };
           
@@ -1395,6 +1398,17 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
             const progress = 30 + ((sceneIndex / totalScenes) * 60);
             setProgressPercentage(Math.round(progress));
             
+            // 💾 AUTO-SAVE: Guardar progreso cada 5 imágenes generadas para evitar pérdida de trabajo
+            if (generatedCount > 0 && generatedCount % 5 === 0 && user?.email) {
+              logger.info(`💾 [AUTO-SAVE] Guardando progreso automático (${generatedCount} imágenes)...`);
+              try {
+                await saveProjectState();
+                logger.info(`✅ [AUTO-SAVE] Progreso guardado exitosamente`);
+              } catch (saveError) {
+                logger.warn(`⚠️ [AUTO-SAVE] Error guardando progreso (no crítico):`, saveError);
+              }
+            }
+            
           }
           
         } catch (error) {
@@ -1507,7 +1521,7 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
   };
 
   // Handle payment success - unlock full video generation
-  const handlePaymentSuccess = async () => {
+  const handlePaymentSuccess = async (stripePaymentId?: string) => {
     logger.info('💳 [PAYMENT] Payment successful - unlocking full video generation');
     
     // Mark user as paid
@@ -1515,6 +1529,25 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
     
     // Close payment gate modal
     setShowPaymentGate(false);
+    
+    // 💾 PERSIST PAYMENT STATUS: Save to database immediately
+    if (currentProjectId && user?.email) {
+      try {
+        await fetch('/api/music-video-projects/mark-paid', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectId: Number(currentProjectId),
+            userEmail: user.email,
+            paidAmount: FULL_VIDEO_PRICE,
+            stripePaymentId: stripePaymentId || undefined
+          })
+        });
+        logger.info('💾 [PAYMENT] Payment status persisted to database');
+      } catch (error) {
+        logger.error('❌ [PAYMENT] Error persisting payment status:', error);
+      }
+    }
     
     toast({
       title: "🎉 Payment Successful!",
@@ -1978,22 +2011,26 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       // El Master Character se genera ANTES de los conceptos, por eso siempre debe estar disponible
       const characterImages = masterCharacter 
         ? [
-            masterCharacter.mainCharacter.angles[0]?.url, // frontal
-            masterCharacter.mainCharacter.angles[1]?.url, // left-profile
-            masterCharacter.mainCharacter.angles[2]?.url, // right-profile
-            masterCharacter.mainCharacter.angles[3]?.url  // three-quarter
+            masterCharacter.mainCharacter.angles[0]?.imageUrl, // frontal
+            masterCharacter.mainCharacter.angles[1]?.imageUrl, // left-profile
+            masterCharacter.mainCharacter.angles[2]?.imageUrl, // right-profile
+            masterCharacter.mainCharacter.angles[3]?.imageUrl  // three-quarter
           ].filter(Boolean)
         : artistReferenceImages;
       
       const characterReference = characterImages.length > 0 ? characterImages : undefined;
       
+      // 🎭 EXTRAER GÉNERO DEL ANÁLISIS FACIAL (para consistencia en conceptos)
+      const artistGender = masterCharacter?.analysis?.perceivedGender || 'not-specified';
+      logger.info(`🎭 [GÉNERO DETECTADO] ${artistGender}`);
+      
       if (characterReference) {
         logger.info(`🎭 [REFERENCIAS] Usando imágenes del Master Character generado (${characterReference.length} ángulos)`);
         logger.info('📸 Ángulos disponibles:', {
-          frontal: masterCharacter?.mainCharacter.angles[0]?.url ? '✅' : '❌',
-          leftProfile: masterCharacter?.mainCharacter.angles[1]?.url ? '✅' : '❌',
-          rightProfile: masterCharacter?.mainCharacter.angles[2]?.url ? '✅' : '❌',
-          threeQuarter: masterCharacter?.mainCharacter.angles[3]?.url ? '✅' : '❌'
+          frontal: masterCharacter?.mainCharacter.angles[0]?.imageUrl ? '✅' : '❌',
+          leftProfile: masterCharacter?.mainCharacter.angles[1]?.imageUrl ? '✅' : '❌',
+          rightProfile: masterCharacter?.mainCharacter.angles[2]?.imageUrl ? '✅' : '❌',
+          threeQuarter: masterCharacter?.mainCharacter.angles[3]?.imageUrl ? '✅' : '❌'
         });
       } else {
         logger.info('⚠️ [REFERENCIAS] No hay imágenes del Master Character disponibles');
@@ -2006,7 +2043,8 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
         characterReference,
         audioDurationInSeconds,
         projectName || undefined, // artistName - para posters cinematográficos premium
-        selectedFile?.name?.replace(/\.[^/.]+$/, "") || songTitle || undefined // songTitle
+        selectedFile?.name?.replace(/\.[^/.]+$/, "") || songTitle || undefined, // songTitle
+        artistGender // 🎭 NUEVO: Género del artista para consistencia visual
       );
       logger.info('✅ [CONCEPTOS] 3 propuestas generadas con contexto de letra');
       
@@ -3846,6 +3884,30 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       setTimelineItems(project.timelineItems);
       setArtistReferenceImages(project.artistReferenceImages || []);
       
+      // 🎵 RESTORE AUDIO BUFFER: Load audio for lipsync when restoring project
+      if (project.audioUrl) {
+        try {
+          logger.info('🎵 [LOAD PROJECT] Loading audio buffer from saved URL...');
+          const audioResponse = await fetch(project.audioUrl);
+          const audioArrayBuffer = await audioResponse.arrayBuffer();
+          
+          if (!audioContext.current) {
+            audioContext.current = new AudioContext();
+          }
+          const buffer = await audioContext.current.decodeAudioData(audioArrayBuffer);
+          setAudioBuffer(buffer);
+          logger.info('✅ [LOAD PROJECT] Audio buffer loaded successfully for lipsync');
+        } catch (audioError) {
+          logger.warn('⚠️ [LOAD PROJECT] Could not load audio buffer (lipsync may not work):', audioError);
+        }
+      }
+      
+      // 💳 RESTORE PAYMENT STATUS: Restore isPaid from saved project
+      if (project.isPaid) {
+        setHasUserPaid(true);
+        logger.info('💳 [LOAD PROJECT] Restored isPaid=true from saved project');
+      }
+      
       if (project.videoStyle) {
         setVideoStyle(project.videoStyle as any);
       }
@@ -4656,6 +4718,9 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       logger.info(`🎬 B-roll/Story clips for video: ${brollAndStoryClips.length}`);
       
       let processedCount = 0;
+      let lipsyncSuccessCount = 0;
+      let lipsyncFailCount = 0;
+      const failedLipsyncClips: number[] = [];
       
       // Process PERFORMANCE clips: First generate video, then apply lipsync
       if (performanceClips.length > 0 && audioUrl) {
@@ -4680,20 +4745,49 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
             
             if (!videoResult.success || !videoResult.videoUrl) {
               logger.error(`❌ Video generation failed for clip ${clip.id}`);
+              failedLipsyncClips.push(clip.id);
+              lipsyncFailCount++;
               continue;
             }
             
-            // STEP 2: Apply PixVerse lipsync to the generated video
+            // STEP 2: Apply PixVerse lipsync to the generated video with retry
             logger.info(`🎤 [PERF ${clip.id}] Step 2: Applying PixVerse lipsync...`);
-            const lipsyncResult = await applyPixVerseLipsync({
-              videoUrl: videoResult.videoUrl, // Use the generated VIDEO, not image
+            let lipsyncResult = await applyPixVerseLipsync({
+              videoUrl: videoResult.videoUrl,
               audioUrl: audioUrl
             });
+            
+            // 🔄 RETRY: If lipsync fails, try one more time
+            if (!lipsyncResult.success) {
+              logger.warn(`⚠️ [PERF ${clip.id}] Lipsync failed, retrying once...`);
+              setLipSyncProgress({ 
+                current: processedCount, 
+                total: performanceClips.length, 
+                message: `Retrying lipsync for scene ${clip.id}...` 
+              });
+              
+              // Wait 2 seconds before retry
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              
+              lipsyncResult = await applyPixVerseLipsync({
+                videoUrl: videoResult.videoUrl,
+                audioUrl: audioUrl
+              });
+            }
             
             // Use lipsync result if successful, otherwise use original video
             const finalVideoUrl = (lipsyncResult.success && lipsyncResult.videoUrl) 
               ? lipsyncResult.videoUrl 
               : videoResult.videoUrl;
+            
+            // Track success/failure
+            if (lipsyncResult.success) {
+              lipsyncSuccessCount++;
+            } else {
+              lipsyncFailCount++;
+              failedLipsyncClips.push(clip.id);
+              logger.warn(`⚠️ [PERF ${clip.id}] Lipsync failed after retry, using original video`);
+            }
             
             // Update timeline item with video URL
             setTimelineItems(prev => prev.map(item =>
@@ -4702,18 +4796,39 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                     ...item, 
                     generatedVideo: finalVideoUrl, 
                     type: 'video' as const,
-                    hasLipsync: lipsyncResult.success 
+                    hasLipsync: lipsyncResult.success,
+                    lipsyncFailed: !lipsyncResult.success
                   }
                 : item
             ));
             
             processedCount++;
             setVideoGenerationProgress({ current: processedCount, total: itemsWithImages.length });
-            setLipSyncProgress({ current: processedCount, total: performanceClips.length, message: `Processed ${processedCount} performance scenes` });
+            setLipSyncProgress({ 
+              current: processedCount, 
+              total: performanceClips.length, 
+              message: `Processed ${processedCount} performance scenes (${lipsyncSuccessCount} with lipsync)` 
+            });
             
           } catch (error) {
             logger.error(`❌ Performance processing failed for clip ${clip.id}:`, error);
+            failedLipsyncClips.push(clip.id);
+            lipsyncFailCount++;
           }
+        }
+        
+        // 📊 Show summary notification for lipsync results
+        if (lipsyncFailCount > 0) {
+          toast({
+            title: "⚠️ Some Lipsync Failed",
+            description: `${lipsyncSuccessCount} scenes with lipsync, ${lipsyncFailCount} scenes using original video. Scenes ${failedLipsyncClips.join(', ')} can be retried manually.`,
+            variant: "default"
+          });
+        } else if (lipsyncSuccessCount > 0) {
+          toast({
+            title: "✅ Lipsync Complete",
+            description: `All ${lipsyncSuccessCount} performance scenes synchronized successfully!`,
+          });
         }
       }
       
@@ -4950,6 +5065,111 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       setExportProgress(0);
       setExportStatus('');
     }
+  };
+
+  /**
+   * Abre el modal de procesamiento de video después de que las imágenes estén generadas
+   * El usuario confirma sus datos y el video entra en cola de renderizado
+   */
+  const handleOpenVideoProcessingModal = () => {
+    if (!currentProjectId) {
+      toast({
+        title: "Error",
+        description: "Primero debes guardar el proyecto",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const generatedImagesCount = timelineItems.filter(item => 
+      item.generatedImage || item.firebaseUrl
+    ).length;
+    
+    if (generatedImagesCount < 5) {
+      toast({
+        title: "Faltan imágenes",
+        description: `Necesitas al menos 5 imágenes generadas. Tienes ${generatedImagesCount}.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setShowVideoProcessingModal(true);
+  };
+
+  /**
+   * Maneja la confirmación del modal de procesamiento
+   * Crea un item en la cola de renderizado y envía webhook a Make.com
+   */
+  const handleVideoProcessingConfirm = async (data: ProcessingConfirmation) => {
+    try {
+      logger.log('🎬 [VIDEO PROCESSING] Confirmando renderizado...', data);
+      
+      // Preparar datos del proyecto para la cola
+      const timelineData = timelineItems.map(item => ({
+        id: item.id,
+        imageUrl: item.firebaseUrl || item.generatedImage,
+        videoUrl: item.generatedVideo || item.firebaseVideoUrl,
+        start_time: item.startTime / 1000,
+        duration: item.duration / 1000,
+        shotCategory: item.shotCategory || 'B-ROLL',
+        hasLipsync: item.shotCategory === 'PERFORMANCE'
+      }));
+      
+      // Enviar solicitud a la API de render queue
+      const response = await fetch('/api/render-queue/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: parseInt(currentProjectId!),
+          userEmail: data.email,
+          artistName: data.artistName,
+          songName: data.songName,
+          profileSlug: data.profileUrl.split('/').pop() || generateProfileSlug(data.artistName),
+          notifyByEmail: data.notifyByEmail,
+          timelineData,
+          audioUrl: audioUrl || '',
+          audioDuration: estimatedDuration / 1000,
+          thumbnailUrl: timelineItems[0]?.firebaseUrl || timelineItems[0]?.generatedImage,
+          aspectRatio: videoAspectRatio,
+          totalClips: timelineItems.length
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Error al crear el trabajo en cola');
+      }
+      
+      setQueuedVideoId(result.queueId);
+      setVideoProcessingComplete(true);
+      
+      logger.log(`✅ [VIDEO PROCESSING] Video en cola: ${result.queueId}`);
+      
+      toast({
+        title: "¡Tu video está en camino!",
+        description: "Recibirás un email cuando esté listo",
+      });
+      
+    } catch (error) {
+      logger.error('Error en video processing:', error);
+      throw error; // Re-throw para que el modal maneje el error
+    }
+  };
+
+  /**
+   * Genera un slug de perfil a partir del nombre del artista
+   */
+  const generateProfileSlug = (name: string): string => {
+    return name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
   };
 
   const handleScriptChange = (value: string | undefined) => {
@@ -7846,6 +8066,34 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                         El proceso de creación ha terminado. Ahora puedes mejorar la calidad de tu video musical con Qubico Video Toolkit antes de exportarlo.
                       </p>
                       
+                      {/* Botón prominente para Generar Video Final con Pipeline Completo */}
+                      <div className="mb-6 p-4 bg-gradient-to-r from-orange-500/10 to-purple-500/10 border border-orange-500/30 rounded-xl">
+                        <div className="flex items-start gap-4">
+                          <div className="p-3 bg-orange-500/20 rounded-full">
+                            <Sparkles className="h-6 w-6 text-orange-500" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-lg mb-1">🎬 Genera tu Video Musical Completo</h3>
+                            <p className="text-sm text-muted-foreground mb-3">
+                              Convertiremos tus {timelineItems.filter(item => item.generatedImage || item.firebaseUrl).length} imágenes en un video musical profesional 
+                              con lipsync integrado. Recibirás un email cuando esté listo.
+                            </p>
+                            <Button 
+                              onClick={handleOpenVideoProcessingModal}
+                              className="bg-gradient-to-r from-orange-600 to-purple-600 hover:from-orange-700 hover:to-purple-700 text-white shadow-lg"
+                              disabled={!currentProjectId || timelineItems.filter(item => item.generatedImage || item.firebaseUrl).length < 5}
+                            >
+                              <Video className="mr-2 h-4 w-4" />
+                              Generar Video Final
+                              <Sparkles className="ml-2 h-4 w-4" />
+                            </Button>
+                            {!currentProjectId && (
+                              <p className="text-xs text-amber-500 mt-2">⚠️ Guarda el proyecto primero</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      
                       <FinalRendering
                         timelineClips={timelineItems.map(item => ({
                           id: typeof item.id === 'number' ? item.id : parseInt(String(item.id), 10),
@@ -8228,6 +8476,23 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Video Processing Modal - Para confirmar renderizado final */}
+      <VideoProcessingModal
+        isOpen={showVideoProcessingModal}
+        onClose={() => setShowVideoProcessingModal(false)}
+        projectData={{
+          projectId: currentProjectId ? parseInt(currentProjectId) : 0,
+          artistName: artistName || videoStyle.artistName || '',
+          songName: songName || 'Tu Canción',
+          thumbnailUrl: timelineItems[0]?.firebaseUrl || timelineItems[0]?.generatedImage,
+          totalScenes: timelineItems.length,
+          audioUrl: audioUrl || undefined,
+          audioDuration: estimatedDuration / 1000
+        }}
+        initialEmail={user?.email || ''}
+        onConfirm={handleVideoProcessingConfirm}
+      />
     </div>
   );
 }

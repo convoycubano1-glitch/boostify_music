@@ -83,3 +83,95 @@
     justify-content: space-between;
   }
 }
+
+/* ===== TIMELINE MOBILE OPTIMIZATIONS ===== */
+
+/* Prevent iOS Safari from bouncing/overscrolling on timeline */
+.timeline-container {
+  -webkit-overflow-scrolling: auto;
+  overscroll-behavior: contain;
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: none;
+}
+
+/* Timeline area: prevent page zoom, allow custom gestures */
+.timeline-background {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Touch-friendly clip handles with visual feedback */
+@media (pointer: coarse) {
+  /* Larger touch targets for coarse pointer (touch) devices */
+  .timeline-clip-handle {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  /* Visual indicator when touch is active */
+  .timeline-clip-handle:active {
+    background-color: rgba(249, 115, 22, 0.8) !important;
+    transform: scaleX(1.2);
+  }
+  
+  /* Larger buttons for touch */
+  .timeline-action-button {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px;
+  }
+  
+  /* Clip selection ring more visible on touch */
+  .timeline-clip-selected {
+    outline: 3px solid rgb(249, 115, 22);
+    outline-offset: 2px;
+  }
+}
+
+/* iOS Safe Area support for timeline toolbar */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .timeline-toolbar-mobile {
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* Haptic feedback visual cue */
+@keyframes haptic-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.haptic-feedback {
+  animation: haptic-pulse 0.1s ease-out;
+}
+
+/* Smooth pinch zoom transitions */
+.timeline-zoomable {
+  transition: transform 0.05s ease-out;
+  will-change: transform;
+}
+
+/* Prevent text selection during gestures */
+.timeline-no-select {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* iOS-specific: Fix for timeline scrolling */
+@supports (-webkit-touch-callout: none) {
+  .timeline-ios-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Prevent rubber-banding on iOS */
+  .timeline-ios-no-bounce {
+    position: fixed;
+    overflow: hidden;
+  }
+}

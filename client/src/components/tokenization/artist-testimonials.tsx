@@ -19,27 +19,27 @@ const ArtistTestimonials = () => {
     {
       name: "Emma Rodriguez",
       role: "Electronic Music Producer",
-      avatar: "",
+      avatar: "https://randomuser.me/api/portraits/women/44.jpg",
       avatarFallback: "ER",
-      testimonial: "Tokenization completely transformed my music career. I went from struggling to monetize my work to earning a consistent income stream directly from my fan community.",
+      testimonial: "BTF-2300 completely transformed my music career. One click and my entire catalog was on-chain. The 80/20 royalty split means I finally get what I deserve.",
       rating: 5,
       location: "Barcelona, Spain"
     },
     {
       name: "Marcus Chen",
       role: "Indie Singer-Songwriter",
-      avatar: "",
+      avatar: "https://randomuser.me/api/portraits/men/32.jpg",
       avatarFallback: "MC",
-      testimonial: "As an independent artist, I needed a way to fund my next album without a label. With music tokenization, my fans became my investors, and I maintain full creative control.",
+      testimonial: "As an independent artist, I needed full control. With BTF-2300, I own my identity token, my fans can invest in me directly, and licensing happens automatically on-chain.",
       rating: 5,
       location: "Toronto, Canada"
     },
     {
       name: "Sophia Williams",
       role: "Jazz Ensemble Director",
-      avatar: "",
+      avatar: "https://randomuser.me/api/portraits/women/68.jpg",
       avatarFallback: "SW",
-      testimonial: "Our entire catalog is now tokenized, creating a passive income that's helped us tour more and invest in better equipment. The smart contracts make royalty payments seamless.",
+      testimonial: "Our entire catalog — music, videos, stems — all unified under one BTF-2300 contract. Brands can license our work with verified on-chain agreements. It's the future.",
       rating: 5,
       location: "New Orleans, USA"
     }
@@ -82,14 +82,14 @@ const ArtistTestimonials = () => {
     <section className="py-24 bg-gray-900">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <Badge className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30 px-3 py-1">
-            SUCCESS STORIES
+          <Badge className="mb-4 bg-purple-500/20 text-purple-400 border-purple-500/30 px-3 py-1">
+            BTF-2300 SUCCESS STORIES
           </Badge>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Artists <span className="text-orange-500">Transforming</span> Their Careers
+            Artists <span className="text-purple-500">Deploying</span> BTF-2300
           </h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Read how musicians around the world are using tokenization to gain financial independence
+            Hear from musicians who have deployed their artist tokens and automated their creative economy
           </p>
         </div>
 
@@ -107,10 +107,10 @@ const ArtistTestimonials = () => {
               {/* Left side - Avatar */}
               <motion.div variants={itemVariants} className="md:w-1/3 flex flex-col items-center">
                 <div className="relative mb-6">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-full blur opacity-70"></div>
+                  <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full blur opacity-70"></div>
                   <Avatar className="w-28 h-28 border-4 border-gray-800 relative">
                     <AvatarImage src={testimonials[activeTestimonial].avatar} alt={testimonials[activeTestimonial].name} />
-                    <AvatarFallback className="text-3xl bg-orange-500 text-white">
+                    <AvatarFallback className="text-3xl bg-purple-500 text-white">
                       {testimonials[activeTestimonial].avatarFallback}
                     </AvatarFallback>
                   </Avatar>
@@ -118,7 +118,7 @@ const ArtistTestimonials = () => {
                 <motion.h3 variants={itemVariants} className="text-xl font-bold text-white">
                   {testimonials[activeTestimonial].name}
                 </motion.h3>
-                <motion.p variants={itemVariants} className="text-orange-400 text-sm mb-2">
+                <motion.p variants={itemVariants} className="text-purple-400 text-sm mb-2">
                   {testimonials[activeTestimonial].role}
                 </motion.p>
                 <motion.p variants={itemVariants} className="text-gray-400 text-sm mb-4">
@@ -135,7 +135,7 @@ const ArtistTestimonials = () => {
               
               {/* Right side - Testimonial */}
               <motion.div variants={itemVariants} className="md:w-2/3">
-                <Quote className="h-10 w-10 text-orange-500/30 mb-4" />
+                <Quote className="h-10 w-10 text-purple-500/30 mb-4" />
                 <motion.blockquote
                   variants={itemVariants}
                   className="text-xl md:text-2xl text-white font-medium italic mb-8 leading-relaxed"
@@ -151,7 +151,7 @@ const ArtistTestimonials = () => {
                     variant="outline" 
                     size="icon"
                     onClick={previous}
-                    className="rounded-full border-gray-700 hover:bg-gray-800 hover:text-orange-400"
+                    className="rounded-full border-gray-700 hover:bg-gray-800 hover:text-purple-400"
                   >
                     <ArrowLeft className="h-5 w-5" />
                   </Button>
@@ -159,7 +159,7 @@ const ArtistTestimonials = () => {
                     variant="outline" 
                     size="icon"
                     onClick={next}
-                    className="rounded-full border-gray-700 hover:bg-gray-800 hover:text-orange-400"
+                    className="rounded-full border-gray-700 hover:bg-gray-800 hover:text-purple-400"
                   >
                     <ArrowRight className="h-5 w-5" />
                   </Button>
@@ -175,7 +175,7 @@ const ArtistTestimonials = () => {
                 key={index}
                 onClick={() => setActiveTestimonial(index)}
                 className={`w-3 h-3 rounded-full transition-colors duration-300 ${
-                  index === activeTestimonial ? 'bg-orange-500' : 'bg-gray-700'
+                  index === activeTestimonial ? 'bg-purple-500' : 'bg-gray-700'
                 }`}
                 aria-label={`Go to testimonial ${index + 1}`}
               />
@@ -185,9 +185,9 @@ const ArtistTestimonials = () => {
         
         <div className="mt-16 text-center">
           <Button 
-            className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+            className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
           >
-            Join These Success Stories
+            Deploy Your BTF-2300 Token
           </Button>
         </div>
       </div>

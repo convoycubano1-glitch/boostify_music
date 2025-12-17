@@ -1,11 +1,12 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ImageIcon, CheckCircle2, Loader2, AlertCircle, RefreshCw, 
   Edit, Trash2, Copy, Star, Grid3x3, List, Search, Filter,
   ChevronDown, ChevronUp, Maximize2, X, ChevronLeft, ChevronRight,
   ZoomIn, ZoomOut, MoreVertical, Check, Download, Eye, EyeOff,
-  Move, ArrowUpDown, Clock, Sparkles, Video as VideoIcon
+  Move, ArrowUpDown, Clock, Sparkles, Video as VideoIcon,
+  User, Film, Clapperboard, Wand2, Shield, Gauge
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
@@ -17,6 +18,7 @@ import { Dialog, DialogContent } from "../ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Progress } from "../ui/progress";
 import { Checkbox } from "../ui/checkbox";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,9 +30,49 @@ import { useToast } from "../../hooks/use-toast";
 
 type ViewMode = 'grid' | 'list';
 type GridSize = 'small' | 'medium' | 'large';
-type FilterMode = 'all' | 'completed' | 'pending' | 'error';
-type SortMode = 'time' | 'title' | 'status';
-type GroupMode = 'none' | 'shotType' | 'role' | 'status';
+type FilterMode = 'all' | 'completed' | 'pending' | 'error' | 'low-quality';
+type SortMode = 'time' | 'title' | 'status' | 'quality';
+type GroupMode = 'none' | 'shotType' | 'role' | 'status' | 'category';
+type ShotCategory = 'PERFORMANCE' | 'B-ROLL' | 'STORY';
+
+// Shot category visual config
+const categoryConfig: Record<ShotCategory, { 
+  color: string; 
+  bgColor: string; 
+  icon: React.ReactNode; 
+  label: string;
+  borderColor: string;
+}> = {
+  PERFORMANCE: {
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-500/20',
+    borderColor: 'border-purple-500/50',
+    icon: <User className="w-3 h-3" />,
+    label: 'Performance'
+  },
+  'B-ROLL': {
+    color: 'text-cyan-400',
+    bgColor: 'bg-cyan-500/20',
+    borderColor: 'border-cyan-500/50',
+    icon: <Film className="w-3 h-3" />,
+    label: 'B-Roll'
+  },
+  STORY: {
+    color: 'text-amber-400',
+    bgColor: 'bg-amber-500/20',
+    borderColor: 'border-amber-500/50',
+    icon: <Clapperboard className="w-3 h-3" />,
+    label: 'Story'
+  }
+};
+
+// Quality score visualization
+const getQualityInfo = (score: number): { color: string; label: string; icon: React.ReactNode } => {
+  if (score >= 80) return { color: 'text-green-400', label: 'Excellent', icon: <Shield className="w-3 h-3" /> };
+  if (score >= 60) return { color: 'text-blue-400', label: 'Good', icon: <CheckCircle2 className="w-3 h-3" /> };
+  if (score >= 40) return { color: 'text-yellow-400', label: 'Fair', icon: <Gauge className="w-3 h-3" /> };
+  return { color: 'text-red-400', label: 'Low', icon: <AlertCircle className="w-3 h-3" /> };
+};
 
 interface EnhancedScenesGalleryProps {
   scenes: TimelineItem[];
@@ -40,7 +82,9 @@ interface EnhancedScenesGalleryProps {
   onEditScene?: (scene: TimelineItem) => void;
   onDeleteScene?: (sceneId: number | string) => void;
   onReorderScenes?: (scenes: TimelineItem[]) => void;
+  onUseAsReference?: (scene: TimelineItem) => void; // NEW: Use image as face reference
   generatingScenes?: Set<number | string>;
+  qualityScores?: Map<string | number, number>; // NEW: Quality scores from validation
 }
 
 export function EnhancedScenesGallery({
@@ -51,7 +95,9 @@ export function EnhancedScenesGallery({
   onEditScene,
   onDeleteScene,
   onReorderScenes,
-  generatingScenes = new Set()
+  onUseAsReference,
+  generatingScenes = new Set(),
+  qualityScores = new Map()
 }: EnhancedScenesGalleryProps) {
   const { toast } = useToast();
   
@@ -76,15 +122,50 @@ export function EnhancedScenesGallery({
   const [compareMode, setCompareMode] = useState(false);
   const [compareScenes, setCompareScenes] = useState<TimelineItem[]>([]);
 
-  // Statistics
+  // Statistics with category breakdown and quality info
   const stats = useMemo(() => {
     const completed = scenes.filter(s => s.imageUrl || s.thumbnail).length;
     const generating = scenes.filter(s => generatingScenes.has(s.id)).length;
     const pending = scenes.length - completed - generating;
     const progress = scenes.length > 0 ? (completed / scenes.length) * 100 : 0;
     
-    return { completed, generating, pending, progress, total: scenes.length };
-  }, [scenes, generatingScenes]);
+    // Category breakdown
+    const categoryBreakdown = {
+      PERFORMANCE: scenes.filter(s => s.metadata?.shotCategory === 'PERFORMANCE').length,
+      'B-ROLL': scenes.filter(s => s.metadata?.shotCategory === 'B-ROLL' || !s.metadata?.shotCategory).length,
+      STORY: scenes.filter(s => s.metadata?.shotCategory === 'STORY').length
+    };
+
+    // Quality stats
+    let lowQualityCount = 0;
+    let avgQuality = 0;
+    let qualitySum = 0;
+    let qualityCount = 0;
+    
+    scenes.forEach(s => {
+      const score = qualityScores.get(s.id);
+      if (score !== undefined) {
+        qualitySum += score;
+        qualityCount++;
+        if (score < 60) lowQualityCount++;
+      }
+    });
+    
+    if (qualityCount > 0) {
+      avgQuality = Math.round(qualitySum / qualityCount);
+    }
+    
+    return { 
+      completed, 
+      generating, 
+      pending, 
+      progress, 
+      total: scenes.length,
+      categoryBreakdown,
+      lowQualityCount,
+      avgQuality
+    };
+  }, [scenes, generatingScenes, qualityScores]);
 
   // Filter, Search & Sort
   const filteredAndSortedScenes = useMemo(() => {
@@ -97,6 +178,12 @@ export function EnhancedScenesGallery({
       filtered = filtered.filter(s => !s.imageUrl && !s.thumbnail && !generatingScenes.has(s.id));
     } else if (filterMode === 'error') {
       filtered = filtered.filter(s => s.metadata?.error);
+    } else if (filterMode === 'low-quality') {
+      // NEW: Filter by low quality score
+      filtered = filtered.filter(s => {
+        const score = qualityScores.get(s.id);
+        return score !== undefined && score < 60;
+      });
     }
     
     // Search
@@ -104,7 +191,8 @@ export function EnhancedScenesGallery({
       filtered = filtered.filter(s => 
         s.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.shotType?.toLowerCase().includes(searchQuery.toLowerCase())
+        s.shotType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.metadata?.shotCategory?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
     
@@ -121,12 +209,22 @@ export function EnhancedScenesGallery({
           return 2;
         };
         return getStatus(a) - getStatus(b);
+      } else if (sortMode === 'quality') {
+        // NEW: Sort by quality score (lowest first for easy regeneration)
+        const scoreA = qualityScores.get(a.id) ?? 50;
+        const scoreB = qualityScores.get(b.id) ?? 50;
+        return scoreA - scoreB;
       }
       return 0;
     });
     
     return filtered;
-  }, [scenes, filterMode, searchQuery, sortMode, generatingScenes]);
+  }, [scenes, filterMode, searchQuery, sortMode, generatingScenes, qualityScores]);
+
+  // Helper to get shot category from scene
+  const getSceneCategory = useCallback((scene: TimelineItem): ShotCategory => {
+    return (scene.metadata?.shotCategory as ShotCategory) || 'B-ROLL';
+  }, []);
 
   // Group scenes
   const groupedScenes = useMemo(() => {
@@ -144,6 +242,9 @@ export function EnhancedScenesGallery({
         if (scene.imageUrl || scene.thumbnail) key = 'Completed';
         else if (generatingScenes.has(scene.id)) key = 'Generating';
         else key = 'Pending';
+      } else if (groupMode === 'category') {
+        // NEW: Group by shot category
+        key = getSceneCategory(scene);
       }
       
       if (!groups[key]) groups[key] = [];
@@ -151,7 +252,7 @@ export function EnhancedScenesGallery({
     });
     
     return groups;
-  }, [filteredAndSortedScenes, groupMode, generatingScenes]);
+  }, [filteredAndSortedScenes, groupMode, generatingScenes, getSceneCategory]);
 
   // Grid columns based on size
   const gridCols = {
@@ -267,6 +368,58 @@ export function EnhancedScenesGallery({
                 {stats.generating} generating
               </Badge>
             )}
+            {/* NEW: Category breakdown badges */}
+            <div className="hidden md:flex items-center gap-1 ml-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge className={cn("text-[10px]", categoryConfig.PERFORMANCE.bgColor, categoryConfig.PERFORMANCE.color)}>
+                      {categoryConfig.PERFORMANCE.icon}
+                      <span className="ml-1">{stats.categoryBreakdown.PERFORMANCE}</span>
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent className="text-xs">Performance shots</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge className={cn("text-[10px]", categoryConfig['B-ROLL'].bgColor, categoryConfig['B-ROLL'].color)}>
+                      {categoryConfig['B-ROLL'].icon}
+                      <span className="ml-1">{stats.categoryBreakdown['B-ROLL']}</span>
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent className="text-xs">B-Roll shots</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge className={cn("text-[10px]", categoryConfig.STORY.bgColor, categoryConfig.STORY.color)}>
+                      {categoryConfig.STORY.icon}
+                      <span className="ml-1">{stats.categoryBreakdown.STORY}</span>
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent className="text-xs">Story shots</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            {/* NEW: Low quality warning */}
+            {stats.lowQualityCount > 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge className="text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      {stats.lowQualityCount} low quality
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent className="text-xs">
+                    {stats.lowQualityCount} images need regeneration
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
           
           <div className="flex items-center gap-2">
@@ -336,6 +489,12 @@ export function EnhancedScenesGallery({
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="error">Errors</SelectItem>
+                  <SelectItem value="low-quality">
+                    <span className="flex items-center gap-1 text-yellow-400">
+                      <AlertCircle className="h-3 w-3" />
+                      Low Quality
+                    </span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
 
@@ -348,6 +507,7 @@ export function EnhancedScenesGallery({
                   <SelectItem value="time">Sort by Time</SelectItem>
                   <SelectItem value="title">Sort by Title</SelectItem>
                   <SelectItem value="status">Sort by Status</SelectItem>
+                  <SelectItem value="quality">Sort by Quality ↓</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -374,6 +534,12 @@ export function EnhancedScenesGallery({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">No Grouping</SelectItem>
+                    <SelectItem value="category">
+                      <span className="flex items-center gap-1">
+                        <Film className="h-3 w-3" />
+                        By Category
+                      </span>
+                    </SelectItem>
                     <SelectItem value="shotType">By Shot Type</SelectItem>
                     <SelectItem value="role">By Role</SelectItem>
                     <SelectItem value="status">By Status</SelectItem>
@@ -483,6 +649,12 @@ export function EnhancedScenesGallery({
                     const isSelected = selectedScenes.has(scene.id);
                     const isComparing = compareScenes.find(s => s.id === scene.id);
                     const globalIndex = filteredAndSortedScenes.findIndex(s => s.id === scene.id);
+                    
+                    // NEW: Get category and quality info
+                    const sceneCategory = getSceneCategory(scene);
+                    const catConfig = categoryConfig[sceneCategory];
+                    const qualityScore = qualityScores.get(scene.id);
+                    const qualityInfo = qualityScore !== undefined ? getQualityInfo(qualityScore) : null;
 
                     return (
                       <motion.div
@@ -519,9 +691,34 @@ export function EnhancedScenesGallery({
                               </div>
                             )}
 
+                            {/* NEW: Category indicator (top-left) */}
+                            {!isSelectionMode && (
+                              <div className="absolute top-2 left-2 z-10">
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className={cn(
+                                        "flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium",
+                                        catConfig.bgColor,
+                                        catConfig.color,
+                                        "border",
+                                        catConfig.borderColor
+                                      )}>
+                                        {catConfig.icon}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom" className="text-xs">
+                                      {catConfig.label} Shot
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
+                            )}
+
                             {/* Image */}
                             <div className={cn(
-                              "aspect-video rounded-lg overflow-hidden bg-black/60 border border-white/10 transition-all",
+                              "aspect-video rounded-lg overflow-hidden bg-black/60 border transition-all",
+                              catConfig.borderColor,
                               hasImage && "group-hover:border-purple-400/50"
                             )}>
                               {hasImage ? (
@@ -549,16 +746,38 @@ export function EnhancedScenesGallery({
                                 <p className="text-[10px] text-white/80 font-medium truncate flex-1">
                                   {scene.title || `Scene ${index + 1}`}
                                 </p>
-                                {scene.shotType && (
-                                  <Badge className="text-[8px] px-1 py-0 h-4 bg-purple-500/80">
-                                    {scene.shotType}
-                                  </Badge>
-                                )}
+                                <div className="flex items-center gap-1">
+                                  {/* NEW: Quality score badge */}
+                                  {qualityInfo && (
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className={cn(
+                                            "flex items-center gap-0.5 text-[8px] px-1 py-0 h-4 rounded",
+                                            qualityInfo.color,
+                                            qualityScore && qualityScore < 60 ? 'bg-red-500/20' : 'bg-white/10'
+                                          )}>
+                                            {qualityInfo.icon}
+                                            <span>{qualityScore}</span>
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="text-xs">
+                                          Quality: {qualityInfo.label} ({qualityScore}/100)
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  )}
+                                  {scene.shotType && (
+                                    <Badge className="text-[8px] px-1 py-0 h-4 bg-purple-500/80">
+                                      {scene.shotType}
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
                             </div>
 
-                            {/* Status Badge */}
-                            <div className="absolute top-2 right-2">
+                            {/* Status Badge + Quality Warning */}
+                            <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
                               {status === 'completed' && (
                                 <div className="bg-green-500 rounded-full p-0.5">
                                   <CheckCircle2 className="h-3 w-3 text-white" />
@@ -573,6 +792,21 @@ export function EnhancedScenesGallery({
                                 <div className="bg-red-500 rounded-full p-0.5">
                                   <AlertCircle className="h-3 w-3 text-white" />
                                 </div>
+                              )}
+                              {/* NEW: Low quality warning */}
+                              {qualityScore !== undefined && qualityScore < 60 && status === 'completed' && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="bg-yellow-500/80 rounded-full p-0.5 animate-pulse">
+                                        <AlertCircle className="h-3 w-3 text-white" />
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left" className="text-xs">
+                                      Low quality - Consider regenerating
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               )}
                             </div>
 
@@ -629,6 +863,29 @@ export function EnhancedScenesGallery({
                                       <Eye className="h-3.5 w-3.5 mr-2" />
                                       {isComparing ? 'Remove from Compare' : 'Add to Compare'}
                                     </DropdownMenuItem>
+                                    {/* NEW: Use as reference action */}
+                                    {onUseAsReference && sceneCategory === 'PERFORMANCE' && (
+                                      <DropdownMenuItem 
+                                        onClick={() => onUseAsReference(scene)}
+                                        className="text-purple-400"
+                                      >
+                                        <Wand2 className="h-3.5 w-3.5 mr-2" />
+                                        Use as Face Reference
+                                      </DropdownMenuItem>
+                                    )}
+                                    {/* NEW: Quick regenerate with enhanced prompt */}
+                                    {onRegenerateScene && qualityScore !== undefined && qualityScore < 60 && (
+                                      <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem 
+                                          onClick={() => onRegenerateScene(scene.id)}
+                                          className="text-yellow-400"
+                                        >
+                                          <Sparkles className="h-3.5 w-3.5 mr-2" />
+                                          Regenerate (Low Quality)
+                                        </DropdownMenuItem>
+                                      </>
+                                    )}
                                     <DropdownMenuSeparator />
                                     {onDeleteScene && (
                                       <DropdownMenuItem 

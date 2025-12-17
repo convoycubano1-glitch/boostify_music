@@ -3,461 +3,155 @@
  * Run this to populate initial data for BoostiSwap marketplace
  */
 import { db } from './db';
-import { tokenizedSongs } from './db/schema';
-import { eq } from 'drizzle-orm';
+import { tokenizedSongs, users } from './db/schema';
+import { eq, sql } from 'drizzle-orm';
 
 // Use direct URLs instead of client-side function
 const BOOSTIFY_CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-const artistImageMap: Record<number, string> = {
-  1: "/artist-images/luna_echo_-_female_pop_singer.png",
-  2: "/artist-images/urban_flow_-_hip-hop_artist.png",
-  3: "/artist-images/electric_dreams_-_electronic_artist.png",
-  4: "/artist-images/soul_harmony_-_r&b_artist.png",
-  5: "/artist-images/maya_rivers_-_indie_folk.png",
-  6: "/artist-images/jah_vibes_-_reggae_artist.png",
-  7: "/artist-images/david_chen_-_classical_pianist.png",
-  8: "/artist-images/sophia_kim_-_k-pop_star.png",
-  9: "/artist-images/marcus_stone_-_jazz_saxophonist.png",
-  10: "/artist-images/isabella_santos_-_reggaeton.png",
-  11: "/artist-images/luke_bradley_-_country_artist.png",
-  12: "/artist-images/aria_nova_-_ambient_electronic.png",
-  13: "/artist-images/alex_thunder_-_trap_producer.png",
-  14: "/artist-images/victoria_cross_-_opera_singer.png",
-  15: "/artist-images/prince_diesel_-_funk_artist.png",
-  16: "/artist-images/ryan_phoenix_-_indie_rock.png",
-  17: "/artist-images/pablo_fuego_-_latin_artist.png",
-  18: "/artist-images/emma_white_-_pop_princess.png",
-  19: "/artist-images/chris_void_-_dubstep_producer.png",
-  20: "/artist-images/james_grant_-_soul_singer.png",
-};
+// Demo artists for BTF-2300 marketplace
+const DEMO_ARTISTS = [
+  { username: "luna_echo", email: "luna@boostify.demo", displayName: "Luna Echo", bio: "Pop singer with ethereal vocals", profileImageUrl: "/artist-images/luna_echo_-_female_pop_singer.png", songName: "Moonlight Dreams", tokenSymbol: "LUNA" },
+  { username: "urban_flow", email: "urban@boostify.demo", displayName: "Urban Flow", bio: "Hip-hop artist and lyricist", profileImageUrl: "/artist-images/urban_flow_-_hip-hop_artist.png", songName: "Urban Rhythm", tokenSymbol: "URBAN" },
+  { username: "electric_dreams", email: "electric@boostify.demo", displayName: "Electric Dreams", bio: "Electronic music producer", profileImageUrl: "/artist-images/electric_dreams_-_electronic_artist.png", songName: "Electric Pulse", tokenSymbol: "ELDREAM" },
+  { username: "soul_harmony", email: "soul@boostify.demo", displayName: "Soul Harmony", bio: "R&B vocalist with timeless soul", profileImageUrl: "/artist-images/soul_harmony_-_r&b_artist.png", songName: "Soul Connection", tokenSymbol: "SOUL" },
+  { username: "maya_rivers", email: "maya@boostify.demo", displayName: "Maya Rivers", bio: "Indie folk singer-songwriter", profileImageUrl: "/artist-images/maya_rivers_-_indie_folk.png", songName: "River Road", tokenSymbol: "MAYA" },
+  { username: "jah_vibes", email: "jah@boostify.demo", displayName: "Jah Vibes", bio: "Reggae artist spreading good vibes", profileImageUrl: "/artist-images/jah_vibes_-_reggae_artist.png", songName: "Reggae Sunset", tokenSymbol: "JAH" },
+  { username: "david_chen", email: "david@boostify.demo", displayName: "David Chen", bio: "Classical pianist and composer", profileImageUrl: "/artist-images/david_chen_-_classical_pianist.png", songName: "Classical Symphony", tokenSymbol: "CHEN" },
+  { username: "sophia_kim", email: "sophia@boostify.demo", displayName: "Sophia Kim", bio: "K-pop sensation", profileImageUrl: "/artist-images/sophia_kim_-_k-pop_star.png", songName: "K-Pop Dream", tokenSymbol: "SOPHIA" },
+  { username: "marcus_stone", email: "marcus@boostify.demo", displayName: "Marcus Stone", bio: "Jazz saxophonist", profileImageUrl: "/artist-images/marcus_stone_-_jazz_saxophonist.png", songName: "Jazz Nights", tokenSymbol: "MARCUS" },
+  { username: "isabella_santos", email: "isabella@boostify.demo", displayName: "Isabella Santos", bio: "Reggaeton star", profileImageUrl: "/artist-images/isabella_santos_-_reggaeton.png", songName: "Reggaeton Fire", tokenSymbol: "BELLA" },
+  { username: "luke_bradley", email: "luke@boostify.demo", displayName: "Luke Bradley", bio: "Country music artist", profileImageUrl: "/artist-images/luke_bradley_-_country_artist.png", songName: "Country Roads", tokenSymbol: "LUKE" },
+  { username: "aria_nova", email: "aria@boostify.demo", displayName: "Aria Nova", bio: "Ambient electronic artist", profileImageUrl: "/artist-images/aria_nova_-_ambient_electronic.png", songName: "Ambient Cosmos", tokenSymbol: "ARIA" },
+  { username: "alex_thunder", email: "alex@boostify.demo", displayName: "Alex Thunder", bio: "Trap producer", profileImageUrl: "/artist-images/alex_thunder_-_trap_producer.png", songName: "Trap Beats", tokenSymbol: "ALEX" },
+  { username: "victoria_cross", email: "victoria@boostify.demo", displayName: "Victoria Cross", bio: "Opera singer", profileImageUrl: "/artist-images/victoria_cross_-_opera_singer.png", songName: "Opera Aria", tokenSymbol: "VICTORIA" },
+  { username: "prince_diesel", email: "prince@boostify.demo", displayName: "Prince Diesel", bio: "Funk artist", profileImageUrl: "/artist-images/prince_diesel_-_funk_artist.png", songName: "Funk Groove", tokenSymbol: "DIESEL" },
+  { username: "ryan_phoenix", email: "ryan@boostify.demo", displayName: "Ryan Phoenix", bio: "Indie rock musician", profileImageUrl: "/artist-images/ryan_phoenix_-_indie_rock.png", songName: "Rock Anthem", tokenSymbol: "RYAN" },
+  { username: "pablo_fuego", email: "pablo@boostify.demo", displayName: "Pablo Fuego", bio: "Latin music artist", profileImageUrl: "/artist-images/pablo_fuego_-_latin_artist.png", songName: "Latin Fire", tokenSymbol: "PABLO" },
+  { username: "emma_white", email: "emma@boostify.demo", displayName: "Emma White", bio: "Pop princess", profileImageUrl: "/artist-images/emma_white_-_pop_princess.png", songName: "Pop Perfection", tokenSymbol: "EMMA" },
+  { username: "chris_void", email: "chris@boostify.demo", displayName: "Chris Void", bio: "Dubstep producer", profileImageUrl: "/artist-images/chris_void_-_dubstep_producer.png", songName: "Dubstep Drop", tokenSymbol: "VOID" },
+  { username: "james_grant", email: "james@boostify.demo", displayName: "James Grant", bio: "Soul singer", profileImageUrl: "/artist-images/james_grant_-_soul_singer.png", songName: "Soul Serenade", tokenSymbol: "JAMES" },
+];
 
-function getArtistImage(artistId: number): string {
-  return artistImageMap[artistId] || "";
-}
-
-export const TOKENIZED_SONGS_SEED = [
-  {
-    artistId: 1,
-    songName: "Moonlight Dreams",
-    songUrl: null,
-    tokenId: 1,
-    tokenSymbol: "LUNA",
-    totalSupply: 10000,
-    availableSupply: 3500,
-    pricePerTokenUsd: "2.45",
-    pricePerTokenEth: "0.005",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxLunaEcho001",
-    imageUrl: getArtistImage(1),
-    description: "A haunting synthwave track with ethereal vocals",
-    benefits: ["Royalty rights", "VIP access", "Exclusive content"],
-    isActive: true
-  },
-  {
-    artistId: 2,
-    songName: "Urban Rhythm",
-    songUrl: null,
-    tokenId: 2,
-    tokenSymbol: "URBAN",
-    totalSupply: 15000,
-    availableSupply: 5200,
-    pricePerTokenUsd: "3.15",
-    pricePerTokenEth: "0.006",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxUrbanFlow001",
-    imageUrl: getArtistImage(2),
-    description: "High-energy hip-hop with infectious beats",
-    benefits: ["Royalty rights", "NFT collectible", "Discord access"],
-    isActive: true
-  },
-  {
-    artistId: 3,
-    songName: "Electric Pulse",
-    songUrl: null,
-    tokenId: 3,
-    tokenSymbol: "ELDREAM",
-    totalSupply: 8000,
-    availableSupply: 1200,
-    pricePerTokenUsd: "4.22",
-    pricePerTokenEth: "0.008",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxElectricDreams001",
-    imageUrl: getArtistImage(3),
-    description: "Electropop sensation breaking charts worldwide",
-    benefits: ["Royalty rights", "Concert invitations", "Merchandise"],
-    isActive: true
-  },
-  {
-    artistId: 4,
-    songName: "Soul Connection",
-    songUrl: null,
-    tokenId: 4,
-    tokenSymbol: "SOUL",
-    totalSupply: 12000,
-    availableSupply: 4100,
-    pricePerTokenUsd: "2.88",
-    pricePerTokenEth: "0.005",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxSoulHarmony001",
-    imageUrl: getArtistImage(4),
-    description: "Deep R&B with timeless soul vibes",
-    benefits: ["Royalty rights", "Exclusive demos", "Fan club access"],
-    isActive: true
-  },
-  {
-    artistId: 5,
-    songName: "River Road",
-    songUrl: null,
-    tokenId: 5,
-    tokenSymbol: "MAYA",
-    totalSupply: 9000,
-    availableSupply: 3200,
-    pricePerTokenUsd: "1.99",
-    pricePerTokenEth: "0.004",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxMayaRivers001",
-    imageUrl: getArtistImage(5),
-    description: "Indie folk masterpiece with acoustic instrumentation",
-    benefits: ["Royalty rights", "Album preorder", "Meet & greet"],
-    isActive: true
-  },
-  {
-    artistId: 6,
-    songName: "Reggae Sunset",
-    songUrl: null,
-    tokenId: 6,
-    tokenSymbol: "JAH",
-    totalSupply: 11000,
-    availableSupply: 4100,
-    pricePerTokenUsd: "2.15",
-    pricePerTokenEth: "0.004",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxJahVibes001",
-    imageUrl: getArtistImage(6),
-    description: "Relaxing reggae vibes for the soul",
-    benefits: ["Royalty rights", "Studio sessions", "Collaboration"],
-    isActive: true
-  },
-  {
-    artistId: 7,
-    songName: "Classical Symphony",
-    songUrl: null,
-    tokenId: 7,
-    tokenSymbol: "CHEN",
-    totalSupply: 5000,
-    availableSupply: 800,
-    pricePerTokenUsd: "5.50",
-    pricePerTokenEth: "0.010",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxDavidChen001",
-    imageUrl: getArtistImage(7),
-    description: "A virtuosic classical composition",
-    benefits: ["Royalty rights", "Private concerts", "Sheet music"],
-    isActive: true
-  },
-  {
-    artistId: 8,
-    songName: "K-Pop Dream",
-    songUrl: null,
-    tokenId: 8,
-    tokenSymbol: "SOPHIA",
-    totalSupply: 12000,
-    availableSupply: 2500,
-    pricePerTokenUsd: "3.80",
-    pricePerTokenEth: "0.007",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxSophiaKim001",
-    imageUrl: getArtistImage(8),
-    description: "Chart-topping K-pop sensation",
-    benefits: ["Royalty rights", "Tour passes", "Limited edition"],
-    isActive: true
-  },
-  {
-    artistId: 9,
-    songName: "Jazz Nights",
-    songUrl: null,
-    tokenId: 9,
-    tokenSymbol: "MARCUS",
-    totalSupply: 7000,
-    availableSupply: 1500,
-    pricePerTokenUsd: "4.15",
-    pricePerTokenEth: "0.008",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxMarcusStone001",
-    imageUrl: getArtistImage(9),
-    description: "Smooth jazz saxophone performance",
-    benefits: ["Royalty rights", "Jazz club events", "Recording sessions"],
-    isActive: true
-  },
-  {
-    artistId: 10,
-    songName: "Reggaeton Fire",
-    songUrl: null,
-    tokenId: 10,
-    tokenSymbol: "BELLA",
-    totalSupply: 13000,
-    availableSupply: 3800,
-    pricePerTokenUsd: "3.45",
-    pricePerTokenEth: "0.006",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxIsabellaSantos001",
-    imageUrl: getArtistImage(10),
-    description: "Hot reggaeton track with infectious rhythm",
-    benefits: ["Royalty rights", "Festival appearances", "Streaming boost"],
-    isActive: true
-  },
-  {
-    artistId: 11,
-    songName: "Country Roads",
-    songUrl: null,
-    tokenId: 11,
-    tokenSymbol: "LUKE",
-    totalSupply: 10000,
-    availableSupply: 3900,
-    pricePerTokenUsd: "2.65",
-    pricePerTokenEth: "0.005",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxLukeBradley001",
-    imageUrl: getArtistImage(11),
-    description: "Classic country ballad",
-    benefits: ["Royalty rights", "Country tour", "Album credits"],
-    isActive: true
-  },
-  {
-    artistId: 12,
-    songName: "Ambient Cosmos",
-    songUrl: null,
-    tokenId: 12,
-    tokenSymbol: "ARIA",
-    totalSupply: 8500,
-    availableSupply: 4200,
-    pricePerTokenUsd: "2.20",
-    pricePerTokenEth: "0.004",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxAriaNova001",
-    imageUrl: getArtistImage(12),
-    description: "Ethereal ambient electronic soundscape",
-    benefits: ["Royalty rights", "Meditation sessions", "Sound design"],
-    isActive: true
-  },
-  {
-    artistId: 13,
-    songName: "Trap Beats",
-    songUrl: null,
-    tokenId: 13,
-    tokenSymbol: "ALEX",
-    totalSupply: 11000,
-    availableSupply: 2800,
-    pricePerTokenUsd: "3.55",
-    pricePerTokenEth: "0.007",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxAlexThunder001",
-    imageUrl: getArtistImage(13),
-    description: "Heavy trap production masterpiece",
-    benefits: ["Royalty rights", "Producer credits", "Beat packs"],
-    isActive: true
-  },
-  {
-    artistId: 14,
-    songName: "Opera Aria",
-    songUrl: null,
-    tokenId: 14,
-    tokenSymbol: "VICTORIA",
-    totalSupply: 4000,
-    availableSupply: 600,
-    pricePerTokenUsd: "6.10",
-    pricePerTokenEth: "0.012",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxVictoriaCross001",
-    imageUrl: getArtistImage(14),
-    description: "Classical opera performance",
-    benefits: ["Royalty rights", "Opera house events", "Performance rights"],
-    isActive: true
-  },
-  {
-    artistId: 15,
-    songName: "Funk Groove",
-    songUrl: null,
-    tokenId: 15,
-    tokenSymbol: "DIESEL",
-    totalSupply: 9500,
-    availableSupply: 2200,
-    pricePerTokenUsd: "3.90",
-    pricePerTokenEth: "0.008",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxPrinceDiesel001",
-    imageUrl: getArtistImage(15),
-    description: "Funky rhythmic groove",
-    benefits: ["Royalty rights", "Funk festivals", "Dancing events"],
-    isActive: true
-  },
-  {
-    artistId: 16,
-    songName: "Rock Anthem",
-    songUrl: null,
-    tokenId: 16,
-    tokenSymbol: "RYAN",
-    totalSupply: 10500,
-    availableSupply: 3600,
-    pricePerTokenUsd: "3.25",
-    pricePerTokenEth: "0.006",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxRyanPhoenix001",
-    imageUrl: getArtistImage(16),
-    description: "Indie rock anthem",
-    benefits: ["Royalty rights", "Rock shows", "Band merchandise"],
-    isActive: true
-  },
-  {
-    artistId: 17,
-    songName: "Latin Fire",
-    songUrl: null,
-    tokenId: 17,
-    tokenSymbol: "PABLO",
-    totalSupply: 12000,
-    availableSupply: 4500,
-    pricePerTokenUsd: "2.99",
-    pricePerTokenEth: "0.006",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxPabloFuego001",
-    imageUrl: getArtistImage(17),
-    description: "Energetic Latin music",
-    benefits: ["Royalty rights", "Latin festivals", "Dance classes"],
-    isActive: true
-  },
-  {
-    artistId: 18,
-    songName: "Pop Perfection",
-    songUrl: null,
-    tokenId: 18,
-    tokenSymbol: "EMMA",
-    totalSupply: 13500,
-    availableSupply: 3200,
-    pricePerTokenUsd: "3.55",
-    pricePerTokenEth: "0.007",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxEmmaWhite001",
-    imageUrl: getArtistImage(18),
-    description: "Catchy pop hit",
-    benefits: ["Royalty rights", "Fan club", "Meet & greet"],
-    isActive: true
-  },
-  {
-    artistId: 19,
-    songName: "Dubstep Drop",
-    songUrl: null,
-    tokenId: 19,
-    tokenSymbol: "VOID",
-    totalSupply: 9000,
-    availableSupply: 1800,
-    pricePerTokenUsd: "4.05",
-    pricePerTokenEth: "0.008",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxChrisVoid001",
-    imageUrl: getArtistImage(19),
-    description: "Massive dubstep bass drop",
-    benefits: ["Royalty rights", "Rave events", "Remix packs"],
-    isActive: true
-  },
-  {
-    artistId: 20,
-    songName: "Soul Serenade",
-    songUrl: null,
-    tokenId: 20,
-    tokenSymbol: "JAMES",
-    totalSupply: 11000,
-    availableSupply: 3400,
-    pricePerTokenUsd: "3.35",
-    pricePerTokenEth: "0.006",
-    royaltyPercentageArtist: 80,
-    royaltyPercentagePlatform: 20,
-    contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
-    metadataUri: "ipfs://QmXxJamesGrant001",
-    imageUrl: getArtistImage(20),
-    description: "Soulful R&B ballad",
-    benefits: ["Royalty rights", "Soul nights", "Studio collab"],
-    isActive: true
-  }
+// Token metadata for songs
+const TOKEN_METADATA = [
+  { totalSupply: 10000, availableSupply: 3500, priceUsd: "2.45", priceEth: "0.005", description: "A haunting synthwave track with ethereal vocals", benefits: ["Royalty rights", "VIP access", "Exclusive content"] },
+  { totalSupply: 15000, availableSupply: 5000, priceUsd: "1.85", priceEth: "0.003", description: "Hard-hitting hip-hop with conscious lyrics", benefits: ["Royalty rights", "Backstage passes", "Exclusive drops"] },
+  { totalSupply: 8000, availableSupply: 1200, priceUsd: "4.22", priceEth: "0.008", description: "Electropop sensation breaking charts worldwide", benefits: ["Royalty rights", "Concert invitations", "Merchandise"] },
+  { totalSupply: 12000, availableSupply: 4100, priceUsd: "2.88", priceEth: "0.005", description: "Deep R&B with timeless soul vibes", benefits: ["Royalty rights", "Exclusive demos", "Fan club access"] },
+  { totalSupply: 9000, availableSupply: 3200, priceUsd: "1.99", priceEth: "0.004", description: "Indie folk masterpiece with acoustic instrumentation", benefits: ["Royalty rights", "Album preorder", "Meet & greet"] },
+  { totalSupply: 11000, availableSupply: 4100, priceUsd: "2.15", priceEth: "0.004", description: "Relaxing reggae vibes for the soul", benefits: ["Royalty rights", "Studio sessions", "Collaboration"] },
+  { totalSupply: 5000, availableSupply: 800, priceUsd: "5.50", priceEth: "0.010", description: "A virtuosic classical composition", benefits: ["Royalty rights", "Private concerts", "Sheet music"] },
+  { totalSupply: 12000, availableSupply: 2500, priceUsd: "3.80", priceEth: "0.007", description: "Chart-topping K-pop sensation", benefits: ["Royalty rights", "Tour passes", "Limited edition"] },
+  { totalSupply: 7000, availableSupply: 1500, priceUsd: "4.15", priceEth: "0.008", description: "Smooth jazz saxophone performance", benefits: ["Royalty rights", "Jazz club events", "Recording sessions"] },
+  { totalSupply: 13000, availableSupply: 3800, priceUsd: "3.45", priceEth: "0.006", description: "Hot reggaeton track with infectious rhythm", benefits: ["Royalty rights", "Festival appearances", "Streaming boost"] },
+  { totalSupply: 10000, availableSupply: 3900, priceUsd: "2.65", priceEth: "0.005", description: "Classic country ballad", benefits: ["Royalty rights", "Country tour", "Album credits"] },
+  { totalSupply: 8500, availableSupply: 4200, priceUsd: "2.20", priceEth: "0.004", description: "Ethereal ambient electronic soundscape", benefits: ["Royalty rights", "Meditation sessions", "Sound design"] },
+  { totalSupply: 11000, availableSupply: 2800, priceUsd: "3.55", priceEth: "0.007", description: "Heavy trap production masterpiece", benefits: ["Royalty rights", "Producer credits", "Beat packs"] },
+  { totalSupply: 4000, availableSupply: 600, priceUsd: "6.10", priceEth: "0.012", description: "Classical opera performance", benefits: ["Royalty rights", "Opera house events", "Performance rights"] },
+  { totalSupply: 9500, availableSupply: 2200, priceUsd: "3.90", priceEth: "0.008", description: "Funky rhythmic groove", benefits: ["Royalty rights", "Funk festivals", "Dancing events"] },
+  { totalSupply: 10500, availableSupply: 3600, priceUsd: "3.25", priceEth: "0.006", description: "Indie rock anthem", benefits: ["Royalty rights", "Rock shows", "Band merchandise"] },
+  { totalSupply: 12000, availableSupply: 4500, priceUsd: "2.99", priceEth: "0.006", description: "Energetic Latin music", benefits: ["Royalty rights", "Latin festivals", "Dance classes"] },
+  { totalSupply: 13500, availableSupply: 3200, priceUsd: "3.55", priceEth: "0.007", description: "Catchy pop hit", benefits: ["Royalty rights", "Fan club", "Meet & greet"] },
+  { totalSupply: 9000, availableSupply: 1800, priceUsd: "4.05", priceEth: "0.008", description: "Massive dubstep bass drop", benefits: ["Royalty rights", "Rave events", "Remix packs"] },
+  { totalSupply: 11000, availableSupply: 3400, priceUsd: "3.35", priceEth: "0.006", description: "Soulful R&B ballad", benefits: ["Royalty rights", "Soul nights", "Studio collab"] },
 ];
 
 export async function seedTokenizedSongs() {
   try {
-    console.log("🌱 Iniciando seed de canciones tokenizadas...");
+    console.log("🌱 Iniciando seed de artistas y tokens BTF-2300...");
     
-    // First check if there are any users in the database
-    const { users } = await import('./db/schema');
-    const existingUsers = await db.select({ id: users.id }).from(users).limit(1);
+    let artistsCreated = 0;
+    let tokensCreated = 0;
+    let artistsSkipped = 0;
     
-    if (existingUsers.length === 0) {
-      console.log("⏭️  No hay usuarios en la base de datos. Saltando seed de canciones tokenizadas.");
-      console.log("   (Las canciones se crearán cuando haya usuarios registrados)");
-      return;
-    }
+    // Get the max tokenId to avoid conflicts
+    const maxTokenResult = await db.select({ maxId: sql<number>`COALESCE(MAX(token_id), 0)` }).from(tokenizedSongs);
+    let nextTokenId = (maxTokenResult[0]?.maxId || 0) + 1;
     
-    // Get all existing user IDs to validate artistId references
-    const allUsers = await db.select({ id: users.id }).from(users);
-    const validUserIds = new Set(allUsers.map(u => u.id));
-    
-    for (const song of TOKENIZED_SONGS_SEED) {
-      // Skip songs where artistId doesn't exist in users table
-      if (!validUserIds.has(song.artistId)) {
-        console.log(`⏭️  Saltando ${song.songName} - artistId ${song.artistId} no existe`);
+    for (let i = 0; i < DEMO_ARTISTS.length; i++) {
+      const artist = DEMO_ARTISTS[i];
+      const metadata = TOKEN_METADATA[i];
+      
+      // Check if artist already exists by username or email
+      const existingArtist = await db.select().from(users).where(eq(users.username, artist.username));
+      const existingByEmail = await db.select().from(users).where(eq(users.email, artist.email));
+      
+      let artistId: number | null = null;
+      
+      if (existingArtist.length === 0 && existingByEmail.length === 0) {
+        try {
+          // Create the artist
+          const [newArtist] = await db.insert(users).values({
+            username: artist.username,
+            email: artist.email,
+            artistName: artist.displayName,
+            biography: artist.bio,
+            profileImageUrl: artist.profileImageUrl,
+            role: "artist",
+          }).returning({ id: users.id });
+          
+          artistId = newArtist.id;
+          artistsCreated++;
+          console.log(`✅ Artista: ${artist.displayName} (ID: ${artistId})`);
+        } catch (insertError) {
+          // If insert fails due to duplicate, try to find the existing artist
+          artistsSkipped++;
+        }
+      } else {
+        artistId = existingArtist.length > 0 ? existingArtist[0].id : existingByEmail[0].id;
+        artistsSkipped++;
+      }
+      
+      // If we couldn't get artistId, skip token creation
+      if (artistId === null) {
         continue;
       }
       
-      const existing = await db.select().from(tokenizedSongs)
-        .where(eq(tokenizedSongs.tokenId, song.tokenId));
+      // Check if token already exists for this song
+      const existingToken = await db.select().from(tokenizedSongs)
+        .where(eq(tokenizedSongs.tokenSymbol, artist.tokenSymbol));
       
-      if (existing.length === 0) {
-        await db.insert(tokenizedSongs).values(song);
-        console.log(`✅ Creada: ${song.songName} (Token ID: ${song.tokenId})`);
-      } else {
-        console.log(`⏭️  Ya existe: ${song.songName}`);
+      if (existingToken.length === 0) {
+        try {
+          // Create the tokenized song with next available tokenId
+          await db.insert(tokenizedSongs).values({
+            artistId,
+            songName: artist.songName,
+            songUrl: null,
+            tokenId: nextTokenId,
+            tokenSymbol: artist.tokenSymbol,
+            totalSupply: metadata.totalSupply,
+            availableSupply: metadata.availableSupply,
+            pricePerTokenUsd: metadata.priceUsd,
+            pricePerTokenEth: metadata.priceEth,
+            royaltyPercentageArtist: 80,
+            royaltyPercentagePlatform: 20,
+            contractAddress: BOOSTIFY_CONTRACT_ADDRESS,
+            metadataUri: `ipfs://QmXx${artist.tokenSymbol}001`,
+            imageUrl: artist.profileImageUrl,
+            description: metadata.description,
+            benefits: metadata.benefits,
+            isActive: true,
+          });
+          tokensCreated++;
+          nextTokenId++; // Increment for next token
+          console.log(`✅ Token BTF-2300: ${artist.songName} ($${artist.tokenSymbol})`);
+        } catch (tokenError) {
+          // Token creation failed, log and skip
+          console.log(`❌ Error creando token ${artist.tokenSymbol}:`, tokenError instanceof Error ? tokenError.message : 'Unknown error');
+        }
       }
     }
     
-    console.log("✅ Seed completado!");
+    console.log(`\n🎉 Seed BTF-2300 completado!`);
+    console.log(`   📦 ${artistsCreated} artistas nuevos, ${artistsSkipped} existentes`);
+    console.log(`   🪙 ${tokensCreated} tokens BTF-2300 creados`);
+    
   } catch (error) {
-    // Log warning but don't crash - seed is optional
-    console.warn("⚠️ Seed de canciones tokenizadas omitido:", error instanceof Error ? error.message : 'Error desconocido');
+    console.warn("⚠️ Seed BTF-2300 omitido:", error instanceof Error ? error.message : 'Error desconocido');
   }
 }
+
+// Legacy export for compatibility (now empty - all data is generated dynamically)
+export const TOKENIZED_SONGS_SEED: any[] = [];

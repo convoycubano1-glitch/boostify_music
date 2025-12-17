@@ -204,39 +204,39 @@ contract MusicTokenizationPlatform is ERC721, Ownable {
   // Animation timeline steps
   const steps = [
     {
-      title: "Create Contract",
-      description: "Artist creates a smart contract to govern their music token",
-      icon: <Code className="h-8 w-8 text-orange-500" />
+      title: "Create BTF-2300",
+      description: "Artist initiates deployment of their BTF-2300 artist token",
+      icon: <Code className="h-8 w-8 text-purple-500" />
     },
     {
-      title: "Set Terms",
-      description: "Defines ownership, royalties, and access rights in code",
-      icon: <Shield className="h-8 w-8 text-orange-500" />
+      title: "Deploy Identity Layer",
+      description: "ERC-721 artist identity token is created on Polygon",
+      icon: <Shield className="h-8 w-8 text-purple-500" />
     },
     {
-      title: "Deploy Contract",
-      description: "Publishes contract to the blockchain permanently",
-      icon: <Terminal className="h-8 w-8 text-orange-500" />
+      title: "Setup Royalty Splitter",
+      description: "80/20 revenue distribution contract is deployed",
+      icon: <Terminal className="h-8 w-8 text-purple-500" />
     },
     {
-      title: "Verify Ownership",
-      description: "Blockchain confirms artist's ownership of the music",
+      title: "Mint Asset Tokens",
+      description: "ERC-1155 tokens for music, videos, licenses created",
       icon: <CheckCircle className="h-8 w-8 text-green-500" />
     },
     {
-      title: "Fan Purchase",
-      description: "Fan buys token, triggering the smart contract",
+      title: "Collector Purchase",
+      description: "Fan buys artist token, triggering BTF-2300 contract",
       icon: <User className="h-8 w-8 text-blue-500" />
     },
     {
       title: "Automatic Execution",
-      description: "Contract executes automatically when conditions are met",
-      icon: <ArrowDown className="h-8 w-8 text-orange-500" />,
+      description: "Smart contract executes royalty split automatically",
+      icon: <ArrowDown className="h-8 w-8 text-purple-500" />,
       extraSpacing: true
     },
     {
-      title: "Royalty Distribution",
-      description: "Artist receives payment directly to their wallet",
+      title: "Revenue Distribution",
+      description: "80% to artist, 20% to platform - instant and trustless",
       icon: <CheckCircle className="h-8 w-8 text-green-500" />
     }
   ];
@@ -265,14 +265,14 @@ contract MusicTokenizationPlatform is ERC721, Ownable {
     <section className="py-24 bg-gray-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <Badge className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30 px-3 py-1">
-            BLOCKCHAIN TECHNOLOGY
+          <Badge className="mb-4 bg-purple-500/20 text-purple-400 border-purple-500/30 px-3 py-1">
+            BTF-2300 ARCHITECTURE
           </Badge>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Smart Contract <span className="text-orange-500">Visualizer</span>
+            Smart Contract <span className="text-purple-500">Visualizer</span>
           </h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            See how blockchain smart contracts power music tokenization and ensure your rights are protected
+            See how BTF-2300 deploys your complete artist identity with automated royalties and on-chain licensing
           </p>
         </div>
 
@@ -280,8 +280,8 @@ contract MusicTokenizationPlatform is ERC721, Ownable {
           {/* Left side: Contract visualization */}
           <div className="bg-gray-900 rounded-xl p-8 shadow-xl">
             <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
-              <Terminal className="h-6 w-6 mr-2 text-orange-500" />
-              Contract Execution Flow
+              <Terminal className="h-6 w-6 mr-2 text-purple-500" />
+              BTF-2300 Deployment Flow
             </h3>
             
             <div className="relative h-[500px] mb-6 overflow-y-auto">
@@ -322,7 +322,7 @@ contract MusicTokenizationPlatform is ERC721, Ownable {
                       animate={{ opacity: 1 }}
                       className={`absolute left-10 top-8 ${step.extraSpacing ? 'h-24' : (index === steps.length - 2 ? 'h-16' : 'h-8')} flex justify-center`}
                     >
-                      <ArrowDown className="text-orange-500 h-6 w-6" />
+                      <ArrowDown className="text-purple-500 h-6 w-6" />
                     </motion.div>
                   )}
                 </motion.div>
@@ -332,24 +332,24 @@ contract MusicTokenizationPlatform is ERC721, Ownable {
             <Button 
               onClick={runAnimation} 
               disabled={isAnimating}
-              className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+              className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
             >
-              {isAnimating ? "Executing Contract..." : "Run Contract Simulation"}
+              {isAnimating ? "Deploying BTF-2300..." : "Run Deployment Simulation"}
             </Button>
           </div>
           
           {/* Right side: Code view */}
           <div className="bg-gray-900 rounded-xl p-8 shadow-xl">
             <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
-              <Code className="h-6 w-6 mr-2 text-orange-500" />
-              Smart Contract Code
+              <Code className="h-6 w-6 mr-2 text-purple-500" />
+              BTF-2300 Contract Code
             </h3>
             
             <Tabs defaultValue="erc721" className="mb-6">
               <TabsList className="bg-gray-800 border border-gray-700">
-                <TabsTrigger value="erc721">ERC-721 (NFT)</TabsTrigger>
-                <TabsTrigger value="erc1155">ERC-1155 (Multi)</TabsTrigger>
-                <TabsTrigger value="custom">Custom</TabsTrigger>
+                <TabsTrigger value="erc721">Identity (ERC-721)</TabsTrigger>
+                <TabsTrigger value="erc1155">Assets (ERC-1155)</TabsTrigger>
+                <TabsTrigger value="custom">Royalty Splitter</TabsTrigger>
               </TabsList>
               
               {Object.entries(contractSnippets).map(([key, code]) => (
@@ -367,13 +367,13 @@ contract MusicTokenizationPlatform is ERC721, Ownable {
             
             <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
               <h4 className="font-bold text-white mb-2 flex items-center">
-                <MessageCircle className="h-4 w-4 mr-2 text-blue-400" />
-                Expert Insight
+                <MessageCircle className="h-4 w-4 mr-2 text-purple-400" />
+                BTF-2300 Insight
               </h4>
               <p className="text-gray-300 text-sm">
-                Smart contracts are self-executing agreements with the terms directly written into code.
-                When you tokenize your music, these contracts automatically handle royalty distributions 
-                whenever your music is purchased or resold, without requiring intermediaries.
+                BTF-2300 combines ERC-721 for artist identity, ERC-1155 for multi-asset catalogs, 
+                and a dedicated royalty splitter contract. This multi-layer architecture enables 
+                one-click deployment of your complete digital presence with automated 80/20 revenue distribution.
               </p>
             </div>
           </div>

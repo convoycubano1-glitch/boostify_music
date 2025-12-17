@@ -131,4 +131,86 @@ router.post('/process-image', async (req, res) => {
   }
 });
 
+// ============================================================================
+// 🎵 UPLOAD AUDIO TEMPORAL - Para PixVerse Lipsync
+// ============================================================================
+// Sube un archivo de audio WAV a la API temporal y devuelve una URL pública
+// Esto es necesario porque PixVerse requiere URLs públicas, no blobs locales
+
+import multer from 'multer';
+
+const audioUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = ['audio/wav', 'audio/wave', 'audio/x-wav', 'audio/mpeg', 'audio/mp3'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Tipo de archivo no permitido: ${file.mimetype}`));
+    }
+  }
+});
+
+router.post('/upload/temp-audio', audioUpload.single('file'), async (req, res) => {
+  try {
+    console.log('🎵 [Upload] Subiendo audio temporal para lipsync...');
+    
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No se proporcionó archivo de audio'
+      });
+    }
+
+    console.log(`📁 [Upload] Audio: ${file.originalname}, ${(file.size / 1024).toFixed(2)}KB`);
+
+    // Convertir buffer a base64
+    const base64Data = file.buffer.toString('base64');
+    
+    // Generar nombre único
+    const timestamp = Date.now();
+    const randomSuffix = Math.floor(Math.random() * 10000);
+    const extension = file.originalname.split('.').pop() || 'wav';
+    const fileName = `audio_lipsync_${timestamp}_${randomSuffix}.${extension}`;
+
+    // Subir a la API temporal
+    const uploadResponse = await axios.post(UPLOAD_API_URL, {
+      file_name: fileName,
+      file_data: base64Data
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY
+      }
+    });
+
+    if (uploadResponse.data && uploadResponse.data.code === 200 && uploadResponse.data.data.url) {
+      const audioUrl = uploadResponse.data.data.url;
+      console.log(`✅ [Upload] Audio subido: ${audioUrl}`);
+      
+      return res.json({
+        success: true,
+        url: audioUrl,
+        fileName,
+        size: file.size
+      });
+    } else {
+      console.error('❌ [Upload] Error en respuesta:', uploadResponse.data);
+      return res.status(500).json({
+        success: false,
+        error: 'Error subiendo audio a servicio temporal'
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ [Upload] Error subiendo audio:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Error interno'
+    });
+  }
+});
+
 export default router;

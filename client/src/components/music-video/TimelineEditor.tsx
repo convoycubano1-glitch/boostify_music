@@ -13,7 +13,7 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { useGesture } from 'react-use-gesture';
+// Note: Gesture handling is done manually for better iOS Safari support
 import { cn } from '../../lib/utils';
 import { 
   Play, Pause, SkipBack, SkipForward, ZoomIn, ZoomOut,
@@ -244,13 +244,34 @@ export function TimelineEditor({
   const [showImageEditorModal, setShowImageEditorModal] = useState(false);
   const [imageEditorModalClip, setImageEditorModalClip] = useState<TimelineClip | null>(null);
   const [ghostClip, setGhostClip] = useState<{ id: number; position: number } | null>(null);
+  
+  // iOS-specific detection for Safari gesture handling
+  const [isIOS, setIsIOS] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  
+  // Touch slop: minimum distance before starting drag (prevents accidental drags)
+  const TOUCH_SLOP = 10; // pixels
+  const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null);
+  const [hasMoved, setHasMoved] = useState(false);
   const [snapLine, setSnapLine] = useState<number | null>(null);
   const [clipTransitions, setClipTransitions] = useState<Map<number, TransitionConfig>>(new Map());
   
-  // Detect mobile viewport
+  // Detect mobile viewport, iOS, and touch capability
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      // Check viewport width
+      const isSmallScreen = window.innerWidth < 768;
+      
+      // Check touch capability (works for iPad in desktop mode)
+      const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      
+      // iOS detection (iPhone, iPad, iPod)
+      const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPad with iOS 13+
+      
+      setIsMobile(isSmallScreen || hasTouch);
+      setIsTouchDevice(hasTouch);
+      setIsIOS(isIOSDevice);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -304,7 +325,6 @@ export function TimelineEditor({
   const waveformRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const rafIdRef = useRef<number | null>(null);
-  const gesturesRef = useRef<any>(null);
 
   // ===== Computed Values =====
   const scaledPixelsPerSecond = PIXELS_PER_SECOND_BASE * zoom;
@@ -1051,13 +1071,27 @@ export function TimelineEditor({
     }
   }, [tool, clips, pixelsToTime, pushHistory, onSplitClip, toast, timelineRef, triggerHaptic]);
 
-  // Mouse/Touch move handler for drag/resize
+  // Mouse/Touch move handler for drag/resize with touch slop
   const handleMouseMove = useCallback((e: MouseEvent | TouchEvent) => {
     if (!draggingClip && !resizingSide && !isPanning && !selectionStartPoint) return;
     
     const clientX = 'touches' in e ? e.touches[0]?.clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0]?.clientY : e.clientY;
     if (clientX === undefined) return;
+    
+    // Touch slop check: Don't start movement until user has moved beyond threshold
+    // This prevents accidental drags when user just wants to tap
+    if ('touches' in e && touchStartPos && !hasMoved) {
+      const distance = Math.sqrt(
+        Math.pow(clientX - touchStartPos.x, 2) + 
+        Math.pow((clientY || 0) - touchStartPos.y, 2)
+      );
+      if (distance < TOUCH_SLOP) {
+        return; // Haven't moved enough yet
+      }
+      setHasMoved(true);
+      triggerHaptic(3); // Light feedback when drag starts
+    }
     
     // Handle selection rectangle update
     if (selectionStartPoint && timelineRef.current) {
@@ -1181,6 +1215,9 @@ export function TimelineEditor({
     setDraggingClip(null);
     setResizingSide(null);
     setIsPanning(false);
+    // Reset touch slop state
+    setTouchStartPos(null);
+    setHasMoved(false);
     document.body.style.cursor = '';
   }, [draggingClip, resizingSide, triggerHaptic, selectionRect, selectionStartPoint, clips, pixelsToTime, timeToPixels]);
 
@@ -1236,12 +1273,17 @@ export function TimelineEditor({
     }
   }, [draggingClip, resizingSide, isPanning, selectionStartPoint, handleMouseMove, handleMouseUp]);
 
-  // ===== Touch Support for Mobile =====
+  // ===== Touch Support for Mobile with Touch Slop =====
   const handleClipTouchStart = useCallback((e: React.TouchEvent, clipId: number, handle?: 'start' | 'end' | 'body') => {
+    // Allow two-finger gestures to pass through for pinch/pan
     if (tool === 'hand' || e.touches.length !== 1) return;
     
     e.preventDefault(); // Prevent default touch behavior
     const touch = e.touches[0];
+    
+    // Store initial touch position for touch slop calculation
+    setTouchStartPos({ x: touch.clientX, y: touch.clientY });
+    setHasMoved(false);
     
     // Convert touch event to mouse event format for handleClipMouseDown
     const mouseEvent = {
@@ -1405,7 +1447,7 @@ export function TimelineEditor({
     return () => cancelAnimationFrame(animationId);
   }, [scrollVelocity]);
 
-  // ===== Gesture Handlers (Touch + Wheel) =====
+  // ===== Gesture Handlers (Touch + Wheel) - iOS Safari Optimized =====
   useEffect(() => {
     if (!timelineRef.current) return;
     const element = timelineRef.current;
@@ -1413,9 +1455,22 @@ export function TimelineEditor({
     // Multi-touch gesture handler (pinch-to-zoom and two-finger pan)
     let lastDistance = 0;
     let lastCenterX = 0;
+    let gestureActive = false;
+    
+    const handleTouchStart = (e: TouchEvent) => {
+      // When two fingers touch, mark gesture as active
+      if (e.touches.length === 2) {
+        gestureActive = true;
+        lastDistance = 0;
+        lastCenterX = 0;
+      }
+    };
+    
     const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 2 && isMobile) {
+      // Handle two-finger gestures (pinch/pan)
+      if (e.touches.length === 2 && isTouchDevice) {
         e.preventDefault();
+        e.stopPropagation();
         
         const touch1 = e.touches[0];
         const touch2 = e.touches[1];
@@ -1440,12 +1495,16 @@ export function TimelineEditor({
           if (horizontalMovement > distanceChange && horizontalMovement > 5) {
             // Two-finger pan: scroll timeline horizontally
             const panDelta = centerX - lastCenterX;
-            element.scrollLeft -= panDelta * 0.5; // Smooth scrolling with 0.5 factor
+            // iOS Safari needs smoother scrolling factor
+            const scrollFactor = isIOS ? 0.3 : 0.5;
+            element.scrollLeft -= panDelta * scrollFactor;
             triggerHaptic(2); // Light haptic feedback
           } else if (distanceChange > 2) {
             // Pinch zoom: adjust zoom level
             const scale = distance / lastDistance;
-            const newZoom = Math.min(3, Math.max(0.5, zoom * scale));
+            // iOS Safari: Use smaller zoom steps for smoother feel
+            const smoothScale = isIOS ? 1 + (scale - 1) * 0.5 : scale;
+            const newZoom = Math.min(3, Math.max(0.5, zoom * smoothScale));
             
             if (newZoom !== zoom) {
               setZoom(newZoom);
@@ -1458,9 +1517,26 @@ export function TimelineEditor({
       }
     };
     
-    const handleTouchEnd = () => {
+    const handleTouchEnd = (e: TouchEvent) => {
+      // Reset gesture state when all fingers are lifted
+      if (e.touches.length === 0) {
+        lastDistance = 0;
+        lastCenterX = 0;
+        gestureActive = false;
+      }
+    };
+    
+    // Also handle touch cancel for iOS interruptions (calls, notifications)
+    const handleTouchCancel = () => {
       lastDistance = 0;
       lastCenterX = 0;
+      gestureActive = false;
+      // Reset any in-progress operations
+      setDraggingClip(null);
+      setResizingSide(null);
+      setIsPanning(false);
+      setTouchStartPos(null);
+      setHasMoved(false);
     };
     
     // Wheel zoom (mouse wheel)
@@ -1499,18 +1575,24 @@ export function TimelineEditor({
       lastScrollTime = now;
     };
     
+    element.addEventListener('touchstart', handleTouchStart, { passive: true });
     element.addEventListener('touchmove', handleTouchMove, { passive: false });
-    element.addEventListener('touchend', handleTouchEnd);
+    element.addEventListener('touchend', handleTouchEnd, { passive: true });
+    element.addEventListener('touchcancel', handleTouchCancel, { passive: true });
     element.addEventListener('wheel', handleWheel, { passive: false });
     element.addEventListener('scroll', handleScroll, { passive: true });
     
     return () => {
+      element.removeEventListener('touchstart', handleTouchStart);
       element.removeEventListener('touchmove', handleTouchMove);
       element.removeEventListener('touchend', handleTouchEnd);
+      element.removeEventListener('touchcancel', handleTouchCancel);
       element.removeEventListener('wheel', handleWheel);
       element.removeEventListener('scroll', handleScroll);
     };
-  }, [zoom, isMobile, triggerHaptic]);
+  }, [zoom, isTouchDevice, isIOS, triggerHaptic]);
+
+  // ===== Timeline Click Handler =====
 
   // ===== Timeline Click Handler =====
   const handleTimelineClick = useCallback((e: React.MouseEvent) => {
@@ -2375,24 +2457,31 @@ export function TimelineEditor({
 
         {/* Timeline scroll area - Enhanced for mobile with momentum scrolling */}
         <div 
-          className="flex-1 overflow-auto" 
+          className={cn(
+            "flex-1 overflow-auto timeline-container",
+            isIOS && "timeline-ios-scroll"
+          )}
           ref={timelineRef}
           style={{
-            scrollBehavior: 'auto', // Disable smooth scroll to enable momentum manually
-            overscrollBehavior: 'contain', // Prevent bouncing on mobile
-            WebkitOverflowScrolling: 'touch' as any // Hardware acceleration on iOS
+            scrollBehavior: 'auto',
+            overscrollBehavior: 'contain',
+            // iOS 13+ uses native momentum scrolling automatically
+            // touch-action set to 'pan-x' allows horizontal scroll but we handle pinch manually
+            touchAction: isTouchDevice ? 'pan-x' : 'auto'
           }}
         >
           <div 
             className={cn(
-              "relative min-h-full timeline-background",
+              "relative min-h-full timeline-background timeline-no-select",
               tool === 'hand' ? 'cursor-grab' : tool === 'razor' ? 'cursor-crosshair' : 'cursor-default',
               isPanning ? 'cursor-grabbing' : ''
             )}
             style={{ 
               width: `${timeToPixels(duration)}px`, 
               minWidth: '100%',
-              touchAction: isMobile ? 'pinch-zoom' : 'auto' // Allow pinch-zoom on mobile
+              // Use 'none' to handle ALL gestures manually for precise control
+              // This prevents iOS Safari from intercepting pinch/pan
+              touchAction: isTouchDevice ? 'none' : 'auto'
             }}
             onClick={handleTimelineClick}
             onMouseDown={handleTimelineMouseDown}
@@ -2630,50 +2719,62 @@ export function TimelineEditor({
                           {/* Resize handles - Professional style, visible on hover/select */}
                           {!clip.locked && (
                             <>
-                              {/* Left handle */}
+                              {/* Left handle - iOS touch optimized */}
                               <div
                                 className={cn(
-                                  "absolute left-0 top-0 bottom-0 cursor-ew-resize transition-all",
-                                  isMobile ? "w-11" : "w-3",
+                                  "absolute left-0 top-0 bottom-0 cursor-ew-resize transition-all timeline-clip-handle",
+                                  isTouchDevice ? "w-11" : "w-3",
                                   tool === 'trim' || isSelected 
-                                    ? "bg-orange-500/70 hover:bg-orange-500" 
+                                    ? "bg-orange-500/70 hover:bg-orange-500 active:bg-orange-600" 
                                     : "bg-transparent group-hover:bg-orange-500/40"
                                 )}
                                 style={{ 
                                   touchAction: 'none',
-                                  minWidth: isMobile ? '44px' : undefined,
-                                  borderLeft: (tool === 'trim' || isSelected) ? '2px solid rgb(249, 115, 22)' : 'none'
+                                  minWidth: isTouchDevice ? '44px' : undefined,
+                                  borderLeft: (tool === 'trim' || isSelected) ? '2px solid rgb(249, 115, 22)' : 'none',
+                                  // Extend touch area for easier grabbing on touch devices
+                                  marginLeft: isTouchDevice ? '-8px' : 0,
+                                  paddingLeft: isTouchDevice ? '8px' : 0
                                 }}
                                 onMouseDown={(e) => handleClipMouseDown(e, clip.id, 'start')}
                                 onTouchStart={(e) => handleClipTouchStart(e, clip.id, 'start')}
                               >
-                                {(tool === 'trim' || isSelected) && (
+                                {(tool === 'trim' || isSelected || isTouchDevice) && (
                                   <div className="absolute inset-y-0 left-0 flex items-center justify-center w-full">
-                                    <div className="w-0.5 h-8 bg-white rounded-full opacity-80" />
+                                    <div className={cn(
+                                      "bg-white rounded-full opacity-80",
+                                      isTouchDevice ? "w-1 h-10" : "w-0.5 h-8"
+                                    )} />
                                   </div>
                                 )}
                               </div>
                               
-                              {/* Right handle */}
+                              {/* Right handle - iOS touch optimized */}
                               <div
                                 className={cn(
-                                  "absolute right-0 top-0 bottom-0 cursor-ew-resize transition-all",
-                                  isMobile ? "w-11" : "w-3",
+                                  "absolute right-0 top-0 bottom-0 cursor-ew-resize transition-all timeline-clip-handle",
+                                  isTouchDevice ? "w-11" : "w-3",
                                   tool === 'trim' || isSelected 
-                                    ? "bg-orange-500/70 hover:bg-orange-500" 
+                                    ? "bg-orange-500/70 hover:bg-orange-500 active:bg-orange-600" 
                                     : "bg-transparent group-hover:bg-orange-500/40"
                                 )}
                                 style={{ 
                                   touchAction: 'none',
-                                  minWidth: isMobile ? '44px' : undefined,
-                                  borderRight: (tool === 'trim' || isSelected) ? '2px solid rgb(249, 115, 22)' : 'none'
+                                  minWidth: isTouchDevice ? '44px' : undefined,
+                                  borderRight: (tool === 'trim' || isSelected) ? '2px solid rgb(249, 115, 22)' : 'none',
+                                  // Extend touch area for easier grabbing on touch devices
+                                  marginRight: isTouchDevice ? '-8px' : 0,
+                                  paddingRight: isTouchDevice ? '8px' : 0
                                 }}
                                 onMouseDown={(e) => handleClipMouseDown(e, clip.id, 'end')}
                                 onTouchStart={(e) => handleClipTouchStart(e, clip.id, 'end')}
                               >
-                                {(tool === 'trim' || isSelected) && (
+                                {(tool === 'trim' || isSelected || isTouchDevice) && (
                                   <div className="absolute inset-y-0 right-0 flex items-center justify-center w-full">
-                                    <div className="w-0.5 h-8 bg-white rounded-full opacity-80" />
+                                    <div className={cn(
+                                      "bg-white rounded-full opacity-80",
+                                      isTouchDevice ? "w-1 h-10" : "w-0.5 h-8"
+                                    )} />
                                   </div>
                                 )}
                               </div>

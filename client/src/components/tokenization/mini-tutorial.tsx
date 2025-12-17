@@ -32,9 +32,9 @@ const MiniTutorial = () => {
   // Tutorial steps with animations and content
   const steps = [
     {
-      icon: <Music2 className="w-10 h-10 text-orange-500" />,
-      title: "Create Your Music",
-      description: "Upload your original music to the platform and prepare it for tokenization.",
+      icon: <Music2 className="w-10 h-10 text-purple-500" />,
+      title: "Upload Your Catalog",
+      description: "Upload your music, videos, images and stems to prepare your complete artist profile.",
       animation: (
         <div className="relative w-full h-32 bg-gray-800 rounded-lg overflow-hidden">
           <motion.div
@@ -45,7 +45,7 @@ const MiniTutorial = () => {
               duration: 3,
               ease: "linear"
             }}
-            className="absolute top-1/2 h-1 w-24 bg-gradient-to-r from-orange-500 to-red-500 rounded-full"
+            className="absolute top-1/2 h-1 w-24 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"
           />
           <motion.div
             initial={{ opacity: 0.4 }}
@@ -57,15 +57,15 @@ const MiniTutorial = () => {
             }}
             className="absolute inset-0 flex items-center justify-center"
           >
-            <Play className="h-12 w-12 text-orange-500" />
+            <Play className="h-12 w-12 text-purple-500" />
           </motion.div>
         </div>
       )
     },
     {
-      icon: <Coins className="w-10 h-10 text-orange-500" />,
-      title: "Tokenize",
-      description: "Convert your music into digital assets secured by blockchain technology.",
+      icon: <Coins className="w-10 h-10 text-purple-500" />,
+      title: "Deploy BTF-2300",
+      description: "One-click deployment of your artist identity, royalty splitter, and asset tokens on Polygon.",
       animation: (
         <div className="relative w-full h-32 bg-gray-800 rounded-lg overflow-hidden flex items-center justify-center">
           <motion.div
@@ -76,7 +76,7 @@ const MiniTutorial = () => {
               repeat: Infinity,
               ease: "easeInOut"
             }}
-            className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center"
+            className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center"
           >
             <Coins className="h-8 w-8 text-white" />
           </motion.div>
@@ -89,15 +89,15 @@ const MiniTutorial = () => {
               ease: "easeOut",
               delay: 0.5
             }}
-            className="absolute inset-0 border-2 border-orange-500 rounded-full"
+            className="absolute inset-0 border-2 border-purple-500 rounded-full"
           />
         </div>
       )
     },
     {
-      icon: <Zap className="w-10 h-10 text-orange-500" />,
-      title: "Earn & Grow",
-      description: "Earn direct revenue and royalties whenever your tokens are traded.",
+      icon: <Zap className="w-10 h-10 text-purple-500" />,
+      title: "Earn & License",
+      description: "Automated 80/20 royalty split and on-chain licensing for every transaction.",
       animation: (
         <div className="relative w-full h-32 bg-gray-800 rounded-lg overflow-hidden">
           <div className="absolute inset-0 flex items-center justify-center">
@@ -135,14 +135,14 @@ const MiniTutorial = () => {
     <section className="py-24 bg-gray-900">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <Badge className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30 px-3 py-1">
-            TUTORIAL
+          <Badge className="mb-4 bg-purple-500/20 text-purple-400 border-purple-500/30 px-3 py-1">
+            BTF-2300 PROCESS
           </Badge>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            3-Step <span className="text-orange-500">Tokenization</span> Process
+            3-Step <span className="text-purple-500">Artist Deployment</span>
           </h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Follow this simple tutorial to start monetizing your music with blockchain technology
+            Deploy your complete artist identity on Polygon with our revolutionary BTF-2300 standard
           </p>
         </div>
 
@@ -174,7 +174,7 @@ const MiniTutorial = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <button className="flex items-center text-orange-500 font-medium hover:text-orange-400 transition-colors">
+                  <button className="flex items-center text-purple-500 font-medium hover:text-purple-400 transition-colors">
                     Learn more <ArrowUpRight className="ml-1 h-4 w-4" />
                   </button>
                 </motion.div>

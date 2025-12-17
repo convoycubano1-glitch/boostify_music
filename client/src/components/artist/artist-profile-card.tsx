@@ -1220,6 +1220,52 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
     enabled: !!artistId
   });
 
+  // Query para Music Video Projects con video renderizado
+  interface MusicVideoProject {
+    id: number;
+    artistName: string;
+    songName: string;
+    finalVideoUrl?: string;
+    thumbnail?: string;
+    status: string;
+    createdAt: string;
+  }
+  
+  const { data: musicVideoProjects = [] as MusicVideoProject[] } = useQuery<MusicVideoProject[]>({
+    queryKey: ["musicVideoProjects", userProfile?.slug || artistId],
+    queryFn: async () => {
+      try {
+        const slug = userProfile?.slug || artistId;
+        logger.info(`🎬 Fetching music video projects for artist: ${slug}`);
+        
+        // Buscar proyectos completados por slug del artista
+        const response = await fetch(`/api/music-video-projects/by-artist/${slug}`);
+        
+        if (!response.ok) {
+          logger.warn(`⚠️ No music video projects found for ${slug}`);
+          return [];
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && Array.isArray(data.projects)) {
+          // Filtrar solo los que tienen video final
+          const completedProjects = data.projects.filter(
+            (p: any) => p.finalVideoUrl && p.status === 'completed'
+          );
+          logger.info(`✅ Found ${completedProjects.length} completed music videos`);
+          return completedProjects;
+        }
+        
+        return [];
+      } catch (error) {
+        logger.error("❌ Error fetching music video projects:", error);
+        return [];
+      }
+    },
+    enabled: !!artistId
+  });
+
   // Query para productos con auto-generación
   const { data: products = [] as Product[], refetch: refetchProducts } = useQuery<Product[]>({
     queryKey: ["merchandise", userProfile?.pgId, artistId],
@@ -3529,6 +3575,88 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                   );
                   })}
                 </div>
+
+                {/* AI Generated Music Videos Section */}
+                {musicVideoProjects.length > 0 && (
+                  <div className="mt-6 pt-4 border-t" style={{ borderColor: colors.hexBorder }}>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="p-1.5 rounded-lg" style={{ backgroundColor: `${colors.hexPrimary}20` }}>
+                        <Sparkles className="h-4 w-4" style={{ color: colors.hexAccent }} />
+                      </div>
+                      <h3 className="font-semibold text-sm" style={{ color: colors.hexAccent }}>
+                        AI Music Videos ({musicVideoProjects.length})
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      {musicVideoProjects.map((project, index) => (
+                        <div
+                          key={project.id}
+                          className="rounded-lg sm:rounded-xl overflow-hidden bg-gradient-to-br from-purple-900/30 to-orange-900/30 hover:from-purple-900/50 hover:to-orange-900/50 transition-all duration-200 border"
+                          style={{ borderColor: colors.hexBorder }}
+                          data-testid={`card-ai-video-${index}`}
+                        >
+                          <div className="relative group">
+                            {project.thumbnail ? (
+                              <img
+                                src={project.thumbnail}
+                                alt={project.songName}
+                                className="w-full h-36 sm:h-40 md:h-44 object-cover"
+                              />
+                            ) : project.finalVideoUrl ? (
+                              <video
+                                src={`${project.finalVideoUrl}#t=0.5`}
+                                className="w-full h-36 sm:h-40 md:h-44 object-cover"
+                                muted
+                                playsInline
+                                preload="metadata"
+                              />
+                            ) : (
+                              <div 
+                                className="w-full h-36 sm:h-40 md:h-44 flex items-center justify-center"
+                                style={{ backgroundColor: `${colors.hexPrimary}33` }}
+                              >
+                                <Film className="h-10 sm:h-12 w-10 sm:w-12" style={{ color: colors.hexAccent }} />
+                              </div>
+                            )}
+                            {/* AI Badge */}
+                            <div className="absolute top-2 left-2">
+                              <span 
+                                className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white flex items-center gap-1"
+                                style={{ background: `linear-gradient(135deg, ${colors.hexPrimary}, #8B5CF6)` }}
+                              >
+                                <Bot className="h-3 w-3" />
+                                AI Generated
+                              </span>
+                            </div>
+                            {/* Play overlay */}
+                            {project.finalVideoUrl && (
+                              <a
+                                href={project.finalVideoUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                              >
+                                <div 
+                                  className="w-16 h-16 rounded-full flex items-center justify-center"
+                                  style={{ backgroundColor: colors.hexPrimary }}
+                                >
+                                  <Play className="h-8 w-8 text-white ml-1" fill="white" />
+                                </div>
+                              </a>
+                            )}
+                          </div>
+                          <div className="p-3">
+                            <h3 className="font-medium text-white text-sm">{project.songName || 'Music Video'}</h3>
+                            <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                              <Sparkles className="h-3 w-3" />
+                              Created with Boostify AI
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
                         );
                       } else if (sectionId === 'news' && (newsArticles.length > 0 || isOwnProfile)) {

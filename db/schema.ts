@@ -826,6 +826,9 @@ export const musicVideoProjects = pgTable("music_video_projects", {
   
   // Payment
   isPaid: boolean("is_paid").default(false).notNull(),
+  paidAt: timestamp("paid_at"),
+  paidAmount: decimal("paid_amount", { precision: 10, scale: 2 }),
+  stripePaymentId: text("stripe_payment_id"),
   creditsUsed: integer("credits_used").default(0).notNull(),
   
   // Metadata
@@ -2435,3 +2438,66 @@ export const insertSocialMediaPostSchema = createInsertSchema(socialMediaPosts).
 export const selectSocialMediaPostSchema = createSelectSchema(socialMediaPosts);
 export type InsertSocialMediaPost = z.infer<typeof insertSocialMediaPostSchema>;
 export type SelectSocialMediaPost = typeof socialMediaPosts.$inferSelect;
+
+// ============================================================================
+// RENDER QUEUE - Cola de renderizado de videos musicales
+// ============================================================================
+export const renderQueue = pgTable("render_queue", {
+  id: serial("id").primaryKey(),
+  
+  // Relaciones
+  projectId: integer("project_id").references(() => musicVideoProjects.id, { onDelete: "cascade" }),
+  artistProfileId: integer("artist_profile_id").references(() => users.id, { onDelete: "cascade" }),
+  
+  // Información del usuario
+  userEmail: text("user_email").notNull(),
+  artistName: text("artist_name").notNull(),
+  songName: text("song_name").notNull(),
+  profileSlug: text("profile_slug"),
+  
+  // Estado del pipeline
+  status: text("status", { 
+    enum: ["pending", "generating_videos", "rendering", "uploading", "completed", "failed"] 
+  }).default("pending").notNull(),
+  
+  // Progreso detallado
+  currentStep: text("current_step"),
+  progress: integer("progress").default(0), // 0-100
+  totalClips: integer("total_clips").default(10),
+  processedClips: integer("processed_clips").default(0),
+  
+  // Datos para renderizado
+  timelineData: json("timeline_data").$type<any[]>(),
+  audioUrl: text("audio_url"),
+  audioDuration: decimal("audio_duration", { precision: 10, scale: 2 }),
+  thumbnailUrl: text("thumbnail_url"),
+  aspectRatio: text("aspect_ratio").default("16:9"),
+  
+  // Resultado
+  finalVideoUrl: text("final_video_url"),
+  shotstackRenderId: text("shotstack_render_id"),
+  firebaseVideoUrl: text("firebase_video_url"),
+  
+  // Webhook status
+  pendingWebhookSent: boolean("pending_webhook_sent").default(false),
+  pendingWebhookSentAt: timestamp("pending_webhook_sent_at"),
+  completedWebhookSent: boolean("completed_webhook_sent").default(false),
+  completedWebhookSentAt: timestamp("completed_webhook_sent_at"),
+  
+  // Error tracking
+  errorMessage: text("error_message"),
+  errorStep: text("error_step"),
+  retryCount: integer("retry_count").default(0),
+  maxRetries: integer("max_retries").default(3),
+  
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+});
+
+export const insertRenderQueueSchema = createInsertSchema(renderQueue).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectRenderQueueSchema = createSelectSchema(renderQueue);
+export type InsertRenderQueue = z.infer<typeof insertRenderQueueSchema>;
+export type SelectRenderQueue = typeof renderQueue.$inferSelect;

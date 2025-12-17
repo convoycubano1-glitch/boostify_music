@@ -1,0 +1,488 @@
+/**
+ * 🎬 Video Pipeline Service
+ * Pipeline completo: Imágenes → Videos con Lipsync → Render Final
+ */
+
+import { logger } from '../../utils/logger';
+import { 
+  updateQueueProgress, 
+  markAsCompleted, 
+  markAsFailed,
+  getNextPendingItem 
+} from './queue-manager';
+import { startVideoRender, checkRenderStatus } from '../video-rendering/shotstack-service';
+import { uploadVideoToFirebaseStorage } from '../video-upload-firebase';
+import { db } from '../../db';
+import { renderQueue, musicVideoProjects } from '../../db/schema';
+import { eq } from 'drizzle-orm';
+
+// Constantes de configuración
+const CLIP_DURATION = 3; // segundos por clip
+const LIPSYNC_TIMEOUT = 120000; // 2 minutos timeout para lipsync
+const RENDER_POLL_INTERVAL = 5000; // 5 segundos entre checks
+const MAX_RENDER_WAIT = 600000; // 10 minutos máximo de espera
+
+interface TimelineClip {
+  id: string;
+  imageUrl?: string;
+  videoUrl?: string;
+  generatedVideo?: string;
+  start_time: number;
+  duration: number;
+  shotCategory?: 'PERFORMANCE' | 'B-ROLL' | 'STORY';
+  hasLipsync?: boolean;
+  audioSegmentUrl?: string; // URL del segmento de audio cortado para lipsync
+  lipsyncVideoUrl?: string; // URL del video con lipsync ya aplicado
+}
+
+interface PipelineResult {
+  success: boolean;
+  videoUrl?: string;
+  firebaseUrl?: string;
+  error?: string;
+}
+
+/**
+ * Procesar un item de la cola
+ * Este es el entry point principal del pipeline
+ */
+export async function processQueueItem(queueId: number): Promise<PipelineResult> {
+  logger.log(`🎬 [PIPELINE] Iniciando procesamiento de queue ${queueId}...`);
+
+  try {
+    // 1. Obtener datos de la cola
+    const [queueItem] = await db.select()
+      .from(renderQueue)
+      .where(eq(renderQueue.id, queueId));
+
+    if (!queueItem) {
+      throw new Error(`Queue item ${queueId} not found`);
+    }
+
+    const timelineData = queueItem.timelineData as TimelineClip[] || [];
+    const totalClips = timelineData.length || 10;
+
+    // 2. Actualizar estado a "generating_videos"
+    await updateQueueProgress(queueId, {
+      status: 'generating_videos',
+      currentStep: 'Convirtiendo imágenes a video...',
+      progress: 10
+    });
+
+    // 3. Procesar cada clip (convertir imágenes a video)
+    const processedClips: Array<{
+      id: string;
+      videoUrl: string;
+      start: number;
+      duration: number;
+    }> = [];
+
+    for (let i = 0; i < timelineData.length; i++) {
+      const clip = timelineData[i];
+      const clipIndex = i + 1;
+
+      await updateQueueProgress(queueId, {
+        currentStep: `Procesando clip ${clipIndex}/${totalClips}...`,
+        progress: 10 + Math.round((i / totalClips) * 40), // 10-50%
+        processedClips: i
+      });
+
+      try {
+        // Determinar qué URL usar para el video
+        let videoUrl: string | undefined = clip.videoUrl || clip.generatedVideo || undefined;
+
+        // Si es PERFORMANCE y no tiene video, necesita lipsync
+        if (!videoUrl && clip.imageUrl && clip.shotCategory === 'PERFORMANCE') {
+          // 🎤 PERFORMANCE: Usar audioSegmentUrl del clip (ya cortado y subido a Firebase)
+          // Si ya tiene lipsyncVideoUrl, usarlo directamente
+          if (clip.lipsyncVideoUrl) {
+            videoUrl = clip.lipsyncVideoUrl;
+            logger.log(`✅ [PIPELINE] Clip ${clipIndex} ya tiene lipsync: ${videoUrl.substring(0, 60)}...`);
+          } else if (clip.audioSegmentUrl) {
+            // Generar lipsync con el segmento de audio específico de este clip
+            logger.log(`🎤 [PIPELINE] Clip ${clipIndex} PERFORMANCE - usando audioSegmentUrl`);
+            const lipsyncResult = await generateLipsyncVideo(
+              clip.imageUrl,
+              clip.audioSegmentUrl, // ✅ CORRECTO: usar segmento, no audio completo
+              clip.start_time,
+              clip.duration || CLIP_DURATION
+            );
+            if (lipsyncResult) {
+              videoUrl = lipsyncResult;
+            }
+          } else {
+            logger.warn(`⚠️ [PIPELINE] Clip ${clipIndex} PERFORMANCE sin audioSegmentUrl, saltando lipsync`);
+          }
+        }
+
+        // Si aún no tiene video, usar imagen como video estático
+        if (!videoUrl && clip.imageUrl) {
+          videoUrl = clip.imageUrl; // Shotstack puede usar imágenes directamente
+        }
+
+        if (videoUrl) {
+          processedClips.push({
+            id: clip.id,
+            videoUrl,
+            start: clip.start_time || (i * CLIP_DURATION),
+            duration: clip.duration || CLIP_DURATION
+          });
+        }
+
+      } catch (clipError: any) {
+        logger.error(`❌ [PIPELINE] Error procesando clip ${clipIndex}:`, clipError);
+        // Continuar con los demás clips
+        if (clip.imageUrl) {
+          processedClips.push({
+            id: clip.id,
+            videoUrl: clip.imageUrl,
+            start: clip.start_time || (i * CLIP_DURATION),
+            duration: clip.duration || CLIP_DURATION
+          });
+        }
+      }
+    }
+
+    // 4. Actualizar estado a "rendering"
+    await updateQueueProgress(queueId, {
+      status: 'rendering',
+      currentStep: 'Renderizando video final...',
+      progress: 55,
+      processedClips: totalClips
+    });
+
+    // 5. Preparar clips para Shotstack
+    const shotstackClips = processedClips.map(clip => ({
+      id: clip.id,
+      imageUrl: clip.videoUrl, // Shotstack acepta tanto videos como imágenes
+      videoUrl: clip.videoUrl.includes('.mp4') ? clip.videoUrl : undefined,
+      start: clip.start,
+      duration: clip.duration,
+      transition: 'fade' as const
+    }));
+
+    // 6. Iniciar renderizado con Shotstack
+    const renderResult = await startVideoRender({
+      clips: shotstackClips,
+      audioUrl: queueItem.audioUrl || undefined,
+      audioDuration: queueItem.audioDuration ? parseFloat(queueItem.audioDuration) : undefined,
+      resolution: '1080p',
+      fps: 30,
+      quality: 'high',
+      aspectRatio: (queueItem.aspectRatio || '16:9') as any
+    });
+
+    if (!renderResult.success || !renderResult.renderId) {
+      throw new Error(renderResult.error || 'Failed to start Shotstack render');
+    }
+
+    logger.log(`📹 [PIPELINE] Renderizado iniciado: ${renderResult.renderId}`);
+
+    // Guardar el render ID
+    await db.update(renderQueue)
+      .set({
+        shotstackRenderId: renderResult.renderId,
+        updatedAt: new Date()
+      })
+      .where(eq(renderQueue.id, queueId));
+
+    // 7. Esperar a que el renderizado termine
+    await updateQueueProgress(queueId, {
+      currentStep: 'Esperando renderizado...',
+      progress: 70
+    });
+
+    const finalVideoUrl = await waitForRender(renderResult.renderId, queueId);
+
+    if (!finalVideoUrl) {
+      throw new Error('Render failed or timed out');
+    }
+
+    // 8. Subir a Firebase
+    await updateQueueProgress(queueId, {
+      status: 'uploading',
+      currentStep: 'Subiendo video a la nube...',
+      progress: 90
+    });
+
+    const firebaseResult = await uploadVideoToFirebaseStorage(
+      finalVideoUrl,
+      queueItem.userEmail,
+      String(queueItem.projectId)
+    );
+
+    if (!firebaseResult.success || !firebaseResult.firebaseUrl) {
+      logger.warn(`⚠️ [PIPELINE] Error subiendo a Firebase, usando URL de Shotstack`);
+    }
+
+    const firebaseUrl = firebaseResult.firebaseUrl || finalVideoUrl;
+
+    // 9. Marcar como completado
+    await markAsCompleted(queueId, finalVideoUrl, firebaseUrl);
+
+    logger.log(`✅ [PIPELINE] Video completado: ${firebaseUrl}`);
+
+    return {
+      success: true,
+      videoUrl: finalVideoUrl,
+      firebaseUrl
+    };
+
+  } catch (error: any) {
+    logger.error(`❌ [PIPELINE] Error en pipeline:`, error);
+    
+    await markAsFailed(queueId, error.message, 'pipeline');
+    
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Generar video con lipsync usando PixVerse
+ * FLUJO: Imagen → Video (Kling) → Lipsync (PixVerse)
+ * 
+ * PixVerse requiere VIDEO (MP4/MOV), no imagen
+ */
+async function generateLipsyncVideo(
+  imageUrl: string,
+  audioUrl: string,
+  startTime: number,
+  duration: number
+): Promise<string | null> {
+  const FAL_API_KEY = process.env.FAL_API_KEY;
+  
+  if (!FAL_API_KEY) {
+    logger.error(`❌ [LIPSYNC] FAL_API_KEY no configurada`);
+    return null;
+  }
+
+  try {
+    // ====== PASO 1: Convertir imagen a video con Kling v2.5 Turbo Pro ======
+    logger.log(`🎬 [LIPSYNC] Paso 1: Convirtiendo imagen a video con Kling v2.5 Turbo Pro...`);
+    logger.log(`🖼️ [LIPSYNC] Imagen: ${imageUrl.substring(0, 60)}...`);
+    logger.log(`🎧 [LIPSYNC] Audio segmento: ${audioUrl.substring(0, 60)}...`);
+    
+    const klingResponse = await fetch('https://queue.fal.run/fal-ai/kling-video/v2.5-turbo/pro/image-to-video', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Key ${FAL_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        image_url: imageUrl,
+        prompt: "Person singing with natural mouth movement, subtle head motion, professional music video style",
+        duration: Math.min(duration, 5), // Kling max 5 segundos
+        aspect_ratio: "16:9"
+      })
+    });
+
+    if (!klingResponse.ok) {
+      const errorData = await klingResponse.json().catch(() => ({}));
+      logger.error(`❌ [LIPSYNC] Kling error:`, errorData);
+      return null;
+    }
+
+    const klingData = await klingResponse.json();
+    const klingRequestId = klingData.request_id;
+    logger.log(`⏳ [LIPSYNC] Kling request enviado: ${klingRequestId}`);
+
+    // Esperar a que Kling termine (polling)
+    let videoUrl: string | null = null;
+    const maxAttempts = 60; // 5 minutos máximo
+    
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(r => setTimeout(r, 5000)); // 5 segundos entre checks
+      
+      const statusResponse = await fetch(
+        `https://queue.fal.run/fal-ai/kling-video/requests/${klingRequestId}/status`,
+        { headers: { 'Authorization': `Key ${FAL_API_KEY}` } }
+      );
+      
+      const statusData = await statusResponse.json();
+      
+      if (statusData.status === 'COMPLETED') {
+        // Obtener resultado
+        const resultResponse = await fetch(
+          `https://queue.fal.run/fal-ai/kling-video/requests/${klingRequestId}`,
+          { headers: { 'Authorization': `Key ${FAL_API_KEY}` } }
+        );
+        const resultData = await resultResponse.json();
+        videoUrl = resultData.video?.url || resultData.video_url;
+        logger.log(`✅ [LIPSYNC] Video de Kling listo: ${videoUrl?.substring(0, 60)}...`);
+        break;
+      } else if (statusData.status === 'FAILED') {
+        logger.error(`❌ [LIPSYNC] Kling falló:`, statusData);
+        return null;
+      }
+      
+      logger.log(`⏳ [LIPSYNC] Kling procesando... (${i + 1}/${maxAttempts})`);
+    }
+
+    if (!videoUrl) {
+      logger.error(`❌ [LIPSYNC] Timeout esperando Kling`);
+      return null;
+    }
+
+    // ====== PASO 2: Aplicar lipsync con PixVerse ======
+    logger.log(`🎤 [LIPSYNC] Paso 2: Aplicando lipsync con PixVerse...`);
+    
+    const pixverseResponse = await fetch('https://queue.fal.run/fal-ai/pixverse/lipsync', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Key ${FAL_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        video_url: videoUrl,
+        audio_url: audioUrl
+        // No usamos voice_id ni text porque queremos el audio real
+      })
+    });
+
+    if (!pixverseResponse.ok) {
+      const errorData = await pixverseResponse.json().catch(() => ({}));
+      logger.error(`❌ [LIPSYNC] PixVerse error:`, errorData);
+      // Si PixVerse falla, retornar el video sin lipsync
+      return videoUrl;
+    }
+
+    const pixverseData = await pixverseResponse.json();
+    const pixverseRequestId = pixverseData.request_id;
+    logger.log(`⏳ [LIPSYNC] PixVerse request enviado: ${pixverseRequestId}`);
+
+    // Esperar a que PixVerse termine
+    for (let i = 0; i < 60; i++) {
+      await new Promise(r => setTimeout(r, 5000));
+      
+      const statusResponse = await fetch(
+        `https://queue.fal.run/fal-ai/pixverse/requests/${pixverseRequestId}/status`,
+        { headers: { 'Authorization': `Key ${FAL_API_KEY}` } }
+      );
+      
+      const statusData = await statusResponse.json();
+      
+      if (statusData.status === 'COMPLETED') {
+        const resultResponse = await fetch(
+          `https://queue.fal.run/fal-ai/pixverse/requests/${pixverseRequestId}`,
+          { headers: { 'Authorization': `Key ${FAL_API_KEY}` } }
+        );
+        const resultData = await resultResponse.json();
+        const lipsyncVideoUrl = resultData.video?.url || resultData.video_url;
+        
+        if (lipsyncVideoUrl) {
+          logger.log(`✅ [LIPSYNC] Video con lipsync listo: ${lipsyncVideoUrl.substring(0, 60)}...`);
+          return lipsyncVideoUrl;
+        }
+      } else if (statusData.status === 'FAILED') {
+        logger.error(`❌ [LIPSYNC] PixVerse falló:`, statusData);
+        // Si falla, retornar el video de Kling sin lipsync
+        return videoUrl;
+      }
+    }
+
+    // Si timeout, retornar video sin lipsync
+    logger.warn(`⚠️ [LIPSYNC] Timeout en PixVerse, usando video sin lipsync`);
+    return videoUrl;
+
+  } catch (error: any) {
+    logger.error(`❌ [LIPSYNC] Error:`, error);
+    return null;
+  }
+}
+
+/**
+ * Esperar a que el renderizado de Shotstack termine
+ */
+async function waitForRender(renderId: string, queueId: number): Promise<string | null> {
+  const startTime = Date.now();
+  let lastProgress = 70;
+
+  while (Date.now() - startTime < MAX_RENDER_WAIT) {
+    try {
+      const status = await checkRenderStatus(renderId);
+
+      if (status.status === 'done' && status.url) {
+        logger.log(`✅ [RENDER] Video listo: ${status.url}`);
+        return status.url;
+      }
+
+      if (status.status === 'failed') {
+        throw new Error(`Shotstack render failed: ${status.error || 'Unknown error'}`);
+      }
+
+      // Actualizar progreso estimado
+      if (status.progress) {
+        const newProgress = 70 + Math.round(status.progress * 0.2); // 70-90%
+        if (newProgress > lastProgress) {
+          lastProgress = newProgress;
+          await updateQueueProgress(queueId, {
+            progress: lastProgress,
+            currentStep: `Renderizando (${status.progress}%)...`
+          });
+        }
+      }
+
+      // Esperar antes del siguiente check
+      await new Promise(resolve => setTimeout(resolve, RENDER_POLL_INTERVAL));
+
+    } catch (error: any) {
+      logger.error(`❌ [RENDER] Error checking status:`, error);
+      throw error;
+    }
+  }
+
+  throw new Error('Render timed out after 10 minutes');
+}
+
+/**
+ * Iniciar el procesador de cola (background worker)
+ */
+let isProcessing = false;
+let processingInterval: NodeJS.Timeout | null = null;
+
+export function startQueueProcessor(): void {
+  if (processingInterval) {
+    logger.warn(`⚠️ [PROCESSOR] Queue processor already running`);
+    return;
+  }
+
+  logger.log(`🚀 [PROCESSOR] Starting queue processor...`);
+
+  processingInterval = setInterval(async () => {
+    if (isProcessing) return;
+
+    try {
+      const nextItem = await getNextPendingItem();
+      
+      if (nextItem) {
+        isProcessing = true;
+        logger.log(`📦 [PROCESSOR] Processing queue item ${nextItem.id}...`);
+        
+        await processQueueItem(nextItem.id);
+        
+        isProcessing = false;
+      }
+
+    } catch (error: any) {
+      logger.error(`❌ [PROCESSOR] Error:`, error);
+      isProcessing = false;
+    }
+  }, 10000); // Check every 10 seconds
+}
+
+export function stopQueueProcessor(): void {
+  if (processingInterval) {
+    clearInterval(processingInterval);
+    processingInterval = null;
+    logger.log(`⏹️ [PROCESSOR] Queue processor stopped`);
+  }
+}
+
+export default {
+  processQueueItem,
+  startQueueProcessor,
+  stopQueueProcessor
+};

@@ -258,6 +258,273 @@ router.post('/musetalk', async (req: Request, res: Response) => {
   }
 });
 
+// ============================================================================
+// 🎤 PIXVERSE LIPSYNC - Video-to-Video Lip Synchronization
+// ============================================================================
+// Modelo: fal-ai/pixverse/lipsync
+// Costo: ~$0.04/segundo de video
+// Input: video_url (video con cara) + audio_url (segmento de audio)
+// Output: Video con labios sincronizados al audio
+
+interface PixVerseLipsyncRequest {
+  videoUrl: string;
+  audioUrl: string;
+  clipId?: number;
+  sceneId?: number;
+}
+
+interface PixVerseLipsyncResponse {
+  success: boolean;
+  videoUrl?: string;
+  requestId?: string;
+  processingTime?: number;
+  error?: string;
+}
+
+/**
+ * POST /api/fal/pixverse/lipsync
+ * Aplica lip-sync a un video usando PixVerse
+ * 
+ * WORKFLOW COMPLETO:
+ * 1. Imagen → Video (Kling O1)
+ * 2. Video + Audio → Lipsync Video (PixVerse)
+ */
+router.post('/pixverse/lipsync', async (req: Request, res: Response) => {
+  try {
+    if (!FAL_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: 'FAL_API_KEY not configured on server'
+      });
+    }
+
+    const { videoUrl, audioUrl, clipId, sceneId } = req.body as PixVerseLipsyncRequest;
+
+    if (!videoUrl || !audioUrl) {
+      return res.status(400).json({
+        success: false,
+        error: 'videoUrl and audioUrl are required'
+      });
+    }
+
+    console.log('🎤 [FAL-BACKEND] Starting PixVerse Lipsync...');
+    console.log(`📹 Video: ${videoUrl.substring(0, 80)}...`);
+    console.log(`🎵 Audio: ${audioUrl.substring(0, 80)}...`);
+    if (clipId) console.log(`🎬 Clip ID: ${clipId}`);
+
+    const startTime = Date.now();
+
+    // Submit job a FAL AI PixVerse Lipsync
+    const submitResponse = await fetchWithFailover(
+      'https://queue.fal.run/fal-ai/pixverse/lipsync',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          video_url: videoUrl,
+          audio_url: audioUrl
+          // NO usamos voice_id ni text - queremos audio real, no TTS
+        })
+      },
+      'PixVerse Lipsync'
+    );
+
+    if (!submitResponse.ok) {
+      const errorData = await submitResponse.json().catch(() => ({}));
+      console.error('❌ [FAL-BACKEND] Error submitting PixVerse job:', errorData);
+      await logFalUsage('pixverse-lipsync', 0, JSON.stringify(errorData));
+      return res.status(500).json({
+        success: false,
+        error: `Error submitting lipsync job: ${submitResponse.statusText}`,
+        details: errorData
+      });
+    }
+
+    const submitData = await submitResponse.json();
+    const requestId = submitData.request_id;
+
+    console.log(`⏳ [FAL-BACKEND] PixVerse job submitted: ${requestId}`);
+
+    // Poll para obtener el resultado (lipsync puede tardar 2-5 minutos)
+    let attempts = 0;
+    const maxAttempts = 120; // 10 minutos máximo
+    const pollInterval = 5000; // 5 segundos
+
+    while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+      const statusResponse = await fetch(
+        `https://queue.fal.run/fal-ai/pixverse/lipsync/requests/${requestId}/status`,
+        {
+          headers: {
+            'Authorization': `Key ${FAL_API_KEY}`
+          }
+        }
+      );
+
+      if (!statusResponse.ok) {
+        console.warn(`⚠️ [FAL-BACKEND] Error checking PixVerse status (attempt ${attempts + 1})`);
+        attempts++;
+        continue;
+      }
+
+      const statusData = await statusResponse.json();
+
+      // === COMPLETED ===
+      if (statusData.status === 'COMPLETED') {
+        const resultResponse = await fetch(
+          `https://queue.fal.run/fal-ai/pixverse/lipsync/requests/${requestId}`,
+          {
+            headers: {
+              'Authorization': `Key ${FAL_API_KEY}`
+            }
+          }
+        );
+
+        if (!resultResponse.ok) {
+          return res.status(500).json({
+            success: false,
+            error: 'Error retrieving lipsync result',
+            requestId
+          });
+        }
+
+        const resultData = await resultResponse.json();
+        const processingTime = (Date.now() - startTime) / 1000;
+        const lipsyncVideoUrl = resultData.video?.url;
+
+        if (!lipsyncVideoUrl) {
+          console.error('❌ [FAL-BACKEND] No video URL in PixVerse response:', resultData);
+          return res.status(500).json({
+            success: false,
+            error: 'No video URL in lipsync response',
+            requestId
+          });
+        }
+
+        console.log(`✅ [FAL-BACKEND] PixVerse Lipsync completed in ${processingTime.toFixed(1)}s!`);
+        console.log(`🎬 Lipsync video: ${lipsyncVideoUrl.substring(0, 80)}...`);
+        
+        await logFalUsage('pixverse-lipsync', 1);
+
+        return res.json({
+          success: true,
+          videoUrl: lipsyncVideoUrl,
+          requestId,
+          processingTime,
+          clipId,
+          sceneId
+        } as PixVerseLipsyncResponse);
+      }
+
+      // === FAILED ===
+      if (statusData.status === 'FAILED') {
+        console.error('❌ [FAL-BACKEND] PixVerse job failed:', statusData.error);
+        await logFalUsage('pixverse-lipsync', 0, statusData.error);
+        return res.status(500).json({
+          success: false,
+          error: statusData.error || 'Lipsync processing failed',
+          requestId
+        });
+      }
+
+      // IN_QUEUE o IN_PROGRESS
+      if (attempts % 6 === 0) { // Log cada 30 segundos
+        console.log(`⏳ [FAL-BACKEND] PixVerse status: ${statusData.status} (${Math.round(attempts * pollInterval / 1000)}s elapsed)`);
+      }
+      attempts++;
+    }
+
+    // Timeout
+    console.error('❌ [FAL-BACKEND] PixVerse lipsync timeout');
+    return res.status(408).json({
+      success: false,
+      error: 'Lipsync processing timeout - took too long',
+      requestId
+    });
+
+  } catch (error) {
+    console.error('❌ [FAL-BACKEND] PixVerse Lipsync error:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * GET /api/fal/pixverse/lipsync/:requestId
+ * Verifica el estado de un job de PixVerse lipsync (para polling manual)
+ */
+router.get('/pixverse/lipsync/:requestId', async (req: Request, res: Response) => {
+  try {
+    if (!FAL_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: 'FAL_API_KEY not configured'
+      });
+    }
+
+    const { requestId } = req.params;
+
+    const statusResponse = await fetch(
+      `https://queue.fal.run/fal-ai/pixverse/lipsync/requests/${requestId}/status`,
+      {
+        headers: {
+          'Authorization': `Key ${FAL_API_KEY}`
+        }
+      }
+    );
+
+    if (!statusResponse.ok) {
+      return res.status(500).json({
+        success: false,
+        error: 'Error checking lipsync status'
+      });
+    }
+
+    const statusData = await statusResponse.json();
+
+    // Si está completo, obtener el resultado
+    if (statusData.status === 'COMPLETED') {
+      const resultResponse = await fetch(
+        `https://queue.fal.run/fal-ai/pixverse/lipsync/requests/${requestId}`,
+        {
+          headers: {
+            'Authorization': `Key ${FAL_API_KEY}`
+          }
+        }
+      );
+
+      if (resultResponse.ok) {
+        const resultData = await resultResponse.json();
+        return res.json({
+          success: true,
+          status: 'COMPLETED',
+          videoUrl: resultData.video?.url,
+          requestId
+        });
+      }
+    }
+
+    return res.json({
+      success: true,
+      status: statusData.status,
+      requestId,
+      logs: statusData.logs
+    });
+
+  } catch (error) {
+    console.error('❌ [FAL-BACKEND] Error checking PixVerse status:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 /**
  * GET /api/fal/status/:requestId
  * Verifica el estado de un job de FAL AI
@@ -788,13 +1055,127 @@ interface KlingVideoRequest {
   referenceImages?: string[];
   duration?: '5' | '10';
   aspectRatio?: '16:9' | '9:16' | '1:1';
-  model?: 'o1-standard-i2v' | 'o1-standard-ref2v' | 'v2.1-pro-i2v' | 'v2.1-standard-i2v';
+  model?: 'o1-pro-i2v' | 'o1-standard-i2v' | 'o1-standard-ref2v' | 'v2.1-pro-i2v' | 'v2.1-standard-i2v';
+  // 🎬 NUEVOS CAMPOS para instrucciones de movimiento
+  motionInstructions?: {
+    cameraMovement?: string;       // 'pan', 'dolly', 'tracking', 'crane', 'static', 'handheld'
+    movementDirection?: string;    // 'left-to-right', 'right-to-left', 'push-in', 'pull-out', 'up', 'down'
+    movementSpeed?: 'slow' | 'medium' | 'fast' | 'dynamic';
+    isKeyMoment?: boolean;         // Si es un momento clave de la canción
+    keyMomentType?: string;        // 'drop', 'crescendo', 'breakdown', 'climax', 'hook'
+    keyMomentEffect?: string;      // 'zoom_in', 'flash', 'slow_motion', 'fast_cuts', 'shake'
+    audioEnergy?: 'low' | 'medium' | 'high';
+    audioSection?: string;         // 'intro', 'verse', 'chorus', 'bridge', 'outro'
+    emotion?: string;              // 'melancholic', 'energetic', 'euphoric', etc.
+  };
+  // 🎵 Configuración avanzada del modelo
+  cfgScale?: number;              // 0.0-1.0, adherencia al prompt
+  negativePrompt?: string;        // Qué evitar en el video
 }
 
 /**
  * POST /api/fal/kling-video/generate
  * Genera video desde imagen usando FAL Kling (reemplaza PiAPI)
  */
+
+/**
+ * 🎬 Construye un prompt de movimiento cinematográfico basado en metadata de la escena
+ */
+function buildVideoMotionPrompt(
+  basePrompt: string,
+  instructions?: KlingVideoRequest['motionInstructions']
+): string {
+  if (!instructions) {
+    return `${basePrompt}, smooth cinematic motion, professional music video quality`;
+  }
+
+  const parts: string[] = [basePrompt];
+
+  // 1. Movimiento de cámara
+  const cameraMotions: Record<string, string> = {
+    'pan': 'smooth horizontal pan',
+    'dolly': 'dolly movement with depth',
+    'tracking': 'tracking shot following the subject',
+    'crane': 'vertical crane movement',
+    'static': 'minimal camera movement, stable composition',
+    'handheld': 'subtle handheld movement for authenticity',
+    'drone': 'aerial drone movement',
+    'zoom': 'zoom motion'
+  };
+  
+  if (instructions.cameraMovement && cameraMotions[instructions.cameraMovement]) {
+    parts.push(cameraMotions[instructions.cameraMovement]);
+  }
+
+  // 2. Dirección del movimiento
+  if (instructions.movementDirection) {
+    const directionMap: Record<string, string> = {
+      'left-to-right': 'moving left to right',
+      'right-to-left': 'moving right to left',
+      'push-in': 'pushing in towards subject',
+      'pull-out': 'pulling out revealing scene',
+      'up': 'moving upward',
+      'down': 'moving downward'
+    };
+    if (directionMap[instructions.movementDirection]) {
+      parts.push(directionMap[instructions.movementDirection]);
+    }
+  }
+
+  // 3. Velocidad según energía de la canción
+  const speedMap: Record<string, string> = {
+    'slow': 'slow deliberate motion',
+    'medium': 'smooth steady motion',
+    'fast': 'dynamic fast movement',
+    'dynamic': 'varying speed with rhythm'
+  };
+  const speed = instructions.movementSpeed || 
+    (instructions.audioEnergy === 'high' ? 'fast' : 
+     instructions.audioEnergy === 'low' ? 'slow' : 'medium');
+  parts.push(speedMap[speed] || 'smooth motion');
+
+  // 4. Efectos especiales para KEY MOMENTS
+  if (instructions.isKeyMoment && instructions.keyMomentEffect) {
+    const effectMap: Record<string, string> = {
+      'zoom_in': 'dramatic zoom in effect',
+      'zoom_out': 'reveal zoom out',
+      'flash': 'flash transition effect',
+      'slow_motion': 'slow motion emphasis',
+      'fast_cuts': 'energetic quick movements',
+      'shake': 'camera shake for impact',
+      'glitch': 'digital glitch effect'
+    };
+    if (effectMap[instructions.keyMomentEffect]) {
+      parts.push(effectMap[instructions.keyMomentEffect]);
+    }
+  }
+
+  // 5. Mood/Emoción
+  if (instructions.emotion) {
+    parts.push(`${instructions.emotion} atmosphere`);
+  }
+
+  // 6. Sección de audio para contexto
+  if (instructions.audioSection) {
+    const sectionVibes: Record<string, string> = {
+      'intro': 'building anticipation',
+      'verse': 'storytelling rhythm',
+      'pre-chorus': 'rising energy',
+      'chorus': 'peak emotional intensity',
+      'bridge': 'reflective moment',
+      'breakdown': 'tension and release',
+      'outro': 'gradual resolution'
+    };
+    if (sectionVibes[instructions.audioSection]) {
+      parts.push(sectionVibes[instructions.audioSection]);
+    }
+  }
+
+  parts.push('professional music video quality, cinematic, 24fps film look');
+
+  return parts.join(', ');
+}
+
 router.post('/kling-video/generate', async (req: Request, res: Response) => {
   try {
     if (!FAL_API_KEY) {
@@ -810,7 +1191,10 @@ router.post('/kling-video/generate', async (req: Request, res: Response) => {
       referenceImages,
       duration = '5', 
       aspectRatio = '16:9',
-      model = 'o1-standard-i2v'
+      model = 'o1-pro-i2v',  // 🌟 DEFAULT: O1 Pro para mejor calidad
+      motionInstructions,
+      cfgScale = 0.5,
+      negativePrompt = 'blur, distort, low quality, static, frozen, no motion'
     } = req.body as KlingVideoRequest;
 
     if (!prompt) {
@@ -820,15 +1204,39 @@ router.post('/kling-video/generate', async (req: Request, res: Response) => {
       });
     }
 
+    // 🎬 Construir prompt enriquecido con instrucciones de movimiento
+    const enrichedPrompt = buildVideoMotionPrompt(prompt, motionInstructions);
+    
+    console.log(`🎬 [FAL-BACKEND] Motion Instructions:`, JSON.stringify(motionInstructions || 'none'));
+    console.log(`📝 [FAL-BACKEND] Enriched Prompt: ${enrichedPrompt.substring(0, 120)}...`);
+
     // Determinar el endpoint FAL según el modelo
     let falEndpoint: string;
     let requestBody: any = {
-      prompt,
+      prompt: enrichedPrompt,  // 🎬 Usar prompt enriquecido
       duration,
-      aspect_ratio: aspectRatio
+      aspect_ratio: aspectRatio,
+      cfg_scale: cfgScale,              // 🎵 Adherencia al prompt
+      negative_prompt: negativePrompt   // 🎵 Evitar problemas comunes
     };
 
     switch (model) {
+      case 'o1-pro-i2v':
+        // 🌟 O1 PRO Image-to-Video - MEJOR MODELO para music videos
+        // Endpoint: fal-ai/kling-video/o1/image-to-video
+        falEndpoint = 'https://queue.fal.run/fal-ai/kling-video/o1/image-to-video';
+        if (!imageUrl) {
+          return res.status(400).json({
+            success: false,
+            error: 'imageUrl is required for o1-pro-i2v model'
+          });
+        }
+        // O1 Pro usa start_image_url en lugar de image_url
+        requestBody.start_image_url = imageUrl;
+        delete requestBody.image_url;
+        console.log(`🌟 [FAL-BACKEND] Using Kling O1 PRO (best quality)`);
+        break;
+        
       case 'o1-standard-ref2v':
         // Reference-to-Video: mantiene identidad de personajes
         falEndpoint = 'https://queue.fal.run/fal-ai/kling-video/o1/standard/reference-to-video';
@@ -971,11 +1379,15 @@ router.get('/kling-video/:requestId', async (req: Request, res: Response) => {
     }
 
     const { requestId } = req.params;
-    const { model = 'o1-standard-i2v' } = req.query;
+    const { model = 'o1-pro-i2v' } = req.query;
 
     // Determinar el endpoint base según el modelo
     let baseEndpoint: string;
     switch (model) {
+      case 'o1-pro-i2v':
+        // 🌟 O1 PRO - Mejor modelo
+        baseEndpoint = 'fal-ai/kling-video/o1/image-to-video';
+        break;
       case 'o1-standard-ref2v':
         baseEndpoint = 'fal-ai/kling-video/o1/standard/reference-to-video';
         break;
@@ -1057,12 +1469,13 @@ router.get('/kling-video/:requestId', async (req: Request, res: Response) => {
 });
 
 // ============================================================================
-// 🎭 IMAGE GENERATION WITH FACE REFERENCE (fal-ai/pulid for face consistency)
+// 🎭 IMAGE GENERATION WITH FACE REFERENCE (nano-banana/edit for consistency)
 // ============================================================================
 
 /**
  * POST /api/fal/nano-banana/generate-with-face
- * Genera imágenes manteniendo consistencia facial usando PuLID
+ * Genera imágenes manteniendo consistencia facial usando nano-banana/edit
+ * Este modelo es más potente que flux-pulid para mantener identidad facial
  */
 router.post('/nano-banana/generate-with-face', async (req: Request, res: Response) => {
   try {
@@ -1088,7 +1501,7 @@ router.post('/nano-banana/generate-with-face', async (req: Request, res: Respons
 
     const startTime = Date.now();
 
-    // Si hay referencias faciales, usar PuLID para mantener consistencia
+    // Determinar endpoint basado en si hay referencias faciales
     let endpoint = 'https://fal.run/fal-ai/nano-banana';
     let requestBody: any = {
       prompt,
@@ -1099,28 +1512,29 @@ router.post('/nano-banana/generate-with-face', async (req: Request, res: Respons
       enable_safety_checker: true
     };
 
-    // Si hay referencias, usar flux-pulid para consistencia facial
+    // Si hay referencias, usar nano-banana/edit para consistencia facial
+    // nano-banana/edit es MEJOR que flux-pulid para mantener identidad
     if (referenceImages && referenceImages.length > 0) {
-      endpoint = 'https://fal.run/fal-ai/flux-pulid';
-      const firstReference = referenceImages[0];
+      endpoint = 'https://fal.run/fal-ai/nano-banana/edit';
       
-      // La referencia puede ser URL o base64
-      const referenceUrl = firstReference.startsWith('data:') 
-        ? firstReference  // Ya es base64
-        : firstReference; // Es URL
+      // nano-banana/edit acepta múltiples imágenes de referencia como array
+      const imageUrls = referenceImages.map((ref: string) => 
+        ref.startsWith('data:') ? ref : ref
+      );
+      
+      // Prompt mejorado para mantener identidad exacta
+      const enhancedPrompt = `${prompt}. IMPORTANT: Keep the EXACT same face, identity, and features from the reference image. Same person, same skin tone, same facial structure.`;
       
       requestBody = {
-        prompt: `${prompt}, same person as in reference image, consistent facial features, same identity`,
-        reference_image_url: referenceUrl,
+        prompt: enhancedPrompt,
+        image_urls: imageUrls, // ARRAY de URLs - nano-banana/edit acepta múltiples
         num_images: 1,
-        guidance_scale: 4,
-        true_cfg: 1,
-        id_weight: 1,
-        max_sequence_length: 128,
-        enable_safety_checker: true
+        aspect_ratio: aspectRatio === '16:9' ? '16:9' : 
+                      aspectRatio === '9:16' ? '9:16' : '1:1',
+        output_format: 'png'
       };
       
-      console.log(`🎭 [FAL-BACKEND] Using PuLID for face consistency`);
+      console.log(`🎭 [FAL-BACKEND] Using nano-banana/edit for face consistency with ${imageUrls.length} reference(s)`);
     }
 
     const response = await fetchWithFailover(
@@ -1216,14 +1630,17 @@ router.post('/nano-banana/generate-batch', async (req: Request, res: Response) =
         };
 
         if (useFaceRef) {
-          endpoint = 'https://fal.run/fal-ai/flux-pulid';
+          // Usar nano-banana/edit en lugar de flux-pulid para mejor consistencia
+          endpoint = 'https://fal.run/fal-ai/nano-banana/edit';
+          
+          const enhancedPrompt = `${prompt}. Keep EXACT same face and identity from reference.`;
+          
           requestBody = {
-            prompt: `${prompt}, same person as in reference, consistent identity`,
-            reference_image_url: referenceImages[0],
+            prompt: enhancedPrompt,
+            image_urls: referenceImages, // Array de referencias
             num_images: 1,
-            guidance_scale: 4,
-            id_weight: 1,
-            enable_safety_checker: true
+            aspect_ratio: aspectRatio === '16:9' ? '16:9' : '1:1',
+            output_format: 'png'
           };
         }
 

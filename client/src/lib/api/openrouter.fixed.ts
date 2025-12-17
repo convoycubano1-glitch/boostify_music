@@ -813,10 +813,12 @@ export async function generateThreeConceptProposals(
   artistReferences?: string[],
   audioDuration?: number,
   artistName?: string,
-  songTitle?: string
+  songTitle?: string,
+  artistGender?: string // 🎭 NUEVO: Género del artista para consistencia visual
 ): Promise<MusicVideoConcept[]> {
   try {
     logger.info("🎨 Generando 3 propuestas de concepto visual con Gemini...");
+    logger.info(`🎭 Género del artista: ${artistGender || 'no especificado'}`);
     
     // Llamar al endpoint del backend que usa Gemini
     const response = await fetch("/api/music-video/generate-concepts", {
@@ -830,7 +832,8 @@ export async function generateThreeConceptProposals(
         characterReference: artistReferences,
         audioDuration,
         artistName,
-        songTitle
+        songTitle,
+        artistGender // 🎭 Pasar género al backend
       })
     });
     

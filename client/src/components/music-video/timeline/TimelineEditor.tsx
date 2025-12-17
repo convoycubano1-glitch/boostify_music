@@ -1408,16 +1408,39 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
     try {
       const prompt = clip.metadata?.imagePrompt || clip.title || 'cinematic motion, smooth camera movement';
       
-      // Usar FAL Kling para image-to-video (O1 Standard)
+      // 🎬 Extraer metadata de la escena para instrucciones de movimiento
+      const sceneMetadata = clip.metadata || {};
+      const motionInstructions = {
+        cameraMovement: sceneMetadata.camera_movement || sceneMetadata.cameraMovement || 'smooth',
+        movementDirection: sceneMetadata.movement_direction,
+        movementSpeed: sceneMetadata.audio_energy === 'high' ? 'fast' as const : 
+                       sceneMetadata.audio_energy === 'low' ? 'slow' as const : 'medium' as const,
+        isKeyMoment: sceneMetadata.is_key_moment || sceneMetadata.isKeyMoment || false,
+        keyMomentType: sceneMetadata.key_moment_type || sceneMetadata.keyMomentType,
+        keyMomentEffect: sceneMetadata.key_moment_effect || sceneMetadata.suggestedEffect,
+        audioEnergy: (sceneMetadata.audio_energy || 'medium') as 'low' | 'medium' | 'high',
+        audioSection: sceneMetadata.audio_section || sceneMetadata.music_section,
+        emotion: sceneMetadata.emotion || sceneMetadata.mood,
+      };
+      
+      // ⏱️ Duración máxima 5 segundos para mejor calidad
+      const videoDuration = Math.min(clip.duration, 5) <= 5 ? '5' as const : '10' as const;
+      
+      logger.info(`🎬 [Timeline] Motion instructions:`, motionInstructions);
+      
+      // Usar FAL Kling O1 PRO para image-to-video (mejor calidad)
       const response = await fetch('/api/fal/kling-video/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: `${prompt}, smooth cinematic motion, professional music video`,
+          prompt: prompt,
           imageUrl: imageUrl,
-          model: 'o1-standard-i2v', // KLING O1 Image-to-Video
-          duration: clip.duration <= 5 ? '5' : '10',
+          model: 'o1-pro-i2v', // 🌟 KLING O1 PRO - Mejor modelo para music videos
+          duration: videoDuration,
           aspectRatio: '16:9',
+          motionInstructions, // 🎬 Pasar instrucciones de movimiento
+          cfgScale: 0.5,      // Balance entre prompt y creatividad
+          negativePrompt: 'blur, distort, low quality, static, frozen, no motion, jittery',
         }),
       });
 
@@ -1537,6 +1560,157 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
     // Iniciar después de 10 segundos
     setTimeout(checkStatus, 10000);
   }, [updateClip, toast]);
+
+  // ============================================================================
+  // 🎤 LIPSYNC - Aplicar sincronización de labios a clips PERFORMANCE
+  // ============================================================================
+  // WORKFLOW: Video (ya generado) + Audio Segment → Video con Lipsync
+  const [isApplyingLipsync, setIsApplyingLipsync] = useState<number | null>(null);
+
+  const handleApplyLipsync = useCallback(async (clip: TimelineClip) => {
+    logger.info(`🎤 [Timeline] Aplicando lipsync a clip ${clip.id}`);
+    
+    // 1️⃣ Verificar que el clip tiene video
+    const videoUrl = clip.metadata?.videoUrl;
+    if (!videoUrl) {
+      toast({
+        title: "Sin video",
+        description: "Primero genera el video del clip antes de aplicar lipsync",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // 2️⃣ Verificar que tenemos audioBuffer disponible
+    if (!audioBuffer) {
+      toast({
+        title: "Sin audio",
+        description: "No hay audio disponible para sincronizar",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // 3️⃣ Verificar que el clip tiene timestamps válidos
+    // NOTA: TimelineClip usa 'start' no 'startTime'
+    const startTime = clip.start;
+    const endTime = clip.start + clip.duration;
+    
+    if (startTime === undefined || endTime === undefined || endTime <= startTime) {
+      toast({
+        title: "Timestamps inválidos",
+        description: "El clip no tiene tiempos válidos para cortar audio",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsApplyingLipsync(clip.id);
+
+    toast({
+      title: "🎤 Aplicando lipsync...",
+      description: `Sincronizando labios con audio (${startTime.toFixed(1)}s - ${endTime.toFixed(1)}s)`,
+    });
+
+    try {
+      // 4️⃣ Cortar el segmento de audio correspondiente al clip
+      logger.info(`✂️ [Timeline] Cortando audio: ${startTime}s - ${endTime}s`);
+      
+      // Importar la función de corte de audio
+      const { cutAudioSegment } = await import('@/lib/services/audio-segmentation');
+      const audioSegment = await cutAudioSegment(audioBuffer, startTime, endTime);
+      
+      logger.info(`✅ [Timeline] Audio cortado: ${(audioSegment.blob.size / 1024).toFixed(2)}KB`);
+
+      // 5️⃣ Subir el audio a un servidor temporal para obtener URL
+      // Usamos FormData para subir el audio como archivo
+      const audioFormData = new FormData();
+      audioFormData.append('file', audioSegment.blob, `clip_${clip.id}_audio.wav`);
+      
+      const uploadResponse = await fetch('/api/upload/temp-audio', {
+        method: 'POST',
+        body: audioFormData,
+      });
+
+      if (!uploadResponse.ok) {
+        // Si no hay endpoint de upload, usamos la URL local directamente
+        // PixVerse debería poder aceptar data URLs o necesitamos un workaround
+        logger.warn('⚠️ No hay endpoint de upload, intentando con data URL');
+        
+        // Convertir blob a base64 data URL
+        const reader = new FileReader();
+        const audioDataUrl = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(audioSegment.blob);
+        });
+        
+        // Por ahora, loggeamos que necesitamos un endpoint de upload
+        toast({
+          title: "⚠️ Pendiente",
+          description: "Se requiere implementar endpoint de upload de audio temporal",
+          variant: "destructive",
+        });
+        setIsApplyingLipsync(null);
+        return;
+      }
+
+      const uploadData = await uploadResponse.json();
+      const audioUrl = uploadData.url;
+      
+      logger.info(`📤 [Timeline] Audio subido: ${audioUrl}`);
+
+      // 6️⃣ Llamar al endpoint de lipsync con video + audio
+      const lipsyncResponse = await fetch('/api/fal/pixverse/lipsync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          videoUrl: videoUrl,
+          audioUrl: audioUrl,
+          clipId: clip.id,
+        }),
+      });
+
+      if (!lipsyncResponse.ok) {
+        const errorData = await lipsyncResponse.json();
+        throw new Error(errorData.error || 'Error aplicando lipsync');
+      }
+
+      const lipsyncData = await lipsyncResponse.json();
+
+      if (lipsyncData.success && lipsyncData.videoUrl) {
+        // 7️⃣ Actualizar el clip con el video sincronizado
+        updateClip(clip.id, {
+          metadata: {
+            ...clip.metadata,
+            lipsyncVideoUrl: lipsyncData.videoUrl,
+            lipsyncApplied: true,
+            lipsyncAppliedAt: new Date().toISOString(),
+            lipsyncProcessingTime: lipsyncData.processingTime,
+          },
+        });
+
+        toast({
+          title: "✅ Lipsync aplicado",
+          description: `Labios sincronizados en ${lipsyncData.processingTime?.toFixed(1) || '?'}s`,
+        });
+        
+        logger.info(`✅ [Timeline] Lipsync aplicado a clip ${clip.id}: ${lipsyncData.videoUrl}`);
+      } else {
+        throw new Error('No se recibió URL del video con lipsync');
+      }
+
+    } catch (error) {
+      logger.error(`❌ [Timeline] Error aplicando lipsync:`, error);
+      toast({
+        title: "Error en lipsync",
+        description: error instanceof Error ? error.message : 'Error desconocido',
+        variant: "destructive",
+      });
+    } finally {
+      setIsApplyingLipsync(null);
+    }
+  }, [audioBuffer, toast, updateClip]);
 
   return (
     <>
@@ -2371,6 +2545,69 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                 <span>Dividir en playhead</span>
                 <span className="ml-auto text-[10px] text-white/40">C</span>
               </button>
+
+              <div className="my-1 border-t border-white/10" />
+
+              {/* 🎬 Generar Video */}
+              {(() => {
+                const clip = clips.find(c => c.id === contextMenu.clipId);
+                const hasImage = clip?.imageUrl || clip?.url || clip?.thumbnailUrl;
+                const hasVideo = clip?.metadata?.videoUrl || clip?.metadata?.hasVideo;
+                return hasImage && !hasVideo && (
+                  <button
+                    onClick={() => {
+                      if (clip) handleGenerateVideo(clip);
+                      closeContextMenu();
+                    }}
+                    disabled={isGeneratingVideo === clip?.id}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white/90 hover:bg-blue-500/20 hover:text-blue-400 transition-colors disabled:opacity-50"
+                  >
+                    {isGeneratingVideo === clip?.id ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Film size={14} />
+                    )}
+                    <span>Generar Video</span>
+                  </button>
+                );
+              })()}
+
+              {/* 🎤 Aplicar Lipsync - Solo para clips PERFORMANCE con video */}
+              {(() => {
+                const clip = clips.find(c => c.id === contextMenu.clipId);
+                const hasVideo = clip?.metadata?.videoUrl;
+                const isPerformance = clip?.metadata?.shotCategory === 'PERFORMANCE';
+                const hasLipsync = clip?.metadata?.lipsyncApplied;
+                return hasVideo && isPerformance && !hasLipsync && (
+                  <button
+                    onClick={() => {
+                      if (clip) handleApplyLipsync(clip);
+                      closeContextMenu();
+                    }}
+                    disabled={isApplyingLipsync === clip?.id}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white/90 hover:bg-pink-500/20 hover:text-pink-400 transition-colors disabled:opacity-50"
+                  >
+                    {isApplyingLipsync === clip?.id ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Music size={14} />
+                    )}
+                    <span>🎤 Aplicar Lipsync</span>
+                  </button>
+                );
+              })()}
+
+              {/* 🎤 Mostrar si ya tiene lipsync aplicado */}
+              {(() => {
+                const clip = clips.find(c => c.id === contextMenu.clipId);
+                const hasLipsync = clip?.metadata?.lipsyncApplied;
+                return hasLipsync && (
+                  <div className="w-full flex items-center gap-2 px-3 py-2 text-sm text-green-400">
+                    <Music size={14} />
+                    <span>✓ Lipsync aplicado</span>
+                  </div>
+                );
+              })()}
 
               <div className="my-1 border-t border-white/10" />
 
