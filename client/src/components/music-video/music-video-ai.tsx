@@ -5343,24 +5343,29 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
   // Mapa de clips organizados por capas para el editor profesional multicanal
   const clips: TimelineClip[] = useMemo(() => {
     logger.info("🎬 Generando clips para timeline editor, items:", timelineItems.length);
+    logger.info("🔊 audioUrl:", audioUrl ? audioUrl.substring(0, 50) + '...' : 'NULL');
+    logger.info("⏱️ estimatedDuration:", estimatedDuration);
     
-    // Asegurar que siempre hay un clip de audio en la capa 0 si existe audioUrl
+    // Asegurar que siempre hay un clip de audio en la capa 2 si existe audioUrl
+    // NOTA: Capa 2 = Audio Track en TimelineEditor/TimelineLayers
     const audioClips = audioUrl ? [
       ensureCompatibleClip({
         id: 9999, // ID especial para audio principal
         start: 0,
         duration: estimatedDuration, // Usamos la duración estimada
         type: 'audio' as const,
-        layer: 0, // Capa de audio (0)
+        layer: 2, // Capa de audio (2) - coincide con TimelineLayers
+        layerId: 2, // También incluir layerId para compatibilidad
         title: 'Audio Principal',
         description: 'Pista de audio importada',
         audioUrl: audioUrl,
+        url: audioUrl, // También incluir url para compatibilidad
         visible: true,
         locked: false
       })
     ] : [];
     
-    logger.info("🔊 Audio importado:", audioUrl ? "SI" : "NO");
+    logger.info("🔊 Audio clips creados:", audioClips.length);
     
     // Mapear los items de timeline a clips visuales
     const visualClips = timelineItems.map(item => {
@@ -5371,12 +5376,12 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       // Si tiene audioUrl, es un clip de audio adicional
       if (item.audioUrl) {
         clipType = 'audio';
-        clipLayer = 0; // Capa de audio (0)
+        clipLayer = 2; // Capa de audio (2) - coincide con TimelineLayers
       } 
       // Si tiene textContent, es un clip de texto
       else if (item.metadata?.textContent) {
         clipType = 'text';
-        clipLayer = 2; // Capa de texto (2)
+        clipLayer = 3; // Capa de texto (3)
       }
       // Si tiene movementApplied, es un clip con efecto
       else if (item.metadata?.movementApplied) {

@@ -131,6 +131,12 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   onAddImageToTimeline,
   projectContext,
 }) => {
+  // 🔊 DEBUG: Log audioPreviewUrl on mount and changes
+  useEffect(() => {
+    console.log('🎵 [TIMELINE] audioPreviewUrl received:', audioPreviewUrl ? audioPreviewUrl.substring(0, 80) + '...' : 'NULL/UNDEFINED');
+    console.log('🎵 [TIMELINE] duration:', duration);
+  }, [audioPreviewUrl, duration]);
+  
   const [clips, setClips] = useState<TimelineClip[]>(() => normalizeClips(initialClips));
   const [zoom, setZoom] = useState(initialZoom);
   const [currentTime, setCurrentTime] = useState(0);
@@ -2706,12 +2712,15 @@ function normalizeClips(clips: any[]): TimelineClip[] {
     
     // CRITICAL: Asignar layerId por defecto basado en el tipo de clip
     // Capa 1 = Imágenes Generadas, Capa 2 = Audio
+    // NOTA: Aceptar tanto 'layerId' como 'layer' para compatibilidad con TimelineClipUnified
     const typeStr = typeof c.type === 'string' ? c.type.toUpperCase() : 'IMAGE';
     const normalizedType = (typeStr === 'AUDIO' ? ClipType.AUDIO : 
                             typeStr === 'VIDEO' ? ClipType.VIDEO :
                             typeStr === 'GENERATED_IMAGE' ? ClipType.GENERATED_IMAGE :
                             ClipType.IMAGE) as ClipType;
-    const layerId = c.layerId || (normalizedType === ClipType.AUDIO ? 2 : 1);
+    const layerId = c.layerId || c.layer || (normalizedType === ClipType.AUDIO ? 2 : 1);
+    
+    console.log(`📍 [normalizeClips] Clip ${index}: type='${typeStr}', layer=${c.layer}, layerId=${c.layerId} -> finalLayerId=${layerId}`);
     
     // CRITICAL: Convertir start_time/end_time (ms) a start/duration (segundos)
     // TimelineItem usa start_time en ms, TimelineClip usa start en segundos
