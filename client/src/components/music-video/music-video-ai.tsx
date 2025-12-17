@@ -1518,11 +1518,15 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       // 🎬 AUTO-OPEN VIDEO PROCESSING MODAL
       // Después de generar todas las imágenes, abrir automáticamente el modal
       // para que el usuario confirme y empiece la generación de video
-      const finalGeneratedCount = timelineItems.filter(item => 
-        item.generatedImage || item.firebaseUrl
-      ).length;
+      // Usamos generatedCount del proceso actual (ya calculado arriba) en vez de timelineItems
+      // porque el estado de React puede no estar actualizado aún
+      const finalGeneratedCount = generatedCount + startFrom - 1;
       
-      if (finalGeneratedCount >= 5 && currentProjectId) {
+      logger.info(`🎬 [AUTO-VIDEO] Check: generatedCount=${finalGeneratedCount}, currentProjectId=${currentProjectId}`);
+      
+      // Abrimos el modal si hay al menos 3 imágenes generadas
+      // El currentProjectId puede no estar seteado aún si es un proyecto nuevo
+      if (finalGeneratedCount >= 3) {
         logger.info('🎬 [AUTO-VIDEO] Abriendo modal de procesamiento de video automáticamente...');
         
         // Esperar un momento para que el usuario vea el resultado
@@ -1533,6 +1537,8 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
             description: "Confirma tus datos para empezar la generación del video",
           });
         }, 2000);
+      } else {
+        logger.warn(`⚠️ [AUTO-VIDEO] No se abre modal: generatedCount=${finalGeneratedCount} (mínimo 3)`);
       }
       
     } catch (error) {
@@ -5171,6 +5177,44 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
     try {
       logger.log('🎬 [VIDEO PROCESSING] Confirmando renderizado...', data);
       
+      // Si no hay currentProjectId, creamos el proyecto primero
+      let projectId = currentProjectId;
+      if (!projectId && user?.email) {
+        logger.info('🎬 [VIDEO PROCESSING] Creando proyecto antes de enviar a cola...');
+        try {
+          const result = await musicVideoProjectServicePostgres.saveProject({
+            userEmail: user.email,
+            projectName: data.artistName + ' - ' + data.songName,
+            artistName: data.artistName,
+            songName: data.songName,
+            audioUrl: audioUrl || undefined,
+            audioDuration: estimatedDuration / 1000,
+            timelineItems: timelineItems,
+            selectedDirector: videoStyle.selectedDirector,
+            videoStyle: videoStyle,
+            artistReferenceImages: artistReferenceImages,
+            status: 'generating_videos' as const,
+            progress: {
+              scriptGenerated: true,
+              imagesGenerated: timelineItems.filter(t => t.generatedImage || t.firebaseUrl).length,
+              totalImages: timelineItems.length,
+              videosGenerated: 0,
+              totalVideos: timelineItems.length
+            }
+          });
+          projectId = String(result.project.id);
+          setCurrentProjectId(projectId);
+          logger.info(`✅ [VIDEO PROCESSING] Proyecto creado: ${projectId}`);
+        } catch (saveError) {
+          logger.error('❌ [VIDEO PROCESSING] Error creando proyecto:', saveError);
+          throw new Error('Error al crear el proyecto. Intenta de nuevo.');
+        }
+      }
+      
+      if (!projectId) {
+        throw new Error('No se pudo obtener o crear el ID del proyecto');
+      }
+      
       // Preparar datos del proyecto para la cola
       const timelineData = timelineItems.map(item => ({
         id: item.id,
@@ -5187,7 +5231,7 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          projectId: parseInt(currentProjectId!),
+          projectId: parseInt(projectId),
           userEmail: data.email,
           artistName: data.artistName,
           songName: data.songName,
