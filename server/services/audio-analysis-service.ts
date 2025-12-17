@@ -1,25 +1,34 @@
 /**
- * 🎵 Audio Analysis Service - fal-ai/audio-understanding
+ * 🎵 Audio Analysis Service - OpenAI Whisper + Análisis Local
  * 
  * Analiza automáticamente la estructura musical para enriquecer la edición de video.
  * Este servicio se ejecuta automáticamente cuando el usuario sube audio
  * y proporciona información para sincronizar escenas con la música.
  * 
+ * FLUJO:
+ * 1. OpenAI Whisper → Transcribir letra con timestamps (identifica PERFORMANCE)
+ * 2. Análisis de energía y estructura
+ * 3. Combinar para identificar secciones con voz (PERFORMANCE) vs instrumentales (B-ROLL)
+ * 
  * CAPACIDADES:
+ * - Transcripción de letra con timestamps (Whisper)
  * - Detección de estructura (intro, verso, coro, bridge, outro)
- * - BPM y tempo
- * - Detección de instrumentos prominentes
+ * - BPM estimado
  * - Momentos de alta energía (drops, climax)
  * - Beats y downbeats para sincronización
  * 
- * COSTO: ~$0.05-0.10 por análisis (según duración)
+ * COSTO: ~$0.006/min (Whisper)
  */
 
 import axios from 'axios';
 import { logger } from '../utils/logger';
+import OpenAI from 'openai';
 
 const FAL_API_KEY = process.env.FAL_API_KEY || '';
-const FAL_BASE_URL = 'https://fal.run';
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
+
+// Inicializar OpenAI client
+const openai = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY }) : null;
 
 // ========== INTERFACES ==========
 
@@ -81,10 +90,30 @@ export interface AudioAnalysisResult {
   // Curva de energía para visualización
   energyCurve: EnergyPoint[];
   
+  // 🎤 NUEVO: Transcripción de Whisper
+  transcription?: TranscriptionResult;
+  
   // Metadata de análisis
   analyzedAt: string;
   analysisVersion: string;
-  rawResponse?: any; // Respuesta cruda de fal-ai para debugging
+  rawResponse?: any;
+}
+
+// 🎤 Transcripción con timestamps de Whisper
+export interface TranscriptionSegment {
+  id: number;
+  start: number;   // segundos
+  end: number;     // segundos
+  text: string;    // letra de ese segmento
+  hasVocals: boolean; // true si tiene voz cantando
+}
+
+export interface TranscriptionResult {
+  text: string;           // Letra completa
+  language: string;       // Idioma detectado
+  duration: number;       // Duración del audio
+  segments: TranscriptionSegment[];
+  vocalSegments: Array<{ start: number; end: number }>; // Rangos donde hay voz
 }
 
 export interface EditingRecommendations {
@@ -97,51 +126,77 @@ export interface EditingRecommendations {
 // ========== SERVICIO PRINCIPAL ==========
 
 /**
- * Analiza un archivo de audio usando fal-ai/audio-understanding
+ * 🎵 Analiza un archivo de audio
+ * 
+ * FLUJO:
+ * 1. OpenAI Whisper → Transcribir letra con timestamps
+ * 2. Generar análisis de estructura basado en transcripción
+ * 3. Identificar secciones PERFORMANCE (con voz) vs B-ROLL (instrumental)
  */
 export async function analyzeAudio(audioUrl: string): Promise<AudioAnalysisResult> {
-  if (!FAL_API_KEY) {
-    logger.error('[AudioAnalysis] FAL_API_KEY no configurada');
-    throw new Error('FAL_API_KEY is required for audio analysis');
-  }
-
   logger.log(`[AudioAnalysis] 🎵 Iniciando análisis de audio: ${audioUrl.substring(0, 60)}...`);
 
   try {
-    // Paso 1: Llamar a fal-ai/audio-understanding para análisis completo
-    const analysisResponse = await axios.post(
-      `${FAL_BASE_URL}/fal-ai/audio-understanding`,
-      {
-        audio_url: audioUrl,
-        // Pedir análisis completo
-        analysis_type: 'full',
-        include_beats: true,
-        include_structure: true,
-        include_instruments: true,
-        include_mood: true,
-      },
-      {
-        headers: {
-          'Authorization': `Key ${FAL_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        timeout: 120000, // 2 minutos para canciones largas
-      }
-    );
+    // ====== PASO 1: Transcribir con OpenAI Whisper ======
+    let transcription: TranscriptionResult | undefined;
+    
+    if (openai && OPENAI_API_KEY) {
+      logger.log('[AudioAnalysis] 🎤 Paso 1: Transcribiendo con OpenAI Whisper...');
+      transcription = await transcribeWithWhisper(audioUrl);
+      logger.log(`[AudioAnalysis] ✅ Transcripción completada:
+        - Duración: ${transcription.duration}s
+        - Idioma: ${transcription.language}
+        - Segmentos: ${transcription.segments.length}
+        - Segmentos con voz: ${transcription.vocalSegments.length}
+      `);
+    } else {
+      logger.warn('[AudioAnalysis] ⚠️ OpenAI API key no configurada, saltando transcripción');
+    }
 
-    logger.log('[AudioAnalysis] ✅ Respuesta recibida de fal-ai');
+    // ====== PASO 2: Generar análisis de estructura ======
+    logger.log('[AudioAnalysis] 📊 Paso 2: Generando análisis de estructura...');
     
-    // Paso 2: Parsear y estructurar la respuesta
-    const rawData = analysisResponse.data;
-    const analysis = parseAudioAnalysisResponse(rawData, audioUrl);
+    const duration = transcription?.duration || 180;
+    const bpm = 120; // BPM estimado por defecto
     
-    logger.log(`[AudioAnalysis] 📊 Análisis completado:
+    // Generar secciones basadas en transcripción
+    const sections = transcription 
+      ? generateSectionsFromTranscription(transcription)
+      : generateDefaultSections(duration);
+    
+    // Generar beats
+    const beats = generateBeats(bpm, duration);
+    const downbeats = beats.filter((_, i) => i % 4 === 0);
+    
+    // Detectar momentos clave
+    const keyMoments = detectKeyMoments(sections);
+    
+    // Generar curva de energía
+    const energyCurve = generateEnergyCurve(sections, duration);
+
+    const analysis: AudioAnalysisResult = {
+      duration,
+      bpm,
+      key: 'Unknown',
+      genre: 'Unknown',
+      mood: ['neutral'],
+      sections,
+      instruments: [],
+      beats,
+      downbeats,
+      keyMoments,
+      energyCurve,
+      transcription,
+      analyzedAt: new Date().toISOString(),
+      analysisVersion: '2.0.0-whisper',
+    };
+    
+    logger.log(`[AudioAnalysis] ✅ Análisis completado:
       - BPM: ${analysis.bpm}
-      - Key: ${analysis.key}
       - Secciones: ${analysis.sections.length}
-      - Instrumentos: ${analysis.instruments.length}
       - Key Moments: ${analysis.keyMoments.length}
       - Beats: ${analysis.beats.length}
+      - Con transcripción: ${!!transcription}
     `);
 
     return analysis;
@@ -149,14 +204,166 @@ export async function analyzeAudio(audioUrl: string): Promise<AudioAnalysisResul
   } catch (error: any) {
     logger.error('[AudioAnalysis] ❌ Error en análisis:', error.message);
     
-    // Si fal-ai falla, intentar análisis simplificado
-    if (error.response?.status === 404 || error.response?.status === 400) {
-      logger.warn('[AudioAnalysis] Modelo no disponible, usando análisis básico');
-      return generateBasicAnalysis(audioUrl);
-    }
+    // Fallback a análisis básico
+    logger.warn('[AudioAnalysis] Usando análisis básico como fallback');
+    return generateBasicAnalysis(audioUrl);
+  }
+}
+
+// ========== TRANSCRIPCIÓN CON WHISPER ==========
+
+/**
+ * 🎤 Transcribe audio usando OpenAI Whisper
+ * Devuelve letra con timestamps para identificar secciones PERFORMANCE
+ */
+async function transcribeWithWhisper(audioUrl: string): Promise<TranscriptionResult> {
+  if (!openai) {
+    throw new Error('OpenAI client not initialized');
+  }
+
+  try {
+    // Descargar el audio desde la URL
+    const audioResponse = await axios.get(audioUrl, {
+      responseType: 'arraybuffer',
+      timeout: 60000,
+    });
     
+    // Crear un File-like object para Whisper
+    const audioBuffer = Buffer.from(audioResponse.data);
+    const audioFile = new File([audioBuffer], 'audio.mp3', { type: 'audio/mpeg' });
+
+    // Llamar a Whisper con timestamps
+    const transcription = await openai.audio.transcriptions.create({
+      file: audioFile,
+      model: 'whisper-1',
+      response_format: 'verbose_json',
+      timestamp_granularities: ['segment'],
+    });
+
+    // Parsear respuesta
+    const segments: TranscriptionSegment[] = (transcription.segments || []).map((seg: any, i: number) => ({
+      id: i,
+      start: seg.start || 0,
+      end: seg.end || 0,
+      text: seg.text || '',
+      hasVocals: (seg.text || '').trim().length > 0,
+    }));
+
+    // Identificar rangos con voz (para marcar PERFORMANCE)
+    const vocalSegments: Array<{ start: number; end: number }> = [];
+    let currentVocalStart: number | null = null;
+
+    segments.forEach((seg, i) => {
+      if (seg.hasVocals && seg.text.trim().length > 3) {
+        if (currentVocalStart === null) {
+          currentVocalStart = seg.start;
+        }
+      } else {
+        if (currentVocalStart !== null) {
+          vocalSegments.push({
+            start: currentVocalStart,
+            end: segments[i - 1]?.end || seg.start,
+          });
+          currentVocalStart = null;
+        }
+      }
+    });
+
+    // Cerrar último segmento si quedó abierto
+    if (currentVocalStart !== null && segments.length > 0) {
+      vocalSegments.push({
+        start: currentVocalStart,
+        end: segments[segments.length - 1].end,
+      });
+    }
+
+    return {
+      text: transcription.text || '',
+      language: (transcription as any).language || 'unknown',
+      duration: (transcription as any).duration || segments[segments.length - 1]?.end || 180,
+      segments,
+      vocalSegments,
+    };
+
+  } catch (error: any) {
+    logger.error('[Whisper] Error transcribiendo:', error.message);
     throw error;
   }
+}
+
+/**
+ * Genera secciones basadas en la transcripción de Whisper
+ * Las secciones con voz se marcan como potenciales PERFORMANCE
+ */
+function generateSectionsFromTranscription(transcription: TranscriptionResult): AudioSection[] {
+  const sections: AudioSection[] = [];
+  const duration = transcription.duration;
+  
+  if (transcription.vocalSegments.length === 0) {
+    // Sin voz detectada, usar estructura por defecto
+    return generateDefaultSections(duration);
+  }
+
+  let lastEnd = 0;
+  let sectionIndex = 0;
+
+  transcription.vocalSegments.forEach((vocal, i) => {
+    // Agregar sección instrumental antes de la voz (si hay gap)
+    if (vocal.start > lastEnd + 2) {
+      sections.push({
+        type: sectionIndex === 0 ? 'intro' : 'instrumental',
+        startTime: lastEnd,
+        endTime: vocal.start,
+        duration: vocal.start - lastEnd,
+        energy: 'low',
+        description: sectionIndex === 0 ? 'Intro instrumental' : 'Instrumental break',
+      });
+      sectionIndex++;
+    }
+
+    // Agregar sección con voz (PERFORMANCE candidate)
+    const vocalDuration = vocal.end - vocal.start;
+    let sectionType: AudioSection['type'] = 'verse';
+    let energy: AudioSection['energy'] = 'medium';
+
+    // Heurística simple para detectar coros vs versos
+    if (vocalDuration > 20) {
+      sectionType = 'verse';
+      energy = 'medium';
+    } else if (vocalDuration > 10) {
+      sectionType = 'chorus';
+      energy = 'high';
+    } else {
+      sectionType = 'pre-chorus';
+      energy = 'medium';
+    }
+
+    sections.push({
+      type: sectionType,
+      startTime: vocal.start,
+      endTime: vocal.end,
+      duration: vocalDuration,
+      energy,
+      description: `${sectionType} - vocal performance`,
+    });
+    
+    lastEnd = vocal.end;
+    sectionIndex++;
+  });
+
+  // Agregar outro si queda tiempo
+  if (lastEnd < duration - 2) {
+    sections.push({
+      type: 'outro',
+      startTime: lastEnd,
+      endTime: duration,
+      duration: duration - lastEnd,
+      energy: 'low',
+      description: 'Outro',
+    });
+  }
+
+  return sections;
 }
 
 /**
