@@ -4,6 +4,7 @@ import { Button } from "../ui/button";
 import { useWeb3 } from "../../hooks/use-web3";
 import { useWeb3Ready } from "../../lib/context/web3-context";
 import { Wallet, ChevronDown, Loader2 } from "lucide-react";
+import { useToast } from "../../hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,22 +17,28 @@ import {
 export function WalletConnectButton() {
   const { address, isConnected, isWeb3Ready } = useWeb3();
   const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
 
   // Truncate address for display
   const truncatedAddress = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : "";
 
-  // Don't render RainbowKit components until WagmiProvider is ready
+  // Show connect button while Web3 is not ready - clicking will show initializing message
   if (!isWeb3Ready) {
     return (
       <Button
         variant="outline"
-        disabled
-        className="gap-2 bg-gradient-to-r from-orange-500/10 to-orange-600/10 border-orange-500/50"
+        onClick={() => {
+          toast({
+            title: "⏳ Inicializando Web3...",
+            description: "Por favor espera un momento mientras se conecta a la blockchain.",
+          });
+        }}
+        className="gap-2 bg-gradient-to-r from-orange-500/20 to-orange-600/20 border-orange-500/50 hover:border-orange-400 hover:bg-orange-500/30 cursor-pointer"
       >
-        <Loader2 className="h-4 w-4 text-orange-400 animate-spin" />
-        <span className="text-orange-400/70">Loading Wallet...</span>
+        <Wallet className="h-4 w-4 text-orange-400" />
+        <span className="text-orange-400">Conectar Wallet</span>
       </Button>
     );
   }
