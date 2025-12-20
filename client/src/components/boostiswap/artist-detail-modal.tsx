@@ -36,21 +36,7 @@ import { ArtistProfile } from "@/data/artist-profiles";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { TOKEN_PREFIXES } from "@/lib/btf2300-config";
 import { ArtistProgressWidget } from "./artist-progress-widget";
-
-// Lazy load wagmi hooks to prevent errors when provider is not ready
-let useWriteContractHook: any = null;
-let useWaitForTransactionReceiptHook: any = null;
-let ConnectButtonComponent: any = null;
-
-try {
-  const wagmi = require('wagmi');
-  useWriteContractHook = wagmi.useWriteContract;
-  useWaitForTransactionReceiptHook = wagmi.useWaitForTransactionReceipt;
-  const rainbowkit = require('@rainbow-me/rainbowkit');
-  ConnectButtonComponent = rainbowkit.ConnectButton;
-} catch {
-  // wagmi not available yet
-}
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 interface ArtistDetailModalProps {
   artist: ArtistProfile | null;
@@ -59,33 +45,17 @@ interface ArtistDetailModalProps {
   artistImage?: string;
 }
 
-// Wrapper component that checks if Web3 is ready before rendering the modal content
+// Modal component - siempre renderiza el contenido, Web3 se maneja internamente
 export function ArtistDetailModal({
   artist,
   isOpen,
   onClose,
   artistImage,
 }: ArtistDetailModalProps) {
-  const { isWeb3Ready } = useWeb3();
-  
   // Don't render anything if no artist
   if (!artist) return null;
   
-  // If Web3 is not ready, show a loading dialog
-  if (!isWeb3Ready) {
-    return (
-      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-w-md bg-slate-900 border-slate-700">
-          <div className="flex flex-col items-center justify-center py-12 gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-orange-400" />
-            <p className="text-white">Initializing Web3...</p>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-  
-  // When Web3 is ready, render the full modal with wagmi hooks
+  // Siempre renderizar el contenido - el botón de wallet manejará el estado de Web3
   return (
     <ArtistDetailModalContent
       artist={artist}
@@ -103,8 +73,7 @@ function ArtistDetailModalContent({
   onClose,
   artistImage,
 }: ArtistDetailModalProps) {
-  // Now we can safely use wagmi hooks because Web3 is guaranteed to be ready
-  const { address, isConnected } = useWeb3();
+  const { address, isConnected, isWeb3Ready } = useWeb3();
   const { toast } = useToast();
   const btf2300 = useBTF2300();
   
@@ -113,15 +82,10 @@ function ArtistDetailModalContent({
   const [isSuccess, setIsSuccess] = useState(false);
   const [userBalance, setUserBalance] = useState<string>("0");
   const [artistOnChain, setArtistOnChain] = useState<any>(null);
-  
-  // Use lazy-loaded wagmi hooks if available
-  const writeContractResult = useWriteContractHook?.();
-  const writeContract = writeContractResult?.writeContract;
-  const transactionHash = writeContractResult?.data;
 
   // Fetch artist data from blockchain
   useEffect(() => {
-    if (artist?.id) {
+    if (artist?.id && isWeb3Ready) {
       // Get artist info from contract
       btf2300.getArtist(artist.id).then(setArtistOnChain);
       
@@ -133,7 +97,7 @@ function ArtistDetailModalContent({
         });
       }
     }
-  }, [artist?.id, address, btf2300]);
+  }, [artist?.id, address, btf2300, isWeb3Ready]);
 
   // artist is guaranteed to exist here
   if (!artist) return null;
@@ -497,29 +461,34 @@ function ArtistDetailModalContent({
                 </div>
               )}
               
-              {/* Connect Wallet Button - uses RainbowKit's ConnectButton.Custom */}
+              {/* Connect Wallet Button - uses RainbowKit's ConnectButton */}
               {!isConnected ? (
-                ConnectButtonComponent ? (
-                  <ConnectButtonComponent.Custom>
-                    {({ openConnectModal }: { openConnectModal: () => void }) => (
+                isWeb3Ready ? (
+                  <ConnectButton.Custom>
+                    {({ openConnectModal }) => (
                       <Button 
                         onClick={openConnectModal}
                         className="w-full font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                         data-testid="button-connect-wallet"
                       >
                         <Wallet className="mr-2 h-4 w-4" />
-                        Connect Wallet
+                        Conectar Wallet
                       </Button>
                     )}
-                  </ConnectButtonComponent.Custom>
+                  </ConnectButton.Custom>
                 ) : (
                   <Button 
-                    disabled
-                    className="w-full font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 opacity-50"
+                    className="w-full font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                    onClick={() => {
+                      toast({
+                        title: "Inicializando Web3...",
+                        description: "Por favor espera un momento mientras se conecta a la blockchain",
+                      });
+                    }}
                     data-testid="button-connect-wallet"
                   >
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Loading Web3...
+                    <Wallet className="mr-2 h-4 w-4" />
+                    Conectar Wallet
                   </Button>
                 )
               ) : (
