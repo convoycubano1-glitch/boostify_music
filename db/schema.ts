@@ -77,6 +77,13 @@ export const users = pgTable("users", {
   isAIGenerated: boolean("is_ai_generated").default(false).notNull(),
   generatedBy: integer("generated_by").references(() => users.id, { onDelete: "cascade" }),
   recordLabelId: text("record_label_id"),
+  // BTF-2300 Blockchain NFT fields
+  blockchainNetwork: text("blockchain_network"), // polygon, ethereum, etc.
+  blockchainArtistId: integer("blockchain_artist_id"), // On-chain artist ID
+  blockchainTokenId: text("blockchain_token_id"), // NFT Token ID (string for large numbers)
+  blockchainTxHash: text("blockchain_tx_hash"), // Transaction hash of registration
+  blockchainContract: text("blockchain_contract"), // Contract address
+  blockchainRegisteredAt: timestamp("blockchain_registered_at"), // When registered on-chain
   // Profile Layout Configuration
   profileLayout: json("profile_layout").$type<{
     order: string[];

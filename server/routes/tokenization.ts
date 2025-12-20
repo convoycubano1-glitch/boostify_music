@@ -32,6 +32,49 @@ const recordPurchaseSchema = z.object({
   blockNumber: z.number().int().positive().optional(),
 });
 
+// GET /api/tokenization/songs - Get songs for authenticated user
+router.get('/songs', async (req, res) => {
+  try {
+    const user = req.user as any;
+    if (!user || !user.id) {
+      return res.json([]); // Return empty array if not authenticated
+    }
+    
+    const songs = await db.select().from(tokenizedSongs)
+      .where(eq(tokenizedSongs.artistId, user.id))
+      .orderBy(desc(tokenizedSongs.createdAt));
+
+    res.json(songs);
+  } catch (error) {
+    console.error('Error fetching tokenized songs for user:', error);
+    res.json([]); // Return empty array on error to prevent 500
+  }
+});
+
+// GET /api/tokenization/earnings - Get earnings for authenticated user
+router.get('/earnings', async (req, res) => {
+  try {
+    const user = req.user as any;
+    if (!user || !user.id) {
+      return res.json({ totalEarnings: 0, recentEarnings: [] });
+    }
+    
+    const earnings = await db.select().from(artistTokenEarnings)
+      .where(eq(artistTokenEarnings.artistId, user.id))
+      .orderBy(desc(artistTokenEarnings.createdAt));
+
+    const totalEarnings = earnings.reduce((sum, e) => sum + parseFloat(e.amountUsd || '0'), 0);
+
+    res.json({ 
+      totalEarnings, 
+      recentEarnings: earnings.slice(0, 10) 
+    });
+  } catch (error) {
+    console.error('Error fetching earnings for user:', error);
+    res.json({ totalEarnings: 0, recentEarnings: [] });
+  }
+});
+
 router.get('/songs/:artistId', async (req, res) => {
   try {
     const artistId = parseInt(req.params.artistId);

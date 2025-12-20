@@ -139,6 +139,16 @@ app.use((req, res, next) => {
     checkEnvironment();
     console.log('🔄 [4/10] Environment check completed');
     
+    // PUBLIC ROUTES: NFT Metadata API (must be accessible without auth for blockchain/OpenSea)
+    console.log('🔗 Setting up public NFT metadata routes...');
+    try {
+      const nftMetadataRouter = await import('./routes/nft-metadata');
+      app.use('/api/metadata', nftMetadataRouter.default);
+      console.log('✅ NFT metadata routes configured (public access)');
+    } catch (error) {
+      console.error('⚠️ NFT metadata routes failed to load:', error);
+    }
+    
     // Setup Clerk Auth middleware (replacing Replit Auth)
     console.log('🔐 [5/10] Setting up Clerk Auth middleware...');
     log('🔐 Setting up Clerk Auth middleware...');
@@ -147,8 +157,14 @@ app.use((req, res, next) => {
       const { clerkAuthMiddleware } = await import('./middleware/clerk-auth');
       // Apply Clerk's built-in middleware first (handles cookie/header parsing)
       app.use(clerkMiddleware());
-      // Then apply our custom middleware to populate req.user
-      app.use('/api', clerkAuthMiddleware);
+      // Then apply our custom middleware to populate req.user (skip /api/metadata which is public)
+      app.use('/api', (req, res, next) => {
+        // Skip auth for NFT metadata endpoints (already handled above)
+        if (req.path.startsWith('/metadata')) {
+          return next();
+        }
+        return clerkAuthMiddleware(req, res, next);
+      });
       console.log('✅ [6/10] Clerk Auth middleware configured successfully');
       log('✅ Clerk Auth middleware configured successfully');
     } catch (error) {

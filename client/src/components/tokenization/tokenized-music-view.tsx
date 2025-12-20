@@ -3,11 +3,24 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Coins, ShoppingCart, Sparkles, Wallet } from 'lucide-react';
+import { Coins, ShoppingCart, Sparkles, Wallet, Loader2 } from 'lucide-react';
 import { BuyTokensDialog } from './buy-tokens-dialog';
+import { useWeb3 } from '../../hooks/use-web3';
 
 // Componente ConnectButton lazy para evitar errores cuando wagmi no está disponible
 const LazyConnectButton = () => {
+  const { isWeb3Ready } = useWeb3();
+  
+  // Don't try to render RainbowKit until WagmiProvider is ready
+  if (!isWeb3Ready) {
+    return (
+      <Button variant="outline" disabled>
+        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+        Loading Wallet...
+      </Button>
+    );
+  }
+  
   try {
     const { ConnectButton } = require('@rainbow-me/rainbowkit');
     return <ConnectButton chainStatus="none" showBalance={false} />;

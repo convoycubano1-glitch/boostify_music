@@ -375,6 +375,11 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   app.use('/api/printful', printfulRouter); // Printful integration routes
   app.use('/api/crowdfunding', crowdfundingRouter); // Crowdfunding routes
   app.use('/api/tokenization', tokenizationRouter); // Tokenization (Web3/Blockchain) routes
+  
+  // NFT Metadata API for BTF-2300 tokens (must be public for blockchain access)
+  const nftMetadataRouter = await import('./routes/nft-metadata');
+  app.use('/api/metadata', nftMetadataRouter.default); // NFT metadata for artists, songs, catalogs, licenses
+  
   app.use('/api/admin/import-artists', adminImportArtistsRouter); // Admin: Import artists from JSON/Excel
   app.use('/api/admin/api-usage', apiUsageRouter);
   app.use('/api/admin/accounting', accountingRouter);
@@ -441,10 +446,22 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   // Endpoint para obtener la suscripción actual del usuario
   app.get('/api/subscriptions/current', async (req, res) => {
     try {
-      const userId = req.user?.id;
+      const userId = (req.user as any)?.id;
       
       if (!userId) {
-        return res.status(401).json({ error: "Usuario no autenticado" });
+        // Usuario no autenticado - devolver plan free
+        return res.json({
+          plan: 'free',
+          status: 'active',
+          price: 0,
+          currency: 'usd',
+          features: [
+            'Acceso básico a la plataforma',
+            'Perfil de artista',
+            'Subir canciones',
+            'Funcionalidades limitadas'
+          ]
+        });
       }
 
       const { subscriptions } = await import ('./db/schema');
@@ -489,7 +506,14 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
       });
     } catch (error) {
       console.error("Error obteniendo suscripción:", error);
-      return res.status(500).json({ error: "Error al obtener suscripción" });
+      // En caso de error, devolver plan free en lugar de 500
+      return res.json({
+        plan: 'free',
+        status: 'active',
+        price: 0,
+        currency: 'usd',
+        features: ['Acceso básico a la plataforma']
+      });
     }
   });
 

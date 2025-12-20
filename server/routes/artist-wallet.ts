@@ -9,6 +9,125 @@ import { eq, desc, and, sql, gte } from 'drizzle-orm';
 const router = Router();
 
 /**
+ * Obtener balance actual del wallet del usuario autenticado
+ */
+router.get('/balance', async (req: Request, res: Response) => {
+  try {
+    const user = req.user as any;
+    if (!user || !user.id) {
+      return res.json({ success: true, wallet: { balance: 0, totalEarnings: 0, totalSpent: 0, currency: 'usd' } });
+    }
+
+    let wallet = await db.query.artistWallet.findFirst({
+      where: eq(artistWallet.userId, user.id)
+    });
+
+    if (!wallet) {
+      const [newWallet] = await db.insert(artistWallet).values({
+        userId: user.id,
+        balance: '0',
+        totalEarnings: '0',
+        totalSpent: '0',
+        currency: 'usd'
+      }).returning();
+      wallet = newWallet;
+    }
+
+    return res.json({
+      success: true,
+      wallet: {
+        balance: parseFloat(wallet.balance),
+        totalEarnings: parseFloat(wallet.totalEarnings),
+        totalSpent: parseFloat(wallet.totalSpent),
+        currency: wallet.currency,
+        updatedAt: wallet.updatedAt
+      }
+    });
+  } catch (error: any) {
+    console.error('Error fetching wallet balance for user:', error);
+    return res.json({ success: true, wallet: { balance: 0, totalEarnings: 0, totalSpent: 0, currency: 'usd' } });
+  }
+});
+
+/**
+ * Obtener historial de ganancias del usuario autenticado
+ */
+router.get('/earnings-history', async (req: Request, res: Response) => {
+  try {
+    const user = req.user as any;
+    if (!user || !user.id) {
+      return res.json({ success: true, earnings: [], dailyEarnings: [] });
+    }
+
+    const days = parseInt(req.query.days as string) || 30;
+    const limitDate = new Date();
+    limitDate.setDate(limitDate.getDate() - days);
+
+    const sales = await db.select()
+      .from(salesTransactions)
+      .where(
+        and(
+          eq(salesTransactions.artistId, user.id),
+          eq(salesTransactions.status, 'completed'),
+          gte(salesTransactions.createdAt, limitDate)
+        )
+      )
+      .orderBy(desc(salesTransactions.createdAt));
+
+    return res.json({
+      success: true,
+      earnings: sales,
+      dailyEarnings: []
+    });
+  } catch (error: any) {
+    console.error('Error fetching earnings history for user:', error);
+    return res.json({ success: true, earnings: [], dailyEarnings: [] });
+  }
+});
+
+/**
+ * Obtener estadísticas de ventas del usuario autenticado
+ */
+router.get('/sales-stats', async (req: Request, res: Response) => {
+  try {
+    const user = req.user as any;
+    if (!user || !user.id) {
+      return res.json({ 
+        success: true, 
+        stats: { totalSales: 0, totalRevenue: 0, averageOrder: 0, topProducts: [] } 
+      });
+    }
+
+    const sales = await db.select()
+      .from(salesTransactions)
+      .where(
+        and(
+          eq(salesTransactions.artistId, user.id),
+          eq(salesTransactions.status, 'completed')
+        )
+      );
+
+    const totalRevenue = sales.reduce((sum, s) => sum + parseFloat(s.amount || '0'), 0);
+
+    return res.json({
+      success: true,
+      stats: {
+        totalSales: sales.length,
+        totalRevenue,
+        averageOrder: sales.length > 0 ? totalRevenue / sales.length : 0,
+        topProducts: []
+      }
+    });
+  } catch (error: any) {
+    console.error('Error fetching sales stats for user:', error);
+    return res.json({ 
+      success: true, 
+      stats: { totalSales: 0, totalRevenue: 0, averageOrder: 0, topProducts: [] } 
+    });
+  }
+});
+
+/**
  * Obtener balance actual del wallet del artista
  */
 router.get('/balance/:userId', async (req: Request, res: Response) => {

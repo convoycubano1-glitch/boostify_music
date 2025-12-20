@@ -497,24 +497,45 @@ router.post('/mark-paid', async (req, res) => {
 });
 
 /**
- * GET /by-artist/:artistSlug
- * Obtiene todos los proyectos de música de un artista por su slug
+ * GET /by-artist/:artistIdOrSlug
+ * Obtiene todos los proyectos de música de un artista por su slug o ID
  * Usado para mostrar videos completados en el perfil del artista
  */
-router.get('/by-artist/:artistSlug', async (req, res) => {
+router.get('/by-artist/:artistIdOrSlug', async (req, res) => {
   try {
-    const { artistSlug } = req.params;
-    logger.log(`🎬 [BY-ARTIST] Buscando proyectos para artista: ${artistSlug}`);
+    const { artistIdOrSlug } = req.params;
+    logger.log(`🎬 [BY-ARTIST] Buscando proyectos para artista: ${artistIdOrSlug}`);
     
-    if (!artistSlug) {
-      return res.status(400).json({
-        success: false,
-        error: 'Artist slug es requerido'
+    if (!artistIdOrSlug) {
+      return res.json({
+        success: true,
+        projects: []
       });
     }
     
+    // Check if it's a numeric ID
+    const isNumericId = /^\d+$/.test(artistIdOrSlug);
+    
+    // If numeric ID, try to find the artist first
+    let artistName: string | null = null;
+    if (isNumericId) {
+      try {
+        const { users } = await import('../db/schema');
+        const [artist] = await db
+          .select({ artistName: users.artistName, username: users.username })
+          .from(users)
+          .where(eq(users.id, parseInt(artistIdOrSlug)))
+          .limit(1);
+        
+        if (artist) {
+          artistName = artist.artistName || artist.username || null;
+        }
+      } catch (e) {
+        logger.log(`⚠️ [BY-ARTIST] Could not find artist by ID: ${artistIdOrSlug}`);
+      }
+    }
+    
     // Buscar proyectos que coincidan con el artistName transformado a slug
-    // O que tengan un slug directo almacenado
     const allProjects = await db
       .select({
         id: musicVideoProjects.id,
@@ -544,11 +565,24 @@ router.get('/by-artist/:artistSlug', async (req, res) => {
     const matchingProjects = allProjects.filter(project => {
       if (!project.artistName) return false;
       const projectSlug = generateSlug(project.artistName);
-      return projectSlug === artistSlug || 
-             project.artistName.toLowerCase() === artistSlug.toLowerCase();
+      
+      // Match by slug
+      if (projectSlug === artistIdOrSlug || 
+          project.artistName.toLowerCase() === artistIdOrSlug.toLowerCase()) {
+        return true;
+      }
+      
+      // Match by artist name from DB lookup
+      if (artistName && 
+          (project.artistName.toLowerCase() === artistName.toLowerCase() ||
+           generateSlug(project.artistName) === generateSlug(artistName))) {
+        return true;
+      }
+      
+      return false;
     });
     
-    logger.log(`✅ [BY-ARTIST] Encontrados ${matchingProjects.length} proyectos para ${artistSlug}`);
+    logger.log(`✅ [BY-ARTIST] Encontrados ${matchingProjects.length} proyectos para ${artistIdOrSlug}`);
     
     res.json({
       success: true,
@@ -557,9 +591,10 @@ router.get('/by-artist/:artistSlug', async (req, res) => {
     
   } catch (error) {
     logger.error('❌ [BY-ARTIST] Error:', error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Error desconocido'
+    // Return empty array instead of 500
+    res.json({
+      success: true,
+      projects: []
     });
   }
 });

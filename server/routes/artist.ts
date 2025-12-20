@@ -6,6 +6,75 @@ import { db as firestore } from '../firebase';
 
 const router = Router();
 
+// GET /api/artist - Get current authenticated user's artist profile
+router.get('/', async (req, res) => {
+  try {
+    const authUser = req.user as any;
+    if (!authUser || !authUser.id) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const userId = authUser.id;
+
+    // Get user data from PostgreSQL
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user) {
+      return res.status(404).json({ error: 'Artist not found' });
+    }
+
+    // Try to get profile data from Firestore
+    let firestoreProfile = null;
+    try {
+      const userDoc = await firestore.collection('users').doc(String(userId)).get();
+      if (userDoc.exists) {
+        firestoreProfile = userDoc.data();
+      }
+    } catch (error) {
+      console.log('No Firestore profile found, using PostgreSQL data');
+    }
+
+    // Get marketing metrics
+    const [metrics] = await db
+      .select()
+      .from(marketingMetrics)
+      .where(eq(marketingMetrics.userId, user.id))
+      .limit(1);
+
+    const artistData = {
+      id: user.id,
+      name: firestoreProfile?.displayName || firestoreProfile?.name || user.username || user.artistName || 'Artist',
+      biography: firestoreProfile?.biography || user.biography || '',
+      genre: firestoreProfile?.genre || user.genre || '',
+      location: firestoreProfile?.location || user.location || '',
+      email: user.email,
+      profileImage: firestoreProfile?.profileImage || firestoreProfile?.photoURL || user.profileImage || '',
+      bannerImage: firestoreProfile?.bannerImage || user.coverImage || '',
+      slug: firestoreProfile?.slug || user.slug || '',
+      socialMedia: {
+        instagram: firestoreProfile?.instagram || user.instagramHandle || '',
+        twitter: firestoreProfile?.twitter || user.twitterHandle || '',
+        youtube: firestoreProfile?.youtube || user.youtubeChannel || '',
+        spotify: firestoreProfile?.spotify || user.spotifyUrl || ''
+      },
+      stats: {
+        monthlyListeners: metrics?.monthlyListeners || 0,
+        followers: metrics?.instagramFollowers || 0,
+        views: metrics?.youtubeViews || 0
+      }
+    };
+
+    res.json(artistData);
+  } catch (error) {
+    console.error('Error fetching authenticated artist data:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;

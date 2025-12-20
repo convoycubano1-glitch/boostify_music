@@ -1,5 +1,9 @@
-import React, { createContext, useContext, ReactNode, useMemo } from 'react';
-import { useAccount, useBalance, useChainId } from 'wagmi';
+import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
+
+// Lazy load wagmi hooks to avoid "useConfig must be used within WagmiProvider" error
+let useAccountHook: any = null;
+let useBalanceHook: any = null;
+let useChainIdHook: any = null;
 
 interface Web3ContextType {
   isWeb3Ready: boolean;
@@ -34,19 +38,34 @@ export function Web3NotReadyProvider({ children }: { children: ReactNode }) {
 
 // Provider for when Web3 IS ready - provides actual wagmi data
 export function Web3ReadyInternalProvider({ children }: { children: ReactNode }) {
-  const { address, isConnected } = useAccount();
-  const chainId = useChainId();
-  const { data: balance } = useBalance({ address });
+  const [state, setState] = useState<Web3ContextType>({ ...defaultWeb3Context, isWeb3Ready: true });
+  
+  // Load wagmi hooks lazily
+  useEffect(() => {
+    try {
+      const wagmi = require('wagmi');
+      useAccountHook = wagmi.useAccount;
+      useBalanceHook = wagmi.useBalance;
+      useChainIdHook = wagmi.useChainId;
+    } catch {
+      console.warn('[Web3Context] Could not load wagmi hooks');
+    }
+  }, []);
+  
+  // Use wagmi hooks if available
+  const accountData = useAccountHook?.() || { address: undefined, isConnected: false };
+  const chainId = useChainIdHook?.() || undefined;
+  const balanceData = useBalanceHook?.({ address: accountData.address });
 
   const value = useMemo<Web3ContextType>(() => ({
     isWeb3Ready: true,
-    address,
-    isConnected,
+    address: accountData.address,
+    isConnected: accountData.isConnected,
     chainId,
-    balance: balance?.value?.toString(),
-    balanceFormatted: balance?.formatted,
-    symbol: balance?.symbol,
-  }), [address, isConnected, chainId, balance]);
+    balance: balanceData?.data?.value?.toString(),
+    balanceFormatted: balanceData?.data?.formatted,
+    symbol: balanceData?.data?.symbol,
+  }), [accountData.address, accountData.isConnected, chainId, balanceData?.data]);
 
   return (
     <Web3Context.Provider value={value}>

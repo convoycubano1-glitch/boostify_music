@@ -25,6 +25,12 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 import { NotificationTemplates } from '../utils/notifications';
 import { generateSocialMediaContent } from '../services/social-media-service';
 import axios from 'axios';
+// BTF-2300 Blockchain Service para registro automático de NFTs
+import { 
+  registerArtistOnChain, 
+  isBlockchainServiceAvailable,
+  BTF2300_CONTRACT_ADDRESSES 
+} from '../services/btf2300-blockchain';
 
 const router = Router();
 
@@ -324,13 +330,74 @@ router.post("/generate-artist", async (req: Request, res: Response) => {
       'look.cover_url': coverImageUrl
     });
 
+    // 🔗 REGISTRAR ARTISTA EN BLOCKCHAIN (BTF-2300 en Polygon)
+    let blockchainResult: { 
+      success: boolean; 
+      artistId?: number; 
+      tokenId?: number; 
+      txHash?: string; 
+      error?: string;
+    } = { success: false, error: 'Blockchain service not available' };
+    
+    if (isBlockchainServiceAvailable()) {
+      console.log('🔗 Registrando artista en blockchain BTF-2300...');
+      blockchainResult = await registerArtistOnChain(
+        undefined, // Usar platform wallet (el artista no tiene wallet aún)
+        artistDataWithImages.name,
+        postgresId
+      );
+      
+      if (blockchainResult.success) {
+        console.log(`✅ Artista registrado en Polygon!`);
+        console.log(`   🆔 On-chain Artist ID: ${blockchainResult.artistId}`);
+        console.log(`   🎫 NFT Token ID: ${blockchainResult.tokenId}`);
+        console.log(`   🔗 Tx Hash: ${blockchainResult.txHash}`);
+        
+        // Guardar datos del blockchain en PostgreSQL
+        await pgDb.update(users)
+          .set({
+            blockchainNetwork: 'polygon',
+            blockchainArtistId: blockchainResult.artistId,
+            blockchainTokenId: blockchainResult.tokenId?.toString(),
+            blockchainTxHash: blockchainResult.txHash,
+            blockchainContract: BTF2300_CONTRACT_ADDRESSES.artistToken,
+            blockchainRegisteredAt: new Date(),
+          })
+          .where(eq(users.id, postgresId));
+          
+        // Actualizar Firestore con datos del blockchain
+        await db.collection('generated_artists').doc(firestoreId).update({
+          blockchain: {
+            network: 'polygon',
+            contract: BTF2300_CONTRACT_ADDRESSES.artistToken,
+            artistId: blockchainResult.artistId,
+            tokenId: blockchainResult.tokenId,
+            txHash: blockchainResult.txHash,
+            registeredAt: new Date().toISOString()
+          }
+        });
+      } else {
+        console.warn(`⚠️ No se pudo registrar en blockchain: ${blockchainResult.error}`);
+      }
+    } else {
+      console.log('ℹ️ Blockchain service no disponible. Configura PLATFORM_PRIVATE_KEY para habilitar.');
+    }
+
     // Añadir los IDs al objeto de artista
     const completeArtistData = {
       ...artistDataWithImages,
       firestoreId,
       postgresId,
       profileImage: profileImageUrl,
-      coverImage: coverImageUrl
+      coverImage: coverImageUrl,
+      // Datos del blockchain
+      blockchain: blockchainResult.success ? {
+        network: 'polygon',
+        contract: BTF2300_CONTRACT_ADDRESSES.artistToken,
+        artistId: blockchainResult.artistId,
+        tokenId: blockchainResult.tokenId,
+        txHash: blockchainResult.txHash
+      } : null
     };
 
     // Devolver respuesta con datos completos del artista

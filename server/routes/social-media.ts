@@ -87,6 +87,36 @@ router.post('/generate-content', async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/social-media/posts
+ * Obtiene los posts del usuario autenticado
+ */
+router.get('/posts', async (req: Request, res: Response) => {
+  try {
+    const user = req.user as any;
+    if (!user || !user.id) {
+      return res.json({ success: true, posts: [], count: 0 });
+    }
+
+    const posts = await db
+      .select()
+      .from(socialMediaPosts)
+      .where(
+        and(eq(socialMediaPosts.userId, user.id), eq(socialMediaPosts.isPublished, true))
+      )
+      .orderBy(desc(socialMediaPosts.createdAt));
+
+    return res.json({
+      success: true,
+      posts: posts || [],
+      count: posts?.length || 0
+    });
+  } catch (error: any) {
+    console.error('Error fetching social media posts for user:', error);
+    return res.json({ success: true, posts: [], count: 0 });
+  }
+});
+
+/**
  * GET /api/social-media/posts/:userId
  * Obtiene los posts de redes sociales de un artista
  */

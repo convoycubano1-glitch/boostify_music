@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { parseEther } from 'viem';
 import {
   Dialog,
@@ -34,6 +32,21 @@ import { ArtistProfile } from "@/data/artist-profiles";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { BOOSTIFY_CONTRACT_ADDRESS, ERC1155_ABI } from "@/lib/web3-config";
 import { ArtistProgressWidget } from "./artist-progress-widget";
+
+// Lazy load wagmi hooks to prevent errors when provider is not ready
+let useWriteContractHook: any = null;
+let useWaitForTransactionReceiptHook: any = null;
+let ConnectButtonComponent: any = null;
+
+try {
+  const wagmi = require('wagmi');
+  useWriteContractHook = wagmi.useWriteContract;
+  useWaitForTransactionReceiptHook = wagmi.useWaitForTransactionReceipt;
+  const rainbowkit = require('@rainbow-me/rainbowkit');
+  ConnectButtonComponent = rainbowkit.ConnectButton;
+} catch {
+  // wagmi not available yet
+}
 
 interface ArtistDetailModalProps {
   artist: ArtistProfile | null;
@@ -90,8 +103,20 @@ function ArtistDetailModalContent({
   const { address, isConnected } = useWeb3();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
-  const { writeContract, data: hash, error: writeError } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const [hash, setHash] = useState<`0x${string}` | undefined>();
+  const [writeError, setWriteError] = useState<Error | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  
+  // Use lazy-loaded wagmi hooks if available
+  const writeContractResult = useWriteContractHook?.();
+  const writeContract = writeContractResult?.writeContract;
+  const transactionHash = writeContractResult?.data;
+  
+  // Update hash when transaction is sent
+  React.useEffect(() => {
+    if (transactionHash) setHash(transactionHash);
+  }, [transactionHash]);
 
   // artist is guaranteed to exist here
   if (!artist) return null;
@@ -422,18 +447,29 @@ function ArtistDetailModalContent({
               
               {/* Connect Wallet Button - uses RainbowKit's ConnectButton.Custom */}
               {!isConnected ? (
-                <ConnectButton.Custom>
-                  {({ openConnectModal }) => (
-                    <Button 
-                      onClick={openConnectModal}
-                      className="w-full font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                      data-testid="button-connect-wallet"
-                    >
-                      <Wallet className="mr-2 h-4 w-4" />
-                      Connect Wallet
-                    </Button>
-                  )}
-                </ConnectButton.Custom>
+                ConnectButtonComponent ? (
+                  <ConnectButtonComponent.Custom>
+                    {({ openConnectModal }: { openConnectModal: () => void }) => (
+                      <Button 
+                        onClick={openConnectModal}
+                        className="w-full font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                        data-testid="button-connect-wallet"
+                      >
+                        <Wallet className="mr-2 h-4 w-4" />
+                        Connect Wallet
+                      </Button>
+                    )}
+                  </ConnectButtonComponent.Custom>
+                ) : (
+                  <Button 
+                    disabled
+                    className="w-full font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 opacity-50"
+                    data-testid="button-connect-wallet"
+                  >
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading Web3...
+                  </Button>
+                )
               ) : (
                 <Button 
                   onClick={() => handleBuyTokens(artist)}

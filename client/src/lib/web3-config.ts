@@ -36,7 +36,8 @@ export function getWagmiConfig() {
 // Para compatibilidad con código existente
 export const wagmiConfig = getWagmiConfig();
 
-export const BOOSTIFY_CONTRACT_ADDRESS = '0x0000000000000000000000000000000000000000';
+// BTF-2300 ArtistToken Contract - DEPLOYED ON POLYGON MAINNET
+export const BOOSTIFY_CONTRACT_ADDRESS = '0x76F4c51204E096f6993A6171B524A7AaedDcD723';
 
 export const ERC1155_ABI = [
   {

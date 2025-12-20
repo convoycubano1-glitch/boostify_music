@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Button } from "../ui/button";
 import { useWeb3 } from "../../hooks/use-web3";
-import { Wallet, ChevronDown } from "lucide-react";
+import { useWeb3Ready } from "../../lib/context/web3-context";
+import { Wallet, ChevronDown, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,13 +14,27 @@ import {
 } from "../ui/dropdown-menu";
 
 export function WalletConnectButton() {
-  const { address, isConnected } = useWeb3();
+  const { address, isConnected, isWeb3Ready } = useWeb3();
   const [isOpen, setIsOpen] = useState(false);
 
   // Truncate address for display
   const truncatedAddress = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : "";
+
+  // Don't render RainbowKit components until WagmiProvider is ready
+  if (!isWeb3Ready) {
+    return (
+      <Button
+        variant="outline"
+        disabled
+        className="gap-2 bg-gradient-to-r from-orange-500/10 to-orange-600/10 border-orange-500/50"
+      >
+        <Loader2 className="h-4 w-4 text-orange-400 animate-spin" />
+        <span className="text-orange-400/70">Loading Wallet...</span>
+      </Button>
+    );
+  }
 
   if (!isConnected) {
     return (
