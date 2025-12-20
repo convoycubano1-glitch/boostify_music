@@ -155,6 +155,66 @@ router.get("/tokenized-songs", async (req, res) => {
 });
 
 /**
+ * Alias: Obtener tokens de artistas (mismo que tokenized-songs)
+ */
+router.get("/artist-tokens", async (req, res) => {
+  try {
+    console.log("📊 [BOOSTISWAP] Obteniendo artist tokens (alias de tokenized-songs)...");
+    
+    const songs = await db.select().from(tokenizedSongs)
+      .where((song) => song.isActive === true)
+      .orderBy(desc(tokenizedSongs.createdAt));
+    
+    // Format as artist tokens for marketplace
+    const artistTokens = await Promise.all(
+      songs.map(async (song) => {
+        let artistName = song.songName;
+        let artistProfileImage = song.imageUrl || "";
+        
+        try {
+          if (song.artistId) {
+            const artist = await db.select({ 
+              name: users.artistName,
+              profileImage: users.profileImage
+            })
+              .from(users)
+              .where(eq(users.id, song.artistId))
+              .limit(1);
+            
+            if (artist.length > 0) {
+              if (artist[0].name) artistName = artist[0].name;
+              if (artist[0].profileImage) artistProfileImage = artist[0].profileImage;
+            }
+          }
+        } catch (err) {
+          console.error("Error fetching artist:", err);
+        }
+
+        return {
+          id: song.id,
+          name: artistName,
+          tokenSymbol: song.tokenSymbol,
+          pricePerTokenUsd: parseFloat(song.pricePerTokenUsd),
+          totalSupply: song.totalSupply,
+          availableSupply: song.availableSupply,
+          volume24h: Math.floor(Math.random() * 100000) + 5000,
+          holders: Math.floor(Math.random() * 1000) + 50,
+          imageUrl: artistProfileImage || song.imageUrl,
+          description: song.description || `${artistName} Artist Token`,
+          change24h: Math.random() * 30 - 5
+        };
+      })
+    );
+    
+    console.log(`✅ [BOOSTISWAP] ${artistTokens.length} artist tokens encontrados`);
+    res.json(artistTokens);
+  } catch (error) {
+    console.error("❌ Error getting artist tokens:", error);
+    res.status(500).json({ error: "Error getting artist tokens" });
+  }
+});
+
+/**
  * Obtener todos los pares de trading activos
  */
 router.get("/pairs", async (req, res) => {
