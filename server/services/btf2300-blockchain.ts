@@ -12,11 +12,11 @@ import { createPublicClient, createWalletClient, http, parseAbi, formatEther } f
 import { polygon } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 
-// Contract Addresses (Polygon Mainnet)
+// Contract Addresses (Polygon Mainnet) - V2 with ERC1155Receiver fix
 const BTF2300_CONTRACTS = {
-  artistToken: '0x8D39Ee33fBA624Da8666d74428aD5De2DfE8e469' as `0x${string}`,
-  dex: '0xdDcB670fA7eedc85Da3923beDca8dfe225f7146E' as `0x${string}`,
-  royalties: '0xF871a26F3Ed6AF4957f7c8fE7e53720D6B2Aca76' as `0x${string}`,
+  artistToken: '0x16ba188e438b4ebc7edc6acb49bdc1256de2f027' as `0x${string}`,
+  dex: '0xe6577a7e81cd4bf6cf2d074e28fd5a6970fe2647' as `0x${string}`,
+  royalties: '0x09ebf2b96741222bbc6d48035c9bf5a66f6aec91' as `0x${string}`,
 };
 
 // Base URL for metadata

@@ -686,6 +686,29 @@ contract BTF2300ArtistToken is ERC1155, AccessControl, ReentrancyGuard, Pausable
         return super.supportsInterface(interfaceId);
     }
     
+    // ==================== ERC1155 RECEIVER ====================
+    // Required for the contract to hold its own tokens (custody model)
+    
+    function onERC1155Received(
+        address,
+        address,
+        uint256,
+        uint256,
+        bytes calldata
+    ) external pure returns (bytes4) {
+        return this.onERC1155Received.selector;
+    }
+    
+    function onERC1155BatchReceived(
+        address,
+        address,
+        uint256[] calldata,
+        uint256[] calldata,
+        bytes calldata
+    ) external pure returns (bytes4) {
+        return this.onERC1155BatchReceived.selector;
+    }
+    
     // Allow contract to receive ETH
     receive() external payable {}
 }

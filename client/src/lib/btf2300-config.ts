@@ -10,11 +10,11 @@
 // ============================================
 
 export const BTF2300_ADDRESSES = {
-  // Polygon Mainnet (chainId: 137)
+  // Polygon Mainnet (chainId: 137) - V2 contracts with ERC1155Receiver fix
   137: {
-    artistToken: '0x8D39Ee33fBA624Da8666d74428aD5De2DfE8e469', // BTF-2300 ArtistToken v2 - DEPLOYED (with updateArtistProfile)
-    dex: '0xdDcB670fA7eedc85Da3923beDca8dfe225f7146E', // BTF-2300 DEX - DEPLOYED
-    royalties: '0xF871a26F3Ed6AF4957f7c8fE7e53720D6B2Aca76', // BTF-2300 Royalties - DEPLOYED
+    artistToken: '0x16ba188e438b4ebc7edc6acb49bdc1256de2f027', // BTF-2300 ArtistToken v2 - FIXED
+    dex: '0xe6577a7e81cd4bf6cf2d074e28fd5a6970fe2647', // BTF-2300 DEX v2
+    royalties: '0x09ebf2b96741222bbc6d48035c9bf5a66f6aec91', // BTF-2300 Royalties v2
   },
   // Polygon Amoy Testnet (chainId: 80002)
   80002: {
