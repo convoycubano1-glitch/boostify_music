@@ -1,5 +1,6 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BlockchainStatusWidget } from "./blockchain-status-widget";
 import {
   BarChart,
   LineChart,
@@ -43,7 +44,12 @@ export function DashboardView() {
   ];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Blockchain Status Widget */}
+      <div className="lg:col-span-1">
+        <BlockchainStatusWidget />
+      </div>
+
       {/* 24h Price Chart */}
       <Card className="bg-gradient-to-br from-slate-800/50 to-slate-700/30 border-slate-700 lg:col-span-2">
         <CardHeader className="border-b border-slate-700/50">

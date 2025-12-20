@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { parseEther } from 'viem';
+import React, { useState, useEffect } from "react";
+import { parseEther, formatEther } from 'viem';
 import {
   Dialog,
   DialogContent,
@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   TrendingUp,
   Users,
@@ -25,12 +26,15 @@ import {
   CheckCircle2,
   ArrowRight,
   Wallet,
+  ExternalLink,
+  Coins,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useWeb3 } from "@/hooks/use-web3";
+import { useBTF2300 } from "@/hooks/use-btf2300";
 import { ArtistProfile } from "@/data/artist-profiles";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { BOOSTIFY_CONTRACT_ADDRESS, ERC1155_ABI } from "@/lib/web3-config";
+import { TOKEN_PREFIXES } from "@/lib/btf2300-config";
 import { ArtistProgressWidget } from "./artist-progress-widget";
 
 // Lazy load wagmi hooks to prevent errors when provider is not ready
@@ -102,21 +106,34 @@ function ArtistDetailModalContent({
   // Now we can safely use wagmi hooks because Web3 is guaranteed to be ready
   const { address, isConnected } = useWeb3();
   const { toast } = useToast();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [hash, setHash] = useState<`0x${string}` | undefined>();
-  const [writeError, setWriteError] = useState<Error | null>(null);
-  const [isConfirming, setIsConfirming] = useState(false);
+  const btf2300 = useBTF2300();
+  
+  const [tokenAmount, setTokenAmount] = useState<number>(100);
+  const [pricePerToken, setPricePerToken] = useState<string>("0.005");
   const [isSuccess, setIsSuccess] = useState(false);
+  const [userBalance, setUserBalance] = useState<string>("0");
+  const [artistOnChain, setArtistOnChain] = useState<any>(null);
   
   // Use lazy-loaded wagmi hooks if available
   const writeContractResult = useWriteContractHook?.();
   const writeContract = writeContractResult?.writeContract;
   const transactionHash = writeContractResult?.data;
-  
-  // Update hash when transaction is sent
-  React.useEffect(() => {
-    if (transactionHash) setHash(transactionHash);
-  }, [transactionHash]);
+
+  // Fetch artist data from blockchain
+  useEffect(() => {
+    if (artist?.id) {
+      // Get artist info from contract
+      btf2300.getArtist(artist.id).then(setArtistOnChain);
+      
+      // Get user balance if connected
+      if (address) {
+        const tokenId = TOKEN_PREFIXES.ARTIST + artist.id;
+        btf2300.getTokenBalance(tokenId).then((balance) => {
+          setUserBalance(balance.toString());
+        });
+      }
+    }
+  }, [artist?.id, address, btf2300]);
 
   // artist is guaranteed to exist here
   if (!artist) return null;
@@ -131,6 +148,9 @@ function ArtistDetailModalContent({
       tokenValue: 0.50 * (1 + (artist.growthMetrics.tokenAppreciation / 100) * i / 12)
     }));
   };
+
+  const totalCostMatic = (parseFloat(pricePerToken) * tokenAmount).toFixed(4);
+  const tokenId = TOKEN_PREFIXES.ARTIST + artist.id;
 
   const handleBuyTokens = async (selectedArtist: ArtistProfile) => {
     if (!isConnected) {
@@ -152,29 +172,19 @@ function ArtistDetailModalContent({
     }
 
     try {
-      setIsProcessing(true);
       console.log("🛒 Comprando tokens para:", selectedArtist.name);
+      console.log(`📊 Token ID: ${tokenId}, Cantidad: ${tokenAmount}, Precio: ${pricePerToken} MATIC`);
 
-      // Convert 100 tokens at 0.005 ETH each
-      const tokenAmount = BigInt(100);
-      const pricePerTokenEth = "0.005"; // 0.005 ETH por token
-      const totalPrice = parseFloat(pricePerTokenEth) * 100;
-      const value = parseEther(totalPrice.toString());
-
-      // Call the smart contract using safeBatchTransferFrom or mint function
-      // Using the correct function that exists in ERC1155 standard
-      writeContract({
-        address: BOOSTIFY_CONTRACT_ADDRESS as `0x${string}`,
-        abi: ERC1155_ABI,
-        functionName: "mint",
-        args: [address, BigInt(selectedArtist.id), tokenAmount, "0x"],
-        value,
-      });
-
-      toast({
-        title: "✅ Transacción enviada",
-        description: `Comprando 100 tokens de ${selectedArtist.name}...`,
-      });
+      // Use the BTF-2300 hook to buy tokens
+      const result = await btf2300.buyTokensDirect(tokenId, tokenAmount, pricePerToken);
+      
+      if (result.success) {
+        setIsSuccess(true);
+        // Refresh balance
+        btf2300.getTokenBalance(tokenId).then((balance) => {
+          setUserBalance(balance.toString());
+        });
+      }
     } catch (error: any) {
       console.error("❌ Error:", error);
       toast({
@@ -182,28 +192,18 @@ function ArtistDetailModalContent({
         description: error.message || "No se pudo procesar la compra",
         variant: "destructive",
       });
-    } finally {
-      setIsProcessing(false);
     }
   };
 
   // Handle transaction confirmation
-  React.useEffect(() => {
-    if (isSuccess) {
+  useEffect(() => {
+    if (isSuccess && btf2300.txHash) {
       toast({
         title: "✅ Compra exitosa!",
-        description: `Transacción confirmada: ${hash}`,
-      });
-      onClose();
-    }
-    if (writeError) {
-      toast({
-        title: "❌ Transacción cancelada",
-        description: writeError.message,
-        variant: "destructive",
+        description: `Transacción confirmada en Polygon`,
       });
     }
-  }, [isSuccess, writeError, hash, toast, onClose]);
+  }, [isSuccess, btf2300.txHash, toast]);
 
   const potentialColors = {
     High: "bg-blue-500/20 text-blue-300 border-blue-500/30",
@@ -437,11 +437,63 @@ function ArtistDetailModalContent({
               </span>
               's future?
             </p>
+            
+            {/* User Balance Display */}
+            {isConnected && userBalance !== "0" && (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 mb-3 flex items-center gap-2">
+                <Coins className="h-4 w-4 text-green-400" />
+                <p className="text-sm text-green-300">
+                  Tu balance: <span className="font-bold">{userBalance} tokens</span>
+                </p>
+              </div>
+            )}
+
+            {/* Artist On-Chain Status */}
+            {artistOnChain && (
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <CheckCircle2 className="h-4 w-4 text-blue-400" />
+                  <p className="text-xs text-blue-300 font-semibold">Artista verificado en Polygon</p>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Token ID: {tokenId} • {artistOnChain.isVerified ? '✓ Verificado' : 'Pendiente'}
+                </p>
+              </div>
+            )}
+            
             <div className="space-y-3">
               {!isConnected && (
                 <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3 flex items-center gap-2">
                   <AlertCircle className="h-4 w-4 text-red-400 flex-shrink-0" />
                   <p className="text-xs text-red-300">Conecta tu wallet para comprar tokens</p>
+                </div>
+              )}
+              
+              {/* Token Amount Input */}
+              {isConnected && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-slate-400 mb-1 block">Cantidad de tokens</label>
+                    <Input
+                      type="number"
+                      value={tokenAmount}
+                      onChange={(e) => setTokenAmount(parseInt(e.target.value) || 0)}
+                      min={1}
+                      max={10000}
+                      className="bg-slate-800/50 border-slate-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 mb-1 block">Precio por token (MATIC)</label>
+                    <Input
+                      type="number"
+                      value={pricePerToken}
+                      onChange={(e) => setPricePerToken(e.target.value)}
+                      step="0.001"
+                      min="0.001"
+                      className="bg-slate-800/50 border-slate-600"
+                    />
+                  </div>
                 </div>
               )}
               
@@ -473,14 +525,14 @@ function ArtistDetailModalContent({
               ) : (
                 <Button 
                   onClick={() => handleBuyTokens(artist)}
-                  disabled={isProcessing || isConfirming}
+                  disabled={btf2300.isLoading || isSuccess}
                   className="w-full font-semibold text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   data-testid="button-buy-artist-token"
                 >
-                  {isProcessing || isConfirming ? (
+                  {btf2300.isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {isConfirming ? "Confirmando..." : "Procesando..."}
+                      Procesando en Polygon...
                     </>
                   ) : isSuccess ? (
                     <>
@@ -490,7 +542,7 @@ function ArtistDetailModalContent({
                   ) : (
                     <>
                       <ShoppingCart className="mr-2 h-4 w-4" />
-                      Comprar 100 Tokens - 0.5 ETH
+                      Comprar {tokenAmount} Tokens - {totalCostMatic} MATIC
                     </>
                   )}
                 </Button>
@@ -498,15 +550,22 @@ function ArtistDetailModalContent({
               
               <p className="text-xs text-slate-400 text-center">
                 {isConnected ? (
-                  <>💳 100 tokens @ 0.005 ETH • Pago seguro en blockchain</>
+                  <>💳 {tokenAmount} tokens @ {pricePerToken} MATIC • Transacción real en Polygon Mainnet</>
                 ) : (
                   <>Conecta tu MetaMask para comprar</>
                 )}
               </p>
-              {hash && (
-                <p className="text-xs text-slate-500 text-center truncate">
-                  TX: {hash}
-                </p>
+              
+              {btf2300.txHash && (
+                <a 
+                  href={`https://polygonscan.com/tx/${btf2300.txHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 text-xs text-blue-400 hover:text-blue-300"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Ver transacción en PolygonScan
+                </a>
               )}
             </div>
           </div>

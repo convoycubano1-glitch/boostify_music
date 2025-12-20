@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,11 +12,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useWeb3 } from "@/hooks/use-web3";
+import { useBTF2300 } from "@/hooks/use-btf2300";
 import { useArtistTokens } from "@/hooks/use-artist-tokens";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { Loader2, Plus } from "lucide-react";
+import { TOKEN_PREFIXES } from "@/lib/btf2300-config";
+import { formatEther } from "viem";
+import { Loader2, Plus, ExternalLink, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface AddLiquidityModalProps {
   triggerLabel?: string;
@@ -25,62 +26,72 @@ interface AddLiquidityModalProps {
 
 export function AddLiquidityModal({ triggerLabel = "Add Liquidity", poolId }: AddLiquidityModalProps) {
   const [open, setOpen] = useState(false);
-  const [token1, setToken1] = useState("");
-  const [token2, setToken2] = useState("");
-  const [amount1, setAmount1] = useState("");
-  const [amount2, setAmount2] = useState("");
+  const [selectedToken, setSelectedToken] = useState("");
+  const [tokenAmount, setTokenAmount] = useState("");
+  const [maticAmount, setMaticAmount] = useState("");
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [poolInfo, setPoolInfo] = useState<any>(null);
+  
   const { isConnected, address } = useWeb3();
+  const btf2300 = useBTF2300();
   const artistTokens = useArtistTokens();
   const { toast } = useToast();
 
-  const addLiquidityMutation = useMutation({
-    mutationFn: async () => {
-      if (!token1 || !token2 || !amount1 || !amount2) {
-        throw new Error("Fill in all fields");
-      }
-      if (!isConnected) {
-        throw new Error("Wallet not connected");
-      }
+  // Get token ID
+  const getTokenId = (tokenIdStr: string) => {
+    const artistId = parseInt(tokenIdStr);
+    return TOKEN_PREFIXES.ARTIST + artistId;
+  };
 
-      return apiRequest({
-        url: "/api/boostiswap/contracts/liquidity/add",
-        method: "POST",
-        data: {
-          userId: 1,
-          token1Id: parseInt(token1),
-          token2Id: parseInt(token2),
-          amount1: parseFloat(amount1),
-          amount2: parseFloat(amount2),
-          walletAddress: address,
-        },
-      });
-    },
-    onSuccess: (data) => {
+  // Fetch pool info when token selected
+  useEffect(() => {
+    if (selectedToken) {
+      const tokenId = getTokenId(selectedToken);
+      btf2300.getPoolInfo(tokenId).then(setPoolInfo);
+    }
+  }, [selectedToken, btf2300]);
+
+  const handleAddLiquidity = async () => {
+    if (!selectedToken || !tokenAmount || !maticAmount) {
       toast({
-        title: "✅ Liquidity Added",
-        description: `Added ${amount1} + ${amount2} to pool. LP shares: ${data.liquidity.liquidityShares}`,
-      });
-      setOpen(false);
-      setToken1("");
-      setToken2("");
-      setAmount1("");
-      setAmount2("");
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error Adding Liquidity",
-        description: error.message || "Failed to add liquidity",
+        title: "Error",
+        description: "Completa todos los campos",
         variant: "destructive",
       });
-    },
-  });
-
-  // Auto-calculate amount2 based on amount1 (simple 1:1 ratio for demo)
-  React.useEffect(() => {
-    if (amount1 && parseFloat(amount1) > 0) {
-      setAmount2((parseFloat(amount1) * 1.5).toFixed(4));
+      return;
     }
-  }, [amount1]);
+
+    if (!isConnected) {
+      toast({
+        title: "Wallet no conectada",
+        description: "Conecta tu wallet primero",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const tokenId = getTokenId(selectedToken);
+    
+    const result = await btf2300.addLiquidity(
+      tokenId,
+      parseInt(tokenAmount),
+      maticAmount,
+      0 // minLPTokens
+    );
+
+    if (result.success) {
+      setIsSuccess(true);
+      // Refresh pool info
+      btf2300.getPoolInfo(tokenId).then(setPoolInfo);
+      
+      setTimeout(() => {
+        setIsSuccess(false);
+        setOpen(false);
+        setTokenAmount("");
+        setMaticAmount("");
+      }, 2000);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -92,23 +103,25 @@ export function AddLiquidityModal({ triggerLabel = "Add Liquidity", poolId }: Ad
       </DialogTrigger>
       <DialogContent className="bg-slate-800 border-slate-700">
         <DialogHeader>
-          <DialogTitle>Add Liquidity</DialogTitle>
-          <DialogDescription>Provide liquidity to earn trading fees</DialogDescription>
+          <DialogTitle>Añadir Liquidez al DEX</DialogTitle>
+          <DialogDescription>
+            Provee liquidez para ganar fees de trading en Polygon
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {!isConnected && (
             <div className="bg-amber-500/20 border border-amber-500/50 rounded-lg p-3">
-              <p className="text-amber-400 text-sm">Connect your wallet first</p>
+              <p className="text-amber-400 text-sm">Conecta tu wallet primero</p>
             </div>
           )}
 
-          {/* Token 1 */}
+          {/* Token Selection */}
           <div className="space-y-2">
-            <Label>Token 1</Label>
-            <Select value={token1} onValueChange={setToken1}>
+            <Label>Token de Artista</Label>
+            <Select value={selectedToken} onValueChange={setSelectedToken}>
               <SelectTrigger className="bg-slate-900/50 border-slate-700">
-                <SelectValue placeholder="Select first token" />
+                <SelectValue placeholder="Selecciona un artista" />
               </SelectTrigger>
               <SelectContent className="bg-slate-800 border-slate-700">
                 {artistTokens.map((t) => (
@@ -118,69 +131,110 @@ export function AddLiquidityModal({ triggerLabel = "Add Liquidity", poolId }: Ad
                 ))}
               </SelectContent>
             </Select>
-            <Input
-              type="number"
-              placeholder="0.0"
-              value={amount1}
-              onChange={(e) => setAmount1(e.target.value)}
-              className="bg-slate-900/50 border-slate-700"
-            />
           </div>
 
-          {/* Token 2 */}
+          {/* Token Amount */}
           <div className="space-y-2">
-            <Label>Token 2</Label>
-            <Select value={token2} onValueChange={setToken2}>
-              <SelectTrigger className="bg-slate-900/50 border-slate-700">
-                <SelectValue placeholder="Select second token" />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700">
-                {artistTokens.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.symbol} - {t.artist}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              type="number"
-              placeholder="0.0"
-              value={amount2}
-              onChange={(e) => setAmount2(e.target.value)}
-              className="bg-slate-900/50 border-slate-700"
-            />
+            <Label>Cantidad de Tokens</Label>
+            <div className="relative">
+              <Input
+                type="number"
+                placeholder="0"
+                value={tokenAmount}
+                onChange={(e) => setTokenAmount(e.target.value)}
+                className="bg-slate-900/50 border-slate-700 pr-16"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                Tokens
+              </span>
+            </div>
           </div>
 
-          {/* Info */}
-          {amount1 && amount2 && (
+          {/* MATIC Amount */}
+          <div className="space-y-2">
+            <Label>Cantidad de MATIC</Label>
+            <div className="relative">
+              <Input
+                type="number"
+                placeholder="0.0"
+                value={maticAmount}
+                onChange={(e) => setMaticAmount(e.target.value)}
+                className="bg-slate-900/50 border-slate-700 pr-16"
+                step="0.01"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                MATIC
+              </span>
+            </div>
+          </div>
+
+          {/* Pool Info */}
+          {poolInfo && poolInfo.isActive && (
             <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-3">
+              <p className="text-xs text-muted-foreground mb-2">Pool existente:</p>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
-                  <p className="text-muted-foreground">Your share</p>
-                  <p className="font-semibold text-orange-400">~0.15 LP</p>
+                  <p className="text-muted-foreground">Reserva Tokens</p>
+                  <p className="font-semibold text-white">{poolInfo.tokenReserve.toString()}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Pool fee APY</p>
-                  <p className="font-semibold text-green-400">14.2%</p>
+                  <p className="text-muted-foreground">Reserva MATIC</p>
+                  <p className="font-semibold text-white">{formatEther(poolInfo.ethReserve)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Total LP</p>
+                  <p className="font-semibold text-orange-400">{poolInfo.totalLPTokens.toString()}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Fees acumulados</p>
+                  <p className="font-semibold text-green-400">{formatEther(poolInfo.feeAccumulated)}</p>
                 </div>
               </div>
             </div>
           )}
 
+          {/* No Pool - Will Create */}
+          {selectedToken && (!poolInfo || !poolInfo.isActive) && (
+            <div className="bg-blue-500/20 border border-blue-500/50 rounded-lg p-3 flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
+              <p className="text-blue-400 text-sm">
+                Este token no tiene pool aún. Al añadir liquidez crearás un nuevo pool.
+              </p>
+            </div>
+          )}
+
           <Button
-            onClick={() => addLiquidityMutation.mutate()}
-            disabled={!isConnected || addLiquidityMutation.isPending || !token1 || !token2 || !amount1 || !amount2}
+            onClick={handleAddLiquidity}
+            disabled={!isConnected || btf2300.isLoading || !selectedToken || !tokenAmount || !maticAmount || isSuccess}
             className="w-full bg-orange-500 hover:bg-orange-600"
           >
-            {addLiquidityMutation.isPending ? (
+            {btf2300.isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Adding...
+                Procesando en Polygon...
+              </>
+            ) : isSuccess ? (
+              <>
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                ¡Liquidez Añadida!
               </>
             ) : (
-              "Add Liquidity"
+              "Añadir Liquidez"
             )}
           </Button>
+
+          {/* Transaction Link */}
+          {btf2300.txHash && (
+            <a 
+              href={`https://polygonscan.com/tx/${btf2300.txHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 text-sm text-blue-400 hover:text-blue-300"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Ver transacción en PolygonScan
+            </a>
+          )}
         </div>
       </DialogContent>
     </Dialog>
