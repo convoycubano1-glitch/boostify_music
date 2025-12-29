@@ -10,7 +10,7 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Email sender configuration
-const FROM_EMAIL = 'Boostify Music <noreply@boostifymusic.com>';
+const FROM_EMAIL = 'Boostify Music <info@boostifymusic.com>';
 const SUPPORT_EMAIL = 'support@boostifymusic.com';
 
 export interface EmailResult {
