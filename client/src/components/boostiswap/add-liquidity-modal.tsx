@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { TOKEN_PREFIXES } from "@/lib/btf2300-config";
 import { formatEther } from "viem";
 import { Loader2, Plus, ExternalLink, CheckCircle2, AlertCircle } from "lucide-react";
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 interface AddLiquidityModalProps {
   triggerLabel?: string;
@@ -32,7 +33,7 @@ export function AddLiquidityModal({ triggerLabel = "Add Liquidity", poolId }: Ad
   const [isSuccess, setIsSuccess] = useState(false);
   const [poolInfo, setPoolInfo] = useState<any>(null);
   
-  const { isConnected, address } = useWeb3();
+  const { isConnected, address, isWeb3Ready } = useWeb3();
   const btf2300 = useBTF2300();
   const artistTokens = useArtistTokens();
   const { toast } = useToast();
@@ -111,8 +112,26 @@ export function AddLiquidityModal({ triggerLabel = "Add Liquidity", poolId }: Ad
 
         <div className="space-y-4">
           {!isConnected && (
-            <div className="bg-amber-500/20 border border-amber-500/50 rounded-lg p-3">
-              <p className="text-amber-400 text-sm">Conecta tu wallet primero</p>
+            <div className="bg-amber-500/20 border border-amber-500/50 rounded-lg p-3 flex flex-col items-center gap-3">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-400" />
+                <p className="text-amber-400 text-sm">Conecta tu wallet primero</p>
+              </div>
+              {isWeb3Ready ? (
+                <ConnectButton 
+                  showBalance={false}
+                  chainStatus="icon"
+                  accountStatus="address"
+                  label="🔗 Conectar Wallet"
+                />
+              ) : (
+                <Button 
+                  onClick={() => toast({ title: "⏳ Inicializando Web3...", description: "Por favor espera un momento" })}
+                  className="bg-purple-500 hover:bg-purple-600"
+                >
+                  Conectar Wallet
+                </Button>
+              )}
             </div>
           )}
 

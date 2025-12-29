@@ -12,10 +12,11 @@ import { useBTF2300 } from "@/hooks/use-btf2300";
 import { useArtistTokens } from "@/hooks/use-artist-tokens";
 import { TOKEN_PREFIXES } from "@/lib/btf2300-config";
 import { formatEther } from "viem";
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 export function SwapInterface() {
   const { toast } = useToast();
-  const { isConnected, address } = useWeb3();
+  const { isConnected, address, isWeb3Ready } = useWeb3();
   const btf2300 = useBTF2300();
   const artistTokens = useArtistTokens();
   
@@ -284,30 +285,51 @@ export function SwapInterface() {
           </div>
         )}
 
-        {/* Swap Button */}
-        <Button
-          onClick={handleSwap}
-          disabled={!isConnected || btf2300.isLoading || !selectedToken || !inputAmount || isSuccess}
-          className="w-full bg-orange-500 hover:bg-orange-600 text-lg py-6 disabled:opacity-50"
-        >
-          {!isConnected ? (
-            "Conectar Wallet"
-          ) : btf2300.isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Procesando en Polygon...
-            </>
-          ) : isSuccess ? (
-            <>
-              <CheckCircle2 className="mr-2 h-5 w-5" />
-              ¡Swap Exitoso!
-            </>
-          ) : (
-            <>
-              {swapMode === 'buy' ? 'Comprar' : 'Vender'} Tokens
-            </>
-          )}
-        </Button>
+        {/* Connect Wallet Button - uses RainbowKit when Web3 is ready */}
+        {!isConnected && (
+          <div className="w-full flex justify-center">
+            {isWeb3Ready ? (
+              <ConnectButton 
+                showBalance={false}
+                chainStatus="icon"
+                accountStatus="address"
+                label="🔗 Conectar Wallet para Swap"
+              />
+            ) : (
+              <Button 
+                onClick={() => toast({ title: "⏳ Inicializando Web3...", description: "Por favor espera un momento e intenta de nuevo" })}
+                className="w-full bg-purple-500 hover:bg-purple-600 text-lg py-6"
+              >
+                Conectar Wallet
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Swap Button - only shown when connected */}
+        {isConnected && (
+          <Button
+            onClick={handleSwap}
+            disabled={btf2300.isLoading || !selectedToken || !inputAmount || isSuccess}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-lg py-6 disabled:opacity-50"
+          >
+            {btf2300.isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Procesando en Polygon...
+              </>
+            ) : isSuccess ? (
+              <>
+                <CheckCircle2 className="mr-2 h-5 w-5" />
+                ¡Swap Exitoso!
+              </>
+            ) : (
+              <>
+                {swapMode === 'buy' ? 'Comprar' : 'Vender'} Tokens
+              </>
+            )}
+          </Button>
+        )}
 
         {/* Transaction Link */}
         {btf2300.txHash && (
