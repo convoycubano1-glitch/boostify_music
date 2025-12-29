@@ -434,12 +434,6 @@ export default function HomePage() {
     window.location.href = '/signup';
   };
 
-  // Calculate days until launch
-  const launchDate = new Date('2025-12-26T00:00:00');
-  const now = new Date();
-  const diffTime = launchDate.getTime() - now.getTime();
-  const daysUntilLaunch = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Beta Development Notice */}
@@ -481,18 +475,6 @@ export default function HomePage() {
               transition={{ duration: 0.8 }}
               className="text-center space-y-6"
             >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 1, delay: 0.2 }}
-              >
-                <Badge 
-                  className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30 px-4 py-1 text-sm"
-                  variant="outline"
-                >
-                  Launch in {daysUntilLaunch} days — December 26th, 2025
-                </Badge>
-              </motion.div>
 
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-red-500 to-orange-500 leading-tight">
                 <motion.span

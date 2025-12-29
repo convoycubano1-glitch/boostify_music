@@ -5,6 +5,9 @@ import { useParams } from "wouter";
 import { useAuth } from "../hooks/use-auth";
 import { Head } from "../components/ui/head";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { SignIn, useClerk } from "@clerk/clerk-react";
+import { useState } from "react";
 
 interface ArtistData {
   name: string;
@@ -21,24 +24,90 @@ interface ArtistData {
 
 export default function ProfilePage() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading, isAuthenticated } = useAuth();
+  const { openSignIn } = useClerk();
+  const [showSignIn, setShowSignIn] = useState(false);
 
   // Use the URL id or fallback to the authenticated user's id
-  const artistId = id || (user?.id ? String(user.id) : null);
+  // Use user.id > 0 check to ensure we have a valid ID from the database
+  const artistId = id || (user?.id && user.id > 0 ? String(user.id) : null);
   
   // Check if this is the user's own profile
-  const isOwnProfile = !id && !!user;
+  const isOwnProfile = !id && !!user && user.id > 0;
+
+  // Auto-open sign in modal when user is not authenticated and trying to view their own profile
+  useEffect(() => {
+    // Only trigger if:
+    // 1. Auth is done loading
+    // 2. No ID in URL (trying to view own profile)
+    // 3. User is not authenticated
+    if (!isAuthLoading && !id && !isAuthenticated) {
+      setShowSignIn(true);
+      // Try to open Clerk modal
+      try {
+        openSignIn({ redirectUrl: '/profile' });
+      } catch (e) {
+        // Fallback to showing inline SignIn component
+        console.log('Using inline SignIn component');
+      }
+    }
+  }, [isAuthLoading, id, isAuthenticated, openSignIn]);
 
   // Query para obtener datos del artista
-  const { data: artistData, isLoading } = useQuery<ArtistData>({
+  const { data: artistData, isLoading: isArtistLoading } = useQuery<ArtistData>({
     queryKey: ["/api/artist", artistId],
-    enabled: !!artistId
+    enabled: !!artistId && (!isOwnProfile || user?.id !== 0)
   });
 
-  if (!artistId || isLoading) {
+  // Show loading only while auth is initially loading (brief moment)
+  if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-black pt-4 flex items-center justify-center">
-        <p className="text-white">Loading profile...</p>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-white text-sm">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If no user and no id in URL, show sign in component
+  if (!artistId) {
+    return (
+      <div className="min-h-screen bg-black pt-4 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-6">
+          <div className="text-center mb-4">
+            <h1 className="text-2xl font-bold text-white mb-2">Accede a tu perfil</h1>
+            <p className="text-gray-400">Inicia sesión para ver y editar tu perfil de artista</p>
+          </div>
+          <SignIn 
+            appearance={{
+              elements: {
+                rootBox: "mx-auto",
+                card: "bg-gray-900 border border-gray-800",
+                headerTitle: "text-white",
+                headerSubtitle: "text-gray-400",
+                formFieldLabel: "text-gray-300",
+                formFieldInput: "bg-gray-800 border-gray-700 text-white",
+                formButtonPrimary: "bg-orange-500 hover:bg-orange-600",
+                footerActionLink: "text-orange-500 hover:text-orange-400",
+              }
+            }}
+            routing="hash"
+            afterSignInUrl="/profile"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (isArtistLoading) {
+    return (
+      <div className="min-h-screen bg-black pt-4 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-white text-sm">Cargando perfil...</p>
+        </div>
       </div>
     );
   }
