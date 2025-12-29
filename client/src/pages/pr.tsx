@@ -107,7 +107,7 @@ const GENRES = [
 
 export default function PRPage() {
   const { toast } = useToast();
-  const { user, userSubscription } = useAuth();
+  const { user, userSubscription, isAdmin } = useAuth();
   const [activeView, setActiveView] = useState<"list" | "wizard" | "campaign">("list");
   const [wizardStep, setWizardStep] = useState(1);
   const [selectedCampaign, setSelectedCampaign] = useState<number | null>(null);
@@ -396,6 +396,7 @@ export default function PRPage() {
       requiredPlan="premium" 
       userSubscription={userSubscription} 
       featureName="PR Management Tools"
+      isAdmin={isAdmin}
     >
       <div className="min-h-screen bg-background">
         <Header />

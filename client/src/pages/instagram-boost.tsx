@@ -62,7 +62,7 @@ import {
 } from "lucide-react";
 
 export default function InstagramBoostPage() {
-  const { user, userSubscription } = useAuth();
+  const { user, userSubscription, isAdmin } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("ai-tools");
   const [aiToolTab, setAiToolTab] = useState("captions");
@@ -498,6 +498,7 @@ export default function InstagramBoostPage() {
                 requiredPlan="basic" 
                 userSubscription={userSubscription} 
                 featureName="AI Tools"
+                isAdmin={isAdmin}
               >
               <div className="mb-6">
                 <h2 className="text-2xl font-bold mb-2">AI-Powered Instagram Tools</h2>
@@ -913,6 +914,7 @@ export default function InstagramBoostPage() {
                 requiredPlan="pro" 
                 userSubscription={userSubscription} 
                 featureName="Community Tools"
+                isAdmin={isAdmin}
               >
               {/* Quick Stats */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -1077,6 +1079,7 @@ export default function InstagramBoostPage() {
                 requiredPlan="premium" 
                 userSubscription={userSubscription} 
                 featureName="Influencer Tools"
+                isAdmin={isAdmin}
               >
               {/* Search and Filters */}
               <Card className="p-4 sm:p-6">
@@ -1269,6 +1272,7 @@ export default function InstagramBoostPage() {
                 requiredPlan="premium" 
                 userSubscription={userSubscription} 
                 featureName="Strategy Tools"
+                isAdmin={isAdmin}
               >
               <div className="grid gap-6 lg:grid-cols-2">
                 {/* Content Mix Strategy */}
@@ -1458,6 +1462,7 @@ export default function InstagramBoostPage() {
                 requiredPlan="premium" 
                 userSubscription={userSubscription} 
                 featureName="Analytics Reports"
+                isAdmin={isAdmin}
               >
               {/* Date Range Selector */}
               <Card className="p-4">

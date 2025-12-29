@@ -6,6 +6,9 @@ import { useUser, useClerk, useAuth as useClerkAuth } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 
+// Admin emails list - must match server/shared/constants.ts
+const ADMIN_EMAILS = ['convoycubano@gmail.com'];
+
 // Tipo de usuario basado en el schema de la base de datos
 interface User {
   id: number;
@@ -17,6 +20,7 @@ interface User {
   profileImageUrl?: string | null;
   role: string;
   isAdmin?: boolean;
+  subscriptionPlan?: string | null;
   // Artist profile fields
   slug?: string | null;
   artistName?: string | null;
@@ -54,6 +58,16 @@ export function useAuth() {
     username: clerkUser.username,
   } : null);
 
+  // Check if current user is admin (based on email)
+  const userEmail = user?.email || clerkUser?.primaryEmailAddress?.emailAddress;
+  const isAdmin = Boolean(
+    user?.isAdmin || 
+    (userEmail && ADMIN_EMAILS.includes(userEmail.toLowerCase()))
+  );
+
+  // Get subscription plan (admin gets premium access)
+  const userSubscription = isAdmin ? 'premium' : (user?.subscriptionPlan?.toLowerCase() || null);
+
   const logout = async () => {
     await clerkSignOut();
   };
@@ -67,6 +81,8 @@ export function useAuth() {
     isLoading,
     loading: isLoading,
     isAuthenticated: isSignedIn ?? false,
+    isAdmin,
+    userSubscription,
     logout,
     login,
     refetch,

@@ -158,12 +158,9 @@ interface ApiKey {
 }
 
 export default function YoutubeViewsPage() {
-  const { user } = useAuth();
+  const { user, isAdmin, userSubscription } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("pre-launch");
-  
-  // Detect user subscription plan
-  const userSubscription = (user as any)?.subscriptionPlan?.toLowerCase() || null;
   
   // Pre-Launch Score states
   const [preLaunchTitle, setPreLaunchTitle] = useState("");
@@ -1141,6 +1138,7 @@ export default function YoutubeViewsPage() {
                 requiredPlan="basic" 
                 userSubscription={userSubscription} 
                 featureName="Pre-Launch Success Predictor"
+                isAdmin={isAdmin}
               >
                 <Card className="p-6">
                 <div className="flex items-center gap-4 mb-6">
@@ -1296,6 +1294,7 @@ export default function YoutubeViewsPage() {
                 requiredPlan="basic" 
                 userSubscription={userSubscription} 
                 featureName="AI Keywords Generator"
+                isAdmin={isAdmin}
               >
                 <Card className="p-6">
                 <div className="flex items-center gap-4 mb-6">
@@ -1417,6 +1416,7 @@ export default function YoutubeViewsPage() {
                 requiredPlan="basic" 
                 userSubscription={userSubscription} 
                 featureName="Title Analyzer"
+                isAdmin={isAdmin}
               >
               <Card className="p-6">
                 <div className="flex items-center gap-4 mb-6">
@@ -1574,6 +1574,7 @@ export default function YoutubeViewsPage() {
                 requiredPlan="basic" 
                 userSubscription={userSubscription} 
                 featureName="Content Ideas Generator"
+                isAdmin={isAdmin}
               >
                 <Card className="p-6">
                 <div className="flex items-center gap-4 mb-6">

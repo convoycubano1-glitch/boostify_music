@@ -16,13 +16,10 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { PlanTierGuard } from "../components/youtube-views/plan-tier-guard";
 
 export default function SpotifyPage() {
-  const { user } = useAuth();
+  const { user, isAdmin, userSubscription } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("listeners");
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  
-  // Detect user subscription plan
-  const userSubscription = (user as any)?.subscriptionPlan?.toLowerCase() || null;
 
   // Tab 1: Monthly Listeners Prediction
   const [artistUrl, setArtistUrl] = useState("");
@@ -563,6 +560,7 @@ export default function SpotifyPage() {
                   requiredPlan="basic" 
                   userSubscription={userSubscription} 
                   featureName="Growth Prediction"
+                  isAdmin={isAdmin}
                 >
                   <div className="grid gap-6 lg:grid-cols-2">
                   {/* Input Card */}
@@ -698,6 +696,7 @@ export default function SpotifyPage() {
                   requiredPlan="basic" 
                   userSubscription={userSubscription} 
                   featureName="Playlist Match Finder"
+                  isAdmin={isAdmin}
                 >
                 <div className="grid gap-6 lg:grid-cols-2">
                   <Card className="group border-orange-500/20 bg-black/40 backdrop-blur-sm hover:border-orange-500/40 transition-all duration-300">
@@ -810,6 +809,7 @@ export default function SpotifyPage() {
                   requiredPlan="pro" 
                   userSubscription={userSubscription} 
                   featureName="Curator Finder"
+                  isAdmin={isAdmin}
                 >
                   <div className="flex gap-3 mb-4">
                   <Button
@@ -1137,6 +1137,7 @@ export default function SpotifyPage() {
                   requiredPlan="pro" 
                   userSubscription={userSubscription} 
                   featureName="SEO Optimizer"
+                  isAdmin={isAdmin}
                 >
                   <div className="grid gap-6 lg:grid-cols-2">
                   <Card className="group border-orange-500/20 bg-black/40 backdrop-blur-sm hover:border-orange-500/40 transition-all duration-300">
