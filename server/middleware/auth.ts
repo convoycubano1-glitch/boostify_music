@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { auth } from '../firebase';
 import { DecodedIdToken } from 'firebase-admin/auth';
 import { getAuth as getClerkAuth } from '@clerk/express';
+import { isAdminEmail } from '../../shared/constants';
 
 /**
  * Niveles de suscripción disponibles, ordenados por jerarquía
@@ -139,7 +140,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
           const email = decodedToken.email;
           
           // Check if user is the admin
-          const isAdmin = email === 'convoycubano@gmail.com';
+          const isAdmin = isAdminEmail(email);
           
           // Sin Firestore del servidor, no podemos obtener subscription info
           // El cliente debe manejar esto desde Stripe directamente
@@ -177,8 +178,8 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
         const decodedToken: DecodedIdToken = await auth.verifyIdToken(token);
         console.log('Token verified successfully for UID:', decodedToken.uid);
         
-        // Check if user is the admin (convoycubano@gmail.com)
-        const isAdmin = decodedToken.email === 'convoycubano@gmail.com' || decodedToken.admin === true;
+        // Check if user is the admin
+        const isAdmin = isAdminEmail(decodedToken.email) || decodedToken.admin === true;
         
         // Get subscription info from Firestore
         let subscriptionInfo: Subscription | undefined = undefined;
@@ -272,8 +273,8 @@ export function requireSubscription(requiredPlan: SubscriptionPlan) {
       });
     }
 
-    // El administrador (convoycubano@gmail.com) siempre tiene acceso completo
-    if (req.user.isAdmin || req.user.email === 'convoycubano@gmail.com') {
+    // El administrador siempre tiene acceso completo
+    if (req.user.isAdmin || isAdminEmail(req.user.email)) {
       return next();
     }
 

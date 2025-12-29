@@ -7,6 +7,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { logger } from "../logger";
 import { useAuth } from '../../hooks/use-auth';
 import { useQuery } from '@tanstack/react-query';
+import { isAdminEmail } from '../../../../shared/constants';
 
 // Tipos de planes disponibles
 // Soporta AMBAS nomenclaturas para compatibilidad:
@@ -220,8 +221,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
    * Jerarquía: free < creator/basic < professional/pro < enterprise/premium
    */
   const hasAccess = (requiredPlan: PlanType | string): boolean => {
-    // Admin tiene acceso a todo
-    if (userRole?.role === 'admin') {
+    // Admin tiene acceso a todo (por rol o por email)
+    if (userRole?.role === 'admin' || isAdminEmail(user?.email)) {
       return true;
     }
     
@@ -238,22 +239,22 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   };
   
   /**
-   * Verificar si el usuario es administrador
+   * Verificar si el usuario es administrador (por rol o por email)
    */
   const isAdmin = (): boolean => {
-    return userRole?.role === 'admin';
+    return userRole?.role === 'admin' || isAdminEmail(user?.email);
   };
   
   /**
    * Verificar si el usuario tiene un permiso específico
    */
   const hasPermission = (permission: string): boolean => {
-    if (!userRole) return false;
-    
-    // Admin tiene todos los permisos
-    if (userRole.role === 'admin') {
+    // Admin tiene todos los permisos (por rol o por email)
+    if (userRole?.role === 'admin' || isAdminEmail(user?.email)) {
       return true;
     }
+    
+    if (!userRole) return false;
     
     // Verificar permisos específicos
     return userRole.permissions?.includes(permission) || false;

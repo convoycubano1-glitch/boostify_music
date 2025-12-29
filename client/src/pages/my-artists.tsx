@@ -34,6 +34,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { AIGenerationModal } from "../components/artist/ai-generation-modal";
+import { isAdminEmail } from "../../../shared/constants";
 
 interface Artist {
   id: number;
@@ -59,7 +60,7 @@ export default function MyArtistsPage() {
   const [, setLocation] = useLocation();
   
   // Detectar si el usuario es admin
-  const isAdmin = user?.email === 'convoycubano@gmail.com';
+  const isAdmin = isAdminEmail(user?.email);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAIGenerationModal, setShowAIGenerationModal] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);

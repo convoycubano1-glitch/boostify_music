@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { clerkClient, getAuth, requireAuth as clerkRequireAuth } from '@clerk/express';
+import { isAdminEmail } from '../../shared/constants';
 
 export interface ClerkAuthUser {
   clerkUserId: string;
@@ -81,5 +82,5 @@ export function getUserId(req: Request): string | null {
  */
 export function isAdmin(req: Request): boolean {
   const user = (req as any).user as ClerkAuthUser | undefined;
-  return user?.email === 'convoycubano@gmail.com';
+  return isAdminEmail(user?.email);
 }

@@ -420,7 +420,7 @@ export function SubscriptionCardCompact() {
                 <ul className="space-y-2 text-xs text-gray-300 mb-4">
                   <li className="flex items-start gap-1">
                     <span className="text-orange-500 mt-0.5">✓</span>
-                    <span>{planInfo.limit} video{planInfo.limit > 1 ? 's' : ''}/mes</span>
+                    <span>{planInfo.videosLimit} video{planInfo.videosLimit > 1 ? 's' : ''}/mes</span>
                   </li>
                   <li className="flex items-start gap-1">
                     <span className="text-orange-500 mt-0.5">✓</span>

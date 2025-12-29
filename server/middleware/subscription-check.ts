@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthUser } from './auth';
+import { isAdminEmail } from '../../shared/constants';
 
 // Soporta AMBAS nomenclaturas para compatibilidad:
 // - Nueva: free, creator, professional, enterprise  
@@ -35,13 +36,8 @@ export function requireSubscription(requiredPlan: SubscriptionPlan = 'free') {
         });
       }
 
-      // Admin users always have access
-      if (req.user.isAdmin === true) {
-        return next();
-      }
-
-      // Check if email is admin email (convoycubano@gmail.com)
-      if (req.user.email === 'convoycubano@gmail.com') {
+      // Admin users always have access (by role or by email)
+      if (req.user.isAdmin === true || isAdminEmail(req.user.email)) {
         return next();
       }
 

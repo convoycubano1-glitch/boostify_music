@@ -5,6 +5,7 @@ import { useLocation } from 'wouter';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import { Button } from '../components/ui/button';
 import { Crown } from 'lucide-react';
+import { isAdminEmail } from '../../../shared/constants';
 
 interface GlobalAuthGuardProps {
   children: React.ReactNode;
@@ -49,7 +50,7 @@ export function GlobalAuthGuard({ children }: GlobalAuthGuardProps) {
   );
 
   const isAdmin = useMemo(() => 
-    user?.email === 'convoycubano@gmail.com',
+    isAdminEmail(user?.email),
     [user?.email]
   );
 

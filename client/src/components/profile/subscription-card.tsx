@@ -161,7 +161,7 @@ export function SubscriptionCard() {
           {isPremiumPlan ? "Beneficios de tu plan:" : "Con este plan tienes:"}
         </h3>
         <ul className="space-y-2">
-          {subscription.features.map((feature, index) => (
+          {(Array.isArray(subscription.features) ? subscription.features : []).map((feature, index) => (
             <li key={index} className="flex items-start gap-2 text-sm text-gray-300">
               <span className="text-orange-500 mt-0.5">✓</span>
               <span>{feature}</span>

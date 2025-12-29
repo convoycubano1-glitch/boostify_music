@@ -1849,8 +1849,13 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
   // Cargar layout desde la base de datos
   useEffect(() => {
     if (artist?.profileLayout) {
-      setSectionOrder(artist.profileLayout.order || defaultOrder);
-      setSectionVisibility(artist.profileLayout.visibility || defaultVisibility);
+      // Ensure order is a valid array before setting
+      const order = artist.profileLayout.order;
+      setSectionOrder(Array.isArray(order) && order.length > 0 ? order : defaultOrder);
+      
+      // Ensure visibility is a valid object before setting
+      const visibility = artist.profileLayout.visibility;
+      setSectionVisibility(visibility && typeof visibility === 'object' && !Array.isArray(visibility) ? visibility : defaultVisibility);
     }
   }, [artist?.profileLayout]);
 

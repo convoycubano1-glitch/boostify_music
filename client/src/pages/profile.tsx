@@ -1,6 +1,4 @@
 import { ArtistProfileCard } from "../components/artist/artist-profile-card";
-import { SubscriptionCardCompact } from "../components/profile/subscription-card-compact";
-import { MyArtistsCompact } from "../components/profile/my-artists-compact";
 import { useParams } from "wouter";
 import { useAuth } from "../hooks/use-auth";
 import { Head } from "../components/ui/head";
@@ -159,16 +157,6 @@ export default function ProfilePage() {
         />
       )}
       <div className="min-h-screen bg-black pt-4">
-        {/* Compact sections - Only show for own profile */}
-        {isOwnProfile && (
-          <div className="container mx-auto px-4 mb-4 max-w-md">
-            <div className="space-y-2">
-              <MyArtistsCompact />
-              <SubscriptionCardCompact />
-            </div>
-          </div>
-        )}
-        
         <ArtistProfileCard artistId={artistId} />
       </div>
     </>

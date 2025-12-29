@@ -3,6 +3,7 @@ import { useSubscription } from "./context/subscription-context";
 import { SubscriptionPlan } from "./api/subscription-service";
 import { Route } from "wouter";
 import React from "react";
+import { isAdminEmail } from "../../../shared/constants";
 
 interface SubscriptionProtectedRouteProps {
   path: string;
@@ -23,7 +24,7 @@ export function SubscriptionProtectedRoute({
   const { hasAccess } = useSubscription();
 
   // Si el usuario es el administrador, permitir acceso sin verificar suscripción
-  const isAdmin = user?.email === 'convoycubano@gmail.com';
+  const isAdmin = isAdminEmail(user?.email);
   
   // Si es admin o tiene acceso, renderizar directamente
   if (isAdmin || hasAccess(requiredPlan)) {
