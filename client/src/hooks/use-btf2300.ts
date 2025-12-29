@@ -9,8 +9,8 @@
  * - Reclamar royalties
  */
 
-import { useState, useCallback, useEffect } from 'react';
-import { parseEther, formatEther, createPublicClient, http, createWalletClient, custom } from 'viem';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { parseEther, formatEther, createPublicClient, http, createWalletClient, custom, fallback } from 'viem';
 import { polygon } from 'viem/chains';
 import { useWeb3 } from './use-web3';
 import { useToast } from './use-toast';
@@ -27,11 +27,40 @@ import {
 const CHAIN_ID = 137;
 const contracts = getBTF2300Addresses(CHAIN_ID);
 
-// Create public client for reading contract state
+// Multiple RPC endpoints with fallback for better reliability
+const POLYGON_RPCS = [
+  'https://polygon-bor-rpc.publicnode.com',
+  'https://rpc.ankr.com/polygon',
+  'https://polygon.llamarpc.com',
+  'https://1rpc.io/matic',
+  'https://polygon-rpc.com',
+];
+
+// Create public client with fallback transport
 const publicClient = createPublicClient({
   chain: polygon,
-  transport: http('https://polygon-rpc.com'),
+  transport: fallback(
+    POLYGON_RPCS.map(url => http(url, { timeout: 10000, retryCount: 2 })),
+    { rank: true }
+  ),
 });
+
+// Simple in-memory cache to avoid repeated RPC calls
+const cache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 60000; // 60 seconds cache
+
+function getCached<T>(key: string): T | null {
+  const entry = cache.get(key);
+  if (entry && Date.now() - entry.timestamp < CACHE_TTL) {
+    return entry.data as T;
+  }
+  cache.delete(key);
+  return null;
+}
+
+function setCache(key: string, data: any): void {
+  cache.set(key, { data, timestamp: Date.now() });
+}
 
 // Types
 export interface ArtistOnChain {
@@ -123,13 +152,17 @@ export function useBTF2300() {
   }, []);
 
   // ============================================
-  // READ FUNCTIONS
+  // READ FUNCTIONS (with caching to reduce RPC calls)
   // ============================================
 
   /**
-   * Get artist info from blockchain
+   * Get artist info from blockchain (cached)
    */
   const getArtist = useCallback(async (artistId: number): Promise<ArtistOnChain | null> => {
+    const cacheKey = `artist_${artistId}`;
+    const cached = getCached<ArtistOnChain>(cacheKey);
+    if (cached) return cached;
+    
     try {
       const result = await publicClient.readContract({
         address: contracts.artistToken as `0x${string}`,
@@ -138,7 +171,7 @@ export function useBTF2300() {
         args: [BigInt(artistId)],
       }) as any;
       
-      return {
+      const artist = {
         artistId: result[0],
         walletAddress: result[1],
         artistName: result[2],
@@ -149,6 +182,9 @@ export function useBTF2300() {
         isActive: result[7],
         registeredAt: result[8],
       };
+      
+      setCache(cacheKey, artist);
+      return artist;
     } catch (error) {
       console.error('Error getting artist:', error);
       return null;
@@ -156,9 +192,13 @@ export function useBTF2300() {
   }, []);
 
   /**
-   * Get song info from blockchain
+   * Get song info from blockchain (cached)
    */
   const getSong = useCallback(async (songId: number): Promise<SongOnChain | null> => {
+    const cacheKey = `song_${songId}`;
+    const cached = getCached<SongOnChain>(cacheKey);
+    if (cached) return cached;
+    
     try {
       const tokenId = TOKEN_PREFIXES.SONG + songId;
       const result = await publicClient.readContract({
@@ -168,7 +208,7 @@ export function useBTF2300() {
         args: [BigInt(tokenId)],
       }) as any;
       
-      return {
+      const song = {
         tokenId: result[0],
         artistId: result[1],
         title: result[2],
@@ -180,6 +220,9 @@ export function useBTF2300() {
         totalEarnings: result[8],
         createdAt: result[9],
       };
+      
+      setCache(cacheKey, song);
+      return song;
     } catch (error) {
       console.error('Error getting song:', error);
       return null;
@@ -187,11 +230,15 @@ export function useBTF2300() {
   }, []);
 
   /**
-   * Get token balance for user
+   * Get token balance for user (cached for 30s)
    */
   const getTokenBalance = useCallback(async (tokenId: number, userAddress?: string): Promise<bigint> => {
     const addr = userAddress || address;
     if (!addr) return BigInt(0);
+    
+    const cacheKey = `balance_${addr}_${tokenId}`;
+    const cached = getCached<bigint>(cacheKey);
+    if (cached !== null) return cached;
     
     try {
       const balance = await publicClient.readContract({
@@ -201,6 +248,7 @@ export function useBTF2300() {
         args: [addr as `0x${string}`, BigInt(tokenId)],
       }) as bigint;
       
+      setCache(cacheKey, balance);
       return balance;
     } catch (error) {
       console.error('Error getting balance:', error);
@@ -209,9 +257,13 @@ export function useBTF2300() {
   }, [address]);
 
   /**
-   * Get current token counts
+   * Get current token counts (cached for 2 minutes)
    */
   const getTokenCounts = useCallback(async () => {
+    const cacheKey = 'token_counts';
+    const cached = getCached<{ totalArtists: number; totalSongs: number; totalCatalogs: number; totalLicenses: number }>(cacheKey);
+    if (cached) return cached;
+    
     try {
       const result = await publicClient.readContract({
         address: contracts.artistToken as `0x${string}`,
@@ -219,12 +271,15 @@ export function useBTF2300() {
         functionName: 'getCurrentTokenCounts',
       }) as [bigint, bigint, bigint, bigint];
       
-      return {
+      const counts = {
         totalArtists: Number(result[0]),
         totalSongs: Number(result[1]),
         totalCatalogs: Number(result[2]),
         totalLicenses: Number(result[3]),
       };
+      
+      setCache(cacheKey, counts);
+      return counts;
     } catch (error) {
       console.error('Error getting token counts:', error);
       return { totalArtists: 0, totalSongs: 0, totalCatalogs: 0, totalLicenses: 0 };
@@ -232,9 +287,13 @@ export function useBTF2300() {
   }, []);
 
   /**
-   * Get DEX pool info
+   * Get DEX pool info (cached)
    */
   const getPoolInfo = useCallback(async (tokenId: number): Promise<PoolInfo | null> => {
+    const cacheKey = `pool_${tokenId}`;
+    const cached = getCached<PoolInfo>(cacheKey);
+    if (cached) return cached;
+    
     try {
       const result = await publicClient.readContract({
         address: contracts.dex as `0x${string}`,
@@ -243,13 +302,16 @@ export function useBTF2300() {
         args: [BigInt(tokenId)],
       }) as [bigint, bigint, bigint, bigint, boolean];
       
-      return {
+      const poolInfo = {
         tokenReserve: result[0],
         ethReserve: result[1],
         totalLPTokens: result[2],
         feeAccumulated: result[3],
         isActive: result[4],
       };
+      
+      setCache(cacheKey, poolInfo);
+      return poolInfo;
     } catch (error) {
       console.error('Error getting pool info:', error);
       return null;
