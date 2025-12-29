@@ -73,8 +73,9 @@ export default function ProfilePage() {
               elements: {
                 rootBox: "mx-auto w-full",
                 card: "bg-zinc-900/80 backdrop-blur-xl border border-zinc-700/50 shadow-2xl shadow-black/50 rounded-2xl",
-                headerTitle: "text-white text-xl font-bold",
-                headerSubtitle: "text-gray-400",
+                header: "hidden",
+                headerTitle: "hidden",
+                headerSubtitle: "hidden",
                 formFieldLabel: "text-gray-300 font-medium",
                 formFieldInput: "bg-zinc-800/80 border-zinc-600 text-white placeholder:text-gray-500 focus:border-orange-500 focus:ring-orange-500/20 rounded-lg",
                 formButtonPrimary: "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-semibold shadow-lg shadow-orange-500/25 rounded-lg",
