@@ -8,7 +8,8 @@ import { db } from '../firebase';
 import { Timestamp, DocumentData } from 'firebase-admin/firestore';
 import { db as pgDb } from '../../db';
 import { users, artistNews, songs, tokenizedSongs, userRoles, subscriptions } from '../../db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and, or, count } from 'drizzle-orm';
+import { isAdminEmail } from '../../shared/constants';
 // FAL AI Nano Banana for images and MiniMax Music for audio
 import { 
   generateImageWithNanoBanana, 
@@ -36,6 +37,105 @@ import { sendArtistGeneratedEmail } from '../services/resend-email-service';
 
 const router = Router();
 
+// Límite de artistas por usuario (excepto admin)
+const MAX_ARTISTS_PER_USER = 1;
+
+/**
+ * Helper function para verificar si el usuario puede crear más artistas
+ * Retorna { canCreate: boolean, reason?: string, isAdmin: boolean, artistCount: number }
+ */
+async function canUserCreateArtist(clerkUserId: string, userEmail?: string | null): Promise<{
+  canCreate: boolean;
+  reason?: string;
+  isAdmin: boolean;
+  artistCount: number;
+  hasPremium: boolean;
+  pgUserId?: number;
+}> {
+  // Verificar si es admin
+  const adminStatus = isAdminEmail(userEmail);
+  
+  // Obtener el usuario de PostgreSQL
+  const userRecord = await pgDb
+    .select({ id: users.id, subscription: users.subscription })
+    .from(users)
+    .where(eq(users.clerkId, clerkUserId))
+    .limit(1);
+
+  if (userRecord.length === 0) {
+    return { 
+      canCreate: false, 
+      reason: 'User not found in database',
+      isAdmin: adminStatus,
+      artistCount: 0,
+      hasPremium: false
+    };
+  }
+
+  const pgUserId = userRecord[0].id;
+  const userSubscription = userRecord[0].subscription || 'free';
+
+  // Verificar suscripción - solo premium/enterprise puede crear artistas
+  // Legacy names: premium = enterprise, pro = professional
+  const hasPremium = ['premium', 'enterprise', 'professional', 'pro'].includes(userSubscription.toLowerCase());
+
+  // Admin siempre tiene acceso premium
+  if (adminStatus) {
+    console.log(`👑 Admin detected (${userEmail}) - unlimited artist creation allowed`);
+    return {
+      canCreate: true,
+      isAdmin: true,
+      artistCount: 0, // No importa para admin
+      hasPremium: true,
+      pgUserId
+    };
+  }
+
+  // Verificar si tiene suscripción premium
+  if (!hasPremium) {
+    return {
+      canCreate: false,
+      reason: 'Premium subscription required to create artists. Please upgrade your plan.',
+      isAdmin: false,
+      artistCount: 0,
+      hasPremium: false,
+      pgUserId
+    };
+  }
+
+  // Contar artistas existentes del usuario (generatedBy = pgUserId)
+  const artistCountResult = await pgDb
+    .select({ count: count() })
+    .from(users)
+    .where(
+      and(
+        eq(users.generatedBy, pgUserId),
+        eq(users.role, 'artist')
+      )
+    );
+
+  const currentArtistCount = artistCountResult[0]?.count || 0;
+
+  if (currentArtistCount >= MAX_ARTISTS_PER_USER) {
+    return {
+      canCreate: false,
+      reason: `You have reached the maximum limit of ${MAX_ARTISTS_PER_USER} artist(s) per account. Only admin users can create unlimited artists.`,
+      isAdmin: false,
+      artistCount: currentArtistCount,
+      hasPremium: true,
+      pgUserId
+    };
+  }
+
+  return {
+    canCreate: true,
+    isAdmin: false,
+    artistCount: currentArtistCount,
+    hasPremium: true,
+    pgUserId
+  };
+}
+
 /**
  * Helper function para descargar una imagen y convertirla a base64
  */
@@ -52,6 +152,43 @@ async function downloadImageAsBase64(imageUrl: string): Promise<string | null> {
     return null;
   }
 }
+
+/**
+ * Endpoint para verificar si el usuario puede crear artistas
+ * Usado por el frontend para mostrar/ocultar botones de creación
+ */
+router.get("/can-create-artist", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const clerkUserId = req.user?.id;
+    const userEmail = req.user?.email;
+
+    if (!clerkUserId) {
+      return res.status(401).json({ 
+        canCreate: false,
+        reason: 'User not authenticated',
+        code: 'AUTH_REQUIRED'
+      });
+    }
+
+    const permissionCheck = await canUserCreateArtist(clerkUserId, userEmail);
+
+    return res.status(200).json({
+      canCreate: permissionCheck.canCreate,
+      reason: permissionCheck.reason || null,
+      isAdmin: permissionCheck.isAdmin,
+      artistCount: permissionCheck.artistCount,
+      maxAllowed: MAX_ARTISTS_PER_USER,
+      hasPremium: permissionCheck.hasPremium
+    });
+  } catch (error) {
+    console.error('Error checking create artist permission:', error);
+    return res.status(500).json({
+      canCreate: false,
+      reason: 'Error checking permissions',
+      code: 'SERVER_ERROR'
+    });
+  }
+});
 
 /**
  * Endpoint para obtener todos los artistas de un usuario
@@ -415,17 +552,41 @@ router.post("/generate-artist", async (req: Request, res: Response) => {
 
 /**
  * Endpoint para crear un artista manualmente
+ * 
+ * 🔒 RESTRICCIONES:
+ * - Requiere suscripción Premium/Enterprise
+ * - Límite de 1 artista por cuenta (excepto admin)
+ * - Admin (convoycubano@gmail.com) puede crear ilimitados
  */
 router.post("/create-manual", isAuthenticated, async (req: Request, res: Response) => {
   try {
     console.log('📝 Recibida solicitud para crear artista manualmente');
     
     const userId = req.user?.id;
+    const userEmail = req.user?.email;
+    
     if (!userId) {
       return res.status(401).json({ 
-        error: 'Usuario no autenticado' 
+        error: 'Usuario no autenticado',
+        code: 'AUTH_REQUIRED'
       });
     }
+
+    // 🔒 VERIFICAR PERMISOS: Premium requerido + límite de 1 artista
+    const permissionCheck = await canUserCreateArtist(userId, userEmail);
+    
+    if (!permissionCheck.canCreate) {
+      console.log(`❌ Permission denied for user ${userId}: ${permissionCheck.reason}`);
+      return res.status(403).json({
+        error: permissionCheck.reason,
+        code: permissionCheck.hasPremium ? 'LIMIT_REACHED' : 'PREMIUM_REQUIRED',
+        artistCount: permissionCheck.artistCount,
+        maxAllowed: MAX_ARTISTS_PER_USER,
+        hasPremium: permissionCheck.hasPremium
+      });
+    }
+
+    console.log(`✅ Permission granted for user ${userId} (Admin: ${permissionCheck.isAdmin}, Artists: ${permissionCheck.artistCount}/${MAX_ARTISTS_PER_USER})`);
 
     const { name, biography, genre, location, slug } = req.body;
 
@@ -443,6 +604,9 @@ router.post("/create-manual", isAuthenticated, async (req: Request, res: Respons
       });
     }
 
+    // Usar el pgUserId del check de permisos para generatedBy
+    const generatedByUserId = permissionCheck.pgUserId;
+
     // Crear artista en PostgreSQL
     const [newArtist] = await pgDb.insert(users).values({
       role: 'artist',
@@ -451,7 +615,7 @@ router.post("/create-manual", isAuthenticated, async (req: Request, res: Respons
       biography: biography || null,
       location: location || null,
       genres: genre ? [genre] : [],
-      generatedBy: userId, // Asociar al usuario creador
+      generatedBy: generatedByUserId, // Asociar al usuario creador (PostgreSQL ID)
       isAIGenerated: false, // No es generado por IA
       createdAt: new Date()
     }).returning();
@@ -801,6 +965,11 @@ async function generateArtistEPK(artistId: number, artistName: string, artistDat
  * Endpoint para generar un artista aleatorio (requiere autenticación)
  * Versión protegida del endpoint anterior
  * ✨ COMPLETO: Genera 10 canciones tokenizadas, contenido social y EPK automáticamente
+ * 
+ * 🔒 RESTRICCIONES:
+ * - Requiere suscripción Premium/Enterprise
+ * - Límite de 1 artista por cuenta (excepto admin)
+ * - Admin (convoycubano@gmail.com) puede crear ilimitados
  */
 router.post("/generate-artist/secure", isAuthenticated, async (req: Request, res: Response) => {
   try {
@@ -808,7 +977,31 @@ router.post("/generate-artist/secure", isAuthenticated, async (req: Request, res
 
     // Obtener ID del usuario autenticado
     const userId = req.user?.uid || req.user?.id;
-    console.log(`Solicitud de usuario: ${userId}`);
+    const userEmail = req.user?.email;
+    console.log(`Solicitud de usuario: ${userId} (${userEmail})`);
+
+    // 🔒 VERIFICAR PERMISOS: Premium requerido + límite de 1 artista
+    if (!userId) {
+      return res.status(401).json({
+        error: 'User not authenticated',
+        code: 'AUTH_REQUIRED'
+      });
+    }
+
+    const permissionCheck = await canUserCreateArtist(userId, userEmail);
+    
+    if (!permissionCheck.canCreate) {
+      console.log(`❌ Permission denied for user ${userId}: ${permissionCheck.reason}`);
+      return res.status(403).json({
+        error: permissionCheck.reason,
+        code: permissionCheck.hasPremium ? 'LIMIT_REACHED' : 'PREMIUM_REQUIRED',
+        artistCount: permissionCheck.artistCount,
+        maxAllowed: MAX_ARTISTS_PER_USER,
+        hasPremium: permissionCheck.hasPremium
+      });
+    }
+
+    console.log(`✅ Permission granted for user ${userId} (Admin: ${permissionCheck.isAdmin}, Artists: ${permissionCheck.artistCount}/${MAX_ARTISTS_PER_USER})`);
 
     // Generar datos del artista aleatorio
     const artistData = await generateRandomArtist();

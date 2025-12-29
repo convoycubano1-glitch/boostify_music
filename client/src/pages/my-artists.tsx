@@ -75,6 +75,19 @@ export default function MyArtistsPage() {
     location: "",
   });
 
+  // Query para verificar si el usuario puede crear artistas
+  const { data: permissionData } = useQuery<{
+    canCreate: boolean;
+    reason?: string;
+    isAdmin: boolean;
+    artistCount: number;
+    maxAllowed: number;
+    hasPremium: boolean;
+  }>({
+    queryKey: ["/api/artist-generator/can-create-artist"],
+    enabled: !!user
+  });
+
   // Query para obtener los artistas del usuario
   const { data: artistsData, isLoading: artistsLoading, refetch } = useQuery<{
     success: boolean;
@@ -100,7 +113,9 @@ export default function MyArtistsPage() {
         title: "Artist created!",
         description: `${data.name} has been created successfully`,
       });
-      refetch();
+      // Invalidate both queries to update permissions and artist list
+      queryClient.invalidateQueries({ queryKey: ["/api/artist-generator/my-artists"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/artist-generator/can-create-artist"] });
       setIsGenerating(false);
     },
     onError: (error: any) => {
@@ -130,7 +145,9 @@ export default function MyArtistsPage() {
         title: "Artist deleted",
         description: "The artist has been deleted successfully",
       });
+      // Invalidate both queries to update permissions and artist list
       queryClient.invalidateQueries({ queryKey: ["/api/artist-generator/my-artists"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/artist-generator/can-create-artist"] });
       setDeletingArtistId(null);
     },
     onError: (error: any) => {
@@ -323,15 +340,29 @@ export default function MyArtistsPage() {
                 </Button>
               )}
               
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <Dialog open={isDialogOpen} onOpenChange={(open) => {
+                // Only allow opening if user has permission
+                if (open && !permissionData?.canCreate && !isAdmin) {
+                  toast({
+                    title: "Cannot create artist",
+                    description: permissionData?.reason || "You don't have permission to create more artists",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                setIsDialogOpen(open);
+              }}>
                 <DialogTrigger asChild>
                   <Button
                     variant="outline"
-                    className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
+                    className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white disabled:opacity-50"
                     data-testid="button-create-manual-artist"
+                    disabled={!permissionData?.canCreate && !isAdmin}
+                    title={!permissionData?.canCreate && !isAdmin ? permissionData?.reason : undefined}
                   >
                     <UserPlus className="h-4 w-4 mr-2" />
                     Create Manually
+                    {!permissionData?.hasPremium && !isAdmin && " 🔒"}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="bg-gray-900 border-gray-800 text-white">
@@ -412,9 +443,10 @@ export default function MyArtistsPage() {
 
               <Button
                 onClick={handleCreateArtist}
-                disabled={isGenerating}
-                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                disabled={isGenerating || (!permissionData?.canCreate && !isAdmin)}
+                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:opacity-50"
                 data-testid="button-create-ai-artist"
+                title={!permissionData?.canCreate && !isAdmin ? permissionData?.reason : undefined}
               >
                 {isGenerating ? (
                   <>
@@ -425,11 +457,49 @@ export default function MyArtistsPage() {
                   <>
                     <Bot className="h-4 w-4 mr-2" />
                     Generate with AI
+                    {!permissionData?.hasPremium && !isAdmin && " 🔒"}
+                    {permissionData?.hasPremium && !permissionData?.canCreate && !isAdmin && ` (${permissionData?.artistCount}/${permissionData?.maxAllowed})`}
                   </>
                 )}
               </Button>
             </div>
           </div>
+
+          {/* Permission Warning Banner */}
+          {!permissionData?.canCreate && !isAdmin && (
+            <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+              <div className="flex items-center gap-3">
+                <span className="text-yellow-500 text-xl">⚠️</span>
+                <div>
+                  <p className="text-yellow-500 font-medium">
+                    {!permissionData?.hasPremium 
+                      ? "Premium subscription required to create artists"
+                      : `Artist limit reached (${permissionData?.artistCount}/${permissionData?.maxAllowed})`
+                    }
+                  </p>
+                  <p className="text-yellow-500/70 text-sm">
+                    {!permissionData?.hasPremium 
+                      ? "Upgrade to Premium to unlock artist generation"
+                      : "Each account can create a maximum of 1 artist. Contact support for more."
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Admin Badge */}
+          {isAdmin && (
+            <div className="mb-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+              <div className="flex items-center gap-3">
+                <span className="text-purple-500 text-xl">👑</span>
+                <div>
+                  <p className="text-purple-500 font-medium">Admin Mode - Unlimited Artist Creation</p>
+                  <p className="text-purple-500/70 text-sm">You can create unlimited artists as an administrator</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
