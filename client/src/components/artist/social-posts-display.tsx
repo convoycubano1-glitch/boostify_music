@@ -22,10 +22,17 @@ interface SocialPostsDisplayProps {
 export function SocialPostsDisplay({ userId }: SocialPostsDisplayProps) {
   const { toast } = useToast();
 
-  const { data: posts = [], isLoading } = useQuery<SocialPost[]>({
+  const { data, isLoading } = useQuery<SocialPost[] | { posts: SocialPost[] }>({
     queryKey: ['/api/social-media/posts', userId],
     enabled: !!userId,
   });
+
+  // Ensure posts is always an array regardless of API response shape
+  const posts: SocialPost[] = Array.isArray(data) 
+    ? data 
+    : (data && typeof data === 'object' && 'posts' in data && Array.isArray(data.posts))
+      ? data.posts 
+      : [];
 
   if (isLoading) {
     return (
@@ -36,7 +43,7 @@ export function SocialPostsDisplay({ userId }: SocialPostsDisplayProps) {
     );
   }
 
-  if (posts.length === 0) {
+  if (!posts || posts.length === 0) {
     return null;
   }
 

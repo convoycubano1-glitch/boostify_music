@@ -99,6 +99,7 @@ import apifyInstagramRouter from './routes/apify-instagram'; // Import Apify Ins
 import fashionStudioRouter from './routes/fashion-studio'; // Import Artist Fashion Studio (FAL + Gemini)
 import notificationsRouter from './routes/notifications'; // Import Notifications router for internal messaging
 import webhookStripeRouter from './routes/webhook-stripe'; // Import Stripe Webhook handler
+import resendWebhooksRouter from './routes/resend-webhooks'; // Import Resend Email Webhooks handler
 import subscriptionApiRouter from './routes/subscription-api'; // Import Subscription API routes (PostgreSQL)
 import apiUsageRouter from './routes/api-usage'; // Import API usage monitoring router
 import accountingRouter from './routes/accounting'; // Import accounting/transactions router
@@ -1215,6 +1216,10 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   
   // Stripe Webhook (debe estar antes de cualquier middleware de autenticación)
   app.use('/api/stripe', webhookStripeRouter);
+  
+  // Resend Email Webhooks (public endpoint for email event tracking)
+  app.use('/api/webhooks/resend', resendWebhooksRouter);
+  console.log('✅ Resend Email Webhooks router registered');
   
   // Subscription API (PostgreSQL)
   app.use('/api/subscription', subscriptionApiRouter);

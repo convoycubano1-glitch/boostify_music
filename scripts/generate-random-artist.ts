@@ -1,7 +1,7 @@
 /**
- * Script para generar artistas aleatorios con metadata completa
- * y guardarlos en Firestore para su uso en otras herramientas
- * Migrado a OpenAI para consistencia con el resto de la plataforma
+ * Script to generate random artists with complete metadata
+ * and save them to Firestore for use in other tools
+ * Migrated to OpenAI for consistency with the rest of the platform
  */
 
 import { db } from '../server/firebase';
@@ -9,15 +9,15 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { faker } from '@faker-js/faker';
 import OpenAI from 'openai';
 
-// Cliente OpenAI para generación de texto
+// OpenAI client for text generation
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY || '',
 });
 
 /**
- * Genera un ID único con prefijo
- * @param prefix Prefijo para el ID
- * @returns ID único
+ * Generates a unique ID with prefix
+ * @param prefix Prefix for the ID
+ * @returns Unique ID
  */
 function generateId(prefix: string): string {
   const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase();
@@ -25,26 +25,26 @@ function generateId(prefix: string): string {
 }
 
 /**
- * Genera una duración aleatoria en formato MM:SS
- * @returns Duración en formato de string
+ * Generates a random duration in MM:SS format
+ * @returns Duration as string
  */
 function generateRandomDuration(): string {
-  const minutes = Math.floor(Math.random() * 5) + 2; // Entre 2 y 6 minutos
+  const minutes = Math.floor(Math.random() * 5) + 2; // Between 2 and 6 minutes
   const seconds = Math.floor(Math.random() * 60);
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
 /**
- * Genera una descripción artística usando OpenAI GPT-4o-mini
- * @param prompt El prompt para generar la descripción
- * @returns Descripción generada o descripción de fallback si hay error
+ * Generates an artistic description using OpenAI GPT-4o-mini
+ * @param prompt The prompt to generate the description
+ * @returns Generated description or fallback description if error
  */
 async function generateAIDescription(prompt: string): Promise<string> {
   try {
     const apiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
     
     if (!apiKey) {
-      console.warn('No se encontró la API key de OpenAI, usando descripción generada localmente');
+      console.warn('OpenAI API key not found, using locally generated description');
       return '';
     }
     
@@ -53,7 +53,7 @@ async function generateAIDescription(prompt: string): Promise<string> {
       messages: [
         {
           role: 'system',
-          content: 'Eres un experto en describir artistas musicales con detalles físicos, estilísticos y de personalidad. Genera descripciones realistas, diversas y detalladas.'
+          content: 'You are an expert at describing music artists with physical, stylistic, and personality details. Generate realistic, diverse, and detailed descriptions in English.'
         },
         {
           role: 'user',
@@ -68,25 +68,25 @@ async function generateAIDescription(prompt: string): Promise<string> {
     if (content) {
       return content;
     } else {
-      console.warn('Respuesta vacía de OpenAI, usando descripción generada localmente');
+      console.warn('Empty response from OpenAI, using locally generated description');
       return '';
     }
   } catch (error) {
-    console.error('Error al generar descripción con OpenAI:', error);
+    console.error('Error generating description with OpenAI:', error);
     return '';
   }
 }
 
 /**
- * Genera un artista aleatorio con todos los datos necesarios
- * @returns Datos del artista generado
+ * Generates a random artist with all necessary data
+ * @returns Generated artist data
  */
 export async function generateRandomArtist() {
-  // Usar semilla aleatoria para tener consistencia por artista
+  // Use random seed for consistency per artist
   const seed = Math.floor(Math.random() * 10000);
   faker.seed(seed);
 
-  // Géneros musicales disponibles
+  // Available music genres
   const musicGenres = [
     'Pop', 'Rock', 'Hip Hop', 'R&B', 'Electronic', 'Jazz', 
     'Classical', 'Country', 'Folk', 'Reggae', 'Blues',
@@ -95,7 +95,7 @@ export async function generateRandomArtist() {
     'Soul', 'Funk', 'Disco', 'Synthwave', 'Lo-Fi', 'Ambient'
   ];
 
-  // Seleccionar 1-3 géneros musicales aleatorios
+  // Select 1-3 random music genres
   const selectedGenres = faker.helpers.arrayElements(
     musicGenres, 
     faker.number.int({ min: 1, max: 3 })
@@ -107,7 +107,7 @@ export async function generateRandomArtist() {
     ? `${faker.person.firstName()} ${faker.person.lastName()}`
     : faker.word.words({ count: { min: 1, max: 3 } }).replace(/^\w/, c => c.toUpperCase());
 
-  // Datos del plan de suscripción - Siempre generamos un plan
+  // Subscription plan data - Always generate a plan
   const SUBSCRIPTION_PLANS = [
     { name: "Basic", price: 59.99 },
     { name: "Pro", price: 99.99 },
@@ -115,24 +115,24 @@ export async function generateRandomArtist() {
   ];
   const selectedPlan = faker.helpers.arrayElement(SUBSCRIPTION_PLANS);
   
-  // Datos de videos generados - 30% probabilidad de tener videos
+  // Generated videos data - 30% probability of having videos
   const videoPrice = 199;
-  const hasVideos = faker.datatype.boolean(0.3); // 30% de probabilidad según lo solicitado
+  const hasVideos = faker.datatype.boolean(0.3); // 30% probability as requested
   const videosGenerated = hasVideos ? faker.number.int({ min: 1, max: 5 }) : 0;
   const totalVideoSpend = videoPrice * videosGenerated;
   
-  // Datos de cursos comprados - 15% probabilidad de tener cursos
-  const hasCourses = faker.datatype.boolean(0.15); // 15% de probabilidad según lo solicitado
-  const coursesData = generateRandomCourses(faker, hasCourses); // Solo fuerza cursos si la probabilidad lo permite
+  // Purchased courses data - 15% probability of having courses
+  const hasCourses = faker.datatype.boolean(0.15); // 15% probability as requested
+  const coursesData = generateRandomCourses(faker, hasCourses); // Only forces courses if probability allows
   const totalCourseSpend = coursesData.reduce((total, course) => total + course.price, 0);
 
-  // Generar título del álbum
+  // Generate album title
   const albumTitle = faker.music.songName();
 
-  // Número de canciones en el álbum (entre 5 y 12)
+  // Number of songs in the album (between 5 and 12)
   const songCount = faker.number.int({ min: 5, max: 12 });
 
-  // Generar canciones
+  // Generate songs
   const songs = Array.from({ length: songCount }, () => ({
     title: faker.music.songName(),
     duration: generateRandomDuration(),
@@ -140,124 +140,124 @@ export async function generateRandomArtist() {
       [artistName, faker.person.fullName(), faker.person.fullName()],
       faker.number.int({ min: 1, max: 3 })
     ),
-    explicit: faker.datatype.boolean(0.3) // 30% de probabilidad de ser explícito
+    explicit: faker.datatype.boolean(0.3) // 30% probability of being explicit
   }));
 
-  // Seleccionar una canción aleatoria como single
+  // Select a random song as single
   const singleIndex = faker.number.int({ min: 0, max: songs.length - 1 });
   const single = {
     title: songs[singleIndex].title,
     duration: songs[singleIndex].duration
   };
 
-  // Generar fecha de lanzamiento (entre 3 meses en el pasado y 6 meses en el futuro)
+  // Generate release date (between 3 months ago and 6 months in the future)
   const now = new Date();
   const releaseDate = faker.date.between({
     from: new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()),
     to: new Date(now.getFullYear(), now.getMonth() + 6, now.getDate())
   });
   
-  // Generar nombre de usuario para redes sociales
+  // Generate social media username
   const socialHandle = artistName.toLowerCase().replace(/\s+/g, '_');
   const boostifySocialHandle = `boostify_${socialHandle}`;
 
-  // Generar colores para el esquema de color
+  // Generate colors for the color scheme
   const colors = [
-    'Negro', 'Blanco', 'Rojo', 'Azul', 'Verde', 'Amarillo', 'Naranja',
-    'Púrpura', 'Rosa', 'Turquesa', 'Plateado', 'Dorado', 'Neón'
+    'Black', 'White', 'Red', 'Blue', 'Green', 'Yellow', 'Orange',
+    'Purple', 'Pink', 'Turquoise', 'Silver', 'Gold', 'Neon'
   ];
   const selectedColors = faker.helpers.arrayElements(colors, faker.number.int({ min: 2, max: 4 }));
   
-  // Características físicas detalladas
-  // Solo opciones de género binario (hombre/mujer) según lo solicitado
+  // Detailed physical characteristics
+  // Binary gender options only (male/female) as requested
   const genderOptions = faker.helpers.arrayElement([
-    { value: 'Mujer', probability: 0.5 },
-    { value: 'Hombre', probability: 0.5 }
+    { value: 'Female', probability: 0.5 },
+    { value: 'Male', probability: 0.5 }
   ]);
   const gender = genderOptions.value;
   
-  // Restringir la edad entre 18 y 35 años según lo solicitado
+  // Restrict age between 18 and 35 years as requested
   const ageOptions = faker.helpers.arrayElement([
-    { value: 'joven (18-25 años)', probability: 0.6 },
-    { value: 'adulto joven (26-35 años)', probability: 0.4 }
+    { value: 'young adult (18-25 years old)', probability: 0.6 },
+    { value: 'adult (26-35 years old)', probability: 0.4 }
   ]);
   const age = ageOptions.value;
   
-  // Ajustar altura según rango de edad (todos los artistas son adultos jóvenes 18-35 años)
-  const isAdolescent = false; // Ya no hay adolescentes con el nuevo rango de edad
+  // Adjust height based on age range (all artists are young adults 18-35 years)
+  const isAdolescent = false; // No more adolescents with the new age range
   const height = faker.number.int({ 
     min: isAdolescent ? 150 : 160, 
     max: isAdolescent ? 185 : 190 
   });
   
-  const eyeColor = faker.helpers.arrayElement(['marrón oscuro', 'marrón claro', 'verde', 'azul', 'avellana', 'gris', 'ámbar', 'heterocromía (ojos de diferente color)']);
-  const skinTone = faker.helpers.arrayElement(['clara', 'media', 'morena', 'oscura', 'olivácea', 'bronceada', 'pálida']);
+  const eyeColor = faker.helpers.arrayElement(['dark brown', 'light brown', 'green', 'blue', 'hazel', 'gray', 'amber', 'heterochromia (different colored eyes)']);
+  const skinTone = faker.helpers.arrayElement(['fair', 'medium', 'tan', 'dark', 'olive', 'bronzed', 'pale']);
   const facialFeatures = faker.helpers.arrayElements([
-    'rasgos angulosos', 'rasgos suaves', 'pómulos pronunciados', 'mandíbula definida',
-    'rostro ovalado', 'rostro redondo', 'cejas expresivas', 'labios gruesos', 'labios finos',
-    'mirada penetrante', 'expresión serena', 'sonrisa carismática', 'mirada intensa',
-    'nariz respingada', 'nariz aguileña', 'hoyuelos', 'pecas', 'lunar distintivo'
+    'angular features', 'soft features', 'pronounced cheekbones', 'defined jawline',
+    'oval face', 'round face', 'expressive eyebrows', 'full lips', 'thin lips',
+    'piercing gaze', 'serene expression', 'charismatic smile', 'intense look',
+    'upturned nose', 'aquiline nose', 'dimples', 'freckles', 'distinctive beauty mark'
   ], { min: 2, max: 4 });
   
-  // Generar descripción del estilo visual
+  // Generate visual style description
   const fashionStyles = [
-    'minimalista', 'elegante', 'urbano', 'vintage', 'futurista',
-    'vanguardista', 'retro', 'clásico', 'alternativo', 'casual',
-    'formal', 'ecléctico', 'cyberpunk', 'bohemio', 'grunge'
+    'minimalist', 'elegant', 'urban', 'vintage', 'futuristic',
+    'avant-garde', 'retro', 'classic', 'alternative', 'casual',
+    'formal', 'eclectic', 'cyberpunk', 'bohemian', 'grunge'
   ];
   const accessories = [
-    'gafas de sol', 'sombreros', 'joyería statement', 'guantes',
-    'cadenas', 'piercings', 'tatuajes visibles', 'maquillaje dramático',
-    'pañuelos', 'bufandas', 'bandanas', 'relojes', 'botas'
+    'sunglasses', 'hats', 'statement jewelry', 'gloves',
+    'chains', 'piercings', 'visible tattoos', 'dramatic makeup',
+    'scarves', 'shawls', 'bandanas', 'watches', 'boots'
   ];
   const hairStyles = [
-    'cabello largo', 'cabello corto', 'cabello teñido', 'rastas',
-    'undercut', 'afro', 'cabello rizado', 'cabello liso', 'mullet',
-    'mohawk', 'cabello trenzado'
+    'long hair', 'short hair', 'dyed hair', 'dreadlocks',
+    'undercut', 'afro', 'curly hair', 'straight hair', 'mullet',
+    'mohawk', 'braided hair'
   ];
 
   const selectedFashion = faker.helpers.arrayElement(fashionStyles);
   const selectedAccessory = faker.helpers.arrayElement(accessories);
   const selectedHairStyle = faker.helpers.arrayElement(hairStyles);
-  const hairColor = faker.helpers.arrayElement(['negro', 'castaño oscuro', 'castaño claro', 'rubio', 'pelirrojo', 'gris', 'teñido de azul', 'teñido de verde', 'teñido de morado', 'teñido de rosa']);
-  const bodyType = faker.helpers.arrayElement(['delgado', 'atlético', 'musculoso', 'robusto', 'curvilíneo']);
+  const hairColor = faker.helpers.arrayElement(['black', 'dark brown', 'light brown', 'blonde', 'red', 'gray', 'blue dyed', 'green dyed', 'purple dyed', 'pink dyed']);
+  const bodyType = faker.helpers.arrayElement(['slim', 'athletic', 'muscular', 'stocky', 'curvy']);
 
-  // Generar descripciones con OpenAI para mayor diversidad
-  // Preparamos primero las descripciones locales como respaldo
-  const defaultLookDescription = `${gender} ${age} de ${height}cm de altura con complexión ${bodyType}. Tiene ojos ${eyeColor}, piel ${skinTone} y ${facialFeatures.join(', ')}. Su cabello es ${hairColor} con estilo ${selectedHairStyle}. Suele lucir ${selectedAccessory} como accesorio distintivo. Viste con estilo ${selectedFashion} usando principalmente colores ${selectedColors.join(', ')} que reflejan su identidad musical. Su presencia escénica es ${faker.helpers.arrayElement(['magnética', 'intensa', 'relajada', 'enigmática', 'extravagante', 'minimalista'])}.`;
+  // Generate descriptions with OpenAI for greater diversity
+  // Prepare local descriptions first as fallback
+  const defaultLookDescription = `${gender} ${age} standing ${height}cm tall with a ${bodyType} build. Has ${eyeColor} eyes, ${skinTone} skin and ${facialFeatures.join(', ')}. Hair is ${hairColor} styled ${selectedHairStyle}. Often wears ${selectedAccessory} as a distinctive accessory. Dresses in ${selectedFashion} style using primarily ${selectedColors.join(', ')} colors that reflect their musical identity. Stage presence is ${faker.helpers.arrayElement(['magnetic', 'intense', 'relaxed', 'enigmatic', 'extravagant', 'minimalist'])}.`;
 
-  const defaultBiography = `${artistName} es un${gender === 'Mujer' ? 'a' : ''} talentoso${gender === 'Mujer' ? 'a' : ''} artista de ${selectedGenres.join(', ')} originario${gender === 'Mujer' ? 'a' : ''} de ${faker.location.city()}, ${faker.location.country()}. Conocido${gender === 'Mujer' ? 'a' : ''} por sus composiciones únicas y su ${faker.helpers.arrayElement(['potente', 'melódica', 'emotiva', 'versátil', 'distintiva'])} voz, ha logrado cautivar audiencias en todo el mundo. Su música explora temas de ${faker.helpers.arrayElements(['amor', 'identidad', 'sociedad', 'política', 'naturaleza', 'tecnología', 'existencialismo', 'cultura urbana'], faker.number.int({ min: 1, max: 3 })).join(', ')}.`;
+  const defaultBiography = `${artistName} is a talented ${selectedGenres.join(', ')} artist originally from ${faker.location.city()}, ${faker.location.country()}. Known for unique compositions and a ${faker.helpers.arrayElement(['powerful', 'melodic', 'emotional', 'versatile', 'distinctive'])} voice, they have captivated audiences worldwide. Their music explores themes of ${faker.helpers.arrayElements(['love', 'identity', 'society', 'politics', 'nature', 'technology', 'existentialism', 'urban culture'], faker.number.int({ min: 1, max: 3 })).join(', ')}.`;
 
   // Intentar generar descripciones con OpenAI para mayor diversidad
   let detailedLookDescription = defaultLookDescription;
   let biography = defaultBiography;
   
-  // Prompt para la descripción física
-  const lookPrompt = `Genera una descripción física detallada y creativa para un artista musical con estas características:
-- Género: ${gender}
-- Edad: ${age}
-- Altura: ${height}cm
-- Complexión: ${bodyType}
-- Ojos: ${eyeColor}
-- Piel: ${skinTone}
-- Cabello: ${hairColor}, estilo ${selectedHairStyle}
-- Estilo de moda: ${selectedFashion}
-- Accesorios: ${selectedAccessory}
-- Colores preferidos: ${selectedColors.join(', ')}
-- Música: ${selectedGenres.join(', ')}
+  // Prompt for physical description
+  const lookPrompt = `Generate a detailed and creative physical description for a music artist with these characteristics:
+- Gender: ${gender}
+- Age: ${age}
+- Height: ${height}cm
+- Build: ${bodyType}
+- Eyes: ${eyeColor}
+- Skin: ${skinTone}
+- Hair: ${hairColor}, styled ${selectedHairStyle}
+- Fashion style: ${selectedFashion}
+- Accessories: ${selectedAccessory}
+- Preferred colors: ${selectedColors.join(', ')}
+- Music: ${selectedGenres.join(', ')}
 
-Escribe en tercera persona, entre 100-150 palabras, destacando rasgos únicos y apariencia escénica. Usa lenguaje vívido y descriptivo que capture la esencia visual del artista.`;
+Write in third person, between 100-150 words, highlighting unique features and stage appearance. Use vivid and descriptive language that captures the visual essence of the artist.`;
 
-  // Prompt para la biografía
-  const bioPrompt = `Genera una biografía creativa para ${artistName}, un artista musical con estas características:
-- Género: ${gender}
-- Edad: ${age}
-- Géneros musicales: ${selectedGenres.join(', ')}
-- Ciudad de origen: ${faker.location.city()}, ${faker.location.country()}
-- Estilo visual: ${selectedFashion}, con colores ${selectedColors.join(', ')}
-- Temas explorados: ${faker.helpers.arrayElements(['amor', 'identidad', 'sociedad', 'política', 'naturaleza', 'tecnología', 'existencialismo', 'cultura urbana'], faker.number.int({ min: 1, max: 3 })).join(', ')}
+  // Prompt for biography
+  const bioPrompt = `Generate a creative biography for ${artistName}, a music artist with these characteristics:
+- Gender: ${gender}
+- Age: ${age}
+- Music genres: ${selectedGenres.join(', ')}
+- Origin city: ${faker.location.city()}, ${faker.location.country()}
+- Visual style: ${selectedFashion}, with colors ${selectedColors.join(', ')}
+- Explored themes: ${faker.helpers.arrayElements(['love', 'identity', 'society', 'politics', 'nature', 'technology', 'existentialism', 'urban culture'], faker.number.int({ min: 1, max: 3 })).join(', ')}
 
-Escribe en tercera persona, entre 100-150 palabras, destacando su historia personal, influencias, logros y estilo musical único. Usa un tono que refleje su género musical.`;
+Write in third person, between 100-150 words, highlighting personal history, influences, achievements and unique musical style. Use a tone that reflects their music genre.`;
 
   try {
     // Intentar obtener descripciones de OpenAI
@@ -273,8 +273,8 @@ Escribe en tercera persona, entre 100-150 palabras, destacando su historia perso
       biography = biographyAI;
     }
   } catch (error) {
-    console.warn('Error al generar descripciones con OpenAI, usando descripciones locales.', error);
-    // Mantenemos las descripciones por defecto
+    console.warn('Error generating descriptions with OpenAI, using local descriptions.', error);
+    // Keep default descriptions
   }
 
   // Generar videos 
@@ -284,7 +284,7 @@ Escribe en tercera persona, entre 100-150 palabras, destacando su historia perso
   const artistData = {
     id: generateId("ART"),
     name: artistName,
-    gender: gender === 'Mujer' ? 'female' : 'male', // Género del artista para voz (male/female)
+    gender: gender === 'Female' ? 'female' : 'male', // Artist gender for voice (male/female)
     biography: biography,
     album: {
       id: generateId("ALB"),
@@ -299,9 +299,9 @@ Escribe en tercera persona, entre 100-150 palabras, destacando su historia perso
     },
     music_genres: selectedGenres,
     image_prompts: {
-      artist_look: `${gender} ${age} con ${selectedHairStyle} ${hairColor}, ${selectedAccessory}, estilo ${selectedFashion}, complexión ${bodyType}, ojos ${eyeColor}, piel ${skinTone}, ${facialFeatures[0]}, colores predominantes ${selectedColors.slice(0, 2).join(' y ')}, ambiente de ${faker.helpers.arrayElement(['estudio', 'escenario', 'urbano', 'natural', 'futurista'])}`,
-      album_cover: `Portada de álbum de ${selectedGenres.join(' y ')}, estética ${selectedFashion}, colores ${selectedColors.join(', ')}, concepto visual que representa ${faker.helpers.arrayElement(['emociones intensas', 'paisajes abstractos', 'simbolismo minimalista', 'collage fotográfico', 'ilustración digital'])}`,
-      promotional: `${gender} en pose ${faker.helpers.arrayElement(['natural', 'dinámica', 'pensativa', 'artística', 'poderosa'])}, ambiente ${faker.helpers.arrayElement(['urbano', 'de estudio', 'escénico', 'natural', 'abstracto'])}, iluminación ${faker.helpers.arrayElement(['cálida', 'fría', 'de alto contraste', 'dramática', 'suave'])}`
+      artist_look: `${gender} ${age} with ${selectedHairStyle} ${hairColor}, ${selectedAccessory}, ${selectedFashion} style, ${bodyType} build, ${eyeColor} eyes, ${skinTone} skin, ${facialFeatures[0]}, predominant colors ${selectedColors.slice(0, 2).join(' and ')}, ${faker.helpers.arrayElement(['studio', 'stage', 'urban', 'natural', 'futuristic'])} setting`,
+      album_cover: `Album cover for ${selectedGenres.join(' and ')}, ${selectedFashion} aesthetic, colors ${selectedColors.join(', ')}, visual concept representing ${faker.helpers.arrayElement(['intense emotions', 'abstract landscapes', 'minimalist symbolism', 'photo collage', 'digital illustration'])}`,
+      promotional: `${gender} in a ${faker.helpers.arrayElement(['natural', 'dynamic', 'thoughtful', 'artistic', 'powerful'])} pose, ${faker.helpers.arrayElement(['urban', 'studio', 'stage', 'natural', 'abstract'])} setting, ${faker.helpers.arrayElement(['warm', 'cool', 'high contrast', 'dramatic', 'soft'])} lighting`
     },
     social_media: {
       twitter: {
@@ -360,31 +360,31 @@ Escribe en tercera persona, entre 100-150 palabras, destacando su historia perso
 }
 
 /**
- * Genera datos de cursos aleatorios
- * @param faker Instancia de Faker
- * @param forceAtLeastOne Si es true, garantiza al menos un curso
- * @returns Array de cursos comprados
+ * Generates random course data
+ * @param faker Faker instance
+ * @param forceAtLeastOne If true, guarantees at least one course
+ * @returns Array of purchased courses
  */
 function generateRandomCourses(faker: any, forceAtLeastOne: boolean = false) {
-  // Si no hay que forzar cursos, devolver un array vacío
+  // If no courses needed, return empty array
   if (!forceAtLeastOne) {
     return [];
   }
 
-  // Si forzamos cursos, generar entre 1 y 3 cursos
+  // If forcing courses, generate between 1 and 3
   const courseCount = faker.number.int({ min: 1, max: 3 });
   const courses = [];
   
   const COURSE_TITLES = [
-    "Producción Musical Avanzada",
-    "Marketing Digital para Músicos",
-    "Composición para Bandas Sonoras",
-    "Técnicas Vocales Profesionales",
-    "Distribución Musical en la Era Digital",
-    "Masterización de Audio",
-    "Estrategias de Lanzamiento Musical",
-    "Armonía y Teoría Musical",
-    "Creación de Beats"
+    "Advanced Music Production",
+    "Digital Marketing for Musicians",
+    "Soundtrack Composition",
+    "Professional Vocal Techniques",
+    "Music Distribution in the Digital Era",
+    "Audio Mastering",
+    "Music Release Strategies",
+    "Harmony and Music Theory",
+    "Beat Creation"
   ];
   
   for (let i = 0; i < courseCount; i++) {
@@ -397,7 +397,7 @@ function generateRandomCourses(faker: any, forceAtLeastOne: boolean = false) {
       price,
       purchaseDate: faker.date.past().toISOString().split('T')[0],
       progress: faker.number.int({ min: 0, max: 100 }),
-      completed: faker.datatype.boolean(0.4) // 40% de probabilidad que esté completado
+      completed: faker.datatype.boolean(0.4) // 40% probability of being completed
     });
   }
   
@@ -405,18 +405,18 @@ function generateRandomCourses(faker: any, forceAtLeastOne: boolean = false) {
 }
 
 /**
- * Genera datos de videos aleatorios
- * @param faker Instancia de Faker
- * @param count Cantidad de videos
- * @returns Array de videos generados
+ * Generates random video data
+ * @param faker Faker instance
+ * @param count Number of videos
+ * @returns Array of generated videos
  */
 function generateRandomVideos(faker: any, count: number) {
   const videos = [];
   
   const VIDEO_TYPES = [
-    "Visualizador de audio",
-    "Video musical completo",
-    "Teaser promocional",
+    "Audio visualizer",
+    "Full music video",
+    "Promotional teaser",
     "Lyric video",
     "Behind the scenes"
   ];
@@ -436,28 +436,28 @@ function generateRandomVideos(faker: any, count: number) {
   return videos;
 }
 
-// Esta implementación ha sido migrada al archivo server/routes/artist-generator.ts
-// Mantenemos la firma de la función para compatibilidad
+// This implementation has been migrated to server/routes/artist-generator.ts
+// Keeping the function signature for compatibility
 async function saveArtistToFirestore(artistData: any): Promise<string> {
-  throw new Error('Esta función ha sido migrada al archivo server/routes/artist-generator.ts');
+  throw new Error('This function has been migrated to server/routes/artist-generator.ts');
 }
 
 /**
- * Función principal que genera y guarda un artista
+ * Main function that generates and saves an artist
  */
 async function main() {
   try {
-    console.log('Generando artista aleatorio...');
+    console.log('Generating random artist...');
     const artistData = await generateRandomArtist();
-    console.log('Datos del artista generados:', JSON.stringify(artistData, null, 2));
+    console.log('Artist data generated:', JSON.stringify(artistData, null, 2));
     
-    console.log('Guardando artista en Firestore...');
+    console.log('Saving artist to Firestore...');
     const firestoreId = await saveArtistToFirestore(artistData);
-    console.log(`Artista guardado exitosamente con ID de Firestore: ${firestoreId}`);
+    console.log(`Artist saved successfully with Firestore ID: ${firestoreId}`);
     
     return { artistData, firestoreId };
   } catch (error) {
-    console.error('Error en el proceso de generación de artista:', error);
+    console.error('Error in artist generation process:', error);
     throw error;
   }
 }
@@ -479,8 +479,8 @@ async function main() {
 //     });
 // }
 
-// Exportar funciones para uso en otros archivos
-// Nota: generateRandomArtist ya está exportado directamente arriba
+// Export functions for use in other files
+// Note: generateRandomArtist is already exported directly above
 export {
   saveArtistToFirestore,
   main as generateArtist

@@ -19,7 +19,8 @@ import {
   Brain,
   Palette,
   Mic2,
-  Package
+  Package,
+  Coins
 } from 'lucide-react';
 
 interface GenerationStep {
@@ -40,60 +41,67 @@ interface AIGenerationModalProps {
 const initialSteps: GenerationStep[] = [
   {
     id: 'profile',
-    title: 'Creando Identidad',
-    subtitle: 'Generando perfil artístico único...',
+    title: 'Creating Identity',
+    subtitle: 'Generating unique artist profile...',
     icon: User,
     status: 'pending'
   },
   {
     id: 'bio',
-    title: 'Escribiendo Biografía',
-    subtitle: 'Narrativa con inteligencia artificial...',
+    title: 'Writing Biography',
+    subtitle: 'AI-powered narrative creation...',
     icon: Brain,
     status: 'pending'
   },
   {
     id: 'images',
-    title: 'Diseñando Imágenes',
-    subtitle: 'Creando visuals profesionales...',
+    title: 'Designing Images',
+    subtitle: 'Creating professional visuals...',
     icon: Image,
     status: 'pending'
   },
   {
     id: 'style',
-    title: 'Definiendo Estilo',
-    subtitle: 'Paleta de colores y estética...',
+    title: 'Defining Style',
+    subtitle: 'Color palette and aesthetics...',
     icon: Palette,
     status: 'pending'
   },
   {
     id: 'music',
-    title: 'Componiendo Música',
-    subtitle: 'Generando 3 canciones con voces...',
+    title: 'Composing Music',
+    subtitle: 'Generating 3 songs with vocals...',
     icon: Mic2,
     status: 'pending'
   },
   {
     id: 'merchandise',
-    title: 'Creando Merchandise',
-    subtitle: '6 productos exclusivos...',
+    title: 'Creating Merchandise',
+    subtitle: '6 exclusive products...',
     icon: Package,
+    status: 'pending'
+  },
+  {
+    id: 'blockchain',
+    title: 'Tokenizing on Blockchain',
+    subtitle: 'Registering on BoostiSwap...',
+    icon: Coins,
     status: 'pending'
   }
 ];
 
-// Textos dinámicos que van cambiando
+// Dynamic texts that change during generation
 const dynamicTexts = [
-  "Analizando tendencias musicales...",
-  "Calibrando algoritmos de IA...",
-  "Sintetizando creatividad artificial...",
-  "Optimizando frecuencias sonoras...",
-  "Procesando estilos visuales...",
-  "Generando identidad única...",
-  "Construyendo universo artístico...",
-  "Fusionando datos creativos...",
-  "Renderizando visiones futuras...",
-  "Compilando ADN artístico..."
+  "Analyzing music trends...",
+  "Calibrating AI algorithms...",
+  "Synthesizing artificial creativity...",
+  "Optimizing sound frequencies...",
+  "Processing visual styles...",
+  "Generating unique identity...",
+  "Building artistic universe...",
+  "Merging creative data...",
+  "Rendering future visions...",
+  "Compiling artistic DNA..."
 ];
 
 export function AIGenerationModal({ isOpen, isGenerating, onClose, artistName }: AIGenerationModalProps) {
@@ -149,20 +157,20 @@ export function AIGenerationModal({ isOpen, isGenerating, onClose, artistName }:
     }
   }, [isGenerating, isOpen, onClose]);
 
-  // Animar los pasos mientras se está generando
+  // Animate steps while generating
   useEffect(() => {
     if (!isOpen || !isGenerating) return;
 
-    // Tiempos aproximados basados en el proceso real del servidor:
-    // Total estimado: ~54 segundos
-    // Estos tiempos son estimaciones visuales, el cierre real depende de isGenerating
-    const stepDurations = [3000, 4000, 10000, 2000, 20000, 15000];
+    // Approximate times based on real server process:
+    // Total estimated: ~60 seconds (including blockchain registration)
+    // These times are visual estimates, actual close depends on isGenerating
+    const stepDurations = [3000, 4000, 10000, 2000, 18000, 12000, 8000];
     const timeouts: NodeJS.Timeout[] = [];
     let accumulatedTime = 0;
 
     stepDurations.forEach((duration, index) => {
       if (index === 0) {
-        // El primer paso ya está activo
+        // First step is already active
         accumulatedTime = duration;
         return;
       }
@@ -185,16 +193,16 @@ export function AIGenerationModal({ isOpen, isGenerating, onClose, artistName }:
     };
   }, [isOpen, isGenerating, isComplete]);
 
-  // Actualizar barra de progreso de forma continua mientras se genera
+  // Update progress bar continuously while generating
   useEffect(() => {
     if (!isOpen || !isGenerating || isComplete) return;
     
-    // Estimación de tiempo total: ~54 segundos
-    const estimatedTotalTime = 54000;
+    // Estimated total time: ~60 seconds
+    const estimatedTotalTime = 60000;
     
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTimeRef.current;
-      // Progreso máximo 95% hasta que termine realmente
+      // Max progress 95% until actually complete
       const calculatedProgress = Math.min((elapsed / estimatedTotalTime) * 100, 95);
       setProgress(calculatedProgress);
     }, 200);
@@ -202,7 +210,7 @@ export function AIGenerationModal({ isOpen, isGenerating, onClose, artistName }:
     return () => clearInterval(interval);
   }, [isOpen, isGenerating, isComplete]);
 
-  // Cambiar texto dinámico mientras se genera
+  // Change dynamic text while generating
   useEffect(() => {
     if (!isOpen || !isGenerating) return;
 
@@ -220,9 +228,9 @@ export function AIGenerationModal({ isOpen, isGenerating, onClose, artistName }:
     <Dialog open={isOpen}>
       <DialogContent className="max-w-2xl bg-black/95 border-orange-500/30 overflow-hidden p-0" aria-describedby="ai-generation-description">
         {/* Accessibility - hidden but present for screen readers */}
-        <DialogTitle className="sr-only">Generando Artista con IA</DialogTitle>
+        <DialogTitle className="sr-only">Generating AI Artist</DialogTitle>
         <DialogDescription id="ai-generation-description" className="sr-only">
-          Proceso de generación de artista con inteligencia artificial en progreso
+          AI artist generation process in progress
         </DialogDescription>
         {/* Fondo con partículas */}
         <div className="absolute inset-0 overflow-hidden">
@@ -311,10 +319,10 @@ export function AIGenerationModal({ isOpen, isGenerating, onClose, artistName }:
                 ? 'bg-gradient-to-r from-green-400 via-green-500 to-emerald-500'
                 : 'bg-gradient-to-r from-orange-400 via-orange-500 to-red-500'
             }`}>
-              {isComplete ? '¡Artista Creado Exitosamente!' : 'Creando tu Artista con IA'}
+              {isComplete ? 'Artist Created Successfully!' : 'Creating Your AI Artist'}
             </h2>
             
-            {/* Texto dinámico */}
+            {/* Dynamic text */}
             <AnimatePresence mode="wait">
               <motion.p
                 key={isComplete ? 'complete' : dynamicText}
@@ -324,7 +332,7 @@ export function AIGenerationModal({ isOpen, isGenerating, onClose, artistName }:
                 className={`text-sm font-mono mt-2 ${isComplete ? 'text-green-400' : 'text-gray-400'}`}
               >
                 {isComplete 
-                  ? `${artistName || 'Tu artista'} está listo para conquistar el mundo`
+                  ? `${artistName || 'Your artist'} is ready to conquer the world`
                   : dynamicText}
               </motion.p>
             </AnimatePresence>
@@ -385,10 +393,10 @@ export function AIGenerationModal({ isOpen, isGenerating, onClose, artistName }:
             </p>
           </motion.div>
 
-          {/* Barra de progreso */}
+          {/* Progress bar */}
           <div className="mb-6">
             <div className="flex justify-between text-xs text-gray-500 mb-2">
-              <span>Progreso</span>
+              <span>Progress</span>
               <span>{Math.round(progress)}%</span>
             </div>
             <div className="h-2 bg-gray-800 rounded-full overflow-hidden">

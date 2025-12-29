@@ -1,5 +1,5 @@
 /**
- * Rutas para la generación de artistas aleatorios
+ * Routes for random artist generation
  */
 import { Router, Request, Response } from 'express';
 import { isAuthenticated } from '../middleware/clerk-auth';
@@ -9,7 +9,7 @@ import { Timestamp, DocumentData } from 'firebase-admin/firestore';
 import { db as pgDb } from '../../db';
 import { users, artistNews, songs, tokenizedSongs, userRoles, subscriptions } from '../../db/schema';
 import { eq, desc } from 'drizzle-orm';
-// FAL AI Nano Banana para imágenes y MiniMax Music para audio
+// FAL AI Nano Banana for images and MiniMax Music for audio
 import { 
   generateImageWithNanoBanana, 
   generateImageWithFaceReference as generateImageWithFaceReferenceFAL,
@@ -17,20 +17,22 @@ import {
   generateArtistSongWithFAL,
   generateArtistMerchandise
 } from '../services/fal-service';
-// OpenAI para generación de texto
+// OpenAI for text generation
 import OpenAI from "openai";
 
-// Cliente OpenAI para generación de texto
+// OpenAI client for text generation
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 import { NotificationTemplates } from '../utils/notifications';
 import { generateSocialMediaContent } from '../services/social-media-service';
 import axios from 'axios';
-// BTF-2300 Blockchain Service para registro automático de NFTs
+// BTF-2300 Blockchain Service for automatic NFT registration
 import { 
   registerArtistOnChain, 
   isBlockchainServiceAvailable,
   BTF2300_CONTRACT_ADDRESSES 
 } from '../services/btf2300-blockchain';
+// Resend Email Service for notifications
+import { sendArtistGeneratedEmail } from '../services/resend-email-service';
 
 const router = Router();
 
@@ -787,10 +789,10 @@ async function generateArtistEPK(artistId: number, artistName: string, artistDat
         facebook: artistData.social_media?.facebook?.url
       }
     };
-    console.log('✅ EPK generado para:', artistName);
+    console.log('✅ EPK generated for:', artistName);
     return epkData;
   } catch (error) {
-    console.error('⚠️ Error generando EPK:', error);
+    console.error('⚠️ Error generating EPK:', error);
     return null;
   }
 }
@@ -802,7 +804,7 @@ async function generateArtistEPK(artistId: number, artistName: string, artistDat
  */
 router.post("/generate-artist/secure", isAuthenticated, async (req: Request, res: Response) => {
   try {
-    console.log('🎵 Recibida solicitud autenticada para generar artista con TODAS las funciones activadas');
+    console.log('🎵 Received authenticated request to generate artist with ALL features enabled');
 
     // Obtener ID del usuario autenticado
     const userId = req.user?.uid || req.user?.id;
@@ -810,7 +812,7 @@ router.post("/generate-artist/secure", isAuthenticated, async (req: Request, res
 
     // Generar datos del artista aleatorio
     const artistData = await generateRandomArtist();
-    console.log('🎨 Artista generado exitosamente:', artistData.name);
+    console.log('🎨 Artist generated successfully:', artistData.name);
 
     // 🖼️ GENERAR IMÁGENES DEL ARTISTA CON FAL AI NANO BANANA PRO
     console.log('🖼️ Generando imágenes del artista con FAL AI Nano Banana Pro...');
@@ -937,10 +939,97 @@ router.post("/generate-artist/secure", isAuthenticated, async (req: Request, res
     console.log('📄 Generando EPK del artista...');
     const epkData = await generateArtistEPK(postgresId, artistData.name, artistData);
 
-    // Devolver respuesta completa con todos los módulos activados
+    // 🔗 REGISTRAR ARTISTA EN BLOCKCHAIN (BTF-2300 en Polygon) - Para BoostiSwap
+    let blockchainResult: { 
+      success: boolean; 
+      artistId?: number; 
+      tokenId?: number; 
+      txHash?: string; 
+      error?: string;
+    } = { success: false, error: 'Blockchain service not available' };
+    
+    if (isBlockchainServiceAvailable()) {
+      console.log('🔗 Registrando artista en blockchain BTF-2300 para BoostiSwap...');
+      blockchainResult = await registerArtistOnChain(
+        undefined, // Usar platform wallet (el artista no tiene wallet aún)
+        artistData.name,
+        postgresId
+      );
+      
+      if (blockchainResult.success) {
+        console.log(`✅ Artista registrado en Polygon para BoostiSwap!`);
+        console.log(`   🆔 On-chain Artist ID: ${blockchainResult.artistId}`);
+        console.log(`   🎫 NFT Token ID: ${blockchainResult.tokenId}`);
+        console.log(`   🔗 Tx Hash: ${blockchainResult.txHash}`);
+        
+        // Guardar datos del blockchain en PostgreSQL
+        await pgDb.update(users)
+          .set({
+            blockchainNetwork: 'polygon',
+            blockchainArtistId: blockchainResult.artistId,
+            blockchainTokenId: blockchainResult.tokenId?.toString(),
+            blockchainTxHash: blockchainResult.txHash,
+            blockchainContract: BTF2300_CONTRACT_ADDRESSES.artistToken,
+            blockchainRegisteredAt: new Date(),
+          })
+          .where(eq(users.id, postgresId));
+          
+        // Actualizar Firestore con datos del blockchain
+        await db.collection('generated_artists').doc(firestoreId).update({
+          blockchain: {
+            network: 'polygon',
+            contract: BTF2300_CONTRACT_ADDRESSES.artistToken,
+            artistId: blockchainResult.artistId,
+            tokenId: blockchainResult.tokenId,
+            txHash: blockchainResult.txHash,
+            registeredAt: new Date().toISOString()
+          }
+        });
+      } else {
+        console.warn(`⚠️ No se pudo registrar en blockchain: ${blockchainResult.error}`);
+      }
+    } else {
+      console.log('ℹ️ Blockchain service no disponible. Configura PLATFORM_PRIVATE_KEY para habilitar.');
+    }
+
+    // 📧 SEND EMAIL NOTIFICATION TO USER
+    console.log('📧 Sending artist generation email notification...');
+    let emailNotificationSent = false;
+    try {
+      // Get user email from Clerk auth data or database
+      const userEmail = (req.user as any)?.email || (req.user as any)?.emailAddresses?.[0]?.emailAddress;
+      const userName = (req.user as any)?.firstName || (req.user as any)?.username || 'Artist Creator';
+      
+      if (userEmail) {
+        const emailResult = await sendArtistGeneratedEmail({
+          userEmail,
+          userName,
+          artistName: artistData.name,
+          artistSlug: artistDataWithUser.slug || generateSlug(artistData.name),
+          profileImageUrl,
+          genres: artistData.music_genres || ['Pop'],
+          songsCount: tokenIds.length,
+          tokenSymbol: `BTF-${artistData.name.substring(0, 3).toUpperCase()}`
+        });
+        
+        if (emailResult.success) {
+          console.log(`✅ Email notification sent to ${userEmail}`);
+          emailNotificationSent = true;
+        } else {
+          console.warn(`⚠️ Email failed: ${emailResult.error}`);
+        }
+      } else {
+        console.log('ℹ️ No user email available for notification');
+      }
+    } catch (emailError) {
+      console.error('⚠️ Error sending email notification:', emailError);
+      // Don't fail the request if email fails
+    }
+
+    // Return complete response with all modules activated
     res.status(200).json({
       success: true,
-      message: '✅ Artista creado con TODOS los módulos activados (imágenes + canciones + merchandise + social)',
+      message: '✅ Artist created with ALL modules activated (images + songs + merchandise + social + blockchain + email)',
       artist: {
         ...artistDataWithUser,
         firestoreId,
@@ -975,13 +1064,26 @@ router.post("/generate-artist/secure", isAuthenticated, async (req: Request, res
       epk: {
         status: epkData ? 'generated' : 'pending',
         data: epkData
+      },
+      blockchain: {
+        status: blockchainResult.success ? 'registered' : 'pending',
+        network: 'polygon',
+        artistId: blockchainResult.artistId,
+        tokenId: blockchainResult.tokenId,
+        txHash: blockchainResult.txHash,
+        contract: BTF2300_CONTRACT_ADDRESSES.artistToken,
+        readyForBoostiSwap: blockchainResult.success
+      },
+      emailNotification: {
+        status: emailNotificationSent ? 'sent' : 'skipped',
+        provider: 'resend'
       }
     });
   } catch (error) {
-    console.error('❌ Error generando artista con módulos completos:', error);
+    console.error('❌ Error generating artist with complete modules:', error);
     res.status(500).json({ 
-      error: 'Error al generar artista',
-      details: error instanceof Error ? error.message : 'Error desconocido'
+      error: 'Error generating artist',
+      details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });

@@ -95,20 +95,20 @@ export default function MyArtistsPage() {
       return response;
     },
     onSuccess: (data) => {
-      // El modal se cierra automáticamente cuando detecta isGenerating = false
+      // Modal closes automatically when it detects isGenerating = false
       toast({
-        title: "¡Artista creado!",
-        description: `${data.name} ha sido creado exitosamente`,
+        title: "Artist created!",
+        description: `${data.name} has been created successfully`,
       });
       refetch();
       setIsGenerating(false);
     },
     onError: (error: any) => {
-      // Cerrar modal inmediatamente en caso de error
+      // Close modal immediately on error
       setShowAIGenerationModal(false);
       toast({
         title: "Error",
-        description: error.message || "No se pudo crear el artista",
+        description: error.message || "Could not create the artist",
         variant: "destructive",
       });
       setIsGenerating(false);
@@ -127,8 +127,8 @@ export default function MyArtistsPage() {
     },
     onSuccess: () => {
       toast({
-        title: "Artista eliminado",
-        description: "El artista ha sido eliminado exitosamente",
+        title: "Artist deleted",
+        description: "The artist has been deleted successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/artist-generator/my-artists"] });
       setDeletingArtistId(null);
@@ -136,39 +136,39 @@ export default function MyArtistsPage() {
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "No se pudo eliminar el artista",
+        description: error.message || "Could not delete the artist",
         variant: "destructive",
       });
       setDeletingArtistId(null);
     },
   });
 
-  // Mutation para actualizar artistas AI existentes
+  // Mutation to update existing AI artists
   const fixArtistsMutation = useMutation({
     mutationFn: async () => {
       if (!user?.id || !user?.email) {
-        throw new Error('Usuario no válido');
+        throw new Error('Invalid user');
       }
       return await fixGeneratedByForUserArtists(user.id, user.email);
     },
     onSuccess: (data) => {
       if (data.success) {
         toast({
-          title: "✅ Artistas Actualizados",
-          description: data.message || `${data.updated} perfiles actualizados correctamente`,
+          title: "✅ Artists Updated",
+          description: data.message || `${data.updated} profiles updated successfully`,
         });
         refetch();
       } else {
         toast({
-          title: "Información",
-          description: data.message || "No se encontraron artistas para actualizar",
+          title: "Information",
+          description: data.message || "No artists found to update",
         });
       }
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "No se pudieron actualizar los artistas",
+        description: error.message || "Could not update the artists",
         variant: "destructive",
       });
     },
@@ -183,8 +183,8 @@ export default function MyArtistsPage() {
   const handleCreateManualArtist = async () => {
     if (!manualArtistForm.name.trim()) {
       toast({
-        title: "Nombre requerido",
-        description: "Por favor ingresa un nombre para el artista",
+        title: "Name required",
+        description: "Please enter a name for the artist",
         variant: "destructive",
       });
       return;
@@ -213,8 +213,8 @@ export default function MyArtistsPage() {
       });
 
       toast({
-        title: "¡Artista creado!",
-        description: `${manualArtistForm.name} ha sido creado exitosamente`,
+        title: "Artist created!",
+        description: `${manualArtistForm.name} has been created successfully`,
       });
 
       // Reset form
@@ -230,7 +230,7 @@ export default function MyArtistsPage() {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "No se pudo crear el artista",
+        description: error.message || "Could not create the artist",
         variant: "destructive",
       });
     } finally {
@@ -239,7 +239,7 @@ export default function MyArtistsPage() {
   };
 
   const handleDeleteArtist = (artistId: number, artistName: string) => {
-    if (window.confirm(`¿Estás seguro de que deseas eliminar a ${artistName}? Esta acción no se puede deshacer.`)) {
+    if (window.confirm(`Are you sure you want to delete ${artistName}? This action cannot be undone.`)) {
       deleteArtistMutation.mutate(artistId);
     }
   };
@@ -249,7 +249,7 @@ export default function MyArtistsPage() {
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-orange-500 mx-auto mb-4" />
-          <p className="text-white">Cargando...</p>
+          <p className="text-white">Loading...</p>
         </div>
       </div>
     );
@@ -295,11 +295,11 @@ export default function MyArtistsPage() {
                 My Artists
               </h1>
               <p className="text-gray-400">
-                Administra todos tus artistas
+                Manage all your artists
               </p>
             </div>
             <div className="flex gap-3 flex-wrap">
-              {/* Botón para arreglar artistas AI existentes */}
+              {/* Button to fix existing AI artists */}
               {artists.some(a => a.isAIGenerated) && (
                 <Button
                   variant="outline"
@@ -312,12 +312,12 @@ export default function MyArtistsPage() {
                   {fixArtistsMutation.isPending ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Actualizando...
+                      Updating...
                     </>
                   ) : (
                     <>
                       <Wrench className="h-4 w-4 mr-2" />
-                      Arreglar Artistas AI
+                      Fix AI Artists
                     </>
                   )}
                 </Button>
@@ -331,52 +331,52 @@ export default function MyArtistsPage() {
                     data-testid="button-create-manual-artist"
                   >
                     <UserPlus className="h-4 w-4 mr-2" />
-                    Crear Manualmente
+                    Create Manually
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="bg-gray-900 border-gray-800 text-white">
                   <DialogHeader>
-                    <DialogTitle>Crear Nuevo Artista</DialogTitle>
+                    <DialogTitle>Create New Artist</DialogTitle>
                     <DialogDescription className="text-gray-400">
-                      Ingresa la información básica del artista
+                      Enter the basic artist information
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Nombre del Artista *</Label>
+                      <Label htmlFor="name">Artist Name *</Label>
                       <Input
                         id="name"
-                        placeholder="Ej: John Doe"
+                        placeholder="e.g. John Doe"
                         value={manualArtistForm.name}
                         onChange={(e) => setManualArtistForm({ ...manualArtistForm, name: e.target.value })}
                         className="bg-gray-800 border-gray-700"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="genre">Género Musical</Label>
+                      <Label htmlFor="genre">Music Genre</Label>
                       <Input
                         id="genre"
-                        placeholder="Ej: Pop, Rock, Hip-Hop"
+                        placeholder="e.g. Pop, Rock, Hip-Hop"
                         value={manualArtistForm.genre}
                         onChange={(e) => setManualArtistForm({ ...manualArtistForm, genre: e.target.value })}
                         className="bg-gray-800 border-gray-700"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="location">Ubicación</Label>
+                      <Label htmlFor="location">Location</Label>
                       <Input
                         id="location"
-                        placeholder="Ej: Miami, FL"
+                        placeholder="e.g. Miami, FL"
                         value={manualArtistForm.location}
                         onChange={(e) => setManualArtistForm({ ...manualArtistForm, location: e.target.value })}
                         className="bg-gray-800 border-gray-700"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="biography">Biografía</Label>
+                      <Label htmlFor="biography">Biography</Label>
                       <Textarea
                         id="biography"
-                        placeholder="Cuéntanos sobre el artista..."
+                        placeholder="Tell us about the artist..."
                         rows={4}
                         value={manualArtistForm.biography}
                         onChange={(e) => setManualArtistForm({ ...manualArtistForm, biography: e.target.value })}
@@ -390,7 +390,7 @@ export default function MyArtistsPage() {
                       onClick={() => setIsDialogOpen(false)}
                       disabled={isCreating}
                     >
-                      Cancelar
+                      Cancel
                     </Button>
                     <Button
                       onClick={handleCreateManualArtist}
@@ -400,10 +400,10 @@ export default function MyArtistsPage() {
                       {isCreating ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Creando...
+                          Creating...
                         </>
                       ) : (
-                        "Crear Artista"
+                        "Create Artist"
                       )}
                     </Button>
                   </div>
@@ -419,12 +419,12 @@ export default function MyArtistsPage() {
                 {isGenerating ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Generando...
+                    Generating...
                   </>
                 ) : (
                   <>
                     <Bot className="h-4 w-4 mr-2" />
-                    Generar con IA
+                    Generate with AI
                   </>
                 )}
               </Button>
@@ -439,7 +439,7 @@ export default function MyArtistsPage() {
                   <User className="h-6 w-6 text-orange-500" />
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm">Total Artistas</p>
+                  <p className="text-gray-400 text-sm">Total Artists</p>
                   <p className="text-2xl font-bold">{artists.length}</p>
                 </div>
               </div>
@@ -450,7 +450,7 @@ export default function MyArtistsPage() {
                   <Bot className="h-6 w-6 text-blue-500" />
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm">Generados con IA</p>
+                  <p className="text-gray-400 text-sm">AI Generated</p>
                   <p className="text-2xl font-bold">
                     {artists.filter(a => a.isAIGenerated).length}
                   </p>
@@ -463,7 +463,7 @@ export default function MyArtistsPage() {
                   <Music className="h-6 w-6 text-green-500" />
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm">Géneros Únicos</p>
+                  <p className="text-gray-400 text-sm">Unique Genres</p>
                   <p className="text-2xl font-bold">
                     {new Set(artists.flatMap(a => a.genres || [])).size}
                   </p>
@@ -480,9 +480,9 @@ export default function MyArtistsPage() {
           ) : artists.length === 0 ? (
             <Card className="bg-gray-900 border-gray-800 p-12 text-center">
               <Sparkles className="h-16 w-16 text-orange-500 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No tienes artistas aún</h3>
+              <h3 className="text-xl font-semibold mb-2">You don't have any artists yet</h3>
               <p className="text-gray-400 mb-6">
-                Crea tu primer artista con IA para comenzar
+                Create your first AI artist to get started
               </p>
               <Button
                 onClick={handleCreateArtist}
@@ -492,12 +492,12 @@ export default function MyArtistsPage() {
                 {isGenerating ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Generando...
+                    Generating...
                   </>
                 ) : (
                   <>
                     <Plus className="h-4 w-4 mr-2" />
-                    Crear Mi Primer Artista
+                    Create My First Artist
                   </>
                 )}
               </Button>
@@ -571,7 +571,7 @@ export default function MyArtistsPage() {
                           data-testid={`button-view-artist-${artist.id}`}
                         >
                           <ExternalLink className="h-4 w-4 mr-2" />
-                          Ver Perfil
+                          View Profile
                         </Button>
                       </Link>
                       <Button
@@ -597,7 +597,7 @@ export default function MyArtistsPage() {
           </div>
         </div>
 
-        {/* Modal de Generación con IA */}
+        {/* AI Generation Modal */}
         <AIGenerationModal 
           isOpen={showAIGenerationModal}
           isGenerating={createArtistMutation.isPending}

@@ -1,7 +1,7 @@
 /**
  * Social Media Content Generator Service
- * Genera contenido viral para Facebook, Instagram y TikTok usando OpenAI
- * Migrado de Gemini a OpenAI para mayor eficiencia
+ * Generates viral content for Facebook, Instagram and TikTok using OpenAI
+ * Migrated from Gemini to OpenAI for better efficiency
  */
 import OpenAI from 'openai';
 
@@ -24,16 +24,16 @@ export interface SocialMediaGeneratorResult {
 }
 
 const VIRAL_THEMES = [
-  "Nuevo sencillo dropping pronto 🎵",
-  "Tour de conciertos próximamente 🎤",
-  "Colaboración exclusiva revelada",
-  "Meet & Greet especial para fans",
-  "Escúchame en todas las plataformas",
-  "Limited edition merch disponible",
-  "Detrás de cámaras exclusivo",
-  "Doblando géneros musicales",
-  "Mi journey musical hasta aquí",
-  "Composición de hit en progreso"
+  "New single dropping soon 🎵",
+  "Concert tour coming up 🎤",
+  "Exclusive collaboration revealed",
+  "Special Meet & Greet for fans",
+  "Listen to me on all platforms",
+  "Limited edition merch available",
+  "Exclusive behind the scenes",
+  "Bending music genres",
+  "My musical journey so far",
+  "Hit composition in progress"
 ];
 
 /**
@@ -48,48 +48,48 @@ export async function generateSocialMediaContent(
   try {
     const randomTheme = VIRAL_THEMES[Math.floor(Math.random() * VIRAL_THEMES.length)];
 
-    const prompt = `Eres un experto en marketing musical y contenido viral. Basándote en la siguiente información del artista, genera contenido viral optimizado para 3 plataformas diferentes.
+    const prompt = `You are an expert in music marketing and viral content. Based on the following artist information, generate viral content optimized for 3 different platforms.
 
-ARTISTA: ${artistName}
-BIOGRAFÍA: ${biography}
-URL PERFIL: ${profileUrl}
-TEMA: ${randomTheme}
+ARTIST: ${artistName}
+BIOGRAPHY: ${biography}
+PROFILE URL: ${profileUrl}
+THEME: ${randomTheme}
 
-Genera EXACTAMENTE 3 posts (uno para cada plataforma). Para CADA post responde con este formato JSON exacto (sin markdown):
+Generate EXACTLY 3 posts (one for each platform). For EACH post respond with this exact JSON format (no markdown):
 
-Para INSTAGRAM (1080x1350):
+For INSTAGRAM (1080x1350):
 {
   "platform": "instagram",
-  "caption": "[100-300 caracteres, emojis estratégicos, inspiracional/artístico]",
+  "caption": "[100-300 characters, strategic emojis, inspirational/artistic]",
   "hashtags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
-  "cta": "Ver perfil de ${artistName}"
+  "cta": "View ${artistName}'s profile"
 }
 
-Para FACEBOOK (1200x628):
+For FACEBOOK (1200x628):
 {
   "platform": "facebook",
-  "caption": "[200-500 caracteres, personal, comunitario, invita conversación]",
+  "caption": "[200-500 characters, personal, community-oriented, invites conversation]",
   "hashtags": ["tag1", "tag2"],
-  "cta": "Visita mi perfil: ${profileUrl}"
+  "cta": "Visit my profile: ${profileUrl}"
 }
 
-Para TIKTOK (1080x1920):
+For TIKTOK (1080x1920):
 {
   "platform": "tiktok",
-  "caption": "[80-150 caracteres, energético, trend-friendly, hook viral]",
+  "caption": "[80-150 characters, energetic, trend-friendly, viral hook]",
   "hashtags": ["tag1", "tag2", "tag3"],
-  "cta": "Link en bio: ${profileUrl}"
+  "cta": "Link in bio: ${profileUrl}"
 }
 
-REQUISITOS:
-- Cada post DEBE ser diferente en tono y mensaje
-- Incluir emojis relevantes (Instagram/TikTok especialmente)
-- Los hashtags deben ser específicos del artista y virales
-- El CTA debe incluir el URL del perfil
-- Lenguaje en español
-- Posts motivadores y profesionales
+REQUIREMENTS:
+- Each post MUST be different in tone and message
+- Include relevant emojis (Instagram/TikTok especially)
+- Hashtags must be artist-specific and viral
+- The CTA must include the profile URL
+- Language in English
+- Motivating and professional posts
 
-Genera los 3 posts ahora en formato JSON válido:`;
+Generate the 3 posts now in valid JSON format:`;
 
     console.log('🎬 Generating social media content with OpenAI GPT-4o-mini...');
 
