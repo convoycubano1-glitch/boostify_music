@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '@db';
 import { users, marketingMetrics } from '@db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 import { db as firestore } from '../firebase';
 
 const router = Router();
@@ -15,22 +15,34 @@ router.get('/', async (req, res) => {
     }
 
     const userId = authUser.id;
-
-    // Get user data from PostgreSQL
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+    
+    // Determine if userId is a Clerk ID (string starting with 'user_') or PostgreSQL ID (number)
+    let user;
+    if (typeof userId === 'string' && userId.startsWith('user_')) {
+      // Clerk ID - look up by clerkId field
+      [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.clerkId, userId))
+        .limit(1);
+    } else {
+      // PostgreSQL ID (number) - look up by id field
+      const numericId = typeof userId === 'number' ? userId : parseInt(userId);
+      [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, numericId))
+        .limit(1);
+    }
 
     if (!user) {
       return res.status(404).json({ error: 'Artist not found' });
     }
 
-    // Try to get profile data from Firestore
+    // Try to get profile data from Firestore using PostgreSQL user ID
     let firestoreProfile = null;
     try {
-      const userDoc = await firestore.collection('users').doc(String(userId)).get();
+      const userDoc = await firestore.collection('users').doc(String(user.id)).get();
       if (userDoc.exists) {
         firestoreProfile = userDoc.data();
       }

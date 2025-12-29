@@ -2,29 +2,44 @@ import { getDefaultConfig } from '@rainbow-me/rainbowkit';
 import { polygon, polygonMumbai } from 'wagmi/chains';
 
 // WalletConnect Project ID - debe ser válido de https://cloud.walletconnect.com
-// Si el proyecto da error 403, significa que el projectId no está registrado o expiró
-const WALLETCONNECT_PROJECT_ID = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'demo-project-id';
+// IMPORTANT: This must be set in .env as VITE_WALLETCONNECT_PROJECT_ID for production builds
+const WALLETCONNECT_PROJECT_ID = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID;
+
+// Check if WalletConnect is properly configured
+const isWalletConnectConfigured = WALLETCONNECT_PROJECT_ID && WALLETCONNECT_PROJECT_ID !== 'demo-project-id' && WALLETCONNECT_PROJECT_ID.length > 10;
+
+if (!isWalletConnectConfigured) {
+  console.warn('[Web3Config] ⚠️ VITE_WALLETCONNECT_PROJECT_ID not configured properly. WalletConnect features may not work.');
+  console.warn('[Web3Config] Current value:', WALLETCONNECT_PROJECT_ID || 'undefined');
+}
 
 let wagmiConfigInstance: ReturnType<typeof getDefaultConfig> | null = null;
 
 export function getWagmiConfig() {
   if (!wagmiConfigInstance) {
     try {
+      // Only initialize if WalletConnect is configured, otherwise use a minimal config
+      const projectId = isWalletConnectConfigured ? WALLETCONNECT_PROJECT_ID! : 'boostify-music-fallback';
+      
       wagmiConfigInstance = getDefaultConfig({
         appName: 'Boostify Music',
-        projectId: WALLETCONNECT_PROJECT_ID,
+        projectId: projectId,
         chains: [
           polygon,
           polygonMumbai,
         ],
         ssr: false,
       });
+      
+      if (isWalletConnectConfigured) {
+        console.log('[Web3Config] ✅ WalletConnect initialized with project ID');
+      }
     } catch (error) {
       console.error('[Web3Config] Error initializing wagmi config:', error);
       // Crear config mínima sin WalletConnect
       wagmiConfigInstance = getDefaultConfig({
         appName: 'Boostify Music',
-        projectId: 'demo',
+        projectId: 'boostify-fallback',
         chains: [polygon],
         ssr: false,
       });

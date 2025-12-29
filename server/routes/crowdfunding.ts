@@ -12,9 +12,25 @@ import {
 import { eq, and, desc } from 'drizzle-orm';
 
 // Helper para extraer el ID del usuario de req.user
-// Funciona con Replit Auth (req.user.id) y Firebase Auth (req.user.uid)
+// Funciona con Clerk Auth, Replit Auth y Firebase Auth
 async function getUserId(req: Request): Promise<number | null> {
   const user = req.user as any;
+  
+  // Caso 0: Clerk Auth - tiene ID que comienza con 'user_'
+  if (user?.id && typeof user.id === 'string' && user.id.startsWith('user_')) {
+    console.log('✅ [getUserId] Buscando usuario por Clerk ID:', user.id);
+    const [dbUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.clerkId, user.id))
+      .limit(1);
+    
+    if (dbUser) {
+      console.log('✅ [getUserId] Usuario encontrado con ID:', dbUser.id);
+      return dbUser.id;
+    }
+    console.log('⚠️ [getUserId] Usuario Clerk no encontrado en DB:', user.id);
+  }
   
   // Caso 1: Replit Auth - tiene directamente el ID de la base de datos
   if (user?.id && typeof user.id === 'number') {
