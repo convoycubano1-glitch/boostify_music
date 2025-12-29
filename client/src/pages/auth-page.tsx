@@ -89,6 +89,7 @@ export default function AuthPage() {
                       headerSubtitle: 'hidden',
                       socialButtonsBlockButton: 'bg-white/10 border-white/20 text-white hover:bg-white/20',
                       socialButtonsBlockButtonText: 'text-white',
+                      socialButtonsProviderIcon: 'brightness-0 invert',
                       dividerLine: 'bg-white/20',
                       dividerText: 'text-white/50',
                       formFieldLabel: 'text-white/80',
@@ -126,6 +127,7 @@ export default function AuthPage() {
                       headerSubtitle: 'hidden',
                       socialButtonsBlockButton: 'bg-white/10 border-white/20 text-white hover:bg-white/20',
                       socialButtonsBlockButtonText: 'text-white',
+                      socialButtonsProviderIcon: 'brightness-0 invert',
                       dividerLine: 'bg-white/20',
                       dividerText: 'text-white/50',
                       formFieldLabel: 'text-white/80',
@@ -168,7 +170,7 @@ export default function AuthPage() {
           </div>
           <div className="p-3 rounded-lg bg-white/5 backdrop-blur">
             <p className="text-2xl mb-1">💎</p>
-            <p className="text-xs text-white/60">NFT</p>
+            <p className="text-xs text-white/60">BTF-2300</p>
           </div>
         </div>
       </div>

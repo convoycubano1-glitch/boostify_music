@@ -8,7 +8,7 @@ import { apiRequest } from "../lib/queryClient";
 import { useAuth } from "../hooks/use-auth";
 import { SocialUser } from "../lib/social/types";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
-import { BadgeInfo, Globe, Users, User, MessageSquare, Sparkles, BookMarked, Music, ExternalLink } from "lucide-react";
+import { BadgeInfo, Globe, Users, User, MessageSquare, Sparkles, Music, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "../components/ui/button";
 import { useToast } from "../hooks/use-toast";
@@ -281,27 +281,25 @@ export default function SocialNetworkPage() {
               </CardContent>
             </Card>
 
-            {/* Enlaces útiles */}
-            <Card>
-              <CardHeader>
+            {/* Estadísticas de la comunidad */}
+            <Card className="bg-gradient-to-br from-purple-900/30 to-orange-900/30 border-purple-500/20">
+              <CardHeader className="pb-2">
                 <CardTitle className="flex items-center text-lg">
-                  <BookMarked className="h-5 w-5 mr-2" />
-                  Enlaces
+                  <Users className="h-5 w-5 mr-2 text-purple-400" />
+                  Comunidad
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <Button variant="link" className="p-0 h-auto" asChild>
-                  <Link href="/education">Cursos educativos</Link>
-                </Button>
-                <Button variant="link" className="p-0 h-auto" asChild>
-                  <Link href="/record-label-services">Servicios de producción</Link>
-                </Button>
-                <Button variant="link" className="p-0 h-auto" asChild>
-                  <Link href="/artist-dashboard">Dashboard de artista</Link>
-                </Button>
-                <Button variant="link" className="p-0 h-auto" asChild>
-                  <Link href="/manager-tools">Herramientas de management</Link>
-                </Button>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div className="p-3 rounded-lg bg-white/5">
+                    <p className="text-2xl font-bold text-orange-400">{artists.length || 0}</p>
+                    <p className="text-xs text-slate-400">Artistas</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-white/5">
+                    <p className="text-2xl font-bold text-purple-400">{users?.length || 0}</p>
+                    <p className="text-xs text-slate-400">Miembros</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>

@@ -440,7 +440,7 @@ export default function HomePage() {
       <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white py-3 sticky top-0 z-50">
         <div className="container mx-auto px-4">
           <p className="text-center text-sm md:text-base font-medium">
-            🚀 Platform in Beta Testing & Development Phase - Official Launch: January 2026
+            🚀 Platform in Beta Testing & Development Phase - Official Launch: 25 January 2026
           </p>
         </div>
       </div>

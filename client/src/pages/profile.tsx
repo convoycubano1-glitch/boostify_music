@@ -5,9 +5,7 @@ import { useParams } from "wouter";
 import { useAuth } from "../hooks/use-auth";
 import { Head } from "../components/ui/head";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { SignIn, useClerk } from "@clerk/clerk-react";
-import { useState } from "react";
+import { SignIn } from "@clerk/clerk-react";
 
 interface ArtistData {
   name: string;
@@ -24,9 +22,7 @@ interface ArtistData {
 
 export default function ProfilePage() {
   const { id } = useParams();
-  const { user, isLoading: isAuthLoading, isAuthenticated } = useAuth();
-  const { openSignIn } = useClerk();
-  const [showSignIn, setShowSignIn] = useState(false);
+  const { user, isLoading: isAuthLoading } = useAuth();
 
   // Use the URL id or fallback to the authenticated user's id
   // Use user.id > 0 check to ensure we have a valid ID from the database
@@ -34,24 +30,6 @@ export default function ProfilePage() {
   
   // Check if this is the user's own profile
   const isOwnProfile = !id && !!user && user.id > 0;
-
-  // Auto-open sign in modal when user is not authenticated and trying to view their own profile
-  useEffect(() => {
-    // Only trigger if:
-    // 1. Auth is done loading
-    // 2. No ID in URL (trying to view own profile)
-    // 3. User is not authenticated
-    if (!isAuthLoading && !id && !isAuthenticated) {
-      setShowSignIn(true);
-      // Try to open Clerk modal
-      try {
-        openSignIn({ redirectUrl: '/profile' });
-      } catch (e) {
-        // Fallback to showing inline SignIn component
-        console.log('Using inline SignIn component');
-      }
-    }
-  }, [isAuthLoading, id, isAuthenticated, openSignIn]);
 
   // Query para obtener datos del artista
   const { data: artistData, isLoading: isArtistLoading } = useQuery<ArtistData>({
@@ -74,28 +52,59 @@ export default function ProfilePage() {
   // If no user and no id in URL, show sign in component
   if (!artistId) {
     return (
-      <div className="min-h-screen bg-black pt-4 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-6">
-          <div className="text-center mb-4">
-            <h1 className="text-2xl font-bold text-white mb-2">Accede a tu perfil</h1>
-            <p className="text-gray-400">Inicia sesión para ver y editar tu perfil de artista</p>
+      <div className="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black pt-4 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-8 max-w-md w-full px-4">
+          {/* Logo y título */}
+          <div className="text-center space-y-4">
+            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/20">
+              <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
+                Boostify Music
+              </h1>
+              <p className="text-gray-400 mt-2">Inicia sesión para acceder a tu perfil de artista</p>
+            </div>
           </div>
+          
+          {/* SignIn Component con estilos mejorados */}
           <SignIn 
             appearance={{
               elements: {
-                rootBox: "mx-auto",
-                card: "bg-gray-900 border border-gray-800",
-                headerTitle: "text-white",
+                rootBox: "mx-auto w-full",
+                card: "bg-zinc-900/80 backdrop-blur-xl border border-zinc-700/50 shadow-2xl shadow-black/50 rounded-2xl",
+                headerTitle: "text-white text-xl font-bold",
                 headerSubtitle: "text-gray-400",
-                formFieldLabel: "text-gray-300",
-                formFieldInput: "bg-gray-800 border-gray-700 text-white",
-                formButtonPrimary: "bg-orange-500 hover:bg-orange-600",
-                footerActionLink: "text-orange-500 hover:text-orange-400",
+                formFieldLabel: "text-gray-300 font-medium",
+                formFieldInput: "bg-zinc-800/80 border-zinc-600 text-white placeholder:text-gray-500 focus:border-orange-500 focus:ring-orange-500/20 rounded-lg",
+                formButtonPrimary: "bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-semibold shadow-lg shadow-orange-500/25 rounded-lg",
+                footerActionLink: "text-orange-400 hover:text-orange-300 font-medium",
+                socialButtonsBlockButton: "bg-zinc-800 border-zinc-600 text-white hover:bg-zinc-700 rounded-lg",
+                socialButtonsBlockButtonText: "text-white font-medium",
+                socialButtonsProviderIcon: "brightness-0 invert",
+                dividerLine: "bg-zinc-700",
+                dividerText: "text-gray-500",
+                identityPreviewText: "text-white",
+                identityPreviewEditButton: "text-orange-400 hover:text-orange-300",
+                formFieldInputShowPasswordButton: "text-gray-400 hover:text-white",
+                otpCodeFieldInput: "bg-zinc-800 border-zinc-600 text-white",
+                footer: "hidden",
+              },
+              layout: {
+                socialButtonsPlacement: "top",
+                showOptionalFields: false,
               }
             }}
             routing="hash"
             afterSignInUrl="/profile"
           />
+          
+          {/* Footer decorativo */}
+          <p className="text-gray-500 text-sm text-center">
+            ¿No tienes cuenta? El registro es automático al iniciar sesión
+          </p>
         </div>
       </div>
     );

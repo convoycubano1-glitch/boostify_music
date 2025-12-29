@@ -464,25 +464,21 @@ function ArtistDetailModalContent({
               {/* Connect Wallet Button - uses RainbowKit's ConnectButton */}
               {!isConnected ? (
                 isWeb3Ready ? (
-                  <ConnectButton.Custom>
-                    {({ openConnectModal }) => (
-                      <Button 
-                        onClick={openConnectModal}
-                        className="w-full font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                        data-testid="button-connect-wallet"
-                      >
-                        <Wallet className="mr-2 h-4 w-4" />
-                        Conectar Wallet
-                      </Button>
-                    )}
-                  </ConnectButton.Custom>
+                  <div className="w-full flex justify-center">
+                    <ConnectButton 
+                      showBalance={false}
+                      chainStatus="icon"
+                      accountStatus="address"
+                      label="🔗 Conectar Wallet para Comprar"
+                    />
+                  </div>
                 ) : (
                   <Button 
                     className="w-full font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                     onClick={() => {
                       toast({
-                        title: "Inicializando Web3...",
-                        description: "Por favor espera un momento mientras se conecta a la blockchain",
+                        title: "⏳ Inicializando Web3...",
+                        description: "Espera 2 segundos mientras se conecta a la blockchain. Intenta de nuevo.",
                       });
                     }}
                     data-testid="button-connect-wallet"
