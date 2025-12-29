@@ -161,7 +161,7 @@ export default function VirtualRecordLabelPage() {
 
   // Log de artistas para debugging
   useEffect(() => {
-    if (myVirtualArtists) {
+    if (Array.isArray(myVirtualArtists) && myVirtualArtists.length > 0) {
       logger.info('👥 Artistas virtuales cargados:', myVirtualArtists);
       myVirtualArtists.forEach((artist: any, index: number) => {
         logger.info(`Artista ${index + 1}:`, {
@@ -934,7 +934,7 @@ export default function VirtualRecordLabelPage() {
       <HeroSection handleCreateLabel={() => setCurrentStep(1)} />
       
       {/* My Virtual Artists Section - Solo si el usuario tiene artistas */}
-      {user && myVirtualArtists && myVirtualArtists.length > 0 && (
+      {user && Array.isArray(myVirtualArtists) && myVirtualArtists.length > 0 && (
         <section className="py-8 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-950/20 dark:to-yellow-950/20 border-b">
           <div className="container">
             <div className="flex items-center justify-between mb-6">

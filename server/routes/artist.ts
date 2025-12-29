@@ -90,12 +90,18 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Validate ID is a valid number
+    const numericId = parseInt(id);
+    if (isNaN(numericId)) {
+      return res.status(400).json({ error: 'Invalid artist ID' });
+    }
 
     // Get user data from PostgreSQL
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, parseInt(id)))
+      .where(eq(users.id, numericId))
       .limit(1);
 
     if (!user) {
@@ -120,39 +126,49 @@ router.get('/:id', async (req, res) => {
       .where(eq(marketingMetrics.userId, user.id))
       .limit(1);
 
-    // Get music from Firestore
-    const musicSnapshot = await firestore
-      .collection('songs')
-      .where('userId', '==', user.id)
-      .get();
+    // Get music from Firestore (with defensive error handling)
+    let music: any[] = [];
+    try {
+      const musicSnapshot = await firestore
+        .collection('songs')
+        .where('userId', '==', user.id)
+        .get();
 
-    const music = musicSnapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        title: data.name,
-        url: data.audioUrl,
-        storageRef: data.storageRef,
-        createdAt: data.createdAt?.toDate()
-      };
-    });
+      music = musicSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: data.name,
+          url: data.audioUrl,
+          storageRef: data.storageRef,
+          createdAt: data.createdAt?.toDate()
+        };
+      });
+    } catch (error) {
+      console.log('Error fetching music from Firestore, returning empty array');
+    }
 
-    // Get videos from Firestore
-    const videosSnapshot = await firestore
-      .collection('videos')
-      .where('userId', '==', user.id)
-      .get();
+    // Get videos from Firestore (with defensive error handling)
+    let videos: any[] = [];
+    try {
+      const videosSnapshot = await firestore
+        .collection('videos')
+        .where('userId', '==', user.id)
+        .get();
 
-    const videos = videosSnapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        title: data.title,
-        url: data.url,
-        thumbnail: data.thumbnailUrl,
-        createdAt: data.createdAt?.toDate()
-      };
-    });
+      videos = videosSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: data.title,
+          url: data.url,
+          thumbnail: data.thumbnailUrl,
+          createdAt: data.createdAt?.toDate()
+        };
+      });
+    } catch (error) {
+      console.log('Error fetching videos from Firestore, returning empty array');
+    }
 
     // Combine all data, prioritizing Firestore profile data if available
     const artistData = {
