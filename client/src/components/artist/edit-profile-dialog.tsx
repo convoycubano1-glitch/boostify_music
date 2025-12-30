@@ -1780,7 +1780,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
               
               {subscription && subscription.epkLimit && subscription.epkLimit > 0 && subscription.epkUsed < subscription.epkLimit ? (
                 <div className="bg-black/20 rounded-lg p-3 border border-green-500/10">
-                  <EPKGenerator />
+                  <EPKGenerator artistId={artistId} />
                 </div>
               ) : subscription && subscription.epkLimit && subscription.epkLimit > 0 ? (
                 <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-2">
@@ -1792,7 +1792,7 @@ export function EditProfileDialog({ artistId, currentData, onUpdate, onGalleryCr
                 </div>
               ) : subscription && subscription.epkLimit === 0 ? null : (
                 <div className="bg-black/20 rounded-lg p-3 border border-green-500/10">
-                  <EPKGenerator />
+                  <EPKGenerator artistId={artistId} />
                 </div>
               )}
             </div>

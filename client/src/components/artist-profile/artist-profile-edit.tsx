@@ -258,7 +258,7 @@ export function ArtistProfileEdit({
         </TabsContent>
 
         <TabsContent value="epk" className="space-y-6">
-          <EPKGenerator />
+          <EPKGenerator artistId={profile.id} />
         </TabsContent>
 
         <TabsContent value="songs" className="space-y-6">

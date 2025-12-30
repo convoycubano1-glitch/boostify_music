@@ -44,7 +44,11 @@ interface EPKData {
   pressRelease?: string;
 }
 
-export function EPKGenerator() {
+interface EPKGeneratorProps {
+  artistId?: string | number;
+}
+
+export function EPKGenerator({ artistId }: EPKGeneratorProps) {
   const { toast } = useToast();
   const [generatedEPK, setGeneratedEPK] = useState<EPKData | null>(null);
 
@@ -53,7 +57,7 @@ export function EPKGenerator() {
       const response = await apiRequest({
         url: '/api/epk/generate',
         method: 'POST',
-        data: {}
+        data: { artistId: artistId ? String(artistId) : undefined }
       });
       return response;
     },
