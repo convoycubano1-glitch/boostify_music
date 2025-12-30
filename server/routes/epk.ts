@@ -5,6 +5,7 @@ import { db } from '../db';
 import { users } from '@db/schema';
 import { eq } from 'drizzle-orm';
 import { generateImageWithNanoBanana } from '../services/fal-service';
+import { isAdminEmail } from '../../shared/constants';
 
 const router = express.Router();
 
@@ -90,6 +91,11 @@ router.post('/generate', authenticate, async (req: Request, res: Response) => {
 
     console.log(`[EPK] Buscando usuario con clerkId: ${clerkUserId}`);
 
+    // Check if user is admin first - admins can generate EPK for any artist
+    const userEmail = (req as any).user?.email;
+    const isAdmin = isAdminEmail(userEmail);
+    console.log(`[EPK] User email: ${userEmail}, isAdmin: ${isAdmin}`);
+
     // First, get the PostgreSQL ID of the requesting user
     const [requestingUser] = await db
       .select({ id: users.id })
@@ -124,12 +130,13 @@ router.post('/generate', authenticate, async (req: Request, res: Response) => {
       
       // Verify the user owns this artist using proper ID comparison
       // generatedBy is PostgreSQL integer ID, not clerkId
+      // Admin users can access any artist
       const isOwner = user && user.clerkId === clerkUserId;
       const isGenerator = user && requestingUserId && user.generatedBy === requestingUserId;
       
-      console.log(`[EPK] Permission check - isOwner: ${isOwner}, isGenerator: ${isGenerator}`);
+      console.log(`[EPK] Permission check - isAdmin: ${isAdmin}, isOwner: ${isOwner}, isGenerator: ${isGenerator}`);
       
-      if (user && !isOwner && !isGenerator) {
+      if (user && !isAdmin && !isOwner && !isGenerator) {
         return res.status(403).json({ 
           success: false, 
           message: 'No tienes permiso para generar EPK de este artista' 
