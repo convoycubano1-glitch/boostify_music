@@ -80,20 +80,69 @@ router.post('/generate', authenticate, async (req: Request, res: Response) => {
       });
     }
 
-    const userId = (req as any).user?.id;
-    if (!userId) {
+    const clerkUserId = (req as any).user?.id; // This is the Clerk userId (string)
+    if (!clerkUserId) {
       return res.status(401).json({ 
         success: false, 
         message: 'No autorizado' 
       });
     }
 
-    // Get user data from database
-    const [user] = await db
-      .select()
+    console.log(`[EPK] Buscando usuario con clerkId: ${clerkUserId}`);
+
+    // First, get the PostgreSQL ID of the requesting user
+    const [requestingUser] = await db
+      .select({ id: users.id })
       .from(users)
-      .where(eq(users.id, userId))
+      .where(eq(users.clerkId, clerkUserId))
       .limit(1);
+    
+    const requestingUserId = requestingUser?.id;
+    console.log(`[EPK] Requesting user PostgreSQL ID: ${requestingUserId}`);
+
+    // Get user data from database using clerkId (not numeric id)
+    // Also check artistId from request body for generated artists
+    const { artistId } = req.body;
+    let user;
+    
+    if (artistId) {
+      // If artistId is provided, look up that specific artist
+      const numericArtistId = parseInt(artistId);
+      if (!isNaN(numericArtistId)) {
+        [user] = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, numericArtistId))
+          .limit(1);
+      } else {
+        [user] = await db
+          .select()
+          .from(users)
+          .where(eq(users.firestoreId, artistId))
+          .limit(1);
+      }
+      
+      // Verify the user owns this artist using proper ID comparison
+      // generatedBy is PostgreSQL integer ID, not clerkId
+      const isOwner = user && user.clerkId === clerkUserId;
+      const isGenerator = user && requestingUserId && user.generatedBy === requestingUserId;
+      
+      console.log(`[EPK] Permission check - isOwner: ${isOwner}, isGenerator: ${isGenerator}`);
+      
+      if (user && !isOwner && !isGenerator) {
+        return res.status(403).json({ 
+          success: false, 
+          message: 'No tienes permiso para generar EPK de este artista' 
+        });
+      }
+    } else {
+      // No artistId provided, look up the user's own profile by clerkId
+      [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.clerkId, clerkUserId))
+        .limit(1);
+    }
 
     if (!user) {
       return res.status(404).json({ 

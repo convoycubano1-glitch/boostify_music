@@ -16,10 +16,16 @@ import {
   generateImageWithFaceReference as generateImageWithFaceReferenceFAL,
   generateMusicWithMiniMax,
   generateArtistSongWithFAL,
-  generateArtistMerchandise
+  generateArtistMerchandise,
+  generateArtistProfileVideo
 } from '../services/fal-service';
 // OpenAI for text generation
 import OpenAI from "openai";
+
+// Log database connection status at module load time
+console.log('[artist-generator] Module loading...');
+console.log(`[artist-generator] Firebase db available: ${!!db}`);
+console.log(`[artist-generator] PostgreSQL pgDb available: ${!!pgDb}`);
 
 // OpenAI client for text generation
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -63,7 +69,7 @@ async function canUserCreateArtist(clerkUserId: string, userEmail?: string | nul
   try {
     console.log('[canUserCreateArtist] Querying PostgreSQL for user...');
     userRecord = await pgDb
-      .select({ id: users.id, subscription: users.subscription })
+      .select({ id: users.id })
       .from(users)
       .where(eq(users.clerkId, clerkUserId))
       .limit(1);
@@ -84,7 +90,29 @@ async function canUserCreateArtist(clerkUserId: string, userEmail?: string | nul
   }
 
   const pgUserId = userRecord[0].id;
-  const userSubscription = userRecord[0].subscription || 'free';
+  
+  // Buscar suscripción activa en la tabla subscriptions
+  let userSubscription = 'free';
+  try {
+    const subscriptionRecord = await pgDb
+      .select({ plan: subscriptions.plan, status: subscriptions.status })
+      .from(subscriptions)
+      .where(
+        and(
+          eq(subscriptions.userId, pgUserId),
+          eq(subscriptions.status, 'active')
+        )
+      )
+      .limit(1);
+    
+    if (subscriptionRecord.length > 0) {
+      userSubscription = subscriptionRecord[0].plan;
+    }
+    console.log(`[canUserCreateArtist] User subscription: ${userSubscription}`);
+  } catch (subError) {
+    console.error('[canUserCreateArtist] Subscription query failed:', subError);
+    // Continue with free subscription if query fails
+  }
 
   // Verificar suscripción - solo premium/enterprise puede crear artistas
   // Legacy names: premium = enterprise, pro = professional
@@ -171,6 +199,26 @@ async function downloadImageAsBase64(imageUrl: string): Promise<string | null> {
 router.get("/can-create-artist", isAuthenticated, async (req: Request, res: Response) => {
   try {
     console.log('[/can-create-artist] Request received');
+    
+    // Verify database connections are available
+    if (!db) {
+      console.error('[/can-create-artist] Firebase db is null - Firebase not initialized');
+      return res.status(503).json({
+        canCreate: false,
+        reason: 'Database service unavailable (Firebase)',
+        code: 'DB_UNAVAILABLE'
+      });
+    }
+    
+    if (!pgDb) {
+      console.error('[/can-create-artist] PostgreSQL db is null - Database not initialized');
+      return res.status(503).json({
+        canCreate: false,
+        reason: 'Database service unavailable (PostgreSQL)',
+        code: 'DB_UNAVAILABLE'
+      });
+    }
+    
     const clerkUserId = req.user?.id;
     const userEmail = req.user?.email;
     console.log(`[/can-create-artist] User: ${clerkUserId}, Email: ${userEmail}`);
@@ -956,7 +1004,327 @@ async function generateArtistSocialContent(artistId: number, artistName: string,
 }
 
 /**
- * Genera EPK automático para el artista
+ * Genera 5 noticias de prensa automáticamente para el artista (Background task)
+ * Incluye: Release, Performance, Collaboration, Achievement, Lifestyle
+ */
+async function generateArtistNewsAutomatic(
+  artistId: number, 
+  artistName: string, 
+  genre: string, 
+  biography: string,
+  profileImageUrl: string
+): Promise<{ success: boolean; newsCount: number }> {
+  try {
+    console.log(`📰 [Background] Generando 5 noticias para ${artistName}...`);
+    
+    // Descargar imagen del perfil para usar como referencia
+    let profileImageBase64: string | null = null;
+    if (profileImageUrl) {
+      profileImageBase64 = await downloadImageAsBase64(profileImageUrl);
+    }
+    
+    const newsCategories = [
+      { category: "release", title: "New Release" },
+      { category: "performance", title: "Live Performance" },
+      { category: "collaboration", title: "Collaboration" },
+      { category: "achievement", title: "Achievement" },
+      { category: "lifestyle", title: "Lifestyle" }
+    ];
+    
+    let newsCreated = 0;
+    
+    for (const { category, title } of newsCategories) {
+      try {
+        // Generar texto con OpenAI
+        const textResponse = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content: "You are a professional music journalist. Write engaging, authentic news articles about artists."
+            },
+            {
+              role: "user",
+              content: `Write a compelling ${category} news article about ${artistName}, a ${genre} artist. Biography: ${biography}. Format as JSON: {"title": "...", "content": "2-3 paragraphs", "summary": "1 sentence"}`
+            }
+          ],
+          response_format: { type: "json_object" },
+          max_tokens: 500
+        });
+        
+        const newsContent = JSON.parse(textResponse.choices[0].message.content || '{}');
+        
+        // Generar imagen con FAL AI
+        let imageUrl = profileImageUrl; // Fallback
+        try {
+          const imagePrompt = `Professional press photo for ${genre} music news article about ${artistName}, ${category} theme, high quality journalism photography`;
+          
+          if (profileImageBase64) {
+            const imageResult = await generateImageWithFaceReferenceFAL(
+              imagePrompt,
+              profileImageBase64,
+              { width: 1024, height: 576, num_outputs: 1 }
+            );
+            if (imageResult?.images?.[0]?.url) {
+              imageUrl = imageResult.images[0].url;
+            }
+          } else {
+            const imageResult = await generateImageWithNanoBanana(imagePrompt);
+            if (imageResult?.images?.[0]?.url) {
+              imageUrl = imageResult.images[0].url;
+            }
+          }
+        } catch (imgErr) {
+          console.warn(`⚠️ [Background] Image generation failed for ${category} news, using fallback`);
+        }
+        
+        // Guardar en PostgreSQL
+        await pgDb.insert(artistNews).values({
+          userId: artistId,
+          artistId: artistId,
+          title: newsContent.title || `${artistName} - ${title}`,
+          content: newsContent.content || `Exciting news about ${artistName}!`,
+          summary: newsContent.summary || `Latest update from ${artistName}`,
+          imageUrl: imageUrl,
+          category: category,
+          source: 'AI Generated',
+          publishedAt: new Date(),
+          createdAt: new Date()
+        });
+        
+        newsCreated++;
+        console.log(`✅ [Background] News ${newsCreated}/5 created: ${category}`);
+        
+      } catch (newsErr) {
+        console.error(`⚠️ [Background] Error creating ${category} news:`, newsErr);
+      }
+    }
+    
+    console.log(`✅ [Background] ${newsCreated}/5 noticias creadas para ${artistName}`);
+    return { success: true, newsCount: newsCreated };
+    
+  } catch (error) {
+    console.error('❌ [Background] Error generating news:', error);
+    return { success: false, newsCount: 0 };
+  }
+}
+
+/**
+ * Genera EPK completo con IA para el artista (Background task)
+ * Incluye: Biografía mejorada, logros, citas, fact sheet, fotos de prensa
+ */
+async function generateArtistEPKComplete(
+  artistId: number, 
+  artistName: string, 
+  artistData: any,
+  profileImageUrl: string
+): Promise<any> {
+  try {
+    console.log(`📄 [Background] Generando EPK completo para ${artistName}...`);
+    
+    const genre = artistData.music_genres?.[0] || 'Pop';
+    const biography = artistData.biography || '';
+    
+    // 1. Generar biografía mejorada y datos con OpenAI
+    const epkTextResponse = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "You are a professional music publicist creating press materials for artists."
+        },
+        {
+          role: "user",
+          content: `Create a complete EPK (Electronic Press Kit) for ${artistName}, a ${genre} artist. 
+Original bio: ${biography}
+
+Generate JSON with:
+{
+  "enhancedBiography": "Professional 3-paragraph biography",
+  "shortBio": "One sentence bio for quick press",
+  "achievements": ["5 realistic achievements/milestones"],
+  "quotes": ["3 inspirational quotes from the artist"],
+  "factSheet": {
+    "hometown": "city, country",
+    "yearsActive": "year - present",
+    "label": "Independent or label name",
+    "influences": ["3 musical influences"],
+    "instruments": ["instruments they play"]
+  },
+  "pressHighlights": ["3 notable press mentions or features"]
+}`
+        }
+      ],
+      response_format: { type: "json_object" },
+      max_tokens: 1000
+    });
+    
+    const epkTextData = JSON.parse(epkTextResponse.choices[0].message.content || '{}');
+    
+    // 2. Generar 3 fotos de prensa con FAL AI
+    const pressPhotos: string[] = [];
+    const photoPrompts = [
+      `Professional press headshot of ${genre} music artist, studio lighting, clean background`,
+      `${genre} artist performing live on stage, dramatic concert lighting`,
+      `Behind the scenes photo of ${genre} musician in recording studio`
+    ];
+    
+    let profileImageBase64: string | null = null;
+    if (profileImageUrl) {
+      profileImageBase64 = await downloadImageAsBase64(profileImageUrl);
+    }
+    
+    for (const prompt of photoPrompts) {
+      try {
+        if (profileImageBase64) {
+          const imageResult = await generateImageWithFaceReferenceFAL(
+            prompt,
+            profileImageBase64,
+            { width: 1024, height: 1024, num_outputs: 1 }
+          );
+          if (imageResult?.images?.[0]?.url) {
+            pressPhotos.push(imageResult.images[0].url);
+          }
+        } else {
+          const imageResult = await generateImageWithNanoBanana(prompt);
+          if (imageResult?.images?.[0]?.url) {
+            pressPhotos.push(imageResult.images[0].url);
+          }
+        }
+      } catch (imgErr) {
+        console.warn('⚠️ [Background] Press photo generation failed');
+      }
+    }
+    
+    // 3. Compilar EPK completo
+    const completeEPK = {
+      artistName,
+      genre,
+      enhancedBiography: epkTextData.enhancedBiography || biography,
+      shortBio: epkTextData.shortBio || `${artistName} is an emerging ${genre} artist.`,
+      achievements: epkTextData.achievements || [],
+      quotes: epkTextData.quotes || [],
+      factSheet: epkTextData.factSheet || {},
+      pressHighlights: epkTextData.pressHighlights || [],
+      pressPhotos: pressPhotos,
+      socialLinks: {
+        instagram: artistData.social_media?.instagram?.url,
+        spotify: artistData.social_media?.spotify?.url,
+        youtube: artistData.social_media?.youtube?.url,
+        tiktok: artistData.social_media?.tiktok?.url
+      },
+      profileImage: profileImageUrl,
+      generatedAt: new Date().toISOString()
+    };
+    
+    // 4. Guardar en Firebase
+    await db.collection('generated_artists').doc(artistData.firestoreId || String(artistId)).update({
+      epk: completeEPK,
+      epkGenerated: true,
+      epkGeneratedAt: Timestamp.now()
+    });
+    
+    console.log(`✅ [Background] EPK completo generado para ${artistName} con ${pressPhotos.length} fotos`);
+    return completeEPK;
+    
+  } catch (error) {
+    console.error('❌ [Background] Error generating EPK:', error);
+    return null;
+  }
+}
+
+/**
+ * Genera merchandise en background (6 productos)
+ */
+async function generateArtistMerchandiseBackground(
+  artistId: number,
+  firestoreId: string,
+  artistName: string,
+  profileImageUrl: string,
+  genre: string
+): Promise<void> {
+  try {
+    console.log(`🛍️ [Background] Generando 6 productos de merchandise para ${artistName}...`);
+    
+    const merchandiseProducts = await generateArtistMerchandise(artistName, profileImageUrl, genre);
+    
+    // Guardar en Firestore (documento del artista)
+    await db.collection('generated_artists').doc(firestoreId).update({
+      merchandise: merchandiseProducts,
+      merchandiseGenerated: true,
+      merchandiseGeneratedAt: Timestamp.now()
+    });
+    
+    // Guardar cada producto en la colección 'merchandise'
+    for (const product of merchandiseProducts) {
+      const merchDoc = {
+        name: product.name,
+        description: `Official ${artistName} merchandise - ${product.type}`,
+        price: product.price,
+        imageUrl: product.imageUrl,
+        category: product.type === 'T-Shirt' || product.type === 'Hoodie' ? 'Apparel' : 
+                  product.type === 'Cap' || product.type === 'Sticker Pack' ? 'Accessories' :
+                  product.type === 'Poster' ? 'Art' : 'Music',
+        sizes: product.type === 'T-Shirt' || product.type === 'Hoodie' ? ['S', 'M', 'L', 'XL', 'XXL'] :
+               product.type === 'Cap' ? ['One Size'] :
+               product.type === 'Poster' ? ['18x24"', '24x36"'] :
+               product.type === 'Vinyl' ? ['12"'] : ['Standard'],
+        userId: artistId,
+        artistName: artistName,
+        createdAt: Timestamp.now(),
+        generatedByAI: true
+      };
+      await db.collection('merchandise').add(merchDoc);
+    }
+    
+    console.log(`✅ [Background] ${merchandiseProducts.length} productos de merchandise creados para ${artistName}`);
+  } catch (error) {
+    console.error('❌ [Background] Error generating merchandise:', error);
+  }
+}
+
+/**
+ * Genera video de perfil animado para el artista (Background task)
+ * Usa FAL AI Wan 2.6 para convertir la imagen de perfil en un video loop
+ */
+async function generateArtistProfileVideoBackground(
+  artistId: number,
+  firestoreId: string,
+  artistName: string,
+  profileImageUrl: string,
+  genre: string
+): Promise<void> {
+  try {
+    console.log(`🎬 [Background] Generando video de perfil para ${artistName}...`);
+    
+    const videoResult = await generateArtistProfileVideo(profileImageUrl, artistName, genre);
+    
+    if (videoResult.success && videoResult.videoUrl) {
+      console.log(`✅ [Background] Video de perfil generado: ${videoResult.videoUrl.substring(0, 60)}...`);
+      
+      // Actualizar PostgreSQL con el loopVideoUrl
+      await pgDb.update(users).set({
+        loopVideoUrl: videoResult.videoUrl
+      }).where(eq(users.id, artistId));
+      
+      // Actualizar Firestore
+      await db.collection('generated_artists').doc(firestoreId).update({
+        loopVideoUrl: videoResult.videoUrl,
+        profileVideoGenerated: true,
+        profileVideoGeneratedAt: Timestamp.now()
+      });
+      
+      console.log(`✅ [Background] Video de perfil guardado en DB para ${artistName}`);
+    } else {
+      console.warn(`⚠️ [Background] No se pudo generar video: ${videoResult.error}`);
+    }
+  } catch (error) {
+    console.error('❌ [Background] Error generating profile video:', error);
+  }
+}
+
+/**
+ * Genera EPK automático para el artista (versión simple, legacy)
  */
 async function generateArtistEPK(artistId: number, artistName: string, artistData: any): Promise<any> {
   try {
@@ -994,6 +1362,23 @@ async function generateArtistEPK(artistId: number, artistName: string, artistDat
 router.post("/generate-artist/secure", isAuthenticated, async (req: Request, res: Response) => {
   try {
     console.log('🎵 Received authenticated request to generate artist with ALL features enabled');
+
+    // Verify database connections are available
+    if (!db) {
+      console.error('[generate-artist/secure] Firebase db is null - Firebase not initialized');
+      return res.status(503).json({
+        error: 'Database service unavailable (Firebase)',
+        code: 'DB_UNAVAILABLE'
+      });
+    }
+    
+    if (!pgDb) {
+      console.error('[generate-artist/secure] PostgreSQL db is null - Database not initialized');
+      return res.status(503).json({
+        error: 'Database service unavailable (PostgreSQL)',
+        code: 'DB_UNAVAILABLE'
+      });
+    }
 
     // Obtener ID del usuario autenticado
     const userId = req.user?.uid || req.user?.id;
@@ -1104,145 +1489,25 @@ router.post("/generate-artist/secure", isAuthenticated, async (req: Request, res
     );
     console.log(`✅ ${tokenIds.length} canciones tokenizadas creadas con voces y letras`);
 
-    // �️ GENERAR 6 PRODUCTOS DE MERCHANDISE CON IA
-    console.log('🛍️ Generando 6 productos de merchandise con FAL AI...');
-    const merchandiseProducts = await generateArtistMerchandise(
-      artistData.name,
-      profileImageUrl,
-      artistData.music_genres?.[0] || 'Pop'
-    );
-    console.log(`✅ ${merchandiseProducts.length} productos de merchandise generados`);
-
-    // Guardar merchandise en Firestore (documento del artista)
-    await db.collection('generated_artists').doc(firestoreId).update({
-      merchandise: merchandiseProducts,
-      merchandiseGenerated: true,
-      merchandiseGeneratedAt: Timestamp.now()
-    });
-
-    // ✅ TAMBIÉN guardar cada producto en la colección 'merchandise' para que el frontend los encuentre
-    console.log('🛍️ Guardando productos en colección merchandise...');
-    for (const product of merchandiseProducts) {
-      const merchDoc = {
-        name: product.name,
-        description: `Official ${artistData.name} merchandise - ${product.type}`,
-        price: product.price,
-        imageUrl: product.imageUrl,
-        category: product.type === 'T-Shirt' || product.type === 'Hoodie' ? 'Apparel' : 
-                  product.type === 'Cap' || product.type === 'Sticker Pack' ? 'Accessories' :
-                  product.type === 'Poster' ? 'Art' : 'Music',
-        sizes: product.type === 'T-Shirt' || product.type === 'Hoodie' ? ['S', 'M', 'L', 'XL', 'XXL'] :
-               product.type === 'Cap' ? ['One Size'] :
-               product.type === 'Poster' ? ['18x24"', '24x36"'] :
-               product.type === 'Vinyl' ? ['12"'] : ['Standard'],
-        userId: postgresId, // Usar el ID de PostgreSQL para consistencia
-        artistName: artistData.name,
-        createdAt: Timestamp.now(),
-        generatedByAI: true
-      };
-      await db.collection('merchandise').add(merchDoc);
-    }
-    console.log(`✅ ${merchandiseProducts.length} productos guardados en colección merchandise`);
-
-    // 📱 GENERAR CONTENIDO DE REDES SOCIALES AUTOMÁTICAMENTE
-    console.log('📱 Generando contenido para redes sociales...');
-    const socialContent = await generateArtistSocialContent(postgresId, artistData.name, artistData.biography, artistDataWithUser.slug || generateSlug(artistData.name));
-
-    // 📄 GENERAR EPK AUTOMÁTICO
-    console.log('📄 Generando EPK del artista...');
-    const epkData = await generateArtistEPK(postgresId, artistData.name, artistData);
-
-    // 🔗 REGISTRAR ARTISTA EN BLOCKCHAIN (BTF-2300 en Polygon) - Para BoostiSwap
-    let blockchainResult: { 
-      success: boolean; 
-      artistId?: number; 
-      tokenId?: number; 
-      txHash?: string; 
-      error?: string;
-    } = { success: false, error: 'Blockchain service not available' };
+    // ============================================================
+    // 🚀 RESPUESTA INMEDIATA AL CLIENTE
+    // El artista + canciones están listos, respondemos ahora
+    // Todo lo demás se genera en background
+    // ============================================================
     
-    if (isBlockchainServiceAvailable()) {
-      console.log('🔗 Registrando artista en blockchain BTF-2300 para BoostiSwap...');
-      blockchainResult = await registerArtistOnChain(
-        undefined, // Usar platform wallet (el artista no tiene wallet aún)
-        artistData.name,
-        postgresId
-      );
-      
-      if (blockchainResult.success) {
-        console.log(`✅ Artista registrado en Polygon para BoostiSwap!`);
-        console.log(`   🆔 On-chain Artist ID: ${blockchainResult.artistId}`);
-        console.log(`   🎫 NFT Token ID: ${blockchainResult.tokenId}`);
-        console.log(`   🔗 Tx Hash: ${blockchainResult.txHash}`);
-        
-        // Guardar datos del blockchain en PostgreSQL
-        await pgDb.update(users)
-          .set({
-            blockchainNetwork: 'polygon',
-            blockchainArtistId: blockchainResult.artistId,
-            blockchainTokenId: blockchainResult.tokenId?.toString(),
-            blockchainTxHash: blockchainResult.txHash,
-            blockchainContract: BTF2300_CONTRACT_ADDRESSES.artistToken,
-            blockchainRegisteredAt: new Date(),
-          })
-          .where(eq(users.id, postgresId));
-          
-        // Actualizar Firestore con datos del blockchain
-        await db.collection('generated_artists').doc(firestoreId).update({
-          blockchain: {
-            network: 'polygon',
-            contract: BTF2300_CONTRACT_ADDRESSES.artistToken,
-            artistId: blockchainResult.artistId,
-            tokenId: blockchainResult.tokenId,
-            txHash: blockchainResult.txHash,
-            registeredAt: new Date().toISOString()
-          }
-        });
-      } else {
-        console.warn(`⚠️ No se pudo registrar en blockchain: ${blockchainResult.error}`);
-      }
-    } else {
-      console.log('ℹ️ Blockchain service no disponible. Configura PLATFORM_PRIVATE_KEY para habilitar.');
-    }
-
-    // 📧 SEND EMAIL NOTIFICATION TO USER
-    console.log('📧 Sending artist generation email notification...');
-    let emailNotificationSent = false;
-    try {
-      // Get user email from Clerk auth data or database
-      const userEmail = (req.user as any)?.email || (req.user as any)?.emailAddresses?.[0]?.emailAddress;
-      const userName = (req.user as any)?.firstName || (req.user as any)?.username || 'Artist Creator';
-      
-      if (userEmail) {
-        const emailResult = await sendArtistGeneratedEmail({
-          userEmail,
-          userName,
-          artistName: artistData.name,
-          artistSlug: artistDataWithUser.slug || generateSlug(artistData.name),
-          profileImageUrl,
-          genres: artistData.music_genres || ['Pop'],
-          songsCount: tokenIds.length,
-          tokenSymbol: `BTF-${artistData.name.substring(0, 3).toUpperCase()}`
-        });
-        
-        if (emailResult.success) {
-          console.log(`✅ Email notification sent to ${userEmail}`);
-          emailNotificationSent = true;
-        } else {
-          console.warn(`⚠️ Email failed: ${emailResult.error}`);
-        }
-      } else {
-        console.log('ℹ️ No user email available for notification');
-      }
-    } catch (emailError) {
-      console.error('⚠️ Error sending email notification:', emailError);
-      // Don't fail the request if email fails
-    }
-
-    // Return complete response with all modules activated
+    console.log('🎉 Enviando respuesta inmediata al cliente...');
+    const artistSlug = artistDataWithUser.slug || generateSlug(artistData.name);
+    
+    // Marcar que hay contenido pendiente de generar
+    await db.collection('generated_artists').doc(firestoreId).update({
+      backgroundTasksPending: true,
+      backgroundTasksStartedAt: Timestamp.now()
+    });
+    
+    // Responder al cliente AHORA (no esperar a merchandise, news, EPK, etc.)
     res.status(200).json({
       success: true,
-      message: '✅ Artist created with ALL modules activated (images + songs + merchandise + social + blockchain + email)',
+      message: '✅ Artist created! Additional content (merch, news, EPK) generating in background...',
       artist: {
         ...artistDataWithUser,
         firestoreId,
@@ -1261,42 +1526,130 @@ router.post("/generate-artist/secure", isAuthenticated, async (req: Request, res
         songsCreated: tokenIds.length,
         tokenIds: tokenIds,
         audioGenerated: true,
-        provider: 'fal-minimax-music',
-        ready_for_metamask_mint: true
+        provider: 'fal-minimax-music'
       },
-      merchandise: {
-        status: 'generated',
-        productsCreated: merchandiseProducts.length,
-        products: merchandiseProducts,
-        provider: 'fal-nano-banana-edit'
-      },
-      socialMedia: {
-        status: socialContent.success ? 'generated' : 'pending',
-        posts: socialContent.posts || []
-      },
-      epk: {
-        status: epkData ? 'generated' : 'pending',
-        data: epkData
-      },
-      blockchain: {
-        status: blockchainResult.success ? 'registered' : 'pending',
-        network: 'polygon',
-        artistId: blockchainResult.artistId,
-        tokenId: blockchainResult.tokenId,
-        txHash: blockchainResult.txHash,
-        contract: BTF2300_CONTRACT_ADDRESSES.artistToken,
-        readyForBoostiSwap: blockchainResult.success
-      },
-      emailNotification: {
-        status: emailNotificationSent ? 'sent' : 'skipped',
-        provider: 'resend'
+      backgroundTasks: {
+        merchandise: { status: 'generating', products: 6 },
+        news: { status: 'generating', articles: 5 },
+        epk: { status: 'generating' },
+        profileVideo: { status: 'generating', model: 'fal-wan-2.6' },
+        socialMedia: { status: 'generating' },
+        blockchain: { status: 'generating' },
+        email: { status: 'generating' }
       }
     });
+
+    // ============================================================
+    // 🔄 TAREAS EN BACKGROUND (Fire and Forget)
+    // El cliente ya recibió respuesta, ahora generamos el resto
+    // ============================================================
+    
+    const genre = artistData.music_genres?.[0] || 'Pop';
+    const biography = artistData.biography || '';
+    
+    console.log('🔄 Iniciando tareas en background...');
+    
+    // 🛍️ MERCHANDISE (6 productos) - Background
+    generateArtistMerchandiseBackground(
+      postgresId,
+      firestoreId,
+      artistData.name,
+      profileImageUrl,
+      genre
+    ).catch(err => console.error('❌ [Background] Merchandise failed:', err.message));
+    
+    // 📰 NEWS (5 noticias con imágenes) - Background
+    generateArtistNewsAutomatic(
+      postgresId,
+      artistData.name,
+      genre,
+      biography,
+      profileImageUrl
+    ).catch(err => console.error('❌ [Background] News failed:', err.message));
+    
+    // 📄 EPK COMPLETO (biografía mejorada, logros, fotos de prensa) - Background
+    generateArtistEPKComplete(
+      postgresId,
+      artistData.name,
+      { ...artistData, firestoreId },
+      profileImageUrl
+    ).catch(err => console.error('❌ [Background] EPK failed:', err.message));
+    
+    // 🎬 PROFILE VIDEO (imagen a video loop) - Background
+    generateArtistProfileVideoBackground(
+      postgresId,
+      firestoreId,
+      artistData.name,
+      profileImageUrl,
+      genre
+    ).catch(err => console.error('❌ [Background] Profile video failed:', err.message));
+    
+    // 📱 SOCIAL MEDIA CONTENT - Background
+    generateArtistSocialContent(
+      postgresId,
+      artistData.name,
+      biography,
+      artistSlug
+    ).catch(err => console.error('❌ [Background] Social content failed:', err.message));
+    
+    // 🔗 BLOCKCHAIN REGISTRATION - Background
+    if (isBlockchainServiceAvailable()) {
+      registerArtistOnChain(undefined, artistData.name, postgresId)
+        .then(async (result) => {
+          if (result.success) {
+            console.log(`✅ [Background] Blockchain: Artist ID ${result.artistId}, Token ${result.tokenId}`);
+            await pgDb.update(users).set({
+              blockchainNetwork: 'polygon',
+              blockchainArtistId: result.artistId,
+              blockchainTokenId: result.tokenId?.toString(),
+              blockchainTxHash: result.txHash,
+              blockchainContract: BTF2300_CONTRACT_ADDRESSES.artistRegistry,
+              blockchainRegisteredAt: new Date()
+            }).where(eq(users.id, postgresId));
+          }
+        })
+        .catch(err => console.error('❌ [Background] Blockchain failed:', err.message));
+    }
+    
+    // 📧 EMAIL NOTIFICATION - Background
+    const emailAddress = (req.user as any)?.email || (req.user as any)?.emailAddresses?.[0]?.emailAddress;
+    const userName = (req.user as any)?.firstName || (req.user as any)?.username || 'Artist Creator';
+    
+    if (emailAddress) {
+      sendArtistGeneratedEmail({
+        userEmail: emailAddress,
+        userName,
+        artistName: artistData.name,
+        artistSlug,
+        profileImageUrl,
+        genres: artistData.music_genres || ['Pop'],
+        songsCount: tokenIds.length,
+        tokenSymbol: `BTF-${artistData.name.substring(0, 3).toUpperCase()}`
+      }).catch(err => console.error('❌ [Background] Email failed:', err.message));
+    }
+    
+    // Marcar tareas como completándose (después de un delay para dar tiempo)
+    setTimeout(async () => {
+      try {
+        await db.collection('generated_artists').doc(firestoreId).update({
+          backgroundTasksPending: false,
+          backgroundTasksCompletedAt: Timestamp.now()
+        });
+        console.log(`✅ [Background] All tasks marked complete for ${artistData.name}`);
+      } catch (e) {
+        console.warn('⚠️ Could not update background tasks status');
+      }
+    }, 60000); // 1 minuto para que completen las tareas
+    
+    console.log('✅ Todas las tareas background iniciadas');
+    
   } catch (error) {
-    console.error('❌ Error generating artist with complete modules:', error);
-    res.status(500).json({ 
-      error: 'Error generating artist',
-      details: error instanceof Error ? error.message : 'Unknown error'
+    console.error('❌ Error generating artist:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({
+      error: 'Failed to generate artist',
+      message: errorMessage,
+      code: 'GENERATION_ERROR'
     });
   }
 });
@@ -1999,13 +2352,23 @@ router.put("/update-artist/:artistId", isAuthenticated, async (req: Request, res
 router.post("/generate-news/:artistId", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const artistIdParam = req.params.artistId;
-    const userId = req.user?.id;
+    const clerkUserId = req.user?.id; // This is the Clerk userId (string)
 
-    if (!userId) {
+    if (!clerkUserId) {
       return res.status(401).json({ error: 'Usuario no autenticado' });
     }
 
-    console.log(`📰 Generando noticias para artista ${artistIdParam}`);
+    console.log(`📰 Generando noticias para artista ${artistIdParam}, usuario Clerk: ${clerkUserId}`);
+
+    // First, get the PostgreSQL ID of the requesting user
+    const [requestingUser] = await pgDb
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.clerkId, clerkUserId))
+      .limit(1);
+    
+    const requestingUserId = requestingUser?.id;
+    console.log(`📰 Requesting user PostgreSQL ID: ${requestingUserId}`);
 
     let artist;
     const numericId = parseInt(artistIdParam);
@@ -2020,7 +2383,18 @@ router.post("/generate-news/:artistId", isAuthenticated, async (req: Request, re
       return res.status(404).json({ error: 'Artista no encontrado' });
     }
 
-    if (artist.id !== userId && artist.generatedBy !== userId) {
+    // Permission check:
+    // 1. isOwner: the artist's clerkId matches the requesting user's clerkId
+    // 2. isGenerator: the artist was generated by the requesting user (generatedBy is PostgreSQL ID)
+    // 3. isSameUser: the artist's PostgreSQL ID matches the requesting user's PostgreSQL ID (user editing their own profile)
+    const isOwner = artist.clerkId === clerkUserId;
+    const isGenerator = requestingUserId && artist.generatedBy === requestingUserId;
+    const isSameUser = requestingUserId && artist.id === requestingUserId;
+    
+    console.log(`📰 Permission check - isOwner: ${isOwner}, isGenerator: ${isGenerator}, isSameUser: ${isSameUser}`);
+    console.log(`📰 artist.clerkId: ${artist.clerkId}, artist.generatedBy: ${artist.generatedBy}, requestingUserId: ${requestingUserId}`);
+    
+    if (!isOwner && !isGenerator && !isSameUser) {
       return res.status(403).json({ error: 'No tienes permiso para generar noticias de este artista' });
     }
 

@@ -39,6 +39,11 @@ export const FAL_MODELS = {
   // Merchandise (alias de edición)
   MERCHANDISE_EDIT: 'fal-ai/nano-banana/edit',
   
+  // ========== VIDEO ==========
+  // Wan 2.6 Image-to-Video: Convierte imágenes estáticas a videos animados
+  // Duración: ~5 segundos, resolución 480p/720p
+  IMAGE_TO_VIDEO: 'fal-ai/wan/v2.6/image-to-video',
+  
   // ========== MÚSICA ==========
   // MiniMax Music V2: Canciones completas con voces y letras
   // Requiere: prompt (estilo) + lyrics_prompt (letras con [verse][chorus])
@@ -62,6 +67,14 @@ export interface FalImageResult {
   imageBase64?: string;
   error?: string;
   provider?: 'fal-nano-banana' | 'fal-nano-banana-edit' | 'fal-flux-schnell' | 'fal-flux-dev';
+}
+
+export interface FalVideoResult {
+  success: boolean;
+  videoUrl?: string;
+  duration?: number;
+  error?: string;
+  provider?: 'fal-wan-image-to-video';
 }
 
 export interface FalMusicResult {
@@ -1758,6 +1771,260 @@ export async function generateArtistMerchandise(
   return generatedProducts;
 }
 
+/**
+ * ============================================================
+ * GENERACIÓN DE VIDEO - FAL AI WAN 2.6 (Image-to-Video)
+ * ============================================================
+ * Modelo: fal-ai/wan/v2.6/image-to-video
+ * Convierte una imagen estática en un video animado
+ * Ideal para crear loop videos de perfil de artistas
+ * 
+ * @param imageUrl - URL de la imagen a convertir en video
+ * @param prompt - Descripción del movimiento/animación deseada
+ * @param options - Opciones adicionales (resolution, duration, etc.)
+ */
+export async function generateVideoFromImage(
+  imageUrl: string,
+  prompt: string,
+  options: {
+    resolution?: '480p' | '720p';
+    aspectRatio?: '16:9' | '9:16' | '1:1';
+    duration?: number; // segundos (default 5)
+  } = {}
+): Promise<FalVideoResult> {
+  try {
+    if (!FAL_API_KEY) {
+      throw new Error('FAL_API_KEY no configurada');
+    }
+
+    logger.log(`[FAL] 🎬 Generando video desde imagen con Wan 2.6...`);
+    logger.log(`[FAL] Image URL: ${imageUrl.substring(0, 80)}...`);
+    logger.log(`[FAL] Motion Prompt: ${prompt.substring(0, 100)}...`);
+
+    // Parámetros para wan/v2.6/image-to-video
+    const requestBody = {
+      image_url: imageUrl,
+      prompt: prompt,
+      negative_prompt: "blurry, distorted, low quality, deformed face, ugly",
+      num_frames: options.duration ? options.duration * 8 : 40, // ~5 segundos a 8fps
+      resolution: options.resolution || '480p',
+      aspect_ratio: options.aspectRatio || '1:1',
+      seed: Math.floor(Math.random() * 1000000)
+    };
+
+    logger.log(`[FAL] Request a wan/v2.6/image-to-video:`, JSON.stringify(requestBody));
+
+    const response = await axios.post(
+      `${FAL_BASE_URL}/${FAL_MODELS.IMAGE_TO_VIDEO}`,
+      requestBody,
+      {
+        headers: {
+          'Authorization': `Key ${FAL_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 300000 // 5 minutos - la generación de video tarda más
+      }
+    );
+
+    logger.log(`[FAL] Response:`, JSON.stringify(response.data).substring(0, 500));
+
+    // El modelo puede retornar video en diferentes formatos
+    let videoUrl = response.data?.video?.url || 
+                   response.data?.video_url ||
+                   response.data?.output?.video_url ||
+                   response.data?.result?.video_url;
+
+    if (videoUrl) {
+      logger.log(`[FAL] ✅ Video generado: ${videoUrl.substring(0, 80)}...`);
+
+      // Descargar y subir a Firebase Storage para URL permanente
+      try {
+        const videoResponse = await axios.get(videoUrl, {
+          responseType: 'arraybuffer',
+          timeout: 60000
+        });
+        
+        if (storage) {
+          const timestamp = Date.now();
+          const randomId = Math.random().toString(36).substring(7);
+          const fileName = `artist-videos/${timestamp}_${randomId}.mp4`;
+          
+          const bucket = storage.bucket();
+          const file = bucket.file(fileName);
+          
+          await file.save(Buffer.from(videoResponse.data), {
+            metadata: { contentType: 'video/mp4' },
+            public: true,
+            validation: false,
+          });
+          
+          await file.makePublic();
+          const permanentUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+          
+          logger.log(`[FAL] ✅ Video subido a Storage: ${permanentUrl}`);
+          
+          return {
+            success: true,
+            videoUrl: permanentUrl,
+            duration: options.duration || 5,
+            provider: 'fal-wan-image-to-video'
+          };
+        }
+      } catch (uploadError: any) {
+        logger.warn(`[FAL] ⚠️ Error subiendo video a Storage, usando URL temporal: ${uploadError.message}`);
+      }
+
+      return {
+        success: true,
+        videoUrl: videoUrl,
+        duration: options.duration || 5,
+        provider: 'fal-wan-image-to-video'
+      };
+    }
+
+    throw new Error('No se recibió URL de video en la respuesta');
+
+  } catch (error: any) {
+    logger.error(`[FAL] ❌ Error generando video:`, error.message);
+    
+    // Log más detalles si hay respuesta
+    if (error.response?.data) {
+      logger.error(`[FAL] Response data:`, JSON.stringify(error.response.data));
+    }
+
+    return {
+      success: false,
+      error: error.message || 'Error desconocido generando video',
+      provider: 'fal-wan-image-to-video'
+    };
+  }
+}
+
+/**
+ * Genera prompts de performing específicos por género musical
+ * Cada género tiene su estilo artístico y movimientos característicos
+ */
+function getGenrePerformingPrompt(artistName: string, genre: string): string {
+  const genreLower = genre.toLowerCase();
+  
+  // Prompts de performing artístico específicos por género
+  const genrePrompts: Record<string, string> = {
+    // 🎸 Rock / Metal
+    'rock': `${artistName} performing intensely, headbanging with passion, playing air guitar, dramatic rock star pose, stage lights flashing, powerful energy, rebellious attitude, leather jacket vibes, epic rock concert atmosphere`,
+    'metal': `${artistName} performing aggressively, intense headbanging, devil horns gesture, screaming with power, dark dramatic lighting, metal concert energy, fierce expression, flames and smoke atmosphere`,
+    'punk': `${artistName} performing with raw energy, jumping and moshing, rebellious punk attitude, DIY aesthetic, aggressive movements, spitting fire, underground club vibes`,
+    'alternative': `${artistName} performing with artistic intensity, emotional expressions, dramatic gestures, moody lighting, alternative rock stage presence`,
+    
+    // 🎤 Hip-Hop / Rap / Trap
+    'hip-hop': `${artistName} performing on stage, confident swagger, hand gestures to the crowd, gold chains swinging, dropping bars with attitude, hip-hop dance moves, DJ lights behind, urban concert vibes`,
+    'rap': `${artistName} rapping with intensity, mic in hand, aggressive hand gestures, confident posture, trap lights, stage smoke, dropping verses with flow, street credibility`,
+    'trap': `${artistName} performing trap music, lean movements, ice dripping, hood up, dark purple lights, smoke effects, bass heavy atmosphere, street king energy`,
+    'drill': `${artistName} performing drill, masked up aesthetic, aggressive stance, street energy, dark lighting, menacing but artistic presence`,
+    
+    // 🎹 Electronic / EDM
+    'electronic': `${artistName} DJ performing at festival, hands on mixer, neon lights pulsing, LED screens behind, crowd going wild, euphoric electronic music atmosphere, laser beams`,
+    'edm': `${artistName} DJ dropping the beat, massive festival stage, confetti explosion, LED pyramid, hands up moment, peak time energy, electronic dance music euphoria`,
+    'house': `${artistName} DJ in underground club, deep house vibes, intimate atmosphere, disco ball reflections, smooth groove movements, sophisticated electronic aesthetic`,
+    'techno': `${artistName} performing techno, industrial warehouse setting, strobe lights, hypnotic movements, dark and minimal aesthetic, berlin club vibes`,
+    
+    // 🎷 Jazz / Blues / Soul
+    'jazz': `${artistName} performing jazz, smooth movements, eyes closed feeling the music, saxophone or piano nearby, blue spotlight, smoky jazz club atmosphere, sophisticated elegance`,
+    'blues': `${artistName} performing blues with soul, emotional expressions, guitar solo moment, dim warm lighting, intimate blues bar setting, raw emotional performance`,
+    'soul': `${artistName} singing with deep emotion, gospel-style gestures, powerful vocal performance, warm golden lights, touching hearts, soul music passion`,
+    'r&b': `${artistName} performing R&B sensually, smooth dance moves, romantic lighting, silky movements, seductive stage presence, modern R&B vibes`,
+    
+    // 🌴 Reggae / Latin
+    'reggae': `${artistName} performing reggae, rastafari vibes, peaceful movements, red gold green lights, smoke effects, chill island atmosphere, one love energy`,
+    'reggaeton': `${artistName} performing reggaeton, perreo dance moves, latin party energy, neon club lights, sensual movements, puerto rico vibes, dembow rhythm`,
+    'latin': `${artistName} performing latin music, passionate dance moves, salsa energy, colorful stage, Latin pride, fiery performance, hispanic celebration`,
+    
+    // 🎻 Classical / Orchestra
+    'classical': `${artistName} conducting orchestra, elegant movements, dramatic gestures, concert hall grandeur, tuxedo formal, symphonic excellence, maestro energy`,
+    'opera': `${artistName} performing opera, dramatic theatrical pose, powerful vocal expression, grand stage, spotlight solo, classical magnificence`,
+    
+    // 🌊 Chill / Ambient
+    'lofi': `${artistName} creating lofi beats, relaxed vibe, headphones on, nostalgic aesthetic, anime-style lighting, cozy room atmosphere, study session energy`,
+    'ambient': `${artistName} in meditative state, ethereal movements, soft glowing lights, peaceful expression, floating sensation, transcendental atmosphere`,
+    'chill': `${artistName} relaxed performance, laid-back vibes, sunset colors, beach atmosphere, acoustic session, warm peaceful energy`,
+    
+    // 🎵 Pop / Mainstream
+    'pop': `${artistName} performing pop concert, energetic dance choreography, colorful stage production, backup dancers, confetti falling, mainstream star energy, arena tour vibes`,
+    'k-pop': `${artistName} performing K-pop, precise choreography, synchronized dance, colorful neon aesthetics, perfect styling, idol energy, Korean pop star vibes`,
+    'indie': `${artistName} performing indie music, authentic artistic expression, vintage microphone, intimate venue, fairy lights, hipster aesthetic, genuine connection`,
+    
+    // 🌍 World / Folk
+    'folk': `${artistName} performing folk music, acoustic guitar, storytelling expression, campfire atmosphere, rustic setting, authentic roots vibes`,
+    'country': `${artistName} performing country, cowboy aesthetic, acoustic guitar, stadium lights, American heartland vibes, storytelling passion`,
+    'afrobeat': `${artistName} performing afrobeat, vibrant African dance moves, colorful traditional elements, drums and percussion energy, celebration of culture`,
+  };
+
+  // Buscar coincidencia exacta o parcial
+  for (const [key, prompt] of Object.entries(genrePrompts)) {
+    if (genreLower.includes(key) || key.includes(genreLower)) {
+      return prompt;
+    }
+  }
+
+  // Prompt por defecto para géneros no especificados
+  return `${artistName} performing ${genre} music passionately on stage, dynamic artistic movements, professional lighting, concert atmosphere, genuine musical expression, captivating stage presence, artistic performance matching their ${genre} style`;
+}
+
+/**
+ * Genera un video de loop para el perfil de un artista
+ * Crea un performing artístico dinámico basado en el género musical
+ * 
+ * @param profileImageUrl - URL de la imagen de perfil del artista
+ * @param artistName - Nombre del artista (para prompt)
+ * @param genre - Género musical (para estilo del performing)
+ */
+export async function generateArtistProfileVideo(
+  profileImageUrl: string,
+  artistName: string,
+  genre: string = 'pop'
+): Promise<FalVideoResult> {
+  try {
+    logger.log(`[FAL] 🎬 Generando video de performing para ${artistName} (${genre})...`);
+
+    // Obtener prompt de performing específico para el género
+    const performingStyle = getGenrePerformingPrompt(artistName, genre);
+
+    // Prompt completo con instrucciones técnicas de video
+    const motionPrompt = `${performingStyle}. 
+Cinematic quality video, smooth fluid motion, professional music video aesthetic.
+Maintain exact facial features and appearance from the image.
+Dynamic camera angles, concert-quality lighting effects.
+Seamless loop, high production value, artistic music performance.`;
+
+    logger.log(`[FAL] 🎭 Prompt de performing: ${performingStyle.substring(0, 100)}...`);
+
+    const result = await generateVideoFromImage(
+      profileImageUrl,
+      motionPrompt,
+      {
+        resolution: '480p', // Óptimo para loop videos de perfil
+        aspectRatio: '1:1', // Cuadrado para perfil
+        duration: 5 // 5 segundos loop
+      }
+    );
+
+    if (result.success) {
+      logger.log(`[FAL] ✅ Video de performing generado para ${artistName}: ${result.videoUrl?.substring(0, 60)}...`);
+    } else {
+      logger.warn(`[FAL] ⚠️ No se pudo generar video de performing: ${result.error}`);
+    }
+
+    return result;
+
+  } catch (error: any) {
+    logger.error(`[FAL] ❌ Error generando video de performing:`, error.message);
+    return {
+      success: false,
+      error: error.message || 'Error generando video de performing',
+      provider: 'fal-wan-image-to-video'
+    };
+  }
+}
+
 // Exportar todas las funciones
 export default {
   generateImageWithNanoBanana,
@@ -1768,5 +2035,7 @@ export default {
   generateArtistSongWithFAL,
   generateMerchandiseImage,
   generateArtistMerchandise,
+  generateVideoFromImage,
+  generateArtistProfileVideo,
   FAL_MODELS
 };
