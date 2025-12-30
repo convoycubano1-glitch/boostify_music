@@ -52,15 +52,26 @@ async function canUserCreateArtist(clerkUserId: string, userEmail?: string | nul
   hasPremium: boolean;
   pgUserId?: number;
 }> {
+  console.log(`[canUserCreateArtist] Checking permissions for clerkId: ${clerkUserId}, email: ${userEmail}`);
+  
   // Verificar si es admin
   const adminStatus = isAdminEmail(userEmail);
+  console.log(`[canUserCreateArtist] Admin status: ${adminStatus}`);
   
   // Obtener el usuario de PostgreSQL
-  const userRecord = await pgDb
-    .select({ id: users.id, subscription: users.subscription })
-    .from(users)
-    .where(eq(users.clerkId, clerkUserId))
-    .limit(1);
+  let userRecord;
+  try {
+    console.log('[canUserCreateArtist] Querying PostgreSQL for user...');
+    userRecord = await pgDb
+      .select({ id: users.id, subscription: users.subscription })
+      .from(users)
+      .where(eq(users.clerkId, clerkUserId))
+      .limit(1);
+    console.log(`[canUserCreateArtist] PostgreSQL query result: ${JSON.stringify(userRecord)}`);
+  } catch (dbError) {
+    console.error('[canUserCreateArtist] PostgreSQL query failed:', dbError);
+    throw new Error(`Database connection error: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`);
+  }
 
   if (userRecord.length === 0) {
     return { 
@@ -159,10 +170,13 @@ async function downloadImageAsBase64(imageUrl: string): Promise<string | null> {
  */
 router.get("/can-create-artist", isAuthenticated, async (req: Request, res: Response) => {
   try {
+    console.log('[/can-create-artist] Request received');
     const clerkUserId = req.user?.id;
     const userEmail = req.user?.email;
+    console.log(`[/can-create-artist] User: ${clerkUserId}, Email: ${userEmail}`);
 
     if (!clerkUserId) {
+      console.log('[/can-create-artist] No clerkUserId - returning 401');
       return res.status(401).json({ 
         canCreate: false,
         reason: 'User not authenticated',
@@ -170,7 +184,9 @@ router.get("/can-create-artist", isAuthenticated, async (req: Request, res: Resp
       });
     }
 
+    console.log('[/can-create-artist] Calling canUserCreateArtist...');
     const permissionCheck = await canUserCreateArtist(clerkUserId, userEmail);
+    console.log(`[/can-create-artist] Permission check result: ${JSON.stringify(permissionCheck)}`);
 
     return res.status(200).json({
       canCreate: permissionCheck.canCreate,
@@ -181,11 +197,15 @@ router.get("/can-create-artist", isAuthenticated, async (req: Request, res: Resp
       hasPremium: permissionCheck.hasPremium
     });
   } catch (error) {
-    console.error('Error checking create artist permission:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : '';
+    console.error('[/can-create-artist] ERROR:', errorMessage);
+    console.error('[/can-create-artist] Stack:', errorStack);
     return res.status(500).json({
       canCreate: false,
-      reason: 'Error checking permissions',
-      code: 'SERVER_ERROR'
+      reason: `Error checking permissions: ${errorMessage}`,
+      code: 'SERVER_ERROR',
+      debug: process.env.NODE_ENV === 'development' ? errorStack : undefined
     });
   }
 });
