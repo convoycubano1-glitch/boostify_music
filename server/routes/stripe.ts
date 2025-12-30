@@ -1,7 +1,8 @@
 import { Router, Request, Response } from 'express';
 import Stripe from 'stripe';
 import { authenticate } from '../middleware/auth';
-import { db } from '../db';
+import { db as drizzleDb } from '../db';
+import { db as firebaseDb } from '../firebase';
 import { bookings, payments } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { NotificationTemplates } from '../utils/notifications';
@@ -333,7 +334,7 @@ router.get('/subscription-status', authenticate, async (req: Request, res: Respo
     }
     
     // Obtener información del usuario de Firestore
-    const userSnap = await db.collection('users').doc(userId).get();
+    const userSnap = await firebaseDb.collection('users').doc(userId).get();
     const userData = userSnap.data();
     
     // Si el usuario no tiene customerId, no tiene suscripción
@@ -408,7 +409,7 @@ router.post('/cancel-subscription', authenticate, async (req: Request, res: Resp
     }
     
     // Obtener información del usuario de Firestore
-    const userSnap = await db.collection('users').doc(userId).get();
+    const userSnap = await firebaseDb.collection('users').doc(userId).get();
     const userData = userSnap.data();
     
     // Si el usuario no tiene customerId, no tiene suscripción para cancelar
@@ -458,7 +459,7 @@ router.post('/create-portal-session', authenticate, async (req: Request, res: Re
     }
     
     // Obtener información del usuario de Firestore
-    const userSnap = await db.collection('users').doc(userId).get();
+    const userSnap = await firebaseDb.collection('users').doc(userId).get();
     const userData = userSnap.data();
     
     // Si el usuario no tiene customerId, no puede acceder al portal
@@ -506,7 +507,7 @@ router.get('/video-purchase-status/:videoId', authenticate, async (req: Request,
     }
     
     // Verificar si el usuario ha comprado este video
-    const purchasesRef = db.collection('purchases');
+    const purchasesRef = firebaseDb.collection('purchases');
     const purchaseQuery = await purchasesRef
       .where('userId', '==', userId)
       .where('videoId', '==', videoId)
@@ -581,7 +582,7 @@ router.post('/create-music-video-payment', authenticate, async (req: Request, re
     }
     
     // Verificar si el usuario ya ha comprado este video
-    const purchasesRef = db.collection('purchases');
+    const purchasesRef = firebaseDb.collection('purchases');
     const existingPurchase = await purchasesRef
       .where('userId', '==', userId)
       .where('videoId', '==', videoId)
@@ -682,7 +683,7 @@ router.post('/create-musician-booking', authenticate, async (req: Request, res: 
     const tempUserId = 1; // Esto debe ser reemplazado con la búsqueda real del user.id
     
     // Crear el booking en la base de datos
-    const [booking] = await db.insert(bookings).values({
+    const [booking] = await drizzleDb.insert(bookings).values({
       userId: tempUserId,
       musicianId,
       price: totalAmount.toFixed(2),
@@ -752,7 +753,7 @@ router.post('/create-musician-booking', authenticate, async (req: Request, res: 
     });
     
     // Crear registro de pago pendiente
-    await db.insert(payments).values({
+    await drizzleDb.insert(payments).values({
       bookingId: booking.id,
       stripePaymentIntentId: session.payment_intent as string || 'pending',
       stripeCheckoutSessionId: session.id,
@@ -812,7 +813,7 @@ router.post('/create-product-payment', async (req: Request, res: Response) => {
     // Solo intentar obtener información del usuario si está autenticado
     if (userId) {
       // Obtener información del usuario de Firestore
-      const userSnap = await db.collection('users').doc(userId).get();
+      const userSnap = await firebaseDb.collection('users').doc(userId).get();
       userData = userSnap.data();
       
       // Verificar si el usuario ya tiene un customerID en Stripe
@@ -829,7 +830,7 @@ router.post('/create-product-payment', async (req: Request, res: Response) => {
         customerId = customer.id;
         
         // Guardar el customerId en Firestore
-        await db.collection('users').doc(userId).update({
+        await firebaseDb.collection('users').doc(userId).update({
           stripeCustomerId: customerId
         });
       }
@@ -839,7 +840,7 @@ router.post('/create-product-payment', async (req: Request, res: Response) => {
     // Verificar si el usuario ya ha comprado este producto (solo para usuarios autenticados)
     let alreadyPurchased = false;
     if (userId) {
-      const purchasesRef = db.collection(PRODUCT_PURCHASES_COLLECTION);
+      const purchasesRef = firebaseDb.collection(PRODUCT_PURCHASES_COLLECTION);
       const existingPurchase = await purchasesRef
         .where('userId', '==', userId)
         .where('productId', '==', productId)
@@ -914,7 +915,7 @@ router.post('/create-product-payment', async (req: Request, res: Response) => {
       purchaseData.userId = userId;
     }
     
-    await db.collection(PRODUCT_PURCHASES_COLLECTION).add(purchaseData);
+    await firebaseDb.collection(PRODUCT_PURCHASES_COLLECTION).add(purchaseData);
     
     res.json({ success: true, url: session.url });
   } catch (error: any) {
@@ -950,7 +951,7 @@ router.get('/product-purchase-status/:productId', async (req: Request, res: Resp
     
     if (userId) {
       // Si hay usuario autenticado, buscar en sus compras
-      const purchasesRef = db.collection(PRODUCT_PURCHASES_COLLECTION);
+      const purchasesRef = firebaseDb.collection(PRODUCT_PURCHASES_COLLECTION);
       const purchaseQuery = await purchasesRef
         .where('userId', '==', userId)
         .where('productId', '==', productId)
@@ -961,7 +962,7 @@ router.get('/product-purchase-status/:productId', async (req: Request, res: Resp
     }
     
     // Obtener información del producto para verificar si requiere autenticación
-    const productRef = db.collection(PRODUCTS_COLLECTION).doc(productId);
+    const productRef = firebaseDb.collection(PRODUCTS_COLLECTION).doc(productId);
     const productDoc = await productRef.get();
     
     // Si el producto no existe, asumimos que no requiere autenticación
@@ -1104,7 +1105,7 @@ async function handleSuccessfulMusicVideoBundle(session: any) {
     console.log(`🎬 Procesando compra de video para usuario ${userId}, tier: ${tier}`);
     
     // GUARDAR REGISTRO DE COMPRA DE VIDEO
-    const purchaseRef = await db.collection('music_video_purchases').add({
+    const purchaseRef = await firebaseDb.collection('music_video_purchases').add({
       userId,
       tier: tier || 'gold',
       sessionId: session.id,
@@ -1184,7 +1185,7 @@ async function generateMusicVideoBundle(userId: string, purchaseId: string, tier
     console.log(`  ✅ Imagen generada: ${videoThumbnail ? 'OK' : 'FAILED'}`);
     
     // Actualizar estado a "generating"
-    await db.collection('music_video_purchases').doc(purchaseId).update({
+    await firebaseDb.collection('music_video_purchases').doc(purchaseId).update({
       videoStatus: 'generating',
       videoThumbnail: videoThumbnail,
       generationStarted: new Date()
@@ -1199,7 +1200,7 @@ async function generateMusicVideoBundle(userId: string, purchaseId: string, tier
     console.error(`❌ Error en generateMusicVideoBundle:`, error);
     // Marcar como failed pero no romper el flujo
     try {
-      await db.collection('music_video_purchases').doc(purchaseId).update({
+      await firebaseDb.collection('music_video_purchases').doc(purchaseId).update({
         videoStatus: 'generation_failed',
         errorMessage: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -1249,12 +1250,12 @@ async function handleSuccessfulSubscription(session: any) {
     };
     
     // Guardar la suscripción en la colección 'subscriptions'
-    const subscriptionRef = await db.collection('subscriptions').add(subscriptionData);
+    const subscriptionRef = await firebaseDb.collection('subscriptions').add(subscriptionData);
     
     console.log(`  📝 Suscripción creada en Firestore: ${subscriptionRef.id}`);
     
     // Actualizar o crear el documento user_subscriptions para vincular al usuario
-    await db.collection('user_subscriptions').doc(userId).set({
+    await firebaseDb.collection('user_subscriptions').doc(userId).set({
       activeSubscriptionId: subscriptionRef.id,
       updatedAt: new Date()
     }, { merge: true });
@@ -1296,7 +1297,7 @@ async function handleSuccessfulVideoPayment(session: any) {
     }
     
     // Buscar la transacción pendiente por sessionId
-    const purchasesRef = db.collection('purchases');
+    const purchasesRef = firebaseDb.collection('purchases');
     const purchaseQuery = await purchasesRef
       .where('sessionId', '==', session.id)
       .limit(1)
@@ -1364,7 +1365,7 @@ async function handleSuccessfulProductPayment(session: any) {
     const isGuestPurchase = guestPurchase === 'true' || !userId;
     
     // Buscar la transacción pendiente por sessionId
-    const purchasesRef = db.collection(PRODUCT_PURCHASES_COLLECTION);
+    const purchasesRef = firebaseDb.collection(PRODUCT_PURCHASES_COLLECTION);
     let purchaseQuery;
     
     if (isGuestPurchase) {
@@ -1440,7 +1441,7 @@ async function handleSuccessfulMusicianBooking(session: any) {
     console.log(`   Musician amount (80%): $${musicianAmount}`);
     
     // Buscar el payment pendiente por sessionId
-    const [payment] = await db
+    const [payment] = await drizzleDb
       .select()
       .from(payments)
       .where(eq(payments.stripeCheckoutSessionId, session.id))
@@ -1450,7 +1451,7 @@ async function handleSuccessfulMusicianBooking(session: any) {
       console.log(`No se encontró payment pendiente para sessionId ${session.id}, creando nuevo registro`);
       
       // Crear un nuevo registro si no existe
-      await db.insert(payments).values({
+      await drizzleDb.insert(payments).values({
         bookingId: parseInt(bookingId),
         stripePaymentIntentId: session.payment_intent as string,
         stripeCheckoutSessionId: session.id,
@@ -1462,7 +1463,7 @@ async function handleSuccessfulMusicianBooking(session: any) {
       });
     } else {
       // Actualizar el payment existente
-      await db
+      await drizzleDb
         .update(payments)
         .set({
           stripePaymentIntentId: session.payment_intent as string,
