@@ -31,7 +31,25 @@ import {
   PenSquare,
   Play,
   Pause,
-  RotateCcw
+  RotateCcw,
+  Presentation,
+  Rocket,
+  Zap,
+  Globe,
+  Shield,
+  Award,
+  Sparkles,
+  Music,
+  Video,
+  Cpu,
+  Coins,
+  PieChart,
+  LineChart,
+  ArrowUpRight,
+  Building2,
+  Briefcase,
+  Star,
+  ExternalLink
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "../hooks/use-auth";
@@ -697,6 +715,891 @@ function UserGrowthSimulator() {
         </div>
       </div>
     </Card>
+  );
+}
+
+// =====================================
+// PROFESSIONAL PITCH DECK COMPONENT
+// =====================================
+function PitchDeck({ setSelectedTab }: { setSelectedTab: (tab: string) => void }) {
+  const [activeSlide, setActiveSlide] = useState(0);
+  const { toast } = useToast();
+
+  // Function to generate and download PDF
+  const handleDownloadPDF = async () => {
+    toast({
+      title: "Generating PDF...",
+      description: "Please wait while we prepare your Pitch Deck",
+    });
+
+    // Create a comprehensive pitch deck content
+    const pitchDeckContent = `
+BOOSTIFY MUSIC - INVESTOR PITCH DECK
+=====================================
+
+🎵 THE AI-POWERED MUSIC TECH PLATFORM
+
+Empowering independent artists with AI-driven tools for music creation,
+promotion, and monetization.
+
+=====================================
+💰 INVESTMENT OPPORTUNITY
+=====================================
+
+• Current Round: Seed (Post-Money SAFE)
+• Funding Target: $124,000 (min $50,000)
+• Valuation Cap: $5.5M
+• Minimum Investment: $100
+• Platform: Wefunder (wefunder.com/boostify.music)
+
+=====================================
+📊 MARKET OPPORTUNITY
+=====================================
+
+• TAM (Total Addressable Market): $43.6B
+• SAM (Serviceable Market): $12.8B
+• SOM (Target Market - 3 years): $2.4B
+• Industry CAGR: 18.5%
+
+=====================================
+🚀 THE PROBLEM
+=====================================
+
+• 80% of artists struggle with distribution and promotion
+• Traditional tools are expensive and fragmented
+• Limited access to AI-powered creative tools
+• Complex royalty and monetization systems
+
+=====================================
+✨ OUR SOLUTION
+=====================================
+
+Boostify Music provides an all-in-one platform:
+
+1. AI Music Video Generation - Create professional videos in minutes
+2. Smart Distribution - Multi-platform release management
+3. Blockchain Royalties - Transparent, automated payments
+4. Artist Branding Tools - AI-powered marketing suite
+5. MotionDNA Technology - Unique visual identity for each artist
+
+=====================================
+💵 REVENUE MODEL
+=====================================
+
+• SaaS Subscriptions: 45% ($11M projected Y5)
+• AI Video Generation: 25% ($6.1M projected Y5)
+• Blockchain & Tokenization: 15% ($3.7M projected Y5)
+• Licensing & Royalties: 10% ($2.5M projected Y5)
+• Merchandise & Courses: 5% ($1.2M projected Y5)
+
+=====================================
+📈 FINANCIAL PROJECTIONS
+=====================================
+
+Year 1 (2026): $2.5M revenue | 5,000 users
+Year 2 (2027): $8.2M revenue | 20,000 users
+Year 3 (2028): $24.5M revenue | 50,000 users
+Year 4 (2029): $52M revenue | 100,000 users
+Year 5 (2030): $98M revenue | 200,000 users
+
+=====================================
+🎯 USE OF FUNDS ($124K)
+=====================================
+
+• Product Development: $49,600 (40%)
+• Marketing & Artist Acquisition: $31,000 (25%)
+• AI Infrastructure: $24,800 (20%)
+• Team Expansion: $12,400 (10%)
+• Legal & Compliance: $6,200 (5%)
+
+=====================================
+🏆 COMPETITIVE ADVANTAGES
+=====================================
+
+1. AI-First Technology - 10x faster than traditional methods
+2. Blockchain Integration - 100% transparent royalties
+3. All-in-One Platform - 5 tools in 1 ecosystem
+4. Artist-Centric Design - Built by musicians, for musicians
+
+=====================================
+📅 MILESTONES & ROADMAP
+=====================================
+
+Q1 2026: Platform Launch & Seed Round Close
+Q2 2026: 1,000 Active Artists
+Q3 2026: AI Video Generator V2 Launch
+Q4 2026: Blockchain Royalty System Live
+Q1 2027: Series A Preparation
+Q2 2027: 10,000 Active Artists
+
+=====================================
+👥 LEADERSHIP TEAM
+=====================================
+
+• CEO/Founder - Tech & Music Industry Expert
+• CTO - AI/ML Specialist
+• Head of Product - SaaS Growth Expert
+• Creative Director - Award-winning Designer
+
+=====================================
+📞 CONTACT & INVEST
+=====================================
+
+🌐 Website: boostify.music
+💰 Invest: wefunder.com/boostify.music
+📧 Email: investors@boostify.music
+
+=====================================
+DISCLAIMER
+=====================================
+
+Investment involves risk. Past performance is not indicative
+of future results. Please review all documentation and consult
+with financial advisors before investing.
+
+© 2026 Boostify Music. All Rights Reserved.
+    `;
+
+    // Create a Blob and download
+    const blob = new Blob([pitchDeckContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Boostify_Music_Pitch_Deck_2026.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "✅ Pitch Deck Downloaded!",
+      description: "Check your downloads folder for the file",
+    });
+  };
+
+  // Market Data
+  const marketData = {
+    totalAddressableMarket: 43.6, // Billion USD
+    serviceableMarket: 12.8, // Billion USD
+    targetMarket: 2.4, // Billion USD - first 3 years
+    growthRate: 18.5, // CAGR %
+  };
+
+  // Revenue Projections Data
+  const revenueProjections = [
+    { year: 'Y1 2026', revenue: 2.5, users: 5000, arr: 2.5 },
+    { year: 'Y2 2027', revenue: 8.2, users: 20000, arr: 8.2 },
+    { year: 'Y3 2028', revenue: 24.5, users: 50000, arr: 24.5 },
+    { year: 'Y4 2029', revenue: 52.0, users: 100000, arr: 52.0 },
+    { year: 'Y5 2030', revenue: 98.0, users: 200000, arr: 98.0 },
+  ];
+
+  // Revenue Streams
+  const revenueStreams = [
+    { name: 'SaaS Subscriptions', percentage: 45, amount: '$11M', color: 'from-orange-400 to-orange-600' },
+    { name: 'AI Video Generation', percentage: 25, amount: '$6.1M', color: 'from-purple-400 to-purple-600' },
+    { name: 'Blockchain & Tokenization', percentage: 15, amount: '$3.7M', color: 'from-yellow-400 to-amber-600' },
+    { name: 'Licensing & Royalties', percentage: 10, amount: '$2.5M', color: 'from-cyan-400 to-blue-600' },
+    { name: 'Merchandise & Courses', percentage: 5, amount: '$1.2M', color: 'from-green-400 to-emerald-600' },
+  ];
+
+  // Competitive Advantages
+  const competitiveAdvantages = [
+    {
+      icon: Cpu,
+      title: 'AI-First Technology',
+      description: 'Proprietary AI engine for music video generation, artist branding, and content optimization',
+      metric: '10x faster than traditional methods'
+    },
+    {
+      icon: Coins,
+      title: 'Web3 Integration',
+      description: 'Native blockchain for royalty distribution, artist tokens, and fan engagement NFTs',
+      metric: '$BOOST token ecosystem'
+    },
+    {
+      icon: Globe,
+      title: 'Global Reach',
+      description: 'Multi-language support with AI translation for worldwide artist discovery',
+      metric: '180+ countries supported'
+    },
+    {
+      icon: Shield,
+      title: 'Rights Protection',
+      description: 'Automated copyright detection and licensing management system',
+      metric: '99.9% accuracy rate'
+    },
+  ];
+
+  // Team Members
+  const teamMembers = [
+    { role: 'CEO & Founder', expertise: 'Music Industry & AI', experience: '15+ years' },
+    { role: 'CTO', expertise: 'AI/ML & Blockchain', experience: '12+ years' },
+    { role: 'CPO', expertise: 'Product & UX', experience: '10+ years' },
+    { role: 'CMO', expertise: 'Digital Marketing', experience: '8+ years' },
+  ];
+
+  // Milestones
+  const milestones = [
+    { date: 'Q1 2026', milestone: 'Platform Launch', status: 'upcoming' },
+    { date: 'Q2 2026', milestone: '5,000 Active Users', status: 'upcoming' },
+    { date: 'Q4 2026', milestone: 'Series A ($750K)', status: 'upcoming' },
+    { date: 'Q2 2027', milestone: '20,000 Users + Mobile App', status: 'upcoming' },
+    { date: 'Q4 2027', milestone: 'Series B ($2M)', status: 'upcoming' },
+    { date: 'Q4 2028', milestone: '50,000 Users + IPO Ready', status: 'upcoming' },
+  ];
+
+  // Use of Funds
+  const useOfFunds = [
+    { category: 'Product Development', percentage: 40, description: 'AI models, features, mobile apps' },
+    { category: 'Marketing & Growth', percentage: 30, description: 'User acquisition, brand building' },
+    { category: 'Operations', percentage: 15, description: 'Team, infrastructure, compliance' },
+    { category: 'Strategic Reserves', percentage: 15, description: 'Partnerships, acquisitions, runway' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Cover Slide */}
+      <Card className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-slate-900 to-black border-orange-500/30 p-6 sm:p-10">
+        {/* Background Effects */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/10 rounded-full filter blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-amber-500/10 rounded-full filter blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-yellow-500/5 rounded-full filter blur-3xl"></div>
+        
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-500/30">
+              <Presentation className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <span className="text-xs font-semibold text-orange-400 tracking-wider uppercase">Investor Pitch Deck</span>
+              <h2 className="text-3xl sm:text-5xl font-bold bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-400 bg-clip-text text-transparent">
+                BOOSTIFY MUSIC
+              </h2>
+            </div>
+          </div>
+
+          <p className="text-xl sm:text-2xl text-gray-300 max-w-3xl mb-8 leading-relaxed">
+            The <span className="text-orange-400 font-semibold">All-in-One AI Platform</span> Revolutionizing 
+            Music Creation, Distribution & Monetization
+          </p>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+            <div className="text-center p-4 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
+              <div className="text-3xl sm:text-4xl font-bold text-orange-400">$124K</div>
+              <div className="text-xs text-gray-400 mt-1">Seed Round (SAFE)</div>
+            </div>
+            <div className="text-center p-4 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
+              <div className="text-3xl sm:text-4xl font-bold text-yellow-400">$5.5M</div>
+              <div className="text-xs text-gray-400 mt-1">Valuation Cap</div>
+            </div>
+            <div className="text-center p-4 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
+              <div className="text-3xl sm:text-4xl font-bold text-amber-400">$98M</div>
+              <div className="text-xs text-gray-400 mt-1">Y5 Revenue Target</div>
+            </div>
+            <div className="text-center p-4 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
+              <div className="text-3xl sm:text-4xl font-bold text-green-400">200K</div>
+              <div className="text-xs text-gray-400 mt-1">Users by 2030</div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <span className="px-3 py-1.5 bg-orange-500/20 text-orange-300 rounded-full text-xs font-medium flex items-center gap-1">
+              <Music className="w-3 h-3" /> AI Music Tech
+            </span>
+            <span className="px-3 py-1.5 bg-purple-500/20 text-purple-300 rounded-full text-xs font-medium flex items-center gap-1">
+              <Video className="w-3 h-3" /> Generative Video
+            </span>
+            <span className="px-3 py-1.5 bg-yellow-500/20 text-yellow-300 rounded-full text-xs font-medium flex items-center gap-1">
+              <Coins className="w-3 h-3" /> Web3 & Tokenization
+            </span>
+            <span className="px-3 py-1.5 bg-cyan-500/20 text-cyan-300 rounded-full text-xs font-medium flex items-center gap-1">
+              <Zap className="w-3 h-3" /> SaaS Platform
+            </span>
+          </div>
+        </div>
+      </Card>
+
+      {/* Problem & Solution */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* The Problem */}
+        <Card className="p-6 bg-gradient-to-br from-red-950/20 to-gray-900/50 border-red-500/20">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
+              <AlertTriangle className="h-6 w-6 text-red-400" />
+            </div>
+            <h3 className="text-xl font-bold text-white">The Problem</h3>
+          </div>
+
+          <div className="space-y-4">
+            <div className="p-4 bg-black/30 rounded-lg border border-red-500/10">
+              <h4 className="text-sm font-semibold text-red-400 mb-2">Fragmented Tools</h4>
+              <p className="text-xs text-gray-400">Artists juggle 10+ platforms for creation, distribution, marketing, and monetization</p>
+            </div>
+            <div className="p-4 bg-black/30 rounded-lg border border-red-500/10">
+              <h4 className="text-sm font-semibold text-red-400 mb-2">High Production Costs</h4>
+              <p className="text-xs text-gray-400">Professional music videos cost $5K-$50K, putting them out of reach for indie artists</p>
+            </div>
+            <div className="p-4 bg-black/30 rounded-lg border border-red-500/10">
+              <h4 className="text-sm font-semibold text-red-400 mb-2">Unfair Revenue Split</h4>
+              <p className="text-xs text-gray-400">Artists receive only 12-20% of streaming revenue, labels and platforms take the rest</p>
+            </div>
+            <div className="p-4 bg-black/30 rounded-lg border border-red-500/10">
+              <h4 className="text-sm font-semibold text-red-400 mb-2">No Direct Fan Connection</h4>
+              <p className="text-xs text-gray-400">Streaming platforms own the fan relationship, artists lack direct monetization channels</p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Our Solution */}
+        <Card className="p-6 bg-gradient-to-br from-green-950/20 to-gray-900/50 border-green-500/20">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
+              <Rocket className="h-6 w-6 text-green-400" />
+            </div>
+            <h3 className="text-xl font-bold text-white">Our Solution</h3>
+          </div>
+
+          <div className="space-y-4">
+            <div className="p-4 bg-black/30 rounded-lg border border-green-500/10">
+              <h4 className="text-sm font-semibold text-green-400 mb-2">Unified AI Platform</h4>
+              <p className="text-xs text-gray-400">One platform for music creation, AI videos, distribution, marketing, and fan engagement</p>
+            </div>
+            <div className="p-4 bg-black/30 rounded-lg border border-green-500/10">
+              <h4 className="text-sm font-semibold text-green-400 mb-2">AI Video Generation</h4>
+              <p className="text-xs text-gray-400">Professional music videos in minutes for $199, 95% cost reduction vs traditional</p>
+            </div>
+            <div className="p-4 bg-black/30 rounded-lg border border-green-500/10">
+              <h4 className="text-sm font-semibold text-green-400 mb-2">Web3 Royalty System</h4>
+              <p className="text-xs text-gray-400">Blockchain-powered transparent royalty distribution, artists keep 80%+ of revenue</p>
+            </div>
+            <div className="p-4 bg-black/30 rounded-lg border border-green-500/10">
+              <h4 className="text-sm font-semibold text-green-400 mb-2">Direct Monetization</h4>
+              <p className="text-xs text-gray-400">Artist tokens, NFTs, exclusive content, and merchandise with 20% platform fee only</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Market Opportunity */}
+      <Card className="p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border-orange-500/20">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center">
+            <Globe className="h-6 w-6 text-orange-400" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-white">Market Opportunity</h3>
+            <p className="text-xs text-gray-400">Global Music Technology Market</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* TAM */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent rounded-2xl"></div>
+            <div className="relative p-6 text-center">
+              <div className="w-40 h-40 mx-auto relative">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8"/>
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="url(#tamGradient)" strokeWidth="8" strokeDasharray="283" strokeDashoffset="0" strokeLinecap="round"/>
+                  <defs>
+                    <linearGradient id="tamGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#f97316" />
+                      <stop offset="100%" stopColor="#eab308" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-3xl font-bold text-orange-400">${marketData.totalAddressableMarket}B</span>
+                  <span className="text-xs text-gray-400">by 2028</span>
+                </div>
+              </div>
+              <h4 className="text-lg font-semibold text-white mt-4">TAM</h4>
+              <p className="text-xs text-gray-400">Total Addressable Market</p>
+              <p className="text-xs text-orange-400 mt-2">Global Music Tech Industry</p>
+            </div>
+          </div>
+
+          {/* SAM */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent rounded-2xl"></div>
+            <div className="relative p-6 text-center">
+              <div className="w-32 h-32 mx-auto relative mt-4">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8"/>
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="url(#samGradient)" strokeWidth="8" strokeDasharray="283" strokeDashoffset="85" strokeLinecap="round"/>
+                  <defs>
+                    <linearGradient id="samGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#a855f7" />
+                      <stop offset="100%" stopColor="#ec4899" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-bold text-purple-400">${marketData.serviceableMarket}B</span>
+                  <span className="text-[10px] text-gray-400">by 2028</span>
+                </div>
+              </div>
+              <h4 className="text-lg font-semibold text-white mt-4">SAM</h4>
+              <p className="text-xs text-gray-400">Serviceable Addressable Market</p>
+              <p className="text-xs text-purple-400 mt-2">Independent Artist Tools & Services</p>
+            </div>
+          </div>
+
+          {/* SOM */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent rounded-2xl"></div>
+            <div className="relative p-6 text-center">
+              <div className="w-24 h-24 mx-auto relative mt-8">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8"/>
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="url(#somGradient)" strokeWidth="8" strokeDasharray="283" strokeDashoffset="170" strokeLinecap="round"/>
+                  <defs>
+                    <linearGradient id="somGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#eab308" />
+                      <stop offset="100%" stopColor="#22c55e" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-xl font-bold text-yellow-400">${marketData.targetMarket}B</span>
+                  <span className="text-[9px] text-gray-400">target</span>
+                </div>
+              </div>
+              <h4 className="text-lg font-semibold text-white mt-4">SOM</h4>
+              <p className="text-xs text-gray-400">Serviceable Obtainable Market</p>
+              <p className="text-xs text-yellow-400 mt-2">Our 3-Year Target (0.2% capture)</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 bg-black/30 rounded-xl border border-orange-500/10">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <span className="text-sm text-gray-400">Market CAGR (2024-2030)</span>
+              <div className="text-2xl font-bold text-green-400">{marketData.growthRate}%</div>
+            </div>
+            <div className="flex gap-4">
+              <div className="text-center">
+                <div className="text-lg font-bold text-white">11M+</div>
+                <div className="text-xs text-gray-400">Independent Artists</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-white">60K+</div>
+                <div className="text-xs text-gray-400">Songs Uploaded/Day</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-white">$3.5B</div>
+                <div className="text-xs text-gray-400">AI Music Market 2025</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Business Model & Revenue Streams */}
+      <Card className="p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border-orange-500/20">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
+            <PieChart className="h-6 w-6 text-green-400" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-white">Business Model</h3>
+            <p className="text-xs text-gray-400">Multiple Revenue Streams by Year 3 ($24.5M ARR)</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Revenue Streams Chart */}
+          <div className="space-y-4">
+            {revenueStreams.map((stream, index) => (
+              <div key={index}>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-white">{stream.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-gray-300">{stream.amount}</span>
+                    <span className="text-xs text-gray-500">({stream.percentage}%)</span>
+                  </div>
+                </div>
+                <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full bg-gradient-to-r ${stream.color} rounded-full transition-all duration-1000`}
+                    style={{ width: `${stream.percentage}%` }}
+                  ></div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Revenue Model Details */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 bg-black/30 rounded-xl border border-orange-500/10">
+              <div className="flex items-center gap-2 mb-2">
+                <CreditCard className="w-4 h-4 text-orange-400" />
+                <span className="text-xs font-semibold text-white">Subscriptions</span>
+              </div>
+              <p className="text-[10px] text-gray-400 mb-2">Monthly recurring revenue from 3 tiers</p>
+              <div className="space-y-1 text-[10px]">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Basic</span>
+                  <span className="text-orange-400">$59.99/mo</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Pro</span>
+                  <span className="text-orange-400">$99.99/mo</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Premium</span>
+                  <span className="text-orange-400">$149.99/mo</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-black/30 rounded-xl border border-purple-500/10">
+              <div className="flex items-center gap-2 mb-2">
+                <Video className="w-4 h-4 text-purple-400" />
+                <span className="text-xs font-semibold text-white">AI Videos</span>
+              </div>
+              <p className="text-[10px] text-gray-400 mb-2">Pay-per-video generation</p>
+              <div className="space-y-1 text-[10px]">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Standard</span>
+                  <span className="text-purple-400">$199</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Premium</span>
+                  <span className="text-purple-400">$399</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Enterprise</span>
+                  <span className="text-purple-400">$999+</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-black/30 rounded-xl border border-yellow-500/10">
+              <div className="flex items-center gap-2 mb-2">
+                <Coins className="w-4 h-4 text-yellow-400" />
+                <span className="text-xs font-semibold text-white">Blockchain</span>
+              </div>
+              <p className="text-[10px] text-gray-400 mb-2">Transaction fees & tokenization</p>
+              <div className="space-y-1 text-[10px]">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Trading Fee</span>
+                  <span className="text-yellow-400">5%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Token Deploy</span>
+                  <span className="text-yellow-400">3%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Royalties</span>
+                  <span className="text-yellow-400">2%</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-black/30 rounded-xl border border-cyan-500/10">
+              <div className="flex items-center gap-2 mb-2">
+                <Award className="w-4 h-4 text-cyan-400" />
+                <span className="text-xs font-semibold text-white">Licensing</span>
+              </div>
+              <p className="text-[10px] text-gray-400 mb-2">Music licensing & streaming royalties</p>
+              <div className="space-y-1 text-[10px]">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Platform Fee</span>
+                  <span className="text-cyan-400">15%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Sync License</span>
+                  <span className="text-cyan-400">20%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Financial Projections */}
+      <Card className="p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border-orange-500/20">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+            <LineChart className="h-6 w-6 text-cyan-400" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-white">5-Year Financial Projections</h3>
+            <p className="text-xs text-gray-400">Revenue & User Growth Trajectory</p>
+          </div>
+        </div>
+
+        {/* Revenue Chart */}
+        <div className="h-80 bg-black/30 rounded-xl p-6 mb-6 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-cyan-500/5"></div>
+          
+          <div className="relative z-10 h-full flex flex-col">
+            <div className="flex-1 flex items-end gap-4">
+              {revenueProjections.map((item, index) => (
+                <div key={index} className="flex-1 flex flex-col items-center">
+                  <div className="w-full max-w-16 relative">
+                    {/* Bar */}
+                    <div 
+                      className="w-full bg-gradient-to-t from-orange-500 to-amber-400 rounded-t-lg transition-all duration-1000 mx-auto"
+                      style={{ height: `${(item.revenue / 100) * 200}px`, maxHeight: '200px' }}
+                    >
+                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                        <span className="text-sm font-bold text-orange-400">${item.revenue}M</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-3 text-center">
+                    <div className="text-xs font-semibold text-white">{item.year}</div>
+                    <div className="text-[10px] text-gray-500">{(item.users / 1000).toFixed(0)}K users</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Key Metrics */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="p-4 bg-gradient-to-br from-orange-500/10 to-transparent rounded-xl border border-orange-500/20 text-center">
+            <div className="text-2xl font-bold text-orange-400">39x</div>
+            <div className="text-xs text-gray-400 mt-1">Revenue Growth (5Y)</div>
+          </div>
+          <div className="p-4 bg-gradient-to-br from-green-500/10 to-transparent rounded-xl border border-green-500/20 text-center">
+            <div className="text-2xl font-bold text-green-400">72%</div>
+            <div className="text-xs text-gray-400 mt-1">Gross Margin Target</div>
+          </div>
+          <div className="p-4 bg-gradient-to-br from-purple-500/10 to-transparent rounded-xl border border-purple-500/20 text-center">
+            <div className="text-2xl font-bold text-purple-400">$490</div>
+            <div className="text-xs text-gray-400 mt-1">LTV per User (Y3)</div>
+          </div>
+          <div className="p-4 bg-gradient-to-br from-cyan-500/10 to-transparent rounded-xl border border-cyan-500/20 text-center">
+            <div className="text-2xl font-bold text-cyan-400">$65</div>
+            <div className="text-xs text-gray-400 mt-1">CAC Target</div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Competitive Advantage */}
+      <Card className="p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border-orange-500/20">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center">
+            <Shield className="h-6 w-6 text-yellow-400" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-white">Competitive Moat</h3>
+            <p className="text-xs text-gray-400">What Makes Us Different</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {competitiveAdvantages.map((advantage, index) => (
+            <div key={index} className="p-5 bg-black/30 rounded-xl border border-white/10 hover:border-orange-500/30 transition-all group">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500/20 to-amber-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <advantage.icon className="w-5 h-5 text-orange-400" />
+              </div>
+              <h4 className="text-sm font-semibold text-white mb-2">{advantage.title}</h4>
+              <p className="text-xs text-gray-400 mb-3">{advantage.description}</p>
+              <div className="inline-flex items-center gap-1 px-2 py-1 bg-orange-500/10 rounded-full">
+                <Sparkles className="w-3 h-3 text-orange-400" />
+                <span className="text-[10px] text-orange-400 font-medium">{advantage.metric}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Use of Funds */}
+      <Card className="p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border-orange-500/20">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
+            <Briefcase className="h-6 w-6 text-purple-400" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-white">Use of Funds</h3>
+            <p className="text-xs text-gray-400">Seed Round ($124K) Allocation Strategy</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Pie Chart Visual */}
+          <div className="relative flex items-center justify-center">
+            <div className="w-64 h-64 relative">
+              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(249,115,22,0.3)" strokeWidth="20" strokeDasharray="100.5 150.8" strokeDashoffset="0"/>
+                <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(168,85,247,0.3)" strokeWidth="20" strokeDasharray="75.4 175.9" strokeDashoffset="-100.5"/>
+                <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(34,197,94,0.3)" strokeWidth="20" strokeDasharray="37.7 213.6" strokeDashoffset="-175.9"/>
+                <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(59,130,246,0.3)" strokeWidth="20" strokeDasharray="37.7 213.6" strokeDashoffset="-213.6"/>
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-3xl font-bold text-white">$124K</span>
+                <span className="text-xs text-gray-400">Seed Round</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Fund Breakdown */}
+          <div className="space-y-4">
+            {useOfFunds.map((fund, index) => {
+              const colors = ['from-orange-400 to-amber-500', 'from-purple-400 to-pink-500', 'from-green-400 to-emerald-500', 'from-blue-400 to-cyan-500'];
+              const textColors = ['text-orange-400', 'text-purple-400', 'text-green-400', 'text-blue-400'];
+              return (
+                <div key={index} className="p-4 bg-black/30 rounded-xl border border-white/10">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-semibold text-white">{fund.category}</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-lg font-bold ${textColors[index]}`}>{fund.percentage}%</span>
+                      <span className="text-xs text-gray-500">${((fund.percentage / 100) * 124).toFixed(0)}K</span>
+                    </div>
+                  </div>
+                  <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden mb-2">
+                    <div 
+                      className={`h-full bg-gradient-to-r ${colors[index]} rounded-full`}
+                      style={{ width: `${fund.percentage}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-[10px] text-gray-400">{fund.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </Card>
+
+      {/* Team & Milestones */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Team */}
+        <Card className="p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border-orange-500/20">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+              <Users className="h-6 w-6 text-cyan-400" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white">Leadership Team</h3>
+              <p className="text-xs text-gray-400">Experienced Founders</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {teamMembers.map((member, index) => (
+              <div key={index} className="p-4 bg-black/30 rounded-xl border border-white/10 text-center">
+                <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-orange-400 to-amber-600 flex items-center justify-center">
+                  <Star className="w-6 h-6 text-white" />
+                </div>
+                <h4 className="text-sm font-semibold text-white">{member.role}</h4>
+                <p className="text-[10px] text-orange-400 mt-1">{member.expertise}</p>
+                <p className="text-[10px] text-gray-500 mt-1">{member.experience}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Milestones */}
+        <Card className="p-6 bg-gradient-to-br from-gray-900/90 to-gray-900/50 border-orange-500/20">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
+              <Target className="h-6 w-6 text-green-400" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white">Key Milestones</h3>
+              <p className="text-xs text-gray-400">Execution Roadmap</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {milestones.map((item, index) => (
+              <div key={index} className="flex items-center gap-4 p-3 bg-black/30 rounded-lg border border-white/10">
+                <div className="w-16 text-center">
+                  <span className="text-xs font-semibold text-orange-400">{item.date}</span>
+                </div>
+                <div className="flex-1">
+                  <span className="text-sm text-white">{item.milestone}</span>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                  <ArrowUpRight className="w-4 h-4 text-yellow-400" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* Investment Ask / CTA */}
+      <Card className="relative overflow-hidden bg-gradient-to-br from-orange-500/20 via-amber-500/10 to-yellow-500/20 border-orange-500/40 p-8">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-orange-500/10 rounded-full filter blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-yellow-500/10 rounded-full filter blur-3xl"></div>
+        
+        <div className="relative z-10 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-black/30 rounded-full mb-6">
+            <Rocket className="w-4 h-4 text-orange-400" />
+            <span className="text-sm font-semibold text-orange-400">Seed Round Now Open</span>
+          </div>
+
+          <h3 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            Join the <span className="bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">Revolution</span>
+          </h3>
+
+          <p className="text-gray-300 max-w-2xl mx-auto mb-8">
+            Be part of the future of music technology. We're raising <strong className="text-orange-400">up to $124K via Post-Money SAFE on Wefunder</strong> to 
+            finish our MVP, launch, and reach 1,000 active users. Early investors receive priority access to future rounds.
+          </p>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto mb-8">
+            <div className="p-4 bg-black/40 rounded-xl border border-orange-500/30">
+              <div className="text-2xl font-bold text-orange-400">$124K</div>
+              <div className="text-xs text-gray-400">Target (min $50K)</div>
+            </div>
+            <div className="p-4 bg-black/40 rounded-xl border border-orange-500/30">
+              <div className="text-2xl font-bold text-yellow-400">$5.5M</div>
+              <div className="text-xs text-gray-400">SAFE Valuation Cap</div>
+            </div>
+            <div className="p-4 bg-black/40 rounded-xl border border-orange-500/30">
+              <div className="text-2xl font-bold text-green-400">$100</div>
+              <div className="text-xs text-gray-400">Min Investment</div>
+            </div>
+            <div className="p-4 bg-black/40 rounded-xl border border-orange-500/30">
+              <div className="text-2xl font-bold text-cyan-400">SAFE</div>
+              <div className="text-xs text-gray-400">Instrument Type</div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-4">
+            <Button 
+              size="lg" 
+              onClick={() => setSelectedTab('register')}
+              className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold shadow-lg shadow-orange-500/30 px-8"
+            >
+              <DollarSign className="mr-2 h-5 w-5" />
+              Invest Now
+            </Button>
+            <Button 
+              size="lg" 
+              onClick={() => window.open('https://wefunder.com/boostify.music', '_blank')}
+              className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold shadow-lg shadow-emerald-500/30 px-8"
+            >
+              <ExternalLink className="mr-2 h-5 w-5" />
+              Invest via Wefunder
+            </Button>
+            <Button 
+              variant="outline" 
+              size="lg" 
+              onClick={handleDownloadPDF}
+              className="border-orange-500/50 text-orange-300 hover:bg-orange-500/10 px-8"
+            >
+              <Download className="mr-2 h-5 w-5" />
+              Download Full Deck (PDF)
+            </Button>
+          </div>
+
+          <p className="text-xs text-gray-500 mt-6 max-w-xl mx-auto">
+            * Investment involves risk. Past performance is not indicative of future results. 
+            Please review all documentation and consult with financial advisors before investing.
+          </p>
+        </div>
+      </Card>
+    </div>
   );
 }
 
@@ -1672,7 +2575,7 @@ function InvestorStats({ investorData, globalStats }: { investorData?: any; glob
 }
 
 export default function InvestorsDashboard() {
-  const [selectedTab, setSelectedTab] = useState("projections");
+  const [selectedTab, setSelectedTab] = useState("pitchdeck");
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -1703,34 +2606,40 @@ export default function InvestorsDashboard() {
     nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     investmentRounds: [
       { 
-        name: 'Seed Round', 
-        date: 'December 15, 2025', 
+        name: 'Seed / Community Round', 
+        timing: 'Q1 2026', 
         status: 'Active', 
-        target: '$250K',
-        equity: '10%',
+        target: '$124,000',
+        minTarget: '$50,000',
+        instrument: 'Post-Money SAFE (Wefunder)',
+        dilutionRange: '5-12%',
         raisedStatus: 'Active Round',
         goal: '1,000 Active Users',
-        description: 'Seed round funding to accelerate platform development, expand core features, and establish strong market presence. Focus on achieving 1,000 active users and $100K MRR.'
+        description: 'Finish MVP, launch platform, convert waitlist, and validate acquisition channels. Focus on achieving 1,000 active users and first revenue traction.'
       },
       { 
         name: 'Series A', 
-        date: 'June 5, 2026', 
-        status: 'Upcoming', 
-        target: '$750K',
-        equity: '5%',
-        raisedStatus: 'Upcoming Round',
+        timing: 'Q3 2026 (Planned)', 
+        status: 'Planned', 
+        target: '$750,000',
+        minTarget: null,
+        instrument: 'Priced Round (Equity)',
+        dilutionRange: '5-10%',
+        raisedStatus: 'Planned Round',
         goal: '10,000 Active Users',
-        description: 'Series A funding to scale AI-powered video generation, expand AI capabilities, enhance creator tools, and accelerate global user acquisition across music production community.'
+        description: 'Scale AI video pipeline, expand creator tools, accelerate global user acquisition, and achieve meaningful MRR growth across music production community.'
       },
       { 
         name: 'Series B', 
-        date: 'November 15, 2026', 
-        status: 'Upcoming', 
-        target: '$2M',
-        equity: '5%',
+        timing: 'Q4 2026 (Planned)', 
+        status: 'Planned', 
+        target: '$2,000,000',
+        minTarget: null,
+        instrument: 'Priced Round (Equity)',
+        dilutionRange: '5-10%',
         raisedStatus: 'Strategic Round',
         goal: '50,000 Active Users',
-        description: 'Series B to drive global expansion, launch Boostify Records AI label, scale blockchain for automated royalties, establish enterprise partnerships, and solidify market leadership.'
+        description: 'Global expansion, enterprise partnerships, advanced rights/royalty automation, and market leadership consolidation.'
       }
     ]
   };
@@ -1800,6 +2709,14 @@ export default function InvestorsDashboard() {
                     Invest Now
                   </Button>
                   <Button 
+                    size="lg" 
+                    onClick={() => window.open('https://wefunder.com/boostify.music', '_blank')}
+                    className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold shadow-lg shadow-emerald-500/30"
+                  >
+                    <ExternalLink className="mr-2 h-5 w-5" />
+                    Invest via Wefunder
+                  </Button>
+                  <Button 
                     variant="outline" 
                     size="lg" 
                     className="border-orange-500/50 text-orange-300 hover:bg-cyan-500/10 hover:text-orange-200"
@@ -1814,7 +2731,14 @@ export default function InvestorsDashboard() {
 
             {/* Main Content Tabs - Modern Design */}
             <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-              <TabsList className="grid grid-cols-6 max-w-[1200px] mb-6 sm:mb-10 bg-gray-900/50 border border-orange-500/20 p-1">
+              <TabsList className="grid grid-cols-7 max-w-[1400px] mb-6 sm:mb-10 bg-gray-900/50 border border-orange-500/20 p-1">
+                <TabsTrigger 
+                  value="pitchdeck" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-600 data-[state=active]:text-white text-gray-400 data-[state=active]:shadow-lg data-[state=active]:shadow-orange-500/30"
+                >
+                  <Presentation className="w-4 h-4 mr-2" />
+                  <span className="text-xs sm:text-sm">Pitch Deck</span>
+                </TabsTrigger>
                 <TabsTrigger 
                   value="investments" 
                   className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-600 data-[state=active]:text-white text-gray-400 data-[state=active]:shadow-lg data-[state=active]:shadow-orange-500/30"
@@ -1858,6 +2782,11 @@ export default function InvestorsDashboard() {
                   <span className="text-xs sm:text-sm">Register</span>
                 </TabsTrigger>
               </TabsList>
+
+              {/* Pitch Deck Tab */}
+              <TabsContent value="pitchdeck">
+                <PitchDeck setSelectedTab={setSelectedTab} />
+              </TabsContent>
 
               {/* Overview Tab */}
               <TabsContent value="overview">
@@ -2150,13 +3079,22 @@ export default function InvestorsDashboard() {
                   <h3 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6 text-white">Investment Funding Rounds</h3>
                   <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6">Professional funding opportunities with tiered growth targets</p>
 
-                  <Button 
-                    onClick={handleInvestNow}
-                    className="w-full bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-lg mb-4 sm:mb-6"
-                  >
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Invest Now
-                  </Button>
+                  <div className="flex flex-col sm:flex-row gap-3 mb-4 sm:mb-6">
+                    <Button 
+                      onClick={handleInvestNow}
+                      className="flex-1 bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-lg"
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Invest Now
+                    </Button>
+                    <Button 
+                      onClick={() => window.open('https://wefunder.com/boostify.music', '_blank')}
+                      className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold shadow-lg"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Invest via Wefunder
+                    </Button>
+                  </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6">
                     {investmentData.investmentRounds.map((round: any, index: number) => (
@@ -2184,19 +3122,23 @@ export default function InvestorsDashboard() {
                         
                         <div className="space-y-3 mb-4">
                           <div>
-                            <p className="text-xs text-muted-foreground">Launch Date</p>
-                            <p className="text-xs sm:text-sm font-semibold">{round.date}</p>
+                            <p className="text-xs text-muted-foreground">Instrument</p>
+                            <p className="text-xs sm:text-sm font-semibold text-cyan-400">{round.instrument}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-muted-foreground">Equity Offered</p>
-                            <p className="text-sm font-bold text-orange-400">{round.equity}</p>
+                            <p className="text-xs text-muted-foreground">Timing</p>
+                            <p className="text-xs sm:text-sm font-semibold">{round.timing}</p>
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground">Funding Target</p>
-                            <p className="text-sm font-bold">{round.target}</p>
+                            <p className="text-sm font-bold">{round.target}{round.minTarget && <span className="text-xs text-muted-foreground ml-1">(min {round.minTarget})</span>}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-muted-foreground">Round Type</p>
+                            <p className="text-xs text-muted-foreground">Expected Dilution Range</p>
+                            <p className="text-sm font-bold text-orange-400">{round.dilutionRange} <span className="text-[10px] text-muted-foreground">(indicative)</span></p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Round Status</p>
                             <p className="text-xs font-semibold text-orange-400">{round.raisedStatus}</p>
                           </div>
                           <div>
@@ -2206,21 +3148,31 @@ export default function InvestorsDashboard() {
                         </div>
                         
                         {round.status === 'Active' && (
-                          <Button 
-                            onClick={handleInvestNow}
-                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold"
-                          >
-                            <DollarSign className="h-4 w-4 mr-2" />
-                            Invest Now
-                          </Button>
+                          <div className="space-y-2">
+                            <Button 
+                              onClick={() => window.open('https://wefunder.com/boostify.music', '_blank')}
+                              className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold"
+                            >
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Invest via Wefunder
+                            </Button>
+                            <Button 
+                              onClick={handleInvestNow}
+                              variant="outline"
+                              className="w-full border-orange-500/50 text-orange-300 hover:bg-orange-500/10"
+                            >
+                              <DollarSign className="h-4 w-4 mr-2" />
+                              Register to Invest
+                            </Button>
+                          </div>
                         )}
-                        {round.status === 'Upcoming' && (
+                        {round.status === 'Planned' && (
                           <Button 
                             disabled
                             variant="outline"
                             className="w-full"
                           >
-                            Coming Soon
+                            Planned
                           </Button>
                         )}
                       </Card>
@@ -2235,8 +3187,8 @@ export default function InvestorsDashboard() {
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground mb-1">Total Capital Target</p>
-                          <p className="text-xl sm:text-2xl font-bold">$3M</p>
-                          <p className="text-xs text-muted-foreground mt-1">Across all rounds</p>
+                          <p className="text-xl sm:text-2xl font-bold">~$2.9M</p>
+                          <p className="text-xs text-muted-foreground mt-1">Across all planned rounds</p>
                         </div>
                       </div>
                     </Card>
@@ -2260,9 +3212,9 @@ export default function InvestorsDashboard() {
                           <TrendingUp className="h-5 w-5 text-yellow-500" />
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground mb-1">Total Equity Available</p>
-                          <p className="text-xl sm:text-2xl font-bold">20%</p>
-                          <p className="text-xs text-muted-foreground mt-1">Across funding rounds</p>
+                          <p className="text-xs text-muted-foreground mb-1">Indicative Dilution Range</p>
+                          <p className="text-xl sm:text-2xl font-bold">15-32%</p>
+                          <p className="text-xs text-muted-foreground mt-1">Across all rounds (varies)</p>
                         </div>
                       </div>
                     </Card>
