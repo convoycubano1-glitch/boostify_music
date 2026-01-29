@@ -1,0 +1,132 @@
+# ============================================
+# BOOSTIFY MUSIC - DAILY INVESTOR OUTREACH
+# ============================================
+# Automated workflow to send 100 personalized investor emails daily
+# Runs at 9 AM EST (14:00 UTC) Monday-Friday
+# Uses Apify for lead extraction and Resend for email delivery
+
+name: Daily Investor Outreach
+
+on:
+  schedule:
+    # Run at 9 AM EST (14:00 UTC) Monday-Friday
+    - cron: '0 14 * * 1-5'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Outreach mode'
+        required: true
+        default: 'daily'
+        type: choice
+        options:
+          - daily
+          - quick
+          - collect
+          - stats
+
+env:
+  NODE_ENV: production
+
+jobs:
+  investor-outreach:
+    name: Run Investor Outreach
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # ============================================
+      # SETUP
+      # ============================================
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📚 Install dependencies
+        run: npm ci --production=false
+
+      # ============================================
+      # VALIDATE SECRETS
+      # ============================================
+      - name: 🔐 Validate required secrets
+        run: |
+          if [ -z "${{ secrets.RESEND_API_KEY }}" ]; then
+            echo "❌ RESEND_API_KEY is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.APIFY_API_KEY }}" ]; then
+            echo "❌ APIFY_API_KEY is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" ]; then
+            echo "❌ FIREBASE_SERVICE_ACCOUNT is not set"
+            exit 1
+          fi
+          echo "✅ All required secrets are configured"
+
+      # ============================================
+      # RUN OUTREACH
+      # ============================================
+      - name: 🚀 Run investor outreach
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          APIFY_API_KEY: ${{ secrets.APIFY_API_KEY }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          HUNTER_API_KEY: ${{ secrets.HUNTER_API_KEY }}
+        run: |
+          MODE="${{ github.event.inputs.mode || 'daily' }}"
+          echo "🎯 Running outreach in ${MODE} mode..."
+          npx tsx scripts/investor-outreach.ts ${MODE}
+
+      # ============================================
+      # NOTIFICATION (Optional)
+      # ============================================
+      - name: 📊 Post results summary
+        if: always()
+        run: |
+          echo "============================================"
+          echo "📊 OUTREACH JOB COMPLETED"
+          echo "============================================"
+          echo "Date: $(date)"
+          echo "Status: ${{ job.status }}"
+          echo "Mode: ${{ github.event.inputs.mode || 'daily' }}"
+          echo "============================================"
+
+  # ============================================
+  # WEEKLY LEAD COLLECTION (Sundays)
+  # ============================================
+  weekly-lead-collection:
+    name: Weekly Lead Collection
+    runs-on: ubuntu-latest
+    # Only runs on schedule, and only on Sunday
+    if: github.event_name == 'schedule' && github.event.schedule == '0 14 * * 0'
+    timeout-minutes: 45
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📚 Install dependencies
+        run: npm ci --production=false
+
+      - name: 📥 Collect new leads
+        env:
+          APIFY_API_KEY: ${{ secrets.APIFY_API_KEY }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          MAX_LEADS_TO_COLLECT: '1000'
+        run: |
+          echo "📥 Running weekly lead collection..."
+          npx tsx scripts/investor-outreach.ts collect

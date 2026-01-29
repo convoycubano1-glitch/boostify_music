@@ -13,7 +13,11 @@
     "server:dev": "npx tsx watch server/index.ts",
     "client:dev": "cd client && vite",
     "db:migrate": "npx drizzle-kit push",
-    "build:deploy": "node build-for-deploy.js"
+    "build:deploy": "node build-for-deploy.js",
+    "outreach:daily": "npx tsx scripts/investor-outreach.ts daily",
+    "outreach:quick": "npx tsx scripts/investor-outreach.ts quick",
+    "outreach:collect": "npx tsx scripts/investor-outreach.ts collect",
+    "outreach:stats": "npx tsx scripts/investor-outreach.ts stats"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.36.3",
