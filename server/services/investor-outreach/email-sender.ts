@@ -100,18 +100,23 @@ export async function sendInvestorEmail(
 // ============================================
 export async function sendBatchEmails(
   leads: InvestorLead[],
-  config: Partial<OutreachConfig> = {}
+  config: Partial<OutreachConfig> & { force?: boolean } = {}
 ): Promise<{ sent: number; failed: number; results: EmailSendResult[] }> {
   const mergedConfig = { ...DEFAULT_CONFIG, ...config };
   const results: EmailSendResult[] = [];
   let sent = 0;
   let failed = 0;
 
-  // Check if within sending hours
-  const currentHour = new Date().getUTCHours();
-  if (currentHour < mergedConfig.sendingHoursStart || currentHour >= mergedConfig.sendingHoursEnd) {
-    console.log(`⏰ Outside sending hours (${mergedConfig.sendingHoursStart}-${mergedConfig.sendingHoursEnd} UTC). Skipping.`);
-    return { sent: 0, failed: 0, results: [] };
+  // Check if within sending hours (unless forced)
+  if (!config.force) {
+    const currentHour = new Date().getUTCHours();
+    if (currentHour < mergedConfig.sendingHoursStart || currentHour >= mergedConfig.sendingHoursEnd) {
+      console.log(`⏰ Outside sending hours (${mergedConfig.sendingHoursStart}-${mergedConfig.sendingHoursEnd} UTC). Skipping.`);
+      console.log(`💡 Use --force flag to bypass sending hours check`);
+      return { sent: 0, failed: 0, results: [] };
+    }
+  } else {
+    console.log(`⚠️ Force mode enabled - bypassing sending hours check`);
   }
 
   // Limit to daily maximum

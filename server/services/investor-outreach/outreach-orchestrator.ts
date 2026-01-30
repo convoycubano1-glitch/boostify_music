@@ -186,7 +186,8 @@ export async function runTargetedCampaign(
 // QUICK OUTREACH (Single batch)
 // ============================================
 export async function quickOutreach(
-  numEmails: number = 25
+  numEmails: number = 25,
+  force: boolean = false
 ): Promise<{ sent: number; failed: number }> {
   console.log(`\n⚡ Quick outreach: sending ${numEmails} emails...`);
   
@@ -196,10 +197,10 @@ export async function quickOutreach(
     console.log('❌ No leads available. Collecting new leads first...');
     const newLeads = await collectAllLeads();
     await saveLeads(newLeads);
-    return quickOutreach(numEmails);
+    return quickOutreach(numEmails, force);
   }
   
-  const { sent, failed } = await sendBatchEmails(leads, { dailyEmailLimit: numEmails });
+  const { sent, failed } = await sendBatchEmails(leads, { dailyEmailLimit: numEmails, force });
   
   return { sent, failed };
 }

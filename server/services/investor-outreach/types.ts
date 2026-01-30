@@ -60,7 +60,7 @@ export interface EmailTemplate {
   textContent: string;
   variables: string[];
   category: 'cold_outreach' | 'follow_up' | 'warm_intro' | 'investor_update';
-  abVariant?: 'A' | 'B';
+  abVariant?: 'A' | 'B' | 'C' | 'D' | 'E';
   performance?: {
     sent: number;
     opened: number;

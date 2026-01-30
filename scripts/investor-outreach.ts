@@ -16,7 +16,7 @@ import {
   quickOutreach,
   collectAndSaveLeads,
   getOutreachStats 
-} from '../services/investor-outreach';
+} from '../server/services/investor-outreach';
 
 // ============================================
 // ENVIRONMENT VALIDATION
@@ -25,14 +25,19 @@ function validateEnvironment(): void {
   const required = [
     'RESEND_API_KEY',
     'APIFY_API_KEY',
-    'FIREBASE_SERVICE_ACCOUNT',
   ];
+  
+  // Check for Firebase credentials (either format)
+  const hasFirebase = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_ADMIN_KEY || process.env.FIREBASE_PROJECT_ID;
   
   const missing = required.filter(key => !process.env[key]);
   
-  if (missing.length > 0) {
+  if (missing.length > 0 || !hasFirebase) {
     console.error('❌ Missing required environment variables:');
     missing.forEach(key => console.error(`  - ${key}`));
+    if (!hasFirebase) {
+      console.error('  - FIREBASE_SERVICE_ACCOUNT or FIREBASE_ADMIN_KEY or FIREBASE_PROJECT_ID');
+    }
     console.error('\nPlease set these in your .env file or GitHub Secrets');
     process.exit(1);
   }
@@ -61,11 +66,11 @@ async function handleDaily(): Promise<void> {
   }
 }
 
-async function handleQuick(): Promise<void> {
+async function handleQuick(force: boolean = false): Promise<void> {
   console.log('\n⚡ Running quick outreach batch...\n');
   
   const numEmails = parseInt(process.env.QUICK_BATCH_SIZE || '25', 10);
-  const { sent, failed } = await quickOutreach(numEmails);
+  const { sent, failed } = await quickOutreach(numEmails, force);
   
   console.log(`\n✅ Quick batch complete: ${sent} sent, ${failed} failed`);
 }
@@ -109,11 +114,12 @@ async function handleStats(): Promise<void> {
 // ============================================
 async function main(): Promise<void> {
   const command = process.argv[2] || 'daily';
+  const hasForceFlag = process.argv.includes('--force') || process.argv.includes('-f');
   
   console.log('\n' + '═'.repeat(60));
   console.log('   🎵 BOOSTIFY MUSIC - INVESTOR OUTREACH SYSTEM');
   console.log('═'.repeat(60));
-  console.log(`   Command: ${command}`);
+  console.log(`   Command: ${command}${hasForceFlag ? ' (forced)' : ''}`);
   console.log(`   Time: ${new Date().toISOString()}`);
   console.log('═'.repeat(60));
   
@@ -125,7 +131,7 @@ async function main(): Promise<void> {
         await handleDaily();
         break;
       case 'quick':
-        await handleQuick();
+        await handleQuick(hasForceFlag);
         break;
       case 'collect':
         await handleCollect();
@@ -137,7 +143,7 @@ async function main(): Promise<void> {
         console.error(`\n❌ Unknown command: ${command}`);
         console.log('\nAvailable commands:');
         console.log('  daily   - Full daily outreach run');
-        console.log('  quick   - Quick batch of emails');
+        console.log('  quick   - Quick batch of emails (add --force to bypass hours)');
         console.log('  collect - Collect leads only');
         console.log('  stats   - Show statistics');
         process.exit(1);

@@ -98,18 +98,30 @@ export async function getLeadsByStatus(
 // ============================================
 export async function getNewLeadsForOutreach(limit: number = 100): Promise<InvestorLead[]> {
   if (!db) return [];
+  
+  // Simplified query - just get 'new' status leads, filter in memory
   const snapshot = await db.collection(LEADS_COLLECTION)
-    .where('status', 'in', ['new', 'contacted'])
-    .where('emailsSent', '<', 3)
-    .orderBy('emailsSent', 'asc')
-    .orderBy('createdAt', 'asc')
-    .limit(limit)
+    .where('status', '==', 'new')
+    .limit(limit * 2) // Get more to filter
     .get();
   
-  return snapshot.docs.map((doc: any) => ({
-    id: doc.id,
-    ...doc.data(),
-  } as InvestorLead));
+  const leads = snapshot.docs
+    .map((doc: any) => ({
+      id: doc.id,
+      ...doc.data(),
+    } as InvestorLead))
+    .filter((lead: InvestorLead) => (lead.emailsSent || 0) < 3)
+    .sort((a: InvestorLead, b: InvestorLead) => {
+      // Sort by emailsSent first, then by createdAt
+      const emailDiff = (a.emailsSent || 0) - (b.emailsSent || 0);
+      if (emailDiff !== 0) return emailDiff;
+      const aDate = a.createdAt instanceof Date ? a.createdAt : new Date(a.createdAt);
+      const bDate = b.createdAt instanceof Date ? b.createdAt : new Date(b.createdAt);
+      return aDate.getTime() - bDate.getTime();
+    })
+    .slice(0, limit);
+  
+  return leads;
 }
 
 // ============================================
