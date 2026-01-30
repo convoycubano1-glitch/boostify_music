@@ -5,6 +5,9 @@
 ## Descripción
 Boostify Music es una plataforma avanzada de música impulsada por IA que permite crear artistas virtuales con canciones generadas automáticamente usando FAL AI MiniMax, tokenización de música en blockchain, y herramientas de promoción para artistas.
 
+**🚀 NUEVO: Sistema Automatizado de Investor Outreach**
+Sistema inteligente de outreach a inversores en la industria musical con automatización completa via GitHub Actions.
+
 ## 🚀 Características Principales
 - **Generación de Artistas con IA**: Crea artistas virtuales completos con biografía, imágenes y canciones
 - **Música Generada por IA**: Canciones con voces reales usando FAL AI MiniMax Music V2
@@ -12,6 +15,35 @@ Boostify Music es una plataforma avanzada de música impulsada por IA que permit
 - **Perfiles de Artistas**: Páginas de perfil personalizables con múltiples secciones
 - **Sistema de Suscripciones**: Planes con Stripe para acceso a funciones premium
 - **Video Rendering**: Creación de videos musicales con Shotstack
+- **🎯 Investor Outreach Automation**: Sistema automatizado para contactar inversores musicales
+
+## 📊 Investor Outreach System
+
+### Estadísticas Actuales
+- **708 leads** en base de datos
+- **700 leads nuevos** listos para outreach
+- **8 emails enviados** exitosamente
+- **Sistema operativo** 24/7 con GitHub Actions
+
+### Características del Sistema
+- **Automatización completa**: Extrae leads automáticamente cuando faltan (< 100)
+- **Email templates profesionales**: Diseños atractivos con branding corporativo
+- **Base de datos Firebase**: Almacenamiento seguro y escalable
+- **Integración Apify**: Scraping desde Apollo, ZoomInfo, Lusha
+- **GitHub Actions**: Automatización diaria para mantener leads frescos
+- **Resend integration**: Servicio de email profesional
+
+### Comandos del Sistema
+```bash
+# Ver estadísticas
+npx tsx scripts/investor-outreach.ts stats
+
+# Enviar emails (máximo 50 por defecto)
+npx tsx scripts/investor-outreach.ts quick --force
+
+# Importar leads desde Apify
+npx tsx scripts/import-apify-leads.ts
+```
 
 ## 🛠 Tecnologías Principales
 - **Frontend**: React.js, TypeScript, Tailwind CSS, Radix UI
