@@ -269,8 +269,9 @@ const testimonials = [
   }
 ];
 
-const stats = [
-  { label: "Active Artists", value: 10000, icon: Users2 },
+// Default stats (will be replaced with dynamic values)
+const defaultStats = [
+  { label: "Active Artists", value: 7500, icon: Users2 },
   { label: "Music Videos Created", value: 50000, icon: Video },
   { label: "Tracks Promoted", value: 250000, icon: Music2 },
   { label: "Monthly Views", value: 15000000, icon: TrendingUp }
@@ -319,6 +320,26 @@ export default function HomePage() {
   const statsRef = useRef<HTMLDivElement>(null);
   const statsControls = useAnimation();
   const introVideoRef = useRef<HTMLVideoElement>(null);
+  
+  // Dynamic platform stats
+  const [stats, setStats] = useState(defaultStats);
+  
+  // Fetch dynamic stats from API
+  useEffect(() => {
+    fetch('/api/platform-stats')
+      .then(res => res.json())
+      .then(data => {
+        setStats([
+          { label: "Active Artists", value: data.activeArtists || 7500, icon: Users2 },
+          { label: "Music Videos Created", value: data.musicVideosCreated || 50000, icon: Video },
+          { label: "Tracks Promoted", value: data.tracksPromoted || 250000, icon: Music2 },
+          { label: "Monthly Views", value: data.monthlyViews || 15000000, icon: TrendingUp }
+        ]);
+      })
+      .catch(() => {
+        // Keep default stats on error
+      });
+  }, []);
 
   useEffect(() => {
     const viewInterval = setInterval(() => {

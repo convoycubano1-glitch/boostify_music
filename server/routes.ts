@@ -199,6 +199,44 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
     res.status(200).json({ status: 'ok' });
   });
 
+  // Platform stats for homepage (public endpoint - fetches from Supabase leads)
+  app.get('/api/platform-stats', async (req, res) => {
+    try {
+      const pg = await import('pg');
+      const { Client } = pg.default || pg;
+      const supabaseUrl = 'postgresql://postgres.twlflkphpowpvjvoyrae:Metafeed2024%40@aws-0-us-west-2.pooler.supabase.com:6543/postgres';
+      
+      const client = new Client({ connectionString: supabaseUrl });
+      await client.connect();
+      
+      // Get leads count from Supabase
+      const leadsResult = await client.query('SELECT COUNT(*) FROM leads');
+      const leadsCount = parseInt(leadsResult.rows[0].count) || 0;
+      
+      await client.end();
+      
+      // Get songs count from Neon (main app db)
+      const { songs } = await import('./db/schema');
+      const songsResult = await db.select().from(songs);
+      
+      res.json({
+        activeArtists: leadsCount, // Leads as potential artists
+        musicVideosCreated: songsResult.length * 3 + 50000, // Estimated
+        tracksPromoted: leadsCount * 35 + 250000, // Estimated
+        monthlyViews: leadsCount * 2000 + 15000000 // Estimated
+      });
+    } catch (error) {
+      console.error('Error fetching platform stats:', error);
+      // Fallback values
+      res.json({
+        activeArtists: 7500,
+        musicVideosCreated: 50000,
+        tracksPromoted: 250000,
+        monthlyViews: 15000000
+      });
+    }
+  });
+
   app.get('/api/status', (req, res) => {
     // Check database connection if needed
     const databaseStatus = db ? 'connected' : 'disconnected';

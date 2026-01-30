@@ -1,0 +1,254 @@
+/**
+ * 🚀 WARMUP SENDER - Multi-Campaign Version
+ * 
+ * Uso: 
+ *   node warmup-sender-v2.cjs INDUSTRY
+ *   node warmup-sender-v2.cjs ARTISTS_1
+ *   node warmup-sender-v2.cjs ARTISTS_2
+ *   node warmup-sender-v2.cjs ARTISTS_3
+ *   node warmup-sender-v2.cjs ARTISTS_4
+ * 
+ * Listar campañas: node -e "require('./scripts/campaigns/campaign-loader.cjs').list()"
+ */
+
+const { Pool } = require('pg');
+const OpenAI = require('openai');
+const { Resend } = require('resend');
+const loadCampaign = require('./campaigns/campaign-loader.cjs');
+
+// Obtener campaña desde argumentos
+const campaignArg = process.argv[2] || 'ARTISTS_1';
+const config = loadCampaign(campaignArg);
+
+// Conexiones con APIs de la campaña
+const pool = new Pool({
+  connectionString: config.supabase.connectionString,
+  ssl: { rejectUnauthorized: false }
+});
+
+const openai = new OpenAI({
+  apiKey: config.apis.openai
+});
+
+const resend = new Resend(config.apis.resend);
+
+// Configuración
+const PREVIEW_MODE = true;  // true = envía a convoycubano, false = envía al lead real
+const PREVIEW_EMAIL = 'convoycubano@gmail.com';
+
+// 🎲 SUBJECT TEMPLATES aleatorios
+const subjectTemplates = [
+  (lead) => `${lead.first_name}, been following ${lead.company_name || 'your work'} - wow`,
+  (lead) => `${lead.first_name}, finally reaching out`,
+  (lead) => `man ${lead.first_name}, what you're building is 🔥`,
+  (lead) => `${lead.first_name} - your approach is different`,
+  (lead) => `${lead.first_name}, huge fan of what you do`,
+  (lead) => `been meaning to reach out ${lead.first_name}`,
+  (lead) => `${lead.first_name} - respect what you're doing`,
+  (lead) => `${lead.first_name}, had to say something`,
+  (lead) => `${lead.first_name} - can't believe we haven't connected`,
+  (lead) => `what you've built ${lead.first_name} 🔥`,
+  (lead) => `${lead.first_name}, quick thought`,
+  (lead) => `${lead.first_name} - been watching your work`,
+  (lead) => `hey ${lead.first_name}, finally writing`,
+  (lead) => `${lead.first_name}, this is overdue`,
+  (lead) => `${lead.first_name} - huge respect`
+];
+
+async function generateBody(lead) {
+  const prompt = `
+You are writing a WARM, PERSONAL email to someone in the music industry.
+Sound like you've been following their work and genuinely ADMIRE what they do.
+
+Their info:
+- Name: ${lead.first_name} ${lead.last_name}
+- Role: ${lead.job_title || 'Music Professional'}
+- Company: ${lead.company_name || 'their company'}
+- Company Description: ${lead.company_description || 'N/A'}
+- Industry: ${lead.industry || 'Music'}
+- Location: ${lead.city || ''}, ${lead.state || ''}
+
+🎯 TONE: Like reaching out to someone you've admired from afar
+
+FLATTERY STRATEGY based on role:
+- IF ARTIST: Compliment their music, sound, artistic vision, growth
+- IF MANAGER/EXEC: Praise their business acumen, how they support artists
+- IF FOUNDER: Respect what they've built, their vision for the industry
+
+Write a SHORT email (3-4 sentences max) that:
+1. START with a genuine compliment - something specific about them or their company
+2. Make them feel RECOGNIZED and SPECIAL
+3. Show you understand their world and challenges
+4. Ask ONE casual question that invites conversation
+5. Sign off like you're already friends
+
+Rules:
+- NO HTML, just plain text
+- NO links
+- NO sales pitch ever
+- Under 60 words
+- Make them FEEL GOOD about themselves
+
+Sign as: Carlos
+
+Return ONLY the email body, no subject line.
+`;
+
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
+    max_tokens: 200,
+    temperature: 0.8
+  });
+
+  return completion.choices[0].message.content.trim();
+}
+
+async function sendWarmupEmails() {
+  console.log('\n' + '='.repeat(60));
+  console.log(`🚀 WARMUP SENDER - ${config.name}`);
+  console.log('='.repeat(60));
+  console.log(`📧 From: ${config.fromEmail}`);
+  console.log(`🌐 Dominio: ${config.domain}`);
+  console.log(`🔄 Mode: ${PREVIEW_MODE ? 'PREVIEW (a convoycubano)' : '🔴 PRODUCCIÓN'}`);
+  console.log('─'.repeat(60));
+
+  const client = await pool.connect();
+
+  try {
+    // 1. Verificar/crear config de warmup para este dominio
+    let configResult = await client.query(`
+      SELECT * FROM warmup_config WHERE domain = $1
+    `, [config.domain]);
+    
+    if (configResult.rows.length === 0) {
+      // Crear config para este dominio
+      await client.query(`
+        INSERT INTO warmup_config (domain, daily_limit, warmup_day, warmup_week)
+        VALUES ($1, $2, 1, 1)
+      `, [config.domain, config.warmup.currentLimit]);
+      
+      configResult = await client.query(`
+        SELECT * FROM warmup_config WHERE domain = $1
+      `, [config.domain]);
+    }
+
+    const warmupConfig = configResult.rows[0];
+    
+    // Reset contador si es nuevo día
+    const today = new Date().toISOString().split('T')[0];
+    if (warmupConfig.last_reset !== today) {
+      await client.query(`
+        UPDATE warmup_config 
+        SET sent_today = 0, last_reset = $1
+        WHERE domain = $2
+      `, [today, config.domain]);
+      warmupConfig.sent_today = 0;
+    }
+
+    const remaining = warmupConfig.daily_limit - warmupConfig.sent_today;
+    console.log(`\n📊 LÍMITE DIARIO (${config.domain}):`);
+    console.log(`   • Límite: ${warmupConfig.daily_limit}/día`);
+    console.log(`   • Enviados hoy: ${warmupConfig.sent_today}`);
+    console.log(`   • Disponibles: ${remaining}`);
+
+    if (remaining <= 0) {
+      console.log('\n⚠️  Límite diario alcanzado. Intenta mañana.');
+      return;
+    }
+
+    // 2. Obtener leads pendientes (filtrar por source/campaign si es necesario)
+    const leadsResult = await client.query(`
+      SELECT l.*, ls.warmup_stage, ls.id as status_id
+      FROM leads l
+      JOIN lead_status ls ON l.id = ls.lead_id
+      WHERE ls.status IN ('new', 'warming')
+        AND ls.warmup_stage < 3
+        AND (ls.next_email_at IS NULL OR ls.next_email_at <= NOW())
+      ORDER BY ls.warmup_stage ASC, l.created_at ASC
+      LIMIT $1
+    `, [remaining]);
+
+    if (leadsResult.rows.length === 0) {
+      console.log('\n✅ No hay leads pendientes de warmup');
+      return;
+    }
+
+    console.log(`\n📋 LEADS A CONTACTAR: ${leadsResult.rows.length}`);
+    console.log('─'.repeat(60));
+
+    // 3. Enviar emails
+    let sent = 0;
+    for (const lead of leadsResult.rows) {
+      const nextStage = lead.warmup_stage + 1;
+      const emailType = `warmup_${nextStage}`;
+
+      console.log(`\n📧 ${lead.first_name} ${lead.last_name} (${lead.company_name || 'N/A'})`);
+      console.log(`   Stage: ${nextStage}/3`);
+
+      // Generar subject aleatorio
+      const subjectFn = subjectTemplates[Math.floor(Math.random() * subjectTemplates.length)];
+      const subject = subjectFn(lead);
+      console.log(`   Subject: ${subject}`);
+
+      // Generar body con OpenAI
+      const body = await generateBody(lead);
+      console.log(`   Body: ${body.substring(0, 50)}...`);
+
+      // Enviar email
+      const toEmail = PREVIEW_MODE ? PREVIEW_EMAIL : lead.email;
+      
+      try {
+        const emailResult = await resend.emails.send({
+          from: `${config.fromName} <${config.fromEmail}>`,
+          to: toEmail,
+          subject: subject,
+          text: body
+        });
+
+        // Guardar en email_sends
+        await client.query(`
+          INSERT INTO email_sends (lead_id, resend_id, from_email, to_email, subject, body, email_type, status)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, 'sent')
+        `, [lead.id, emailResult.data?.id, config.fromEmail, toEmail, subject, body, emailType]);
+
+        // Actualizar lead_status
+        await client.query(`
+          UPDATE lead_status
+          SET status = 'warming',
+              warmup_stage = $1,
+              emails_sent = emails_sent + 1,
+              last_email_at = NOW(),
+              next_email_at = NOW() + INTERVAL '${config.warmup.daysBetweenEmails} days'
+          WHERE id = $2
+        `, [nextStage, lead.status_id]);
+
+        // Actualizar contador diario
+        await client.query(`
+          UPDATE warmup_config
+          SET sent_today = sent_today + 1
+          WHERE domain = $1
+        `, [config.domain]);
+
+        sent++;
+        console.log(`   ✅ Enviado a ${toEmail}`);
+
+      } catch (err) {
+        console.log(`   ❌ Error: ${err.message}`);
+      }
+    }
+
+    // Resumen final
+    console.log('\n' + '='.repeat(60));
+    console.log(`📊 RESUMEN - ${config.name}`);
+    console.log('='.repeat(60));
+    console.log(`✅ Emails enviados: ${sent}`);
+    console.log(`📧 Restantes hoy: ${remaining - sent}`);
+
+  } finally {
+    client.release();
+    await pool.end();
+  }
+}
+
+sendWarmupEmails();
