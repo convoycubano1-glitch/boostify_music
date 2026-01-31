@@ -1,7 +1,12 @@
 import { SignIn, SignUp, useUser } from '@clerk/clerk-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import { useLocation } from 'wouter';
-import { Loader2, Music } from 'lucide-react';
+import { Loader2, Music, Sparkles, Zap, Users, BarChart3 } from 'lucide-react';
+
+// Lazy load Remotion player to avoid SSR issues
+const AuthAnimationPlayer = lazy(() => 
+  import('@/components/remotion/AuthAnimationPlayer').then(mod => ({ default: mod.AuthAnimationPlayer }))
+);
 
 export default function AuthPage() {
   const { isSignedIn, isLoaded } = useUser();
@@ -85,8 +90,94 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex bg-black">
+      {/* Left Panel - Animation (hidden on mobile) */}
+      <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden">
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-600/20 via-black to-red-900/20" />
+        
+        {/* Animated grid pattern */}
+        <div 
+          className="absolute inset-0 opacity-10"
+          style={{
+            backgroundImage: `linear-gradient(rgba(249, 115, 22, 0.1) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(249, 115, 22, 0.1) 1px, transparent 1px)`,
+            backgroundSize: '50px 50px',
+          }}
+        />
+        
+        {/* Glowing orbs */}
+        <div className="absolute top-20 left-20 w-72 h-72 bg-orange-500/30 rounded-full blur-[100px] animate-pulse" />
+        <div className="absolute bottom-40 right-20 w-96 h-96 bg-red-600/20 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
+        
+        {/* Content */}
+        <div className="relative z-10 flex flex-col items-center justify-center w-full p-8">
+          {/* Remotion Animation */}
+          <Suspense fallback={
+            <div className="w-full max-w-2xl aspect-[4/3] bg-gray-900/50 rounded-2xl flex items-center justify-center border border-gray-800">
+              <div className="flex flex-col items-center gap-4">
+                <Loader2 className="w-10 h-10 animate-spin text-orange-500" />
+                <p className="text-gray-400">Loading animation...</p>
+              </div>
+            </div>
+          }>
+            <AuthAnimationPlayer 
+              width={560}
+              height={420}
+              autoPlay={true}
+              loop={true}
+              className="mb-8"
+            />
+          </Suspense>
+          
+          {/* Features highlights */}
+          <div className="grid grid-cols-2 gap-4 w-full max-w-lg mt-4">
+            <div className="flex items-center gap-3 bg-gray-900/50 backdrop-blur-sm border border-gray-800/50 rounded-xl px-4 py-3">
+              <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-orange-400" />
+              </div>
+              <div>
+                <p className="text-white font-medium text-sm">AI-Powered</p>
+                <p className="text-gray-500 text-xs">Smart music tools</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 bg-gray-900/50 backdrop-blur-sm border border-gray-800/50 rounded-xl px-4 py-3">
+              <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                <Zap className="w-5 h-5 text-green-400" />
+              </div>
+              <div>
+                <p className="text-white font-medium text-sm">Instant Setup</p>
+                <p className="text-gray-500 text-xs">Ready in 60 seconds</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 bg-gray-900/50 backdrop-blur-sm border border-gray-800/50 rounded-xl px-4 py-3">
+              <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                <Users className="w-5 h-5 text-purple-400" />
+              </div>
+              <div>
+                <p className="text-white font-medium text-sm">10K+ Artists</p>
+                <p className="text-gray-500 text-xs">Growing community</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 bg-gray-900/50 backdrop-blur-sm border border-gray-800/50 rounded-xl px-4 py-3">
+              <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-white font-medium text-sm">Analytics</p>
+                <p className="text-gray-500 text-xs">Track your growth</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Panel - Auth Form */}
+      <div className="w-full lg:w-1/2 xl:w-2/5 flex items-center justify-center p-6 lg:p-8">
+        <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-6">
           <div className="w-16 h-16 mx-auto bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-orange-500/30">
@@ -145,6 +236,7 @@ export default function AuthPage() {
         <p className="text-center text-gray-500 text-xs mt-5">
           Free forever • No credit card required
         </p>
+        </div>
       </div>
     </div>
   );
