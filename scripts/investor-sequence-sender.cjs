@@ -1,12 +1,15 @@
 /**
  * 💼 INVESTOR SEQUENCE SENDER
  * Envía emails HTML de la secuencia de 13+ templates para inversores/industria
- * Usa los templates de server/services/investor-outreach/email-templates.ts
+ * Usa Brevo (formerly Sendinblue) para emails del dominio boostifymusic.com
  */
 
 const { Pool } = require('pg');
-const { Resend } = require('resend');
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env.secrets') });
+
+// Brevo API configuration
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
+const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
 
 // Parse arguments
 const args = process.argv.slice(2).reduce((acc, arg) => {
@@ -27,10 +30,40 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Resend (dominio de industria)
-const resend = new Resend(process.env.RESEND_API_INDUSTRY);
+// Brevo email sender (dominio de industria)
 const FROM_EMAIL = 'investors@boostifymusic.com';
 const FROM_NAME = 'Neiver Alvarez';
+
+// Función para enviar email via Brevo
+async function sendBrevoEmail(to, subject, html, replyTo) {
+  try {
+    const response = await fetch(BREVO_API_URL, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { email: FROM_EMAIL, name: FROM_NAME },
+        to: [{ email: to }],
+        replyTo: replyTo ? { email: replyTo } : undefined,
+        subject,
+        htmlContent: html
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.messageId) {
+      return { data: { id: result.messageId }, error: null };
+    } else {
+      return { data: null, error: { message: result.message || JSON.stringify(result) } };
+    }
+  } catch (error) {
+    return { data: null, error: { message: error.message } };
+  }
+}
 
 // Template definitions
 const TEMPLATES = {
@@ -356,12 +389,7 @@ async function sendInvestorSequence() {
       try {
         const html = generateInvestorHTML(lead, template);
 
-        const result = await resend.emails.send({
-          from: `${FROM_NAME} <${FROM_EMAIL}>`,
-          to: [targetEmail],
-          subject: subject,
-          html: html
-        });
+        const result = await sendBrevoEmail(targetEmail, subject, html);
 
         if (result.error) {
           throw new Error(result.error.message);

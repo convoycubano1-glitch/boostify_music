@@ -3,6 +3,7 @@
  * 
  * Sends the 5-email sequence promoting BoostiSwap
  * "The artist collaboration network where you swap features"
+ * Uses Brevo (formerly Sendinblue) for boostifymusic.com domain
  * 
  * Usage:
  *   node boostiswap-sequence-sender.cjs --sequence=1 --max=50 --preview=true
@@ -10,10 +11,13 @@
  */
 
 const { Pool } = require('pg');
-const { Resend } = require('resend');
 
 // Load environment
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env.secrets') });
+
+// Brevo API configuration
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
+const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
 
 // Parse arguments
 const args = process.argv.slice(2).reduce((acc, arg) => {
@@ -33,13 +37,41 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Resend API
-const resend = new Resend(process.env.RESEND_API_INDUSTRY);
-
 // Configuration
 const FROM_EMAIL = 'alex@boostifymusic.com';
 const FROM_NAME = 'Alex from Boostify';
 const REPLY_TO = ['convoycubano@gmail.com', 'alex@boostifymusic.com'];
+
+// Función para enviar email via Brevo
+async function sendBrevoEmail(to, subject, html, replyTo) {
+  try {
+    const response = await fetch(BREVO_API_URL, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { email: FROM_EMAIL, name: FROM_NAME },
+        to: [{ email: to }],
+        replyTo: replyTo ? { email: Array.isArray(replyTo) ? replyTo[0] : replyTo } : undefined,
+        subject,
+        htmlContent: html
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.messageId) {
+      return { data: { id: result.messageId }, error: null };
+    } else {
+      return { data: null, error: { message: result.message || JSON.stringify(result) } };
+    }
+  } catch (error) {
+    return { data: null, error: { message: error.message } };
+  }
+}
 
 const URLS = {
   boostiswap: 'https://boostifymusic.com/boostiswap',
@@ -504,15 +536,14 @@ async function sendEmail(lead, template) {
   const toEmail = PREVIEW_MODE ? PREVIEW_EMAIL : lead.email;
   
   try {
-    const result = await resend.emails.send({
-      from: `${FROM_NAME} <${FROM_EMAIL}>`,
-      to: toEmail,
-      reply_to: REPLY_TO,
-      subject: PREVIEW_MODE ? `[PREVIEW] ${subject}` : subject,
-      html: html
-    });
+    const result = await sendBrevoEmail(
+      toEmail,
+      PREVIEW_MODE ? `[PREVIEW] ${subject}` : subject,
+      html,
+      REPLY_TO[0]
+    );
     
-    return { success: true, id: result.data?.id };
+    return { success: !result.error, id: result.data?.id };
   } catch (error) {
     console.error(`Error sending to ${toEmail}:`, error.message);
     return { success: false, error: error.message };

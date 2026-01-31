@@ -40,7 +40,7 @@ export default function AuthPage() {
     );
   }
 
-  // Clerk appearance config - Boostify theme (same as profile.tsx)
+  // Clerk appearance config - Boostify theme (optimized for mobile)
   const clerkAppearance = {
     variables: {
       colorPrimary: "#f97316",
@@ -52,36 +52,40 @@ export default function AuthPage() {
       borderRadius: "0.75rem",
     },
     elements: {
-      rootBox: "mx-auto w-full",
-      card: "bg-transparent shadow-none p-0 gap-4",
+      rootBox: "mx-auto w-full max-w-full",
+      card: "bg-transparent shadow-none p-0 gap-3 sm:gap-4 w-full max-w-full overflow-hidden",
       header: "hidden",
       headerTitle: "hidden",
       headerSubtitle: "hidden",
-      main: "gap-4",
-      form: "gap-4",
-      formFieldRow: "mb-3",
-      formFieldLabel: "text-gray-300 font-medium text-sm mb-1.5",
-      formFieldInput: "bg-gray-800/90 border border-gray-600 text-white placeholder:text-gray-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 rounded-xl h-12 px-4 transition-all",
+      main: "gap-3 sm:gap-4 w-full",
+      form: "gap-3 sm:gap-4 w-full",
+      formFieldRow: "mb-2 sm:mb-3 w-full",
+      formFieldLabel: "text-gray-300 font-medium text-xs sm:text-sm mb-1 sm:mb-1.5",
+      formFieldInput: "bg-gray-800/90 border border-gray-600 text-white placeholder:text-gray-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 rounded-lg sm:rounded-xl h-11 sm:h-12 px-3 sm:px-4 transition-all text-sm sm:text-base w-full",
       formFieldInputShowPasswordButton: "text-gray-400 hover:text-white transition-colors",
-      formButtonPrimary: "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold shadow-lg shadow-orange-500/30 rounded-xl h-12 text-base transition-all",
+      formButtonPrimary: "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold shadow-lg shadow-orange-500/30 rounded-lg sm:rounded-xl h-11 sm:h-12 text-sm sm:text-base transition-all w-full",
       footerAction: "hidden",
-      footerActionLink: "text-orange-400 hover:text-orange-300 font-medium",
-      socialButtons: "gap-3",
-      socialButtonsBlockButton: "bg-white border border-gray-200 text-gray-800 hover:bg-gray-100 hover:border-gray-300 rounded-xl h-12 transition-all gap-3 shadow-sm",
-      socialButtonsBlockButtonText: "text-gray-800 font-medium text-sm",
-      socialButtonsProviderIcon: "w-5 h-5",
+      footerActionLink: "text-orange-400 hover:text-orange-300 font-medium text-sm",
+      socialButtons: "gap-2 sm:gap-3 w-full flex flex-col",
+      socialButtonsBlockButton: "bg-white border border-gray-200 text-gray-800 hover:bg-gray-100 hover:border-gray-300 rounded-lg sm:rounded-xl h-11 sm:h-12 transition-all gap-2 sm:gap-3 shadow-sm w-full",
+      socialButtonsBlockButtonText: "text-gray-800 font-medium text-xs sm:text-sm",
+      socialButtonsProviderIcon: "w-4 h-4 sm:w-5 sm:h-5",
       socialButtonsBlockButtonArrow: "hidden",
-      dividerRow: "my-4",
+      dividerRow: "my-3 sm:my-4",
       dividerLine: "bg-gray-700",
-      dividerText: "text-gray-500 text-sm px-3",
-      identityPreview: "bg-gray-800/50 border border-gray-700 rounded-xl",
-      identityPreviewText: "text-white",
-      identityPreviewEditButton: "text-orange-400 hover:text-orange-300",
-      otpCodeFieldInput: "bg-gray-800 border-gray-600 text-white rounded-lg",
-      alert: "bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl",
-      alertText: "text-red-400",
+      dividerText: "text-gray-500 text-xs sm:text-sm px-2 sm:px-3",
+      identityPreview: "bg-gray-800/50 border border-gray-700 rounded-lg sm:rounded-xl p-3 w-full",
+      identityPreviewText: "text-white text-sm",
+      identityPreviewEditButton: "text-orange-400 hover:text-orange-300 text-sm",
+      otpCodeFieldInput: "bg-gray-800 border-gray-600 text-white rounded-lg h-11 sm:h-12",
+      alert: "bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg sm:rounded-xl p-3 text-sm",
+      alertText: "text-red-400 text-sm",
       footer: "hidden",
-      alternativeMethodsBlockButton: "bg-gray-800/50 border border-gray-700 text-gray-300 hover:bg-gray-700 rounded-xl",
+      alternativeMethodsBlockButton: "bg-gray-800/50 border border-gray-700 text-gray-300 hover:bg-gray-700 rounded-lg sm:rounded-xl h-11 sm:h-12 w-full",
+      // Mobile-specific overrides
+      formResendCodeLink: "text-orange-400 hover:text-orange-300 text-sm",
+      phoneInputBox: "w-full",
+      formFieldPhoneInput: "w-full",
     },
     layout: {
       socialButtonsPlacement: "top" as const,
@@ -176,24 +180,24 @@ export default function AuthPage() {
       </div>
 
       {/* Right Panel - Auth Form */}
-      <div className="w-full lg:w-1/2 xl:w-2/5 flex items-center justify-center p-6 lg:p-8">
-        <div className="w-full max-w-md">
+      <div className="w-full lg:w-1/2 xl:w-2/5 flex items-center justify-center p-4 sm:p-6 lg:p-8 min-h-screen overflow-y-auto">
+        <div className="w-full max-w-[340px] sm:max-w-md mx-auto">
         {/* Logo */}
-        <div className="text-center mb-6">
-          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-orange-500/30">
-            <Music className="w-8 h-8 text-white" />
+        <div className="text-center mb-5 sm:mb-6">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto bg-gradient-to-br from-orange-500 to-red-600 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg shadow-orange-500/30">
+            <Music className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Boostify Music</h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-white">Boostify Music</h1>
+          <p className="text-gray-400 text-xs sm:text-sm mt-1">
             {activeTab === 'signin' ? 'Welcome back' : 'Create your account'}
           </p>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex bg-gray-800/50 rounded-xl p-1 mb-6">
+        <div className="flex bg-gray-800/50 rounded-lg sm:rounded-xl p-1 mb-5 sm:mb-6">
           <button
             onClick={() => setActiveTab('signin')}
-            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
+            className={`flex-1 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md sm:rounded-lg transition-all ${
               activeTab === 'signin'
                 ? 'bg-orange-500 text-white shadow'
                 : 'text-gray-400 hover:text-white'
@@ -203,7 +207,7 @@ export default function AuthPage() {
           </button>
           <button
             onClick={() => setActiveTab('signup')}
-            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
+            className={`flex-1 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md sm:rounded-lg transition-all ${
               activeTab === 'signup'
                 ? 'bg-orange-500 text-white shadow'
                 : 'text-gray-400 hover:text-white'
@@ -214,7 +218,7 @@ export default function AuthPage() {
         </div>
 
         {/* Auth Forms */}
-        <div className="bg-gradient-to-b from-gray-900/95 to-gray-900/80 border border-gray-700/50 rounded-2xl p-6 backdrop-blur-xl shadow-2xl shadow-black/50">
+        <div className="bg-gradient-to-b from-gray-900/95 to-gray-900/80 border border-gray-700/50 rounded-xl sm:rounded-2xl p-4 sm:p-6 backdrop-blur-xl shadow-2xl shadow-black/50 overflow-hidden">
           {activeTab === 'signin' ? (
             <SignIn 
               appearance={clerkAppearance}
@@ -233,7 +237,7 @@ export default function AuthPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-gray-500 text-xs mt-5">
+        <p className="text-center text-gray-500 text-[10px] sm:text-xs mt-4 sm:mt-5">
           Free forever • No credit card required
         </p>
         </div>

@@ -7,16 +7,50 @@
  * - Trading de tokens de artistas
  * 
  * Estilo: Mismo diseño premium de Music Video Creator v2
+ * Uses Brevo (formerly Sendinblue) for boostifymusic.com domain
  */
 
-const { Resend } = require('resend');
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env.secrets') });
 
-const resend = new Resend(process.env.RESEND_API_INDUSTRY);
+// Brevo API configuration
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
+const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
+
 const TO_EMAIL = 'convoycubano@gmail.com';
 const FROM_EMAIL = 'alex@boostifymusic.com';
 const FROM_NAME = 'Alex from Boostify';
 const REPLY_TO = ['convoycubano@gmail.com', 'alex@boostifymusic.com'];
+
+// Función para enviar email via Brevo
+async function sendBrevoEmail(to, subject, html) {
+  try {
+    const response = await fetch(BREVO_API_URL, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { email: FROM_EMAIL, name: FROM_NAME },
+        to: [{ email: to }],
+        replyTo: { email: REPLY_TO[0] },
+        subject,
+        htmlContent: html
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.messageId) {
+      return { data: { id: result.messageId }, error: null };
+    } else {
+      return { data: null, error: { message: result.message || JSON.stringify(result) } };
+    }
+  } catch (error) {
+    return { data: null, error: { message: error.message } };
+  }
+}
 
 const URLS = {
   boostiswap: 'https://boostifymusic.com/boostiswap',
@@ -713,13 +747,11 @@ async function sendAllPreviews() {
     console.log(`\n📧 Sending Email ${i+1}/5: ${email.subject.substring(0, 45)}...`);
 
     try {
-      const result = await resend.emails.send({
-        from: `${FROM_NAME} <${FROM_EMAIL}>`,
-        to: TO_EMAIL,
-        reply_to: REPLY_TO,
-        subject: `[PREVIEW ${i+1}/5] ${email.subject}`,
-        html: email.html('Artist')
-      });
+      const result = await sendBrevoEmail(
+        TO_EMAIL,
+        `[PREVIEW ${i+1}/5] ${email.subject}`,
+        email.html('Artist')
+      );
 
       console.log(`   ✅ Sent! ID: ${result.data?.id}`);
 

@@ -76,7 +76,7 @@ jobs:
             --preview=${{ github.event.inputs.preview_mode || 'false' }}
         env:
           SUPABASE_CONNECTION_STRING: ${{ secrets.SUPABASE_CONNECTION_STRING }}
-          RESEND_API_INDUSTRY: ${{ secrets.RESEND_API_INDUSTRY }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           PREVIEW_MODE: ${{ github.event.inputs.preview_mode || 'false' }}
 
       - name: ✅ Sequence Complete

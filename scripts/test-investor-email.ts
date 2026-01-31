@@ -2,18 +2,19 @@
 /**
  * Test Investor Email Script
  * Sends test emails to verify templates before going live
+ * Using Brevo for info@boostifymusic.com
  */
 
 import 'dotenv/config';
-import { Resend } from 'resend';
 import { generatePersonalizedEmail } from '../server/services/investor-outreach/email-templates';
 import { InvestorLead } from '../server/services/investor-outreach/types';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
 
 // Test recipient
 const TEST_EMAIL = 'convoycubano@gmail.com';
-const FROM_EMAIL = 'Boostify Music <info@boostifymusic.com>';
+const FROM_EMAIL = 'info@boostifymusic.com';
+const FROM_NAME = 'Boostify Music';
 
 // Sample lead for testing
 const testLead: InvestorLead = {
@@ -52,22 +53,28 @@ async function sendTestEmail(templateId: string): Promise<void> {
   const { subject, html, text } = generatePersonalizedEmail(testLead, templateId);
   
   try {
-    const response = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: TEST_EMAIL,
-      subject: `[TEST] ${subject}`,
-      html,
-      text,
-      tags: [
-        { name: 'type', value: 'test' },
-        { name: 'template', value: templateId },
-      ],
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { email: FROM_EMAIL, name: FROM_NAME },
+        to: [{ email: TEST_EMAIL }],
+        subject: `[TEST] ${subject}`,
+        htmlContent: html,
+        textContent: text
+      })
     });
 
-    if (response.error) {
-      console.error(`❌ Error: ${response.error.message}`);
+    const result = await response.json();
+
+    if (result.messageId) {
+      console.log(`✅ Sent! Message ID: ${result.messageId}`);
     } else {
-      console.log(`✅ Sent! Message ID: ${response.data?.id}`);
+      console.error(`❌ Error:`, result);
     }
   } catch (error: any) {
     console.error(`❌ Failed: ${error.message}`);
@@ -83,8 +90,8 @@ async function main(): Promise<void> {
   console.log(`📋 Templates: ${TEMPLATES.length}`);
   
   // Check API key
-  if (!process.env.RESEND_API_KEY) {
-    console.error('\n❌ RESEND_API_KEY not found in .env');
+  if (!BREVO_API_KEY) {
+    console.error('\n❌ BREVO_API_KEY not found in .env');
     process.exit(1);
   }
   

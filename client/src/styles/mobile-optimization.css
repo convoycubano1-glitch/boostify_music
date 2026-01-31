@@ -175,3 +175,142 @@
     overflow: hidden;
   }
 }
+
+/* ===== CLERK AUTH MOBILE OPTIMIZATIONS ===== */
+
+/* Ensure Clerk components don't overflow on mobile */
+@media (max-width: 640px) {
+  /* Root container */
+  .cl-rootBox {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  /* Card container */
+  .cl-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+  
+  /* Form elements */
+  .cl-form {
+    width: 100% !important;
+  }
+  
+  .cl-formFieldRow {
+    width: 100% !important;
+  }
+  
+  .cl-formFieldInput {
+    width: 100% !important;
+    font-size: 16px !important; /* Prevent iOS zoom on input focus */
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Buttons */
+  .cl-formButtonPrimary,
+  .cl-socialButtonsBlockButton {
+    width: 100% !important;
+    min-height: 44px !important; /* Touch-friendly */
+    font-size: 14px !important;
+  }
+  
+  /* Social buttons container */
+  .cl-socialButtons {
+    width: 100% !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  
+  /* Identity preview (verification screen) */
+  .cl-identityPreview {
+    width: 100% !important;
+    word-break: break-all !important;
+    overflow-wrap: break-word !important;
+  }
+  
+  .cl-identityPreviewText {
+    font-size: 14px !important;
+    word-break: break-all !important;
+  }
+  
+  /* OTP input fields */
+  .cl-otpCodeField {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  
+  .cl-otpCodeFieldInput {
+    width: 40px !important;
+    height: 48px !important;
+    font-size: 18px !important;
+  }
+  
+  /* Alternative methods */
+  .cl-alternativeMethodsBlockButton {
+    width: 100% !important;
+    min-height: 44px !important;
+  }
+  
+  /* Footer actions */
+  .cl-footerAction {
+    flex-direction: column !important;
+    text-align: center !important;
+    gap: 4px !important;
+  }
+  
+  /* Alert messages */
+  .cl-alert {
+    width: 100% !important;
+    word-break: break-word !important;
+  }
+  
+  /* Main content area */
+  .cl-main {
+    width: 100% !important;
+    padding: 0 !important;
+  }
+  
+  /* Header */
+  .cl-header {
+    padding: 0 !important;
+  }
+  
+  /* Divider */
+  .cl-dividerRow {
+    width: 100% !important;
+  }
+  
+  /* Phone input (if used) */
+  .cl-phoneInputBox {
+    width: 100% !important;
+  }
+  
+  .cl-formFieldPhoneInput {
+    width: 100% !important;
+  }
+}
+
+/* Prevent iOS zoom on input focus */
+@media screen and (max-width: 640px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="tel"],
+  input[type="number"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Safe area insets for auth page */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .auth-container-mobile {
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-top: env(safe-area-inset-top);
+  }
+}

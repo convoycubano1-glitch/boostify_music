@@ -39,7 +39,7 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       SUPABASE_CONNECTION_STRING: ${{ secrets.SUPABASE_CONNECTION_STRING }}
-      RESEND_API_INDUSTRY: ${{ secrets.RESEND_API_INDUSTRY }}
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
       RESEND_API_ARTISTS_1: ${{ secrets.RESEND_API_ARTISTS_1 }}
       RESEND_API_ARTISTS_2: ${{ secrets.RESEND_API_ARTISTS_2 }}
       RESEND_API_ARTISTS_3: ${{ secrets.RESEND_API_ARTISTS_3 }}

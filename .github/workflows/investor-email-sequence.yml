@@ -56,7 +56,7 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       SUPABASE_CONNECTION_STRING: ${{ secrets.SUPABASE_CONNECTION_STRING }}
-      RESEND_API_INDUSTRY: ${{ secrets.RESEND_API_INDUSTRY }}
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
       APIFY_API_INDUSTRY: ${{ secrets.APIFY_API_INDUSTRY }}
     
     steps:

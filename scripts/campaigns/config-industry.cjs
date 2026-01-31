@@ -3,6 +3,7 @@
  * Dominio: boostifymusic.com
  * Target: Industry professionals (managers, A&R, labels, venues)
  * Limit: 100 emails/dia (cuando este calentado)
+ * Using Brevo for info@boostifymusic.com
  */
 
 const secrets = require('./secrets.cjs');
@@ -13,16 +14,16 @@ module.exports = {
   name: 'MUSIC INDUSTRY',
   domain: 'boostifymusic.com',
   
-  // Email
+  // Email (using Brevo)
   fromEmail: 'info@boostifymusic.com',
   fromName: 'Alex from Boostify',
-  resendEmail: 'convoycubano1@gmail.com',
+  emailProvider: 'brevo',
   
   // APIs (desde variables de entorno)
   apis: {
     apify: secrets.apify.INDUSTRY,
     apifyActor: 'code_crafter/leads-finder',
-    resend: secrets.resend.INDUSTRY,
+    brevo: secrets.brevo?.INDUSTRY || process.env.BREVO_API_KEY,
     openai: secrets.openai
   },
   

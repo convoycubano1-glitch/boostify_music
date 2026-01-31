@@ -1,17 +1,51 @@
 /**
  * Investor Outreach Email Sender
- * Uses Resend for email delivery with tracking
+ * Uses Brevo for email delivery with tracking
  */
 
-import { Resend } from 'resend';
 import { InvestorLead, EmailSendResult, OutreachConfig } from './types';
 import { generatePersonalizedEmail, selectBestTemplate } from './email-templates';
 import { db, FieldValue } from '../../firebase';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Brevo API configuration
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
+const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
 
-const FROM_EMAIL = 'Boostify Music <investors@boostifymusic.com>';
+const FROM_EMAIL = 'investors@boostifymusic.com';
+const FROM_NAME = 'Boostify Music';
 const REPLY_TO = 'hello@boostifymusic.com';
+
+// Helper function to send email via Brevo
+async function sendBrevoEmail(to: string, subject: string, htmlContent: string, textContent?: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  try {
+    const response = await fetch(BREVO_API_URL, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { email: FROM_EMAIL, name: FROM_NAME },
+        to: [{ email: to }],
+        replyTo: { email: REPLY_TO },
+        subject,
+        htmlContent,
+        textContent
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.messageId) {
+      return { success: true, messageId: result.messageId };
+    } else {
+      return { success: false, error: result.message || JSON.stringify(result) };
+    }
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
 
 // Default outreach configuration
 const DEFAULT_CONFIG: OutreachConfig = {
@@ -48,23 +82,11 @@ export async function sendInvestorEmail(
     // Generate personalized email
     const { subject, html, text } = generatePersonalizedEmail(lead, template);
 
-    // Send via Resend
-    const response = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: lead.email,
-      replyTo: REPLY_TO,
-      subject,
-      html,
-      text,
-      tags: [
-        { name: 'campaign', value: 'investor_outreach' },
-        { name: 'template', value: template },
-        { name: 'lead_id', value: lead.id },
-      ],
-    });
+    // Send via Brevo
+    const response = await sendBrevoEmail(lead.email, subject, html, text);
 
-    if (response.error) {
-      throw new Error(response.error.message);
+    if (!response.success) {
+      throw new Error(response.error || 'Unknown Brevo error');
     }
 
     // Update lead status in database
@@ -76,7 +98,7 @@ export async function sendInvestorEmail(
       success: true,
       leadId: lead.id,
       email: lead.email,
-      messageId: response.data?.id,
+      messageId: response.messageId,
       sentAt: new Date(),
     };
   } catch (error: any) {

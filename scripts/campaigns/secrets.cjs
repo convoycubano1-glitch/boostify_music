@@ -19,9 +19,12 @@ const secrets = {
   // Supabase
   supabase: process.env.SUPABASE_CONNECTION_STRING || 'postgresql://postgres.twlflkphpowpvjvoyrae:Metafeed2024%40@aws-0-us-west-2.pooler.supabase.com:6543/postgres',
   
-  // Resend APIs por campaña
+  // Brevo API (para boostifymusic.com - reemplaza RESEND_API_INDUSTRY)
+  brevo: process.env.BREVO_API_KEY || '',
+  
+  // Resend APIs por campaña (para otros dominios como boostifymusic.site)
   resend: {
-    INDUSTRY: process.env.RESEND_API_INDUSTRY || '',
+    INDUSTRY: process.env.BREVO_API_KEY || '', // Ahora usa Brevo
     ARTISTS_1: process.env.RESEND_API_ARTISTS_1 || '',
     ARTISTS_2: process.env.RESEND_API_ARTISTS_2 || '',
     ARTISTS_3: process.env.RESEND_API_ARTISTS_3 || '',
