@@ -177,13 +177,21 @@ async function sendWarmupEmails() {
     console.log(`\n📋 LEADS A CONTACTAR: ${leadsResult.rows.length}`);
     console.log('─'.repeat(60));
 
-    // 3. Enviar emails
+    // Función para delay aleatorio (simula comportamiento humano)
+    const randomDelay = (min, max) => {
+      const ms = Math.floor(Math.random() * (max - min + 1) + min) * 1000;
+      console.log(`   ⏱️ Esperando ${Math.round(ms/1000)}s antes del siguiente email...`);
+      return new Promise(resolve => setTimeout(resolve, ms));
+    };
+
+    // 3. Enviar emails con delays aleatorios
     let sent = 0;
-    for (const lead of leadsResult.rows) {
+    for (let i = 0; i < leadsResult.rows.length; i++) {
+      const lead = leadsResult.rows[i];
       const nextStage = lead.warmup_stage + 1;
       const emailType = `warmup_${nextStage}`;
 
-      console.log(`\n📧 ${lead.first_name} ${lead.last_name} (${lead.company_name || 'N/A'})`);
+      console.log(`\n📧 [${i+1}/${leadsResult.rows.length}] ${lead.first_name} ${lead.last_name} (${lead.company_name || 'N/A'})`);
       console.log(`   Stage: ${nextStage}/3`);
 
       // Generar subject aleatorio
@@ -233,8 +241,17 @@ async function sendWarmupEmails() {
         sent++;
         console.log(`   ✅ Enviado a ${toEmail}`);
 
+        // Delay aleatorio entre emails (30-90 segundos) para parecer humano
+        if (i < leadsResult.rows.length - 1) {
+          await randomDelay(30, 90);
+        }
+
       } catch (err) {
         console.log(`   ❌ Error: ${err.message}`);
+        // Delay más corto en caso de error
+        if (i < leadsResult.rows.length - 1) {
+          await randomDelay(5, 15);
+        }
       }
     }
 
