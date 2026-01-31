@@ -21,10 +21,13 @@ const openai = new OpenAI({
 
 const resend = new Resend(process.env.RESEND_API_INDUSTRY);
 
-// Configuración
+// Configuración - PREVIEW_MODE controlado por variable de entorno o argumento
+// Por defecto FALSE para producción real
 const FROM_EMAIL = 'carlos@boostifymusic.site';
-const PREVIEW_MODE = true;  // true = envía a convoycubano, false = envía al lead real
-const PREVIEW_EMAIL = 'convoycubano@gmail.com';
+const PREVIEW_MODE = process.env.PREVIEW_MODE === 'true' || process.argv.includes('--preview');
+const PREVIEW_EMAIL = process.env.PREVIEW_EMAIL || 'convoycubano@gmail.com';
+
+console.log(`\n🔧 MODO: ${PREVIEW_MODE ? '⚠️ PREVIEW (emails a ' + PREVIEW_EMAIL + ')' : '✅ PRODUCCIÓN (emails reales)'}`);
 
 // 🎲 SUBJECT TEMPLATES aleatorios
 const subjectTemplates = [
@@ -191,6 +194,7 @@ async function sendWarmupEmails() {
         const emailResult = await resend.emails.send({
           from: `Carlos <${FROM_EMAIL}>`,
           to: toEmail,
+          reply_to: ['convoycubano@gmail.com', FROM_EMAIL], // 📬 Respuestas a Gmail + copia en Resend
           subject: subject,
           text: body
         });

@@ -97,6 +97,8 @@ jobs:
 
     - name: 🚀 Send warmup emails - INDUSTRY
       if: ${{ needs.select-campaign.outputs.campaign == 'ALL' || needs.select-campaign.outputs.campaign == 'INDUSTRY' }}
+      env:
+        PREVIEW_MODE: ${{ github.event.inputs.preview_mode || 'false' }}
       run: |
         echo "📧 Ejecutando campaña INDUSTRY (boostifymusic.com)..."
         node scripts/warmup-sender-v2.cjs INDUSTRY
@@ -104,6 +106,8 @@ jobs:
 
     - name: 🎤 Send warmup emails - ARTISTS_1
       if: ${{ needs.select-campaign.outputs.campaign == 'ALL' || needs.select-campaign.outputs.campaign == 'ARTISTS_1' }}
+      env:
+        PREVIEW_MODE: ${{ github.event.inputs.preview_mode || 'false' }}
       run: |
         echo "📧 Ejecutando campaña ARTISTS_1 (boostifymusic.site)..."
         node scripts/warmup-sender-v2.cjs ARTISTS_1
@@ -111,6 +115,8 @@ jobs:
 
     - name: 🎧 Send warmup emails - ARTISTS_2
       if: ${{ needs.select-campaign.outputs.campaign == 'ALL' || needs.select-campaign.outputs.campaign == 'ARTISTS_2' }}
+      env:
+        PREVIEW_MODE: ${{ github.event.inputs.preview_mode || 'false' }}
       run: |
         echo "📧 Ejecutando campaña ARTISTS_2 (boostifymusic.space)..."
         node scripts/warmup-sender-v2.cjs ARTISTS_2
@@ -118,6 +124,8 @@ jobs:
 
     - name: 🎵 Send warmup emails - ARTISTS_3
       if: ${{ needs.select-campaign.outputs.campaign == 'ALL' || needs.select-campaign.outputs.campaign == 'ARTISTS_3' }}
+      env:
+        PREVIEW_MODE: ${{ github.event.inputs.preview_mode || 'false' }}
       run: |
         echo "📧 Ejecutando campaña ARTISTS_3 (boostifymusic.sbs)..."
         node scripts/warmup-sender-v2.cjs ARTISTS_3
@@ -125,6 +133,8 @@ jobs:
 
     - name: 🎹 Send warmup emails - ARTISTS_4
       if: ${{ needs.select-campaign.outputs.campaign == 'ALL' || needs.select-campaign.outputs.campaign == 'ARTISTS_4' }}
+      env:
+        PREVIEW_MODE: ${{ github.event.inputs.preview_mode || 'false' }}
       run: |
         echo "📧 Ejecutando campaña ARTISTS_4 (boostifymusic.online)..."
         node scripts/warmup-sender-v2.cjs ARTISTS_4
