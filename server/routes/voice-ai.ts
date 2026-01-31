@@ -1,0 +1,327 @@
+/**
+ * Voice AI Routes - API para clonación y transformación de voz
+ * 
+ * Endpoints:
+ * POST /api/voice-ai/clone - Clonar voz desde audio
+ * POST /api/voice-ai/tts - Text-to-Speech con voz clonada
+ * POST /api/voice-ai/change-voice - Cambiar voz en audio existente
+ * POST /api/voice-ai/separate - Separar vocals/instrumental
+ * POST /api/voice-ai/enhance - Mejorar calidad de audio
+ * POST /api/voice-ai/create-song - Workflow completo: canción con tu voz
+ * POST /api/voice-ai/design-voice - Crear voz desde descripción
+ */
+
+import express, { Router, Request, Response } from 'express';
+import multer from 'multer';
+import { logger } from '../utils/logger';
+import VoiceAIService from '../services/voice-ai-service';
+
+const router: Router = express.Router();
+
+// Configurar multer para subida de archivos de audio
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB máximo
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = ['audio/wav', 'audio/mp3', 'audio/mpeg', 'audio/ogg', 'audio/webm', 'audio/m4a'];
+    if (allowedMimes.includes(file.mimetype) || file.mimetype.startsWith('audio/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Solo se permiten archivos de audio'));
+    }
+  },
+});
+
+/**
+ * POST /api/voice-ai/clone
+ * Clona la voz del usuario desde un audio de referencia
+ * 
+ * Body: { audioUrl: string, voiceName?: string }
+ * O File upload: audio file + voiceName en body
+ */
+router.post('/clone', upload.single('audio'), async (req: Request, res: Response) => {
+  try {
+    logger.info('[VoiceAI API] POST /clone');
+    
+    let audioUrl = req.body.audioUrl;
+    const voiceName = req.body.voiceName || 'my_voice';
+    
+    // Si se subió un archivo, primero lo guardamos
+    if (req.file) {
+      logger.info(`[VoiceAI API] Archivo recibido: ${req.file.originalname} (${req.file.size} bytes)`);
+      audioUrl = await VoiceAIService.uploadAudioToStorage(
+        req.file.buffer,
+        req.file.mimetype,
+        'voice-samples'
+      );
+    }
+    
+    if (!audioUrl) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere audioUrl o archivo de audio',
+      });
+    }
+    
+    const result = await VoiceAIService.cloneVoice(audioUrl, voiceName);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error: any) {
+    logger.error('[VoiceAI API] Error en /clone:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/voice-ai/tts
+ * Text-to-Speech con voz clonada
+ * 
+ * Body: { text: string, voiceId: string, speed?: number, emotion?: string }
+ */
+router.post('/tts', async (req: Request, res: Response) => {
+  try {
+    logger.info('[VoiceAI API] POST /tts');
+    
+    const { text, voiceId, speed, emotion } = req.body;
+    
+    if (!text || !voiceId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere text y voiceId',
+      });
+    }
+    
+    const result = await VoiceAIService.textToSpeechWithVoice(text, voiceId, {
+      speed,
+      emotion,
+    });
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error: any) {
+    logger.error('[VoiceAI API] Error en /tts:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/voice-ai/change-voice
+ * Cambia la voz en un audio existente
+ * 
+ * Body: { audioUrl: string, targetVoiceId: string }
+ * O File upload: audio file + targetVoiceId en body
+ */
+router.post('/change-voice', upload.single('audio'), async (req: Request, res: Response) => {
+  try {
+    logger.info('[VoiceAI API] POST /change-voice');
+    
+    let audioUrl = req.body.audioUrl;
+    const targetVoiceId = req.body.targetVoiceId;
+    
+    // Si se subió un archivo, primero lo guardamos
+    if (req.file) {
+      audioUrl = await VoiceAIService.uploadAudioToStorage(
+        req.file.buffer,
+        req.file.mimetype,
+        'songs-to-convert'
+      );
+    }
+    
+    if (!audioUrl || !targetVoiceId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere audioUrl y targetVoiceId',
+      });
+    }
+    
+    const result = await VoiceAIService.changeVoice(audioUrl, targetVoiceId);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error: any) {
+    logger.error('[VoiceAI API] Error en /change-voice:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/voice-ai/separate
+ * Separa vocals e instrumental de un audio
+ * 
+ * Body: { audioUrl: string, target?: string }
+ */
+router.post('/separate', async (req: Request, res: Response) => {
+  try {
+    logger.info('[VoiceAI API] POST /separate');
+    
+    const { audioUrl, target = 'vocals' } = req.body;
+    
+    if (!audioUrl) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere audioUrl',
+      });
+    }
+    
+    const result = await VoiceAIService.separateAudio(audioUrl, target);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error: any) {
+    logger.error('[VoiceAI API] Error en /separate:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/voice-ai/enhance
+ * Mejora la calidad del audio
+ * 
+ * Body: { audioUrl: string }
+ */
+router.post('/enhance', async (req: Request, res: Response) => {
+  try {
+    logger.info('[VoiceAI API] POST /enhance');
+    
+    const { audioUrl } = req.body;
+    
+    if (!audioUrl) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere audioUrl',
+      });
+    }
+    
+    const result = await VoiceAIService.enhanceAudio(audioUrl);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error: any) {
+    logger.error('[VoiceAI API] Error en /enhance:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/voice-ai/create-song
+ * Workflow completo: Crear canción con la voz del usuario
+ * 
+ * Body: { songUrl: string, userVoiceId: string }
+ */
+router.post('/create-song', async (req: Request, res: Response) => {
+  try {
+    logger.info('[VoiceAI API] POST /create-song');
+    
+    const { songUrl, userVoiceId } = req.body;
+    
+    if (!songUrl || !userVoiceId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere songUrl y userVoiceId',
+      });
+    }
+    
+    const result = await VoiceAIService.createSongWithUserVoice(songUrl, userVoiceId);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error: any) {
+    logger.error('[VoiceAI API] Error en /create-song:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/voice-ai/design-voice
+ * Crea una voz personalizada desde descripción de texto
+ * 
+ * Body: { description: string }
+ */
+router.post('/design-voice', async (req: Request, res: Response) => {
+  try {
+    logger.info('[VoiceAI API] POST /design-voice');
+    
+    const { description } = req.body;
+    
+    if (!description) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere description',
+      });
+    }
+    
+    const result = await VoiceAIService.designVoice(description);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error: any) {
+    logger.error('[VoiceAI API] Error en /design-voice:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/voice-ai/models
+ * Lista los modelos de Voice AI disponibles
+ */
+router.get('/models', (req: Request, res: Response) => {
+  res.json({
+    success: true,
+    models: VoiceAIService.VOICE_AI_MODELS,
+    features: [
+      { id: 'clone', name: 'Clonar Voz', description: 'Clona tu voz desde un audio de 30 segundos' },
+      { id: 'tts', name: 'Text-to-Speech', description: 'Genera audio con tu voz clonada' },
+      { id: 'change', name: 'Voice Changer', description: 'Cambia la voz en cualquier canción' },
+      { id: 'separate', name: 'Separar Audio', description: 'Extrae vocals o instrumental' },
+      { id: 'enhance', name: 'Mejorar Audio', description: 'Mejora la calidad del audio a 48kHz' },
+    ],
+  });
+});
+
+export default router;

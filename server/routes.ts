@@ -112,6 +112,7 @@ import socialMediaRouter from './routes/social-media'; // Import Social Media Co
 import { seedTokenizedSongs } from './seed-tokenized-songs'; // Import seed function
 import educationGeminiRouter from './routes/education-gemini'; // Import Education Gemini AI router for course generation
 import renderQueueRouter from './routes/render-queue'; // Import Render Queue for video pipeline processing
+import voiceAiRouter from './routes/voice-ai'; // Import Voice AI router for voice cloning and transformation
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -342,6 +343,9 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   
   // Registrar el router para generación de música (requiere autenticación parcial)
   app.use('/api/music', musicRouter);
+  
+  // Registrar el router para Voice AI (clonación y transformación de voz)
+  app.use('/api/voice-ai', voiceAiRouter);
   
   // Registrar el router para Flux API (generación de imágenes avanzada)
   app.use('/api', fluxApiRouter);

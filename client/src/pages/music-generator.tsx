@@ -57,7 +57,10 @@ import {
   Zap,
   Star,
   Sparkles,
+  Mic,
 } from "lucide-react";
+
+import { VoiceAIStudio } from "../components/music/voice-ai-studio";
 
 /**
  * Main page of the AI Music Generator
@@ -612,9 +615,12 @@ export default function MusicGeneratorPage() {
           
           {/* Generator Tabs */}
           <Tabs defaultValue="generator" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsList className="grid w-full grid-cols-3 mb-4">
               <TabsTrigger value="generator" className="flex items-center gap-2">
                 <MusicIcon className="h-4 w-4" /> Generate Music
+              </TabsTrigger>
+              <TabsTrigger value="voice-ai" className="flex items-center gap-2">
+                <Mic className="h-4 w-4" /> Voice AI
               </TabsTrigger>
               <TabsTrigger value="history" className="flex items-center gap-2">
                 <History className="h-4 w-4" /> History
@@ -678,6 +684,11 @@ export default function MusicGeneratorPage() {
                   </Alert>
                 )}
               </div>
+            </TabsContent>
+            
+            {/* Voice AI Tab */}
+            <TabsContent value="voice-ai" className="space-y-6">
+              <VoiceAIStudio recentGenerations={recentGenerations} />
             </TabsContent>
             
             {/* History Tab */}
