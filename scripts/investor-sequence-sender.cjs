@@ -303,21 +303,22 @@ async function sendInvestorSequence() {
   const client = await pool.connect();
 
   try {
-    // Get investor leads
+    // Get investor/industry leads - buscar en múltiples fuentes
     let query = `
-      SELECT l.*, ls.current_sequence, ls.id as status_id
+      SELECT l.*, ls.warmup_stage, ls.emails_sent, ls.id as status_id
       FROM leads l
       LEFT JOIN lead_status ls ON l.id = ls.lead_id
-      WHERE l.source IN ('linkedin_scrape', 'investor_list', 'industry_contact', 'apify_leads')
+      WHERE l.industry IS NOT NULL 
+        OR l.source IN ('linkedin_scrape', 'investor_list', 'industry_contact', 'apify_leads', 'csv_import')
     `;
 
     if (TARGET_SEGMENT !== 'all') {
-      query += ` AND l.investor_type = '${TARGET_SEGMENT}'`;
+      query += ` AND l.job_title ILIKE '%${TARGET_SEGMENT}%'`;
     }
 
     // Filter by template category
     if (template.category === 'cold_outreach') {
-      query += ` AND (ls.current_sequence IS NULL OR ls.current_sequence = 0)`;
+      query += ` AND (ls.emails_sent IS NULL OR ls.emails_sent = 0)`;
     } else if (template.category === 'follow_up') {
       // Get leads that received previous emails
       const followUpDays = parseInt(TEMPLATE_ID.replace('follow_up_', '').replace('d', ''));
@@ -374,7 +375,8 @@ async function sendInvestorSequence() {
             UPDATE lead_status 
             SET status = 'contacted',
                 last_email_at = NOW(),
-                last_template_id = $1
+                emails_sent = COALESCE(emails_sent, 0) + 1,
+                notes = COALESCE(notes, '') || ' | Template: ' || $1
             WHERE id = $2
           `, [TEMPLATE_ID, lead.status_id]);
 
