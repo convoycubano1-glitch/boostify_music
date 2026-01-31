@@ -89,7 +89,7 @@ Rules:
 - Under 60 words
 - Make them FEEL GOOD about themselves
 
-Sign as: The Boostify Team
+Sign as: Alex
 
 Return ONLY the email body, no subject line.
 `;
