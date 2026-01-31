@@ -3,6 +3,9 @@ import { logger } from "../lib/logger";
 import { Header } from "../components/layout/header";
 import { motion, AnimatePresence } from "framer-motion";
 import { db } from "../firebase";
+import { PlanTierGuard } from "../components/youtube-views/plan-tier-guard";
+import { isAdminEmail } from "../../../shared/constants";
+import { useUser } from "@clerk/clerk-react";
 import { 
   Brain, 
   Database, 
@@ -238,12 +241,17 @@ const agentCategories = [
 
 export default function AIAgentsPage() {
   const { user } = useAuth();
+  const { user: clerkUser } = useUser();
   const [activeTab, setActiveTab] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [recentAgents, setRecentAgents] = useState<string[]>([]);
   const [bookmarkedAgents, setBookmarkedAgents] = useState<string[]>([]);
+
+  // Check if user is admin
+  const userEmail = clerkUser?.primaryEmailAddress?.emailAddress || "";
+  const isAdmin = isAdminEmail(userEmail);
   
   // Cargar historial reciente y agentes favoritos
   useEffect(() => {
@@ -592,7 +600,7 @@ export default function AIAgentsPage() {
     }
   }, [selectedAgent]);
 
-  return (
+  const pageContent = (
     <div className="min-h-screen flex flex-col bg-[#0F0F13]">
       <Header />
       <main className="flex-1 pt-16">
@@ -1178,5 +1186,16 @@ export default function AIAgentsPage() {
         </div>
       </main>
     </div>
+  );
+
+  // If admin, return content directly; otherwise wrap with PlanTierGuard
+  if (isAdmin) {
+    return pageContent;
+  }
+
+  return (
+    <PlanTierGuard requiredPlan="Premium">
+      {pageContent}
+    </PlanTierGuard>
   );
 }

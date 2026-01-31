@@ -10,10 +10,15 @@ import { MotionDNASection } from "../components/music-video/motion-dna-section";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import type { DirectorProfile } from "../data/directors";
+import { useAuth } from "../hooks/use-auth";
+import { PlanTierGuard } from "../components/youtube-views/plan-tier-guard";
+import { isAdminEmail } from "../../../shared/constants";
 
 export default function MusicVideoCreator() {
   const [activeTab, setActiveTab] = useState<'directors' | 'ai' | 'editor'>('ai');
   const [selectedDirector, setSelectedDirector] = useState<DirectorProfile | null>(null);
+  const { user } = useAuth();
+  const isAdmin = user?.email ? isAdminEmail(user.email) : false;
 
   const handleDirectorSelected = (director: DirectorProfile) => {
     setSelectedDirector(director);
@@ -21,19 +26,25 @@ export default function MusicVideoCreator() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
-      <main className="flex-1 flex flex-col">
-        <HeroSection />
-        <ContentSection 
-          activeTab={activeTab} 
-          setActiveTab={setActiveTab}
-          selectedDirector={selectedDirector}
-          onDirectorSelected={handleDirectorSelected}
-        />
-        <MotionDNASection />
-      </main>
-    </div>
+    <PlanTierGuard 
+      requiredPlan="premium" 
+      bypassForAdmin={isAdmin}
+      featureName="Music Video Creator"
+    >
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 flex flex-col">
+          <HeroSection />
+          <ContentSection 
+            activeTab={activeTab} 
+            setActiveTab={setActiveTab}
+            selectedDirector={selectedDirector}
+            onDirectorSelected={handleDirectorSelected}
+          />
+          <MotionDNASection />
+        </main>
+      </div>
+    </PlanTierGuard>
   );
 }
 

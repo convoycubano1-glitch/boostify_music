@@ -1,14 +1,15 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Zap, Music, Video, Bot, LineChart, Share2, Globe, LucideIcon } from "lucide-react";
+import { Sparkles, Zap, Music, Video, Bot, LineChart, Share2, Globe, LucideIcon, Crown, Rocket, Shield, Headphones, Mic2, Radio, Users, TrendingUp } from "lucide-react";
 import { Header } from "../components/layout/header";
 import { Footer } from "../components/layout/footer";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Link } from "wouter";
 
-// Interfaces para nuestros tipos de datos
+// Interfaces
 interface Feature {
   title: string;
   description: string;
@@ -23,158 +24,202 @@ interface CategoryTab {
   icon: LucideIcon;
 }
 
-// Pestañas de categorías para filtrar características
+// Category tabs
 const categoryTabs: CategoryTab[] = [
-  { id: "all", label: "Todas", icon: Sparkles },
-  { id: "music", label: "Música", icon: Music },
+  { id: "all", label: "All Features", icon: Sparkles },
+  { id: "music", label: "Music", icon: Music },
   { id: "video", label: "Video", icon: Video },
-  { id: "ai", label: "Inteligencia Artificial", icon: Bot },
-  { id: "analytics", label: "Analítica", icon: LineChart },
+  { id: "ai", label: "AI Tools", icon: Bot },
+  { id: "analytics", label: "Analytics", icon: LineChart },
   { id: "social", label: "Social", icon: Share2 },
 ];
 
-// Lista de características con sus detalles
+// Features list
 const features: Feature[] = [
   {
-    title: "Generación de Música con IA",
-    description: "Crea pistas musicales completas con nuestra avanzada IA. Personaliza estilo, género y ánimo.",
+    title: "AI Music Generation",
+    description: "Create complete music tracks with our advanced AI. Customize style, genre, mood, and instruments.",
     icon: Music,
     category: "music",
     isPremium: true,
   },
   {
-    title: "Creador de Videos Musicales",
-    description: "Transforma tus canciones en videos musicales profesionales con plantillas y personalización total.",
+    title: "Music Video Creator",
+    description: "Transform your songs into professional music videos with AI-powered visuals and templates.",
     icon: Video,
     category: "video",
     isPremium: true,
   },
   {
-    title: "IA Advisors",
-    description: "Recibe consejos personalizados de expertos en la industria musical impulsados por IA.",
+    title: "AI Music Advisors",
+    description: "Get personalized advice from AI-powered industry experts for your music career.",
     icon: Bot,
     category: "ai",
     isPremium: true,
   },
   {
-    title: "Análisis de Audiencia",
-    description: "Comprende a tu audiencia con análisis detallados sobre demografía, comportamiento y preferencias.",
+    title: "Audience Analytics",
+    description: "Understand your audience with detailed analytics on demographics, behavior, and preferences.",
     icon: LineChart,
     category: "analytics",
   },
   {
-    title: "Distribución Musical Global",
-    description: "Distribuye tu música a todas las plataformas principales con un solo clic.",
+    title: "Global Distribution",
+    description: "Distribute your music to Spotify, Apple Music, and 150+ platforms with one click.",
     icon: Globe,
     category: "music",
   },
   {
-    title: "Red Social Musical",
-    description: "Conecta con otros artistas, productores y fans en nuestra plataforma social especializada.",
+    title: "Artist Network",
+    description: "Connect with other artists, producers, and fans on our music-focused social platform.",
     icon: Share2,
     category: "social",
   },
   {
-    title: "Masterización Automática",
-    description: "Mejora la calidad de tus pistas con nuestras herramientas de masterización automatizada.",
+    title: "Auto Mastering",
+    description: "Professional-quality mastering powered by AI. Make your tracks radio-ready instantly.",
     icon: Zap,
     category: "music",
   },
   {
-    title: "Generación de Imágenes para Artistas",
-    description: "Crea portadas de álbumes, fotos promocionales y arte visual con nuestra herramienta de IA.",
+    title: "AI Image Generator",
+    description: "Create album covers, promotional photos, and visual art with our AI image tools.",
     icon: Bot,
     category: "ai",
     isPremium: true,
   },
   {
-    title: "Analytics Avanzados",
-    description: "Visualiza métricas avanzadas sobre el rendimiento de tu música y campañas de marketing.",
+    title: "Advanced Analytics",
+    description: "Track streams, revenue, playlist placements, and marketing campaign performance.",
     icon: LineChart,
     category: "analytics",
     isPremium: true,
   },
   {
-    title: "Generación de Videos con Texto",
-    description: "Convierte tus descripciones textuales en videos de alta calidad automáticamente.",
+    title: "Text-to-Video AI",
+    description: "Turn text descriptions into high-quality music videos automatically.",
     icon: Video,
     category: "video",
     isPremium: true,
   },
   {
-    title: "Herramientas de Colaboración",
-    description: "Trabaja en tiempo real con otros artistas y productores desde cualquier parte del mundo.",
+    title: "Collaboration Tools",
+    description: "Work in real-time with artists and producers from anywhere in the world.",
     icon: Share2,
     category: "social",
   },
   {
     title: "Virtual Record Label",
-    description: "Accede a servicios completos de sello discográfico virtual con promoción, distribución y más.",
+    description: "Access complete label services: promotion, distribution, sync licensing, and more.",
     icon: Music,
     category: "music",
     isPremium: true,
   },
 ];
 
+// Stats
+const stats = [
+  { value: "10,000+", label: "Active Artists" },
+  { value: "5M+", label: "Streams Generated" },
+  { value: "500K+", label: "Videos Created" },
+  { value: "150+", label: "Distribution Platforms" },
+];
+
 export default function FeaturesPage() {
   const [selectedCategory, setSelectedCategory] = React.useState("all");
   
-  // Filtrar características basadas en la categoría seleccionada
+  // Filter features by category
   const filteredFeatures = features.filter(
     feature => selectedCategory === "all" || feature.category === selectedCategory
   );
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-black flex flex-col">
       <Header />
       
       <main className="flex-1">
-        {/* Sección Hero */}
-        <section className="py-16 md:py-24 px-4 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 to-background z-0"></div>
-          <div className="absolute inset-0 opacity-30 bg-[url('/assets/noise.svg')] z-0"></div>
+        {/* Hero Section */}
+        <section className="py-20 md:py-28 px-4 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-transparent to-transparent z-0"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-red-500/10 rounded-full blur-3xl"></div>
           
           <div className="max-w-7xl mx-auto relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="text-center max-w-3xl mx-auto"
+              className="text-center max-w-4xl mx-auto"
             >
-              <Badge className="mb-4" variant="outline">Boostify Music</Badge>
-              <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">
-                Potencia tu carrera musical con herramientas avanzadas
+              <Badge className="mb-6 bg-orange-500/10 text-orange-500 border-orange-500/30 px-4 py-1.5">
+                <Sparkles className="w-4 h-4 mr-2" />
+                All-in-One Music Platform
+              </Badge>
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 text-white leading-tight">
+                Everything You Need to{" "}
+                <span className="bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
+                  Grow Your Music Career
+                </span>
               </h1>
-              <p className="text-lg text-muted-foreground mb-8">
-                Descubre todas las características que Boostify Music ofrece para ayudarte a crear, promocionar y crecer en la industria musical.
+              <p className="text-lg md:text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
+                Discover the powerful tools that help artists create, promote, and monetize their music. All powered by AI.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600">
-                  Comenzar ahora
-                </Button>
-                <Button size="lg" variant="outline">
-                  Ver planes
-                </Button>
+                <Link href="/auth">
+                  <Button size="lg" className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold px-8 h-12">
+                    <Rocket className="w-5 h-5 mr-2" />
+                    Get Started Free
+                  </Button>
+                </Link>
+                <Link href="/pricing">
+                  <Button size="lg" variant="outline" className="border-gray-700 text-white hover:bg-gray-800 h-12 px-8">
+                    View Pricing
+                  </Button>
+                </Link>
               </div>
             </motion.div>
           </div>
         </section>
+
+        {/* Stats Section */}
+        <section className="py-12 border-y border-gray-800/50 bg-gray-900/30">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              {stats.map((stat, index) => (
+                <motion.div 
+                  key={index} 
+                  className="text-center"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <div className="text-3xl md:text-4xl font-bold text-orange-500 mb-2">{stat.value}</div>
+                  <div className="text-gray-400 text-sm">{stat.label}</div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
         
-        {/* Sección de características */}
-        <section className="py-16 px-4">
+        {/* Features Section */}
+        <section className="py-20 px-4">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">Características principales</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                Explora nuestras potentes herramientas diseñadas para cada aspecto de tu carrera musical
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Powerful Features</h2>
+              <p className="text-gray-400 max-w-2xl mx-auto">
+                Explore our complete toolkit designed for every aspect of your music career
               </p>
             </div>
             
             <Tabs defaultValue="all" className="w-full" onValueChange={setSelectedCategory}>
-              <div className="flex justify-center mb-8">
-                <TabsList className="grid grid-cols-3 md:grid-cols-6 gap-1">
+              <div className="flex justify-center mb-10">
+                <TabsList className="bg-gray-900/80 border border-gray-800 p-1 rounded-xl">
                   {categoryTabs.map((tab) => (
-                    <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-2">
+                    <TabsTrigger 
+                      key={tab.id} 
+                      value={tab.id} 
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-lg data-[state=active]:bg-orange-500 data-[state=active]:text-white text-gray-400"
+                    >
                       <tab.icon className="h-4 w-4" />
                       <span className="hidden md:inline">{tab.label}</span>
                     </TabsTrigger>
@@ -189,26 +234,27 @@ export default function FeaturesPage() {
                       key={feature.title}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
                     >
-                      <Card className="h-full border-border hover:border-orange-500/50 transition-colors">
-                        <CardHeader className="pb-2">
+                      <Card className="h-full bg-gray-900/50 border-gray-800 hover:border-orange-500/50 transition-all hover:shadow-lg hover:shadow-orange-500/10 group">
+                        <CardHeader className="pb-3">
                           <div className="flex justify-between items-start">
-                            <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center">
-                              <feature.icon className="h-5 w-5 text-orange-500" />
+                            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center group-hover:from-orange-500/30 group-hover:to-red-500/30 transition-all">
+                              <feature.icon className="h-6 w-6 text-orange-500" />
                             </div>
                             {feature.isPremium && (
-                              <Badge variant="outline" className="bg-orange-500/10 text-orange-500 border-orange-500/20">
+                              <Badge className="bg-gradient-to-r from-orange-500/10 to-red-500/10 text-orange-500 border-orange-500/20">
+                                <Crown className="w-3 h-3 mr-1" />
                                 Premium
                               </Badge>
                             )}
                           </div>
-                          <CardTitle className="mt-4">{feature.title}</CardTitle>
-                          <CardDescription>{feature.description}</CardDescription>
+                          <CardTitle className="mt-4 text-white text-lg">{feature.title}</CardTitle>
+                          <CardDescription className="text-gray-400">{feature.description}</CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <Button variant="ghost" className="p-0 h-auto text-orange-500 hover:text-orange-600">
-                            Saber más →
+                          <Button variant="ghost" className="p-0 h-auto text-orange-500 hover:text-orange-400 group-hover:translate-x-1 transition-transform">
+                            Learn more →
                           </Button>
                         </CardContent>
                       </Card>
@@ -220,28 +266,36 @@ export default function FeaturesPage() {
           </div>
         </section>
         
-        {/* Sección de llamada a la acción */}
-        <section className="py-16 md:py-24 px-4 bg-orange-500/5 relative">
-          <div className="absolute inset-0 opacity-30 bg-[url('/assets/noise.svg')] z-0"></div>
+        {/* CTA Section */}
+        <section className="py-20 md:py-28 px-4 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-t from-orange-500/10 via-transparent to-transparent z-0"></div>
           <div className="max-w-7xl mx-auto relative z-10">
             <div className="text-center max-w-3xl mx-auto">
-              <Badge className="mb-4 bg-orange-500/10 text-orange-500 border-orange-500/20">
-                ¿Listo para empezar?
-              </Badge>
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                Eleva tu música al siguiente nivel con Boostify
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/10 border border-orange-500/30 rounded-full text-orange-500 text-sm font-medium mb-6">
+                <Rocket className="w-4 h-4" />
+                Ready to Start?
+              </div>
+              <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
+                Take Your Music to the Next Level
               </h2>
-              <p className="text-lg text-muted-foreground mb-8">
-                Únete a miles de artistas que ya están potenciando su carrera musical con nuestras herramientas.
+              <p className="text-lg text-gray-400 mb-10">
+                Join thousands of artists already growing their careers with Boostify. Start for free today.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600">
-                  Comenzar ahora
-                </Button>
-                <Button size="lg" variant="outline">
-                  Ver demo
-                </Button>
+                <Link href="/auth">
+                  <Button size="lg" className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold px-8 h-14 text-lg">
+                    Get Started Free
+                  </Button>
+                </Link>
+                <Link href="/pricing">
+                  <Button size="lg" variant="outline" className="border-gray-700 text-white hover:bg-gray-800 h-14 px-8 text-lg">
+                    View Plans
+                  </Button>
+                </Link>
               </div>
+              <p className="text-gray-500 text-sm mt-6">
+                No credit card required • Free forever on Basic plan
+              </p>
             </div>
           </div>
         </section>

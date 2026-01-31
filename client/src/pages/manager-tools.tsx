@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { logger } from "../lib/logger";
 import { useQueryClient } from "@tanstack/react-query";
+import { useUser } from "@clerk/clerk-react";
+import { useLocation } from "wouter";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
@@ -39,8 +41,17 @@ import { CalendarSection } from "../components/manager/calendar";
 import concertVideo from "../assets/concert-video.mp4";
 
 export default function ManagerToolsPage() {
+  const { isSignedIn, isLoaded } = useUser();
+  const [, setLocation] = useLocation();
   const [selectedTab, setSelectedTab] = useState("technical");
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Redirect to auth if not signed in
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      setLocation("/auth");
+    }
+  }, [isLoaded, isSignedIn, setLocation]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -101,6 +112,20 @@ export default function ManagerToolsPage() {
       color: "from-pink-500 to-rose-500"
     }
   ];
+
+  // Show loading while checking auth
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin h-8 w-8 border-2 border-orange-500 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  // Don't render if not signed in (redirect in progress)
+  if (!isSignedIn) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

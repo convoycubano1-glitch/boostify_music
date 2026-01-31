@@ -34,6 +34,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { AIGenerationModal } from "../components/artist/ai-generation-modal";
+import { ArtistLandingPage } from "../components/artist/artist-landing-page";
 import { isAdminEmail } from "../../../shared/constants";
 
 interface Artist {
@@ -273,19 +274,8 @@ export default function MyArtistsPage() {
   }
 
   if (!user) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Acceso Restringido</h1>
-          <p className="text-gray-400 mb-6">
-            Debes iniciar sesión para ver tus artistas
-          </p>
-          <Link href="/auth">
-            <Button>Iniciar Sesión</Button>
-          </Link>
-        </div>
-      </div>
-    );
+    // Show premium landing page for non-logged users with lead capture
+    return <ArtistLandingPage />;
   }
 
   const artists = artistsData?.artists || [];

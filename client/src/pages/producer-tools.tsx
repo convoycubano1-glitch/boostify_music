@@ -296,7 +296,7 @@ export default function ProducerToolsPage() {
   // Check if user is authenticated - redirect if not
   useEffect(() => {
     if (!user) {
-      setLocation('/signup');
+      setLocation('/auth');
     }
   }, [user, setLocation]);
 
@@ -310,7 +310,7 @@ export default function ProducerToolsPage() {
             You need to be logged in to access Producer Tools.
           </p>
           <Button 
-            onClick={() => setLocation('/signup')}
+            onClick={() => setLocation('/auth')}
             className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
           >
             Sign In / Sign Up
@@ -822,7 +822,7 @@ export default function ProducerToolsPage() {
                   Production Workflow Tools including File Exchange, Video Studio, Progress Tracking, and Version Control require at least a BASIC subscription plan ($59.99/month).
                 </p>
                 <Button 
-                  onClick={() => setLocation('/signup')}
+                  onClick={() => setLocation('/pricing')}
                   className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-lg hover:shadow-orange-500/20 text-sm sm:text-base"
                 >
                   View Subscription Plans

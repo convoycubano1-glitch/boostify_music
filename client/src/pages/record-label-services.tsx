@@ -6,6 +6,9 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { useState } from "react";
+import { PlanTierGuard } from "../components/youtube-views/plan-tier-guard";
+import { isAdminEmail } from "../../../shared/constants";
+import { useUser } from "@clerk/clerk-react";
 import { Header } from "../components/layout/header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -39,8 +42,13 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "..
 export default function RecordLabelServices() {
   const [selectedTab, setSelectedTab] = useState("radio-tv");
   const { user } = useAuth();
+  const { user: clerkUser } = useUser();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  // Check if user is admin
+  const userEmail = clerkUser?.primaryEmailAddress?.emailAddress || "";
+  const isAdmin = isAdminEmail(userEmail);
 
   const { data: services = [] } = useQuery({
     queryKey: ['record-label-services', user?.uid],
@@ -51,7 +59,7 @@ export default function RecordLabelServices() {
     enabled: !!user
   });
 
-  return (
+  const pageContent = (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1">
@@ -1061,5 +1069,16 @@ export default function RecordLabelServices() {
         </div>
       </main>
     </div>
+  );
+
+  // If admin, return content directly; otherwise wrap with PlanTierGuard
+  if (isAdmin) {
+    return pageContent;
+  }
+
+  return (
+    <PlanTierGuard requiredPlan="Premium">
+      {pageContent}
+    </PlanTierGuard>
   );
 }

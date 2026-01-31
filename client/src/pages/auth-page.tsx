@@ -1,9 +1,7 @@
 import { SignIn, SignUp, useUser } from '@clerk/clerk-react';
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Music, Sparkles } from 'lucide-react';
+import { Loader2, Music } from 'lucide-react';
 
 export default function AuthPage() {
   const { isSignedIn, isLoaded } = useUser();
@@ -17,162 +15,136 @@ export default function AuthPage() {
     }
   }, [isLoaded, isSignedIn, setLocation]);
 
+  // Check URL params for signup
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('signup') === 'true') {
+      setActiveTab('signup');
+    }
+  }, []);
+
   // Show loading while Clerk initializes
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-black to-indigo-900">
+      <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-12 h-12 animate-spin text-purple-400" />
-          <p className="text-white/70">Cargando...</p>
+          <Loader2 className="w-10 h-10 animate-spin text-orange-500" />
+          <p className="text-gray-400">Loading...</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-black to-indigo-900 p-4">
-      {/* Background Effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
-      </div>
+  // Clerk appearance config - Boostify theme (same as profile.tsx)
+  const clerkAppearance = {
+    variables: {
+      colorPrimary: "#f97316",
+      colorBackground: "transparent",
+      colorText: "#ffffff",
+      colorTextSecondary: "#9ca3af",
+      colorInputBackground: "#1f2937",
+      colorInputText: "#ffffff",
+      borderRadius: "0.75rem",
+    },
+    elements: {
+      rootBox: "mx-auto w-full",
+      card: "bg-transparent shadow-none p-0 gap-4",
+      header: "hidden",
+      headerTitle: "hidden",
+      headerSubtitle: "hidden",
+      main: "gap-4",
+      form: "gap-4",
+      formFieldRow: "mb-3",
+      formFieldLabel: "text-gray-300 font-medium text-sm mb-1.5",
+      formFieldInput: "bg-gray-800/90 border border-gray-600 text-white placeholder:text-gray-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 rounded-xl h-12 px-4 transition-all",
+      formFieldInputShowPasswordButton: "text-gray-400 hover:text-white transition-colors",
+      formButtonPrimary: "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold shadow-lg shadow-orange-500/30 rounded-xl h-12 text-base transition-all",
+      footerAction: "hidden",
+      footerActionLink: "text-orange-400 hover:text-orange-300 font-medium",
+      socialButtons: "gap-3",
+      socialButtonsBlockButton: "bg-white border border-gray-200 text-gray-800 hover:bg-gray-100 hover:border-gray-300 rounded-xl h-12 transition-all gap-3 shadow-sm",
+      socialButtonsBlockButtonText: "text-gray-800 font-medium text-sm",
+      socialButtonsProviderIcon: "w-5 h-5",
+      socialButtonsBlockButtonArrow: "hidden",
+      dividerRow: "my-4",
+      dividerLine: "bg-gray-700",
+      dividerText: "text-gray-500 text-sm px-3",
+      identityPreview: "bg-gray-800/50 border border-gray-700 rounded-xl",
+      identityPreviewText: "text-white",
+      identityPreviewEditButton: "text-orange-400 hover:text-orange-300",
+      otpCodeFieldInput: "bg-gray-800 border-gray-600 text-white rounded-lg",
+      alert: "bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl",
+      alertText: "text-red-400",
+      footer: "hidden",
+      alternativeMethodsBlockButton: "bg-gray-800/50 border border-gray-700 text-gray-300 hover:bg-gray-700 rounded-xl",
+    },
+    layout: {
+      socialButtonsPlacement: "top" as const,
+      showOptionalFields: false,
+    }
+  };
 
-      <div className="relative z-10 w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Music className="w-10 h-10 text-purple-400" />
-            <h1 className="text-4xl font-bold text-white">BOOSTIFY</h1>
-            <Sparkles className="w-8 h-8 text-yellow-400" />
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-black p-4">
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-orange-500/30">
+            <Music className="w-8 h-8 text-white" />
           </div>
-          <p className="text-white/70 text-lg">
-            Tu plataforma de música potenciada por IA
+          <h1 className="text-2xl font-bold text-white">Boostify Music</h1>
+          <p className="text-gray-400 text-sm mt-1">
+            {activeTab === 'signin' ? 'Welcome back' : 'Create your account'}
           </p>
         </div>
 
-        {/* Auth Card */}
-        <Card className="bg-black/40 backdrop-blur-xl border-purple-500/30">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-white">
-              {activeTab === 'signin' ? 'Bienvenido de vuelta' : 'Únete a BOOSTIFY'}
-            </CardTitle>
-            <CardDescription className="text-white/60">
-              {activeTab === 'signin' 
-                ? 'Inicia sesión para continuar tu viaje musical' 
-                : 'Crea tu cuenta y empieza a crear'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'signin' | 'signup')}>
-              <TabsList className="grid w-full grid-cols-2 mb-6 bg-white/10">
-                <TabsTrigger 
-                  value="signin"
-                  className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-white/70"
-                >
-                  Iniciar Sesión
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="signup"
-                  className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-white/70"
-                >
-                  Registrarse
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="signin" className="flex justify-center">
-                <SignIn 
-                  appearance={{
-                    elements: {
-                      rootBox: 'w-full',
-                      card: 'bg-transparent shadow-none border-none',
-                      headerTitle: 'hidden',
-                      headerSubtitle: 'hidden',
-                      socialButtonsBlockButton: 'bg-white/10 border-white/20 text-white hover:bg-white/20',
-                      socialButtonsBlockButtonText: 'text-white',
-                      socialButtonsProviderIcon: 'brightness-0 invert',
-                      dividerLine: 'bg-white/20',
-                      dividerText: 'text-white/50',
-                      formFieldLabel: 'text-white/80',
-                      formFieldInput: 'bg-white/10 border-white/20 text-white placeholder:text-white/40',
-                      formButtonPrimary: 'bg-purple-600 hover:bg-purple-700',
-                      footerActionLink: 'text-purple-400 hover:text-purple-300',
-                      identityPreviewText: 'text-white',
-                      identityPreviewEditButton: 'text-purple-400',
-                      formFieldInputShowPasswordButton: 'text-white/60',
-                      otpCodeFieldInput: 'bg-white/10 border-white/20 text-white',
-                      footer: 'hidden',
-                    },
-                    variables: {
-                      colorPrimary: '#9333ea',
-                      colorBackground: 'transparent',
-                      colorText: 'white',
-                      colorTextSecondary: 'rgba(255,255,255,0.7)',
-                      colorInputBackground: 'rgba(255,255,255,0.1)',
-                      colorInputText: 'white',
-                    }
-                  }}
-                  routing="hash"
-                  signUpUrl="#signup"
-                  afterSignInUrl="/dashboard"
-                />
-              </TabsContent>
-
-              <TabsContent value="signup" className="flex justify-center">
-                <SignUp 
-                  appearance={{
-                    elements: {
-                      rootBox: 'w-full',
-                      card: 'bg-transparent shadow-none border-none',
-                      headerTitle: 'hidden',
-                      headerSubtitle: 'hidden',
-                      socialButtonsBlockButton: 'bg-white/10 border-white/20 text-white hover:bg-white/20',
-                      socialButtonsBlockButtonText: 'text-white',
-                      socialButtonsProviderIcon: 'brightness-0 invert',
-                      dividerLine: 'bg-white/20',
-                      dividerText: 'text-white/50',
-                      formFieldLabel: 'text-white/80',
-                      formFieldInput: 'bg-white/10 border-white/20 text-white placeholder:text-white/40',
-                      formButtonPrimary: 'bg-purple-600 hover:bg-purple-700',
-                      footerActionLink: 'text-purple-400 hover:text-purple-300',
-                      identityPreviewText: 'text-white',
-                      identityPreviewEditButton: 'text-purple-400',
-                      formFieldInputShowPasswordButton: 'text-white/60',
-                      otpCodeFieldInput: 'bg-white/10 border-white/20 text-white',
-                      footer: 'hidden',
-                    },
-                    variables: {
-                      colorPrimary: '#9333ea',
-                      colorBackground: 'transparent',
-                      colorText: 'white',
-                      colorTextSecondary: 'rgba(255,255,255,0.7)',
-                      colorInputBackground: 'rgba(255,255,255,0.1)',
-                      colorInputText: 'white',
-                    }
-                  }}
-                  routing="hash"
-                  signInUrl="#signin"
-                  afterSignUpUrl="/dashboard"
-                />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-
-        {/* Features */}
-        <div className="mt-8 grid grid-cols-3 gap-4 text-center">
-          <div className="p-3 rounded-lg bg-white/5 backdrop-blur">
-            <p className="text-2xl mb-1">🎵</p>
-            <p className="text-xs text-white/60">Música IA</p>
-          </div>
-          <div className="p-3 rounded-lg bg-white/5 backdrop-blur">
-            <p className="text-2xl mb-1">🎬</p>
-            <p className="text-xs text-white/60">Videos</p>
-          </div>
-          <div className="p-3 rounded-lg bg-white/5 backdrop-blur">
-            <p className="text-2xl mb-1">💎</p>
-            <p className="text-xs text-white/60">BTF-2300</p>
-          </div>
+        {/* Tab Switcher */}
+        <div className="flex bg-gray-800/50 rounded-xl p-1 mb-6">
+          <button
+            onClick={() => setActiveTab('signin')}
+            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
+              activeTab === 'signin'
+                ? 'bg-orange-500 text-white shadow'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Sign In
+          </button>
+          <button
+            onClick={() => setActiveTab('signup')}
+            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
+              activeTab === 'signup'
+                ? 'bg-orange-500 text-white shadow'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Sign Up
+          </button>
         </div>
+
+        {/* Auth Forms */}
+        <div className="bg-gradient-to-b from-gray-900/95 to-gray-900/80 border border-gray-700/50 rounded-2xl p-6 backdrop-blur-xl shadow-2xl shadow-black/50">
+          {activeTab === 'signin' ? (
+            <SignIn 
+              appearance={clerkAppearance}
+              routing="hash"
+              signUpUrl="/auth?signup=true"
+              afterSignInUrl="/dashboard"
+            />
+          ) : (
+            <SignUp 
+              appearance={clerkAppearance}
+              routing="hash"
+              signInUrl="/auth"
+              afterSignUpUrl="/dashboard"
+            />
+          )}
+        </div>
+
+        {/* Footer */}
+        <p className="text-center text-gray-500 text-xs mt-5">
+          Free forever • No credit card required
+        </p>
       </div>
     </div>
   );

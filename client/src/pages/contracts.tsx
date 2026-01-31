@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { logger } from "../lib/logger";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Header } from "../components/layout/header";
+import { PlanTierGuard } from "../components/youtube-views/plan-tier-guard";
+import { isAdminEmail } from "../../../shared/constants";
+import { useUser, useAuth } from "@clerk/clerk-react";
 import { ContractForm, type ContractFormValues } from "../components/contracts/contract-form";
 import { 
   generateContract, 
@@ -14,6 +17,7 @@ import {
   getUserContracts, 
   deleteContract, 
   updateContract, 
+  setContractsAuthToken,
   type Contract,
   type ContractTemplate 
 } from "../lib/gemini-contracts";
@@ -45,7 +49,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Badge } from "../components/ui/badge";
 import { useToast } from "../hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { auth } from "../lib/firebase";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Textarea } from "../components/ui/textarea";
 import { motion } from "framer-motion";
@@ -87,6 +90,8 @@ const buttonVariants = {
 
 export default function ContractsPage() {
   const { toast } = useToast();
+  const { user: clerkUser, isSignedIn } = useUser();
+  const { getToken } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   const [showNewContractDialog, setShowNewContractDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
@@ -102,26 +107,37 @@ export default function ContractsPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedTab, setSelectedTab] = useState("contracts");
 
+  // Set up auth token for contracts API
+  useEffect(() => {
+    if (getToken) {
+      setContractsAuthToken(getToken);
+    }
+  }, [getToken]);
+
+  // Check if user is admin
+  const userEmail = clerkUser?.primaryEmailAddress?.emailAddress || "";
+  const isAdmin = isAdminEmail(userEmail);
+
   // Fetch contracts
   const { data: contracts = [], isLoading } = useQuery({
     queryKey: ['contracts'],
     queryFn: async () => {
       try {
-        if (!auth.currentUser) {
-          throw new Error('Usuario no autenticado');
+        if (!isSignedIn) {
+          throw new Error('User not authenticated');
         }
         return await getUserContracts();
       } catch (error) {
         logger.error('Error fetching contracts:', error);
         toast({
           title: "Error",
-          description: "No se pudieron cargar los contratos. Por favor, intente nuevamente.",
+          description: "Could not load contracts. Please try again.",
           variant: "destructive",
         });
         return [];
       }
     },
-    enabled: !!auth.currentUser,
+    enabled: !!isSignedIn,
   });
 
   // Delete contract mutation
@@ -367,7 +383,7 @@ ${analysis.keyTerms.map((term, i) => `${i + 1}. ${term.term}: ${term.description
     }
   };
 
-  return (
+  const pageContent = (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1 pt-20 px-6 md:pt-24 md:px-10">
@@ -841,6 +857,17 @@ ${analysis.keyTerms.map((term, i) => `${i + 1}. ${term.term}: ${term.description
         </motion.div>
       </main>
     </div>
+  );
+
+  // If admin, return content directly; otherwise wrap with PlanTierGuard
+  if (isAdmin) {
+    return pageContent;
+  }
+
+  return (
+    <PlanTierGuard requiredPlan="Premium">
+      {pageContent}
+    </PlanTierGuard>
   );
 }
 

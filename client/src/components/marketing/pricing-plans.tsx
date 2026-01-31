@@ -77,7 +77,7 @@ export function PricingPlans({ simplified = false, withAnimation = false }: Pric
         description: "Please login to subscribe to a plan",
         variant: "destructive",
       });
-      setLocation('/signup');
+      setLocation('/auth');
       return;
     }
 

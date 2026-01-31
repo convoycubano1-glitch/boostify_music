@@ -16,7 +16,7 @@ const PUBLIC_ROUTES = [
   '/',
   '/auth',
   '/login',
-  '/signup',
+
   '/register',
   '/dashboard',
   '/pricing',

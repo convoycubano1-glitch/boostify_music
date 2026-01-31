@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { logger } from "../lib/logger";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
 import { Header } from "../components/layout/header";
+import { useUser } from "@clerk/clerk-react";
+import { useLocation } from "wouter";
 import { Upload, UserPlus, Users, FileSpreadsheet, Loader2, Mail, Building2, Phone, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { db, auth } from "../lib/firebase";
@@ -44,6 +46,8 @@ interface AddContactFormData {
 
 export default function ContactsPage() {
   const { toast } = useToast();
+  const { isSignedIn, isLoaded } = useUser();
+  const [, setLocation] = useLocation();
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [isAddingContact, setIsAddingContact] = useState(false);
@@ -56,6 +60,27 @@ export default function ContactsPage() {
     role: "",
     notes: ""
   });
+
+  // Redirect to auth if not signed in
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      setLocation("/auth");
+    }
+  }, [isLoaded, isSignedIn, setLocation]);
+
+  // Show loading while checking auth
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin h-8 w-8 border-2 border-orange-500 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  // Don't render if not signed in (redirect in progress)
+  if (!isSignedIn) {
+    return null;
+  }
 
   // Query for contacts with loading state
   const { data: contacts = [], isLoading, refetch } = useQuery({

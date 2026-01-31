@@ -85,8 +85,8 @@ export default function AffiliatesPage() {
   // Use real affiliate data from API
   const currentAffiliateData = affiliateData || {
     id: user?.uid || "",
-    level: "Básico",
-    fullName: user?.displayName || "Usuario",
+    level: "Basic",
+    fullName: user?.displayName || "User",
     stats: {
       totalClicks: 0,
       conversions: 0,
@@ -132,18 +132,18 @@ export default function AffiliatesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                 <div className="space-y-6">
                   <Badge className="bg-primary/20 text-primary hover:bg-primary/30 transition-colors py-2 px-4 text-base">
-                    Ahora Disponible
+                    Now Available
                   </Badge>
-                  <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight">Amplifica tus Ingresos con el Programa de Afiliados Boostify</h1>
+                  <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight">Amplify Your Earnings with the Boostify Affiliate Program</h1>
                   <p className="text-muted-foreground text-base md:text-lg">
-                    Únete a nuestra comunidad de afiliados de alto rendimiento y gana comisiones generosas promocionando productos premium de educación musical.
+                    Join our community of high-performing affiliates and earn generous commissions promoting premium music education products.
                   </p>
                   <div className="flex flex-wrap gap-6 pt-6">
                     <Button className="gap-2 text-base py-6" size="lg">
-                      <Sparkles className="h-5 w-5" /> Unirse Ahora
+                      <Sparkles className="h-5 w-5" /> Join Now
                     </Button>
                     <Button variant="outline" className="text-base py-6" size="lg">
-                      Saber Más
+                      Learn More
                     </Button>
                   </div>
                 </div>
@@ -151,8 +151,8 @@ export default function AffiliatesPage() {
                   <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-primary/10 rounded-lg flex items-center justify-center shadow-md">
                     <div className="text-center p-6">
                       <Sparkles className="h-16 w-16 text-primary mx-auto mb-4" />
-                      <p className="text-3xl font-bold">Gana hasta 30%</p>
-                      <p className="text-xl mt-2">en cada venta</p>
+                      <p className="text-3xl font-bold">Earn up to 30%</p>
+                      <p className="text-xl mt-2">on every sale</p>
                     </div>
                   </div>
                 </div>
@@ -160,15 +160,15 @@ export default function AffiliatesPage() {
             </div>
 
             <div className="mb-12 text-center">
-              <h2 className="text-3xl font-bold mb-6">¿Por qué convertirte en afiliado de Boostify?</h2>
+              <h2 className="text-3xl font-bold mb-6">Why Become a Boostify Affiliate?</h2>
               <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4 mt-8">
                 <div className="flex flex-col items-center p-6 rounded-xl bg-gradient-to-b from-primary/5 to-transparent border border-primary/10">
                   <div className="bg-primary/10 p-4 rounded-full mb-4">
                     <DollarSign className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Comisiones Competitivas</h3>
+                  <h3 className="text-xl font-bold mb-2">Competitive Commissions</h3>
                   <p className="text-muted-foreground text-center">
-                    Gana hasta un 30% de comisión en cada venta realizada a través de tus enlaces de afiliado
+                    Earn up to 30% commission on every sale made through your affiliate links
                   </p>
                 </div>
                 
@@ -176,9 +176,9 @@ export default function AffiliatesPage() {
                   <div className="bg-primary/10 p-4 rounded-full mb-4">
                     <Zap className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Acceso Inmediato</h3>
+                  <h3 className="text-xl font-bold mb-2">Instant Access</h3>
                   <p className="text-muted-foreground text-center">
-                    Comienza a promocionar de inmediato con recursos de marketing listos para usar
+                    Start promoting immediately with ready-to-use marketing resources
                   </p>
                 </div>
                 
@@ -186,9 +186,9 @@ export default function AffiliatesPage() {
                   <div className="bg-primary/10 p-4 rounded-full mb-4">
                     <Crown className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Contenido Premium</h3>
+                  <h3 className="text-xl font-bold mb-2">Premium Content</h3>
                   <p className="text-muted-foreground text-center">
-                    Accede a contenido exclusivo y materiales promocionales diseñados para impulsar conversiones
+                    Access exclusive content and promotional materials designed to boost conversions
                   </p>
                 </div>
                 
@@ -196,9 +196,9 @@ export default function AffiliatesPage() {
                   <div className="bg-primary/10 p-4 rounded-full mb-4">
                     <HeadphonesIcon className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Soporte Dedicado</h3>
+                  <h3 className="text-xl font-bold mb-2">Dedicated Support</h3>
                   <p className="text-muted-foreground text-center">
-                    Recibe asistencia personalizada de nuestro equipo de afiliados para maximizar tus ganancias
+                    Get personalized assistance from our affiliate team to maximize your earnings
                   </p>
                 </div>
               </div>
@@ -242,16 +242,16 @@ export default function AffiliatesPage() {
                     <div>
                       <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
                         <Sparkles className="h-5 w-5 text-primary" />
-                        Dashboard de Afiliados
+                        Affiliate Dashboard
                       </h1>
                       <p className="text-muted-foreground mt-2">
-                        ¡Bienvenido! Rastrea tu rendimiento y accede a todas las herramientas de afiliados.
+                        Welcome! Track your performance and access all affiliate tools.
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-3 mt-4 md:mt-0">
                       <Badge variant="outline" className="text-sm py-2 px-4 flex items-center gap-2 border-primary/20 bg-primary/10 text-primary">
                         <Award className="h-4 w-4 text-yellow-500" />
-                        <span>Nivel {currentAffiliateData.level || "Básico"}</span>
+                        <span>Level {currentAffiliateData.level || "Basic"}</span>
                       </Badge>
                       <Badge variant="secondary" className="text-sm py-2 px-4">
                         ID: {user?.uid?.substring(0, 8) || ""}
@@ -262,19 +262,19 @@ export default function AffiliatesPage() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 bg-background/80 p-4 rounded-lg border border-primary/5">
                     <div className="flex flex-col items-center p-3 text-center">
                       <div className="text-2xl font-bold text-primary">{currentAffiliateData.stats?.totalClicks?.toLocaleString() || "0"}</div>
-                      <div className="text-xs text-muted-foreground mt-1">Clics Totales</div>
+                      <div className="text-xs text-muted-foreground mt-1">Total Clicks</div>
                     </div>
                     <div className="flex flex-col items-center p-3 text-center">
                       <div className="text-2xl font-bold text-primary">{currentAffiliateData.stats?.conversions?.toLocaleString() || "0"}</div>
-                      <div className="text-xs text-muted-foreground mt-1">Conversiones</div>
+                      <div className="text-xs text-muted-foreground mt-1">Conversions</div>
                     </div>
                     <div className="flex flex-col items-center p-3 text-center">
                       <div className="text-2xl font-bold text-primary">${currentAffiliateData.stats?.earnings?.toLocaleString() || "0"}</div>
-                      <div className="text-xs text-muted-foreground mt-1">Ganancias Totales</div>
+                      <div className="text-xs text-muted-foreground mt-1">Total Earnings</div>
                     </div>
                     <div className="flex flex-col items-center p-3 text-center">
                       <div className="text-2xl font-bold text-primary">${currentAffiliateData.stats?.pendingPayment?.toLocaleString() || "0"}</div>
-                      <div className="text-xs text-muted-foreground mt-1">Pago Pendiente</div>
+                      <div className="text-xs text-muted-foreground mt-1">Pending Payment</div>
                     </div>
                   </div>
                 </div>
@@ -302,7 +302,7 @@ export default function AffiliatesPage() {
                   <TabsList className="grid grid-cols-3 gap-2">
                     <TabsTrigger value="coupons" className="flex flex-col items-center gap-1.5 py-2.5">
                       <Ticket className="h-4 w-4" />
-                      <span className="text-xs">Cupones</span>
+                      <span className="text-xs">Coupons</span>
                     </TabsTrigger>
                     <TabsTrigger value="promotions" className="flex flex-col items-center gap-1.5 py-2.5">
                       <Zap className="h-4 w-4" />
@@ -310,18 +310,18 @@ export default function AffiliatesPage() {
                     </TabsTrigger>
                     <TabsTrigger value="badges" className="flex flex-col items-center gap-1.5 py-2.5">
                       <Award className="h-4 w-4" />
-                      <span className="text-xs">Logros</span>
+                      <span className="text-xs">Badges</span>
                     </TabsTrigger>
                   </TabsList>
                   
                   <TabsList className="grid grid-cols-4 gap-2">
                     <TabsTrigger value="referrals" className="flex flex-col items-center gap-1.5 py-2.5">
                       <UserPlus className="h-4 w-4" />
-                      <span className="text-xs">Referidos</span>
+                      <span className="text-xs">Referrals</span>
                     </TabsTrigger>
                     <TabsTrigger value="materials" className="flex flex-col items-center gap-1.5 py-2.5">
                       <Globe className="h-4 w-4" />
-                      <span className="text-xs">Recursos</span>
+                      <span className="text-xs">Materials</span>
                     </TabsTrigger>
                     <TabsTrigger value="content" className="flex flex-col items-center gap-1.5 py-2.5">
                       <Sparkles className="h-4 w-4" />
@@ -329,7 +329,7 @@ export default function AffiliatesPage() {
                     </TabsTrigger>
                     <TabsTrigger value="settings" className="flex flex-col items-center gap-1.5 py-2.5">
                       <Settings2 className="h-4 w-4" />
-                      <span className="text-xs">Config</span>
+                      <span className="text-xs">Settings</span>
                     </TabsTrigger>
                   </TabsList>
                 </div>
@@ -344,39 +344,39 @@ export default function AffiliatesPage() {
                       </TabsTrigger>
                       <TabsTrigger value="links" className="flex items-center gap-1.5 px-4">
                         <Link className="h-4 w-4" />
-                        <span>Enlaces</span>
+                        <span>Links</span>
                       </TabsTrigger>
                       <TabsTrigger value="earnings" className="flex items-center gap-1.5 px-4">
                         <DollarSign className="h-4 w-4" />
-                        <span>Ganancias</span>
+                        <span>Earnings</span>
                       </TabsTrigger>
                       <TabsTrigger value="coupons" className="flex items-center gap-1.5 px-4">
                         <Ticket className="h-4 w-4" />
-                        <span>Cupones</span>
+                        <span>Coupons</span>
                       </TabsTrigger>
                       <TabsTrigger value="promotions" className="flex items-center gap-1.5 px-4">
                         <Zap className="h-4 w-4" />
-                        <span>Promociones</span>
+                        <span>Promotions</span>
                       </TabsTrigger>
                       <TabsTrigger value="badges" className="flex items-center gap-1.5 px-4">
                         <Award className="h-4 w-4" />
-                        <span>Logros</span>
+                        <span>Badges</span>
                       </TabsTrigger>
                       <TabsTrigger value="referrals" className="flex items-center gap-1.5 px-4">
                         <UserPlus className="h-4 w-4" />
-                        <span>Referidos</span>
+                        <span>Referrals</span>
                       </TabsTrigger>
                       <TabsTrigger value="materials" className="flex items-center gap-1.5 px-4">
                         <Globe className="h-4 w-4" />
-                        <span>Materiales</span>
+                        <span>Materials</span>
                       </TabsTrigger>
                       <TabsTrigger value="content" className="flex items-center gap-1.5 px-4">
                         <Sparkles className="h-4 w-4" />
-                        <span>Contenido</span>
+                        <span>Content</span>
                       </TabsTrigger>
                       <TabsTrigger value="settings" className="flex items-center gap-1.5 px-4">
                         <Settings2 className="h-4 w-4" />
-                        <span>Configuración</span>
+                        <span>Settings</span>
                       </TabsTrigger>
                     </TabsList>
                   </div>
@@ -420,10 +420,10 @@ export default function AffiliatesPage() {
                       <div>
                         <h2 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
                           <Sparkles className="h-5 w-5 text-primary" />
-                          Generador de Contenido
+                          Content Generator
                         </h2>
                         <p className="text-muted-foreground mt-2">
-                          Crea contenido persuasivo para promocionar productos y aumentar tus ventas
+                          Create persuasive content to promote products and boost your sales
                         </p>
                       </div>
                     </div>
@@ -433,8 +433,8 @@ export default function AffiliatesPage() {
                         <div className="bg-primary/10 p-3 rounded-full mb-3">
                           <FileText className="h-6 w-6 text-primary" />
                         </div>
-                        <h3 className="font-semibold mb-1">Publicaciones</h3>
-                        <p className="text-xs text-center text-muted-foreground">Crea publicaciones para blogs y redes sociales</p>
+                        <h3 className="font-semibold mb-1">Posts</h3>
+                        <p className="text-xs text-center text-muted-foreground">Create posts for blogs and social media</p>
                       </div>
                       
                       <div className="flex flex-col items-center bg-background/80 p-5 rounded-lg border border-primary/10 shadow-sm">
@@ -442,15 +442,15 @@ export default function AffiliatesPage() {
                           <Mail className="h-6 w-6 text-primary" />
                         </div>
                         <h3 className="font-semibold mb-1">Emails</h3>
-                        <p className="text-xs text-center text-muted-foreground">Genera emails persuasivos para tus clientes</p>
+                        <p className="text-xs text-center text-muted-foreground">Generate persuasive emails for your audience</p>
                       </div>
                       
                       <div className="flex flex-col items-center bg-background/80 p-5 rounded-lg border border-primary/10 shadow-sm">
                         <div className="bg-primary/10 p-3 rounded-full mb-3">
                           <Video className="h-6 w-6 text-primary" />
                         </div>
-                        <h3 className="font-semibold mb-1">Guiones</h3>
-                        <p className="text-xs text-center text-muted-foreground">Crea guiones para videos promocionales</p>
+                        <h3 className="font-semibold mb-1">Scripts</h3>
+                        <p className="text-xs text-center text-muted-foreground">Create scripts for promotional videos</p>
                       </div>
                     </div>
                     
@@ -459,8 +459,8 @@ export default function AffiliatesPage() {
                         <AlertCircle className="h-5 w-5 text-primary" />
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Los afiliados de nivel Premium tienen acceso a tipos de contenido adicionales y personalización avanzada.
-                        <Button variant="link" className="p-0 h-auto text-sm text-primary ml-1">Saber más</Button>
+                        Premium level affiliates have access to additional content types and advanced customization.
+                        <Button variant="link" className="p-0 h-auto text-sm text-primary ml-1">Learn more</Button>
                       </p>
                     </div>
                   </div>

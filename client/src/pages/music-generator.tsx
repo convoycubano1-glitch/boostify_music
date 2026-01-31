@@ -12,6 +12,9 @@ import { generateMusic, checkGenerationStatus, getRecentGenerations, saveGenerat
 import { useToast } from "../hooks/use-toast";
 import { Header } from "../components/layout/header";
 import { motion } from "framer-motion";
+import { useAuth } from "../hooks/use-auth";
+import { PlanTierGuard } from "../components/youtube-views/plan-tier-guard";
+import { isAdminEmail } from "../../../shared/constants";
 
 import {
   Tabs,
@@ -74,6 +77,8 @@ import { VoiceAIStudio } from "../components/music/voice-ai-studio";
 export default function MusicGeneratorPage() {
   // Hooks and services
   const { toast } = useToast();
+  const { user, userSubscription } = useAuth();
+  const isAdmin = isAdminEmail(user?.email);
   
   // Music generator state
   const [musicPrompt, setMusicPrompt] = useState<string>("");
@@ -466,13 +471,19 @@ export default function MusicGeneratorPage() {
   ];
   
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
-      <main className="flex-1 flex flex-col">
-        {/* Hero Section */}
-        <div className="relative w-full min-h-[40vh] sm:min-h-[50vh] overflow-hidden">
-          <video
-            autoPlay
+    <PlanTierGuard 
+      requiredPlan="premium" 
+      userSubscription={userSubscription} 
+      featureName="AI Music Generator"
+      isAdmin={isAdmin}
+    >
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 flex flex-col">
+          {/* Hero Section */}
+          <div className="relative w-full min-h-[40vh] sm:min-h-[50vh] overflow-hidden">
+            <video
+              autoPlay
             loop
             muted
             playsInline
@@ -841,5 +852,6 @@ export default function MusicGeneratorPage() {
         </div>
       </main>
     </div>
+    </PlanTierGuard>
   );
 }

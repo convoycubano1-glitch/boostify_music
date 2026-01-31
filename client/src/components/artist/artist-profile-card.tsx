@@ -2944,7 +2944,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                       Create your professional artist profile for free and reach more fans
                     </p>
                   </div>
-                  <Link href="/signup">
+                  <Link href="/auth">
                     <Button
                       className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg gap-2 px-6 py-6 text-base font-bold rounded-full hover:scale-105 transition-all duration-300"
                       data-testid="button-cta-middle"

@@ -434,7 +434,6 @@ const Router = () => {
           {getRouteComponent("/", WrappedHomePage, null)}
           {getRouteComponent("/auth", WrappedAuthPage, null)}
           {getRouteComponent("/login", WrappedLoginPage, null)}
-          {getRouteComponent("/signup", WrappedAuthSignupPage, null)}
           {getRouteComponent("/diagnostics", WrappedDiagnosticsPage, null)}
           {getRouteComponent("/terms", WrappedTermsPage, null)}
           {getRouteComponent("/privacy", WrappedPrivacyPage, null)}

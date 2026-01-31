@@ -452,7 +452,7 @@ export default function HomePage() {
 
   const handleGoogleLogin = () => {
     // Redirigir a la página de signup que muestra los planes
-    window.location.href = '/signup';
+    window.location.href = '/auth';
   };
 
   return (
@@ -560,7 +560,7 @@ export default function HomePage() {
                       <span className="font-medium">Get Started</span>
                     </Button>
                     
-                    <Link href="/signup">
+                    <Link href="/pricing">
                       <Button 
                         size="lg" 
                         variant="outline" 
@@ -1844,7 +1844,7 @@ export default function HomePage() {
             transition={{ delay: 0.4 }}
             className="text-center mt-10"
           >
-            <Link href="/signup">
+            <Link href="/pricing">
               <Button variant="link" className="text-orange-500 hover:text-orange-400">
                 View all plans and features
                 <ChevronRight className="h-4 w-4 ml-1" />
@@ -1945,7 +1945,7 @@ export default function HomePage() {
                 Get Started Now
                 <MoveRight className="ml-2 h-5 w-5" />
               </Button>
-              <Link href="/signup">
+              <Link href="/pricing">
                 <Button 
                   size="lg" 
                   variant="outline" 

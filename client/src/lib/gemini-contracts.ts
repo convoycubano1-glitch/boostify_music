@@ -24,6 +24,36 @@ export interface Contract {
   userId: string;
 }
 
+// Variable to store the Clerk getToken function
+let clerkGetToken: (() => Promise<string | null>) | null = null;
+
+/**
+ * Set the Clerk getToken function for authenticated requests
+ */
+export function setContractsAuthToken(getToken: () => Promise<string | null>) {
+  clerkGetToken = getToken;
+}
+
+/**
+ * Get axios config with auth headers
+ */
+async function getAuthConfig() {
+  const config: { headers: Record<string, string> } = { headers: {} };
+  
+  if (clerkGetToken) {
+    try {
+      const token = await clerkGetToken();
+      if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+      }
+    } catch (error) {
+      console.warn('Failed to get Clerk token for contracts:', error);
+    }
+  }
+  
+  return config;
+}
+
 export async function generateContract(params: {
   contractType: string;
   artistName: string;
@@ -33,17 +63,20 @@ export async function generateContract(params: {
   duration?: string;
   additionalClauses?: string;
 }): Promise<string> {
-  const response = await axios.post('/api/contracts/generate', params);
+  const config = await getAuthConfig();
+  const response = await axios.post('/api/contracts/generate', params, config);
   return response.data.content;
 }
 
 export async function analyzeContract(contractText: string): Promise<ContractAnalysis> {
-  const response = await axios.post('/api/contracts/analyze', { contractText });
+  const config = await getAuthConfig();
+  const response = await axios.post('/api/contracts/analyze', { contractText }, config);
   return response.data.analysis;
 }
 
 export async function getContractTemplates(): Promise<Record<string, ContractTemplate>> {
-  const response = await axios.get('/api/contracts/templates');
+  const config = await getAuthConfig();
+  const response = await axios.get('/api/contracts/templates', config);
   return response.data.templates;
 }
 
@@ -51,10 +84,11 @@ export async function generateFromTemplate(
   templateType: string,
   customParams: Record<string, string>
 ): Promise<string> {
+  const config = await getAuthConfig();
   const response = await axios.post('/api/contracts/generate-template', {
     templateType,
     customParams
-  });
+  }, config);
   return response.data.content;
 }
 
@@ -64,24 +98,29 @@ export async function saveContract(data: {
   contractType?: string;
   status?: 'draft' | 'active' | 'signed' | 'expired';
 }): Promise<{ id: string }> {
-  const response = await axios.post('/api/contracts', data);
+  const config = await getAuthConfig();
+  const response = await axios.post('/api/contracts', data, config);
   return { id: response.data.id };
 }
 
 export async function getUserContracts(): Promise<Contract[]> {
-  const response = await axios.get('/api/contracts');
+  const config = await getAuthConfig();
+  const response = await axios.get('/api/contracts', config);
   return response.data.contracts;
 }
 
 export async function getContract(id: string): Promise<Contract> {
-  const response = await axios.get(`/api/contracts/${id}`);
+  const config = await getAuthConfig();
+  const response = await axios.get(`/api/contracts/${id}`, config);
   return response.data.contract;
 }
 
 export async function updateContract(id: string, data: Partial<Contract>): Promise<void> {
-  await axios.patch(`/api/contracts/${id}`, data);
+  const config = await getAuthConfig();
+  await axios.patch(`/api/contracts/${id}`, data, config);
 }
 
 export async function deleteContract(id: string): Promise<void> {
-  await axios.delete(`/api/contracts/${id}`);
+  const config = await getAuthConfig();
+  await axios.delete(`/api/contracts/${id}`, config);
 }

@@ -11,6 +11,7 @@ import stripeRouter from "./routes/stripe";
 import { setupVideosRoutes } from "./routes/videos";
 import { setupEmailRoutes } from "./routes/email";
 import { setupApifyRoutes } from "./routes/apify";
+import { setupLeadRoutes } from "./routes/leads";
 import { setupSocialNetworkRoutes } from "./routes/social-network.setup";
 import { setupSubscriptionRoutes } from "./routes/subscription-protected-routes";
 import firestoreSocialNetworkRouter from "./routes/firestore-social-network";
@@ -1252,6 +1253,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   setupVideosRoutes(app);
   setupEmailRoutes(app);
   setupApifyRoutes(app);
+  setupLeadRoutes(app); // Lead capture from landing pages
   setupFiverServicesRoutes(app);
   setupSocialNetworkRoutes(app);
   app.use('/api/stripe', stripeRouter);

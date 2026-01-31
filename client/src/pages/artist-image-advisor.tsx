@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { logger } from "../lib/logger";
 import { Header } from "../components/layout/header";
 import { motion, AnimatePresence } from "framer-motion";
+import { PlanTierGuard } from "../components/youtube-views/plan-tier-guard";
+import { isAdminEmail } from "../../../shared/constants";
+import { useUser } from "@clerk/clerk-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Label } from "../components/ui/label";
@@ -39,6 +42,11 @@ export default function ArtistImageAdvisorPage() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const { user } = useAuth();
+  const { user: clerkUser } = useUser();
+
+  // Check if user is admin
+  const userEmail = clerkUser?.primaryEmailAddress?.emailAddress || "";
+  const isAdmin = isAdminEmail(userEmail);
 
   const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
   const [selectedArtistId, setSelectedArtistId] = useState<number | null>(null);
@@ -65,7 +73,7 @@ export default function ArtistImageAdvisorPage() {
 
   const selectedArtist = artistsData?.artists?.find(a => a.id === selectedArtistId);
 
-  return (
+  const pageContent = (
     <div className="min-h-screen bg-background">
       <Header />
 
@@ -148,6 +156,17 @@ export default function ArtistImageAdvisorPage() {
         </AnimatePresence>
       </main>
     </div>
+  );
+
+  // If admin, return content directly; otherwise wrap with PlanTierGuard
+  if (isAdmin) {
+    return pageContent;
+  }
+
+  return (
+    <PlanTierGuard requiredPlan="Premium">
+      {pageContent}
+    </PlanTierGuard>
   );
 }
 

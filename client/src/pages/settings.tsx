@@ -24,14 +24,19 @@ import {
   Loader2,
   Sparkles,
   Wand2,
-  FileText,
+  CreditCard,
+  Crown,
+  Check,
+  ArrowRight,
 } from "lucide-react";
-import { EPKGenerator } from "../components/artist-profile/epk-generator";
 import { useIsMobile } from "../hooks/use-mobile";
 import { useSettingsStore, themeOptions, densityOptions, languageOptions } from "../store/settings-store";
 import { useEffect, useState } from "react";
 import { useToast } from "../hooks/use-toast";
 import { useAuth } from "../hooks/use-auth";
+import { useUser } from "@clerk/clerk-react";
+import { useLocation } from "wouter";
+import { useSubscription } from "../lib/context/subscription-context";
 import { z } from "zod";
 import { db } from "../firebase";
 import { collection, doc, setDoc, getDoc, query, where, getDocs } from "firebase/firestore";
@@ -51,8 +56,18 @@ export default function SettingsPage() {
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { isSignedIn, isLoaded } = useUser();
+  const [, setLocation] = useLocation();
+  const { subscription, currentPlan, isLoading: subscriptionLoading } = useSubscription();
   
-  // Estado global de configuraciones
+  // Redirect to auth if not signed in
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      setLocation("/auth");
+    }
+  }, [isLoaded, isSignedIn, setLocation]);
+  
+  // Global settings state
   const settings = useSettingsStore();
   
   // Estados para el perfil de artista
@@ -65,21 +80,21 @@ export default function SettingsPage() {
   const [isGeneratingProfileImage, setIsGeneratingProfileImage] = useState(false);
   const [isGeneratingBannerImage, setIsGeneratingBannerImage] = useState(false);
   
-  // Schemas de validación
+  // Validation Schemas
   const profileSchema = z.object({
-    name: z.string().min(2, "El nombre debe tener al menos 2 caracteres").optional(),
-    email: z.string().email("Email inválido").optional(),
+    name: z.string().min(2, "Name must be at least 2 characters").optional(),
+    email: z.string().email("Invalid email").optional(),
     language: z.enum(languageOptions)
   });
 
   const artistProfileSchema = z.object({
-    displayName: z.string().min(2, "El nombre artístico debe tener al menos 2 caracteres"),
-    biography: z.string().min(10, "La biografía debe tener al menos 10 caracteres").optional(),
+    displayName: z.string().min(2, "Artist name must be at least 2 characters"),
+    biography: z.string().min(10, "Biography must be at least 10 characters").optional(),
     genre: z.string().optional(),
     location: z.string().optional(),
-    profileImage: z.string().url("Debe ser una URL válida").optional().or(z.literal("")),
-    bannerImage: z.string().url("Debe ser una URL válida").optional().or(z.literal("")),
-    contactEmail: z.string().email("Email inválido").optional().or(z.literal("")),
+    profileImage: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+    bannerImage: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+    contactEmail: z.string().email("Invalid email").optional().or(z.literal("")),
     contactPhone: z.string().optional(),
     instagram: z.string().optional(),
     twitter: z.string().optional(),
@@ -99,16 +114,16 @@ export default function SettingsPage() {
   });
   
   const securitySchema = z.object({
-    currentPassword: z.string().min(1, "La contraseña actual es obligatoria"),
-    newPassword: z.string().min(8, "La nueva contraseña debe tener al menos 8 caracteres")
-      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "La contraseña debe tener al menos una letra mayúscula, una minúscula y un número"),
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z.string().min(8, "New password must be at least 8 characters")
+      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "Password must contain at least one uppercase letter, one lowercase letter, and one number"),
     confirmPassword: z.string()
   }).refine(data => data.newPassword === data.confirmPassword, {
-    message: "Las contraseñas no coinciden",
+    message: "Passwords do not match",
     path: ["confirmPassword"]
   });
   
-  // Formularios iniciales
+  // Form initializers
   const profileForm = useForm({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -162,7 +177,7 @@ export default function SettingsPage() {
     }
   });
 
-  // Cargar perfil de artista desde Firestore
+  // Load artist profile from Firestore
   useEffect(() => {
     const loadArtistProfile = async () => {
       if (!user?.uid) {
@@ -212,8 +227,8 @@ export default function SettingsPage() {
 
     if (!currentName) {
       toast({
-        title: "Nombre requerido",
-        description: "Debes ingresar tu nombre artístico primero.",
+        title: "Name required",
+        description: "Please enter your artist name first.",
         variant: "destructive",
       });
       return;
@@ -237,8 +252,8 @@ export default function SettingsPage() {
       if (data.success && data.biography) {
         artistProfileForm.setValue("biography", data.biography, { shouldDirty: true });
         toast({
-          title: "Biografía generada",
-          description: "Tu biografía ha sido generada automáticamente. Puedes editarla si deseas.",
+          title: "Biography generated",
+          description: "Your biography has been generated automatically. You can edit it if you wish.",
         });
       } else {
         throw new Error(data.error || 'Failed to generate biography');
@@ -247,7 +262,7 @@ export default function SettingsPage() {
       logger.error("Error generating biography:", error);
       toast({
         title: "Error",
-        description: "No se pudo generar la biografía. Intenta de nuevo.",
+        description: "Could not generate biography. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -261,8 +276,8 @@ export default function SettingsPage() {
 
     if (!currentName) {
       toast({
-        title: "Nombre requerido",
-        description: "Debes ingresar tu nombre artístico primero.",
+        title: "Name required",
+        description: "Please enter your artist name first.",
         variant: "destructive",
       });
       return;
@@ -286,8 +301,8 @@ export default function SettingsPage() {
       if (data.success && data.imageUrl) {
         artistProfileForm.setValue("profileImage", data.imageUrl, { shouldDirty: true });
         toast({
-          title: "Imagen de perfil generada",
-          description: "Tu imagen de perfil ha sido generada. Copia la URL si deseas usarla.",
+          title: "Profile image generated",
+          description: "Your profile image has been generated. Copy the URL if you want to use it.",
         });
       } else {
         throw new Error(data.error || 'Failed to generate profile image');
@@ -296,7 +311,7 @@ export default function SettingsPage() {
       logger.error("Error generating profile image:", error);
       toast({
         title: "Error",
-        description: "No se pudo generar la imagen de perfil. Intenta de nuevo.",
+        description: "Could not generate profile image. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -310,8 +325,8 @@ export default function SettingsPage() {
 
     if (!currentName) {
       toast({
-        title: "Nombre requerido",
-        description: "Debes ingresar tu nombre artístico primero.",
+        title: "Name required",
+        description: "Please enter your artist name first.",
         variant: "destructive",
       });
       return;
@@ -336,8 +351,8 @@ export default function SettingsPage() {
       if (data.success && data.imageUrl) {
         artistProfileForm.setValue("bannerImage", data.imageUrl, { shouldDirty: true });
         toast({
-          title: "Imagen de banner generada",
-          description: "Tu imagen de banner ha sido generada. Copia la URL si deseas usarla.",
+          title: "Banner image generated",
+          description: "Your banner image has been generated. Copy the URL if you want to use it.",
         });
       } else {
         throw new Error(data.error || 'Failed to generate banner image');
@@ -346,7 +361,7 @@ export default function SettingsPage() {
       logger.error("Error generating banner image:", error);
       toast({
         title: "Error",
-        description: "No se pudo generar la imagen de banner. Intenta de nuevo.",
+        description: "Could not generate banner image. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -354,12 +369,12 @@ export default function SettingsPage() {
     }
   };
   
-  // Manejadores para guardar cada formulario
+  // Form submit handlers
   const handleProfileSubmit = (values: z.infer<typeof profileSchema>) => {
     settings.updateProfile(values);
     toast({
-      title: "Perfil actualizado",
-      description: "Tu información de perfil ha sido actualizada."
+      title: "Profile updated",
+      description: "Your profile information has been updated."
     });
   };
 
@@ -367,7 +382,7 @@ export default function SettingsPage() {
     if (!user?.uid) {
       toast({
         title: "Error",
-        description: "Debes estar autenticado para actualizar tu perfil.",
+        description: "You must be logged in to update your profile.",
         variant: "destructive",
       });
       return;
@@ -400,11 +415,11 @@ export default function SettingsPage() {
       };
 
       if (!querySnapshot.empty) {
-        // Actualizar documento existente
+        // Update existing document
         const userDocRef = querySnapshot.docs[0].ref;
         await setDoc(userDocRef, profileData, { merge: true });
       } else {
-        // Crear nuevo documento
+        // Create new document
         const newDocRef = doc(collection(db, "users"));
         await setDoc(newDocRef, {
           ...profileData,
@@ -413,8 +428,8 @@ export default function SettingsPage() {
       }
 
       toast({
-        title: "Perfil de artista actualizado",
-        description: "Tu información de perfil se ha guardado correctamente."
+        title: "Artist profile updated",
+        description: "Your profile information has been saved successfully."
       });
 
       setArtistProfileData(profileData);
@@ -422,7 +437,7 @@ export default function SettingsPage() {
       logger.error("Error saving artist profile:", error);
       toast({
         title: "Error",
-        description: "No se pudo guardar tu perfil. Por favor intenta nuevamente.",
+        description: "Could not save your profile. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -433,41 +448,69 @@ export default function SettingsPage() {
   const handleNotificationsSubmit = (values: z.infer<typeof notificationsSchema>) => {
     settings.updateNotifications(values);
     toast({
-      title: "Preferencias de notificación actualizadas",
-      description: "Tus preferencias de notificación han sido guardadas."
+      title: "Notification preferences updated",
+      description: "Your notification preferences have been saved."
     });
   };
   
   const handleAppearanceSubmit = (values: z.infer<typeof appearanceSchema>) => {
     settings.updateAppearance(values);
-    // Aplicar el tema seleccionado
+    // Apply selected theme
     document.documentElement.setAttribute('data-theme', values.theme === 'system' 
       ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
       : values.theme);
     
     toast({
-      title: "Apariencia actualizada",
-      description: "Tus preferencias de apariencia han sido guardadas."
+      title: "Appearance updated",
+      description: "Your appearance preferences have been saved."
     });
   };
   
   const handleSecuritySubmit = (values: z.infer<typeof securitySchema>) => {
-    // Aquí se implementaría la lógica para cambiar la contraseña
-    // Por ahora sólo simulamos el éxito
+    // Password change logic would be implemented here
+    // For now we just simulate success
     toast({
-      title: "Contraseña actualizada",
-      description: "Tu contraseña ha sido actualizada correctamente."
+      title: "Password updated",
+      description: "Your password has been updated successfully."
     });
     securityForm.reset();
   };
   
-  // Aplicar el tema al cargar la página
+  // Apply theme on page load
   useEffect(() => {
     const theme = settings.appearance.theme;
     document.documentElement.setAttribute('data-theme', theme === 'system' 
       ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
       : theme);
   }, [settings.appearance.theme]);
+
+  // Show loading while checking auth
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin h-8 w-8 border-2 border-orange-500 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  // Don't render if not signed in (redirect in progress)
+  if (!isSignedIn) {
+    return null;
+  }
+
+  // Helper to get plan display name
+  const getPlanDisplayName = (plan: string) => {
+    const planNames: Record<string, string> = {
+      'free': 'Free',
+      'creator': 'Creator',
+      'basic': 'Creator',
+      'professional': 'Professional',
+      'pro': 'Professional',
+      'enterprise': 'Enterprise',
+      'premium': 'Enterprise'
+    };
+    return planNames[plan] || 'Free';
+  };
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 md:pt-6 md:space-y-8">
@@ -478,8 +521,12 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="artist" className="space-y-4 md:space-y-6">
+      <Tabs defaultValue="subscription" className="space-y-4 md:space-y-6">
         <TabsList className="w-full h-auto flex flex-wrap justify-start md:justify-start gap-1 md:gap-2 p-1">
+          <TabsTrigger value="subscription" className="flex-1 md:flex-none gap-1 md:gap-2 h-10 px-2 md:px-4 py-2">
+            <CreditCard className="h-4 w-4" />
+            <span className="text-xs md:text-sm">Subscription</span>
+          </TabsTrigger>
           <TabsTrigger value="artist" className="flex-1 md:flex-none gap-1 md:gap-2 h-10 px-2 md:px-4 py-2">
             <Music className="h-4 w-4" />
             <span className="text-xs md:text-sm">Artist Profile</span>
@@ -502,11 +549,197 @@ export default function SettingsPage() {
           </TabsTrigger>
         </TabsList>
 
+        {/* Subscription Tab */}
+        <TabsContent value="subscription" className="space-y-4">
+          <Card className="p-3 md:p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Crown className="h-5 w-5 text-orange-500" />
+              <h3 className="text-base md:text-lg font-semibold">Your Subscription</h3>
+            </div>
+            
+            {subscriptionLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Current Plan */}
+                <div className="p-4 rounded-lg bg-gradient-to-r from-orange-500/10 to-orange-600/5 border border-orange-500/20">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Current Plan</p>
+                      <p className="text-2xl font-bold text-orange-500">{getPlanDisplayName(currentPlan)}</p>
+                    </div>
+                    <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      subscription?.status === 'active' 
+                        ? 'bg-green-500/20 text-green-500' 
+                        : subscription?.status === 'trialing'
+                        ? 'bg-blue-500/20 text-blue-500'
+                        : 'bg-gray-500/20 text-gray-500'
+                    }`}>
+                      {subscription?.status === 'active' ? 'Active' : 
+                       subscription?.status === 'trialing' ? 'Trial' : 
+                       subscription?.status || 'Free'}
+                    </div>
+                  </div>
+                  
+                  {subscription?.currentPeriodEnd && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {subscription.cancelAtPeriodEnd 
+                        ? `Expires on ${new Date(subscription.currentPeriodEnd).toLocaleDateString()}`
+                        : `Renews on ${new Date(subscription.currentPeriodEnd).toLocaleDateString()}`
+                      }
+                    </p>
+                  )}
+                </div>
+
+                {/* Plan Features */}
+                <div>
+                  <h4 className="font-medium mb-3">Plan Features</h4>
+                  <div className="grid gap-2">
+                    {currentPlan === 'free' ? (
+                      <>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span>Basic analytics</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span>1 artist profile</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span>Limited AI features</span>
+                        </div>
+                      </>
+                    ) : currentPlan === 'creator' || currentPlan === 'basic' ? (
+                      <>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span>Advanced analytics</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span>3 artist profiles</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span>AI content generation</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span>Priority support</span>
+                        </div>
+                      </>
+                    ) : currentPlan === 'professional' || currentPlan === 'pro' ? (
+                      <>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span>Full analytics suite</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span>10 artist profiles</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span>All AI features</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span>Video creation tools</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span>24/7 support</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span>Enterprise analytics</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span>Unlimited artist profiles</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span>All premium AI features</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span>White-label options</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span>Dedicated account manager</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Upgrade Button */}
+                {(currentPlan === 'free' || currentPlan === 'creator' || currentPlan === 'basic') && (
+                  <Button 
+                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                    onClick={() => setLocation('/pricing')}
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Upgrade Your Plan
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+
+                {/* Manage Subscription */}
+                {subscription && subscription.status === 'active' && (
+                  <div className="pt-4 border-t">
+                    <h4 className="font-medium mb-3">Manage Subscription</h4>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button variant="outline" onClick={() => setLocation('/pricing')}>
+                        Change Plan
+                      </Button>
+                      {subscription.stripeSubscriptionId && (
+                        <Button 
+                          variant="ghost" 
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={async () => {
+                            try {
+                              const response = await fetch('/api/subscription/create-portal-session', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' }
+                              });
+                              const data = await response.json();
+                              if (data.url) {
+                                window.location.href = data.url;
+                              }
+                            } catch (error) {
+                              toast({
+                                title: "Error",
+                                description: "Could not open billing portal",
+                                variant: "destructive"
+                              });
+                            }
+                          }}
+                        >
+                          Manage Billing
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </Card>
+        </TabsContent>
+
         <TabsContent value="artist" className="space-y-4">
           <Card className="p-3 md:p-6">
             <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">Artist Profile Information</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Esta información se mostrará en tu perfil público de artista
+              This information will be displayed on your public artist profile
             </p>
             
             {isLoadingArtistProfile ? (
@@ -521,12 +754,12 @@ export default function SettingsPage() {
                     name="displayName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nombre Artístico *</FormLabel>
+                        <FormLabel>Artist Name *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Tu nombre artístico" {...field} data-testid="input-artist-name" />
+                          <Input placeholder="Your artist name" {...field} data-testid="input-artist-name" />
                         </FormControl>
                         <FormDescription>
-                          Este será tu nombre público como artista
+                          This will be your public name as an artist
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -539,7 +772,7 @@ export default function SettingsPage() {
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center justify-between mb-2">
-                          <FormLabel>Biografía</FormLabel>
+                          <FormLabel>Biography</FormLabel>
                           <Button
                             type="button"
                             variant="outline"
@@ -551,26 +784,26 @@ export default function SettingsPage() {
                             {isGeneratingBiography ? (
                               <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Generando...
+                                Generating...
                               </>
                             ) : (
                               <>
                                 <Sparkles className="mr-2 h-4 w-4" />
-                                Generar con IA
+                                Generate with AI
                               </>
                             )}
                           </Button>
                         </div>
                         <FormControl>
                           <Textarea 
-                            placeholder="Cuéntanos tu historia como artista..." 
+                            placeholder="Tell us your story as an artist..." 
                             className="min-h-[100px]"
                             {...field}
                             data-testid="input-biography"
                           />
                         </FormControl>
                         <FormDescription>
-                          Una breve descripción sobre ti y tu música
+                          A brief description about you and your music
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -583,9 +816,9 @@ export default function SettingsPage() {
                       name="genre"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Género Musical</FormLabel>
+                          <FormLabel>Music Genre</FormLabel>
                           <FormControl>
-                            <Input placeholder="Ej: Pop, Rock, Hip-Hop" {...field} data-testid="input-genre" />
+                            <Input placeholder="E.g: Pop, Rock, Hip-Hop" {...field} data-testid="input-genre" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -597,9 +830,9 @@ export default function SettingsPage() {
                       name="location"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Ubicación</FormLabel>
+                          <FormLabel>Location</FormLabel>
                           <FormControl>
-                            <Input placeholder="Ciudad, País" {...field} data-testid="input-location" />
+                            <Input placeholder="City, Country" {...field} data-testid="input-location" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -613,7 +846,7 @@ export default function SettingsPage() {
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center justify-between mb-2">
-                          <FormLabel>URL de Imagen de Perfil</FormLabel>
+                          <FormLabel>Profile Image URL</FormLabel>
                           <Button
                             type="button"
                             variant="outline"
@@ -625,25 +858,25 @@ export default function SettingsPage() {
                             {isGeneratingProfileImage ? (
                               <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Generando...
+                                Generating...
                               </>
                             ) : (
                               <>
                                 <Wand2 className="mr-2 h-4 w-4" />
-                                Generar con IA
+                                Generate with AI
                               </>
                             )}
                           </Button>
                         </div>
                         <FormControl>
                           <Input 
-                            placeholder="https://ejemplo.com/imagen.jpg" 
+                            placeholder="https://example.com/image.jpg" 
                             {...field} 
                             data-testid="input-profile-image"
                           />
                         </FormControl>
                         <FormDescription>
-                          URL de tu foto de perfil (JPG, PNG, etc.)
+                          URL of your profile photo (JPG, PNG, etc.)
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -656,7 +889,7 @@ export default function SettingsPage() {
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center justify-between mb-2">
-                          <FormLabel>URL de Imagen de Banner</FormLabel>
+                          <FormLabel>Banner Image URL</FormLabel>
                           <Button
                             type="button"
                             variant="outline"
@@ -668,25 +901,25 @@ export default function SettingsPage() {
                             {isGeneratingBannerImage ? (
                               <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Generando...
+                                Generating...
                               </>
                             ) : (
                               <>
                                 <Wand2 className="mr-2 h-4 w-4" />
-                                Generar con IA
+                                Generate with AI
                               </>
                             )}
                           </Button>
                         </div>
                         <FormControl>
                           <Input 
-                            placeholder="https://ejemplo.com/banner.jpg" 
+                            placeholder="https://example.com/banner.jpg" 
                             {...field} 
                             data-testid="input-banner-image"
                           />
                         </FormControl>
                         <FormDescription>
-                          URL de tu imagen de portada (banner)
+                          URL of your cover image (banner)
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -694,7 +927,7 @@ export default function SettingsPage() {
                   />
 
                   <div className="border-t pt-4 mt-4">
-                    <h4 className="text-sm font-semibold mb-3">Información de Contacto</h4>
+                    <h4 className="text-sm font-semibold mb-3">Contact Information</h4>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
@@ -702,9 +935,9 @@ export default function SettingsPage() {
                         name="contactEmail"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Email de Contacto</FormLabel>
+                            <FormLabel>Contact Email</FormLabel>
                             <FormControl>
-                              <Input type="email" placeholder="contacto@ejemplo.com" {...field} data-testid="input-contact-email" />
+                              <Input type="email" placeholder="contact@example.com" {...field} data-testid="input-contact-email" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -716,7 +949,7 @@ export default function SettingsPage() {
                         name="contactPhone"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Teléfono</FormLabel>
+                            <FormLabel>Phone</FormLabel>
                             <FormControl>
                               <Input placeholder="+1 234 567 8900" {...field} data-testid="input-phone" />
                             </FormControl>
@@ -728,7 +961,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="border-t pt-4 mt-4">
-                    <h4 className="text-sm font-semibold mb-3">Redes Sociales</h4>
+                    <h4 className="text-sm font-semibold mb-3">Social Networks</h4>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
@@ -738,7 +971,7 @@ export default function SettingsPage() {
                           <FormItem>
                             <FormLabel>Instagram</FormLabel>
                             <FormControl>
-                              <Input placeholder="@tuusuario" {...field} data-testid="input-instagram" />
+                              <Input placeholder="@yourusername" {...field} data-testid="input-instagram" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -752,7 +985,7 @@ export default function SettingsPage() {
                           <FormItem>
                             <FormLabel>Twitter / X</FormLabel>
                             <FormControl>
-                              <Input placeholder="@tuusuario" {...field} data-testid="input-twitter" />
+                              <Input placeholder="@yourusername" {...field} data-testid="input-twitter" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -766,7 +999,7 @@ export default function SettingsPage() {
                           <FormItem>
                             <FormLabel>YouTube</FormLabel>
                             <FormControl>
-                              <Input placeholder="https://youtube.com/@tucanal" {...field} data-testid="input-youtube" />
+                              <Input placeholder="https://youtube.com/@yourchannel" {...field} data-testid="input-youtube" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -798,27 +1031,15 @@ export default function SettingsPage() {
                     {isSavingArtistProfile ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Guardando...
+                        Saving...
                       </>
                     ) : (
-                      "Guardar Cambios"
+                      "Save Changes"
                     )}
                   </Button>
                 </form>
               </Form>
             )}
-          </Card>
-
-          {/* EPK Generator Section */}
-          <Card className="p-3 md:p-6 border-primary/20">
-            <div className="flex items-center gap-2 mb-3 md:mb-4">
-              <FileText className="h-5 w-5 text-primary" />
-              <h3 className="text-base md:text-lg font-semibold">Electronic Press Kit (EPK)</h3>
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              Genera un kit de prensa profesional completo con IA. Incluye biografía mejorada, logros, citas inspiradoras y fotos de prensa coherentes con tu estilo musical.
-            </p>
-            <EPKGenerator />
           </Card>
         </TabsContent>
 
