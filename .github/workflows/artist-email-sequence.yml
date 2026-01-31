@@ -1,0 +1,87 @@
+name: 🎵 Artist Email Sequence (10 HTML Emails)
+
+# Solo se activa manualmente - TÚ decides cuándo
+on:
+  workflow_dispatch:
+    inputs:
+      sequence_number:
+        description: 'Número de email en la secuencia (1-10)'
+        required: true
+        default: '1'
+        type: choice
+        options:
+          - '1'
+          - '2'
+          - '3'
+          - '4'
+          - '5'
+          - '6'
+          - '7'
+          - '8'
+          - '9'
+          - '10'
+      max_emails:
+        description: 'Máximo de emails a enviar'
+        required: false
+        default: '50'
+        type: string
+      preview_mode:
+        description: 'Modo preview (solo a convoycubano@gmail.com)'
+        required: false
+        default: 'true'
+        type: boolean
+
+jobs:
+  send-artist-sequence:
+    runs-on: ubuntu-latest
+    environment: production
+    
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      SUPABASE_CONNECTION_STRING: ${{ secrets.SUPABASE_CONNECTION_STRING }}
+      RESEND_API_INDUSTRY: ${{ secrets.RESEND_API_INDUSTRY }}
+      RESEND_API_ARTISTS_1: ${{ secrets.RESEND_API_ARTISTS_1 }}
+      RESEND_API_ARTISTS_2: ${{ secrets.RESEND_API_ARTISTS_2 }}
+      RESEND_API_ARTISTS_3: ${{ secrets.RESEND_API_ARTISTS_3 }}
+      RESEND_API_ARTISTS_4: ${{ secrets.RESEND_API_ARTISTS_4 }}
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: 📦 Install dependencies
+      run: npm ci
+
+    - name: 🎯 Display configuration
+      run: |
+        echo "═══════════════════════════════════════════════════════════"
+        echo "🎵 ARTIST EMAIL SEQUENCE"
+        echo "═══════════════════════════════════════════════════════════"
+        echo "📧 Email en secuencia: #${{ github.event.inputs.sequence_number }}/10"
+        echo "📊 Máximo emails: ${{ github.event.inputs.max_emails }}"
+        echo "🔄 Preview mode: ${{ github.event.inputs.preview_mode }}"
+        echo "═══════════════════════════════════════════════════════════"
+
+    - name: 📊 Check lead statistics
+      run: node scripts/check-leads.cjs
+
+    - name: 🎵 Send Artist Sequence Email #${{ github.event.inputs.sequence_number }}
+      run: |
+        node scripts/artist-sequence-sender.cjs \
+          --sequence=${{ github.event.inputs.sequence_number }} \
+          --max=${{ github.event.inputs.max_emails }} \
+          --preview=${{ github.event.inputs.preview_mode }}
+      continue-on-error: true
+
+    - name: 📈 Final statistics
+      run: |
+        echo "═══════════════════════════════════════════════════════════"
+        echo "📊 SECUENCIA COMPLETADA"
+        echo "═══════════════════════════════════════════════════════════"
+        node scripts/check-leads.cjs
