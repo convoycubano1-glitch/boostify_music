@@ -1,0 +1,99 @@
+# 🤝 BOOSTISWAP - 5 EMAIL SEQUENCE
+# 
+# Automated email campaign to promote BoostiSwap:
+# "The artist collaboration network where you swap features"
+#
+# Usage:
+#   - Manual trigger with sequence number selection
+#   - Preview mode to test emails before production sends
+
+name: BoostiSwap Sequence (5 Emails)
+
+on:
+  workflow_dispatch:
+    inputs:
+      sequence_number:
+        description: 'Sequence Email Number (1-5)'
+        required: true
+        default: '1'
+        type: choice
+        options:
+          - '1'
+          - '2'
+          - '3'
+          - '4'
+          - '5'
+      max_emails:
+        description: 'Maximum number of emails to send'
+        required: false
+        default: '50'
+        type: string
+      preview_mode:
+        description: 'Preview mode (sends to test email only)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+  schedule:
+    # Send sequence emails every Tuesday and Friday at 3pm UTC
+    - cron: '0 15 * * 2,5'
+
+jobs:
+  send-boostiswap-sequence:
+    name: '🤝 BoostiSwap Sequence Email #${{ github.event.inputs.sequence_number || 1 }}'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📚 Install Dependencies
+        run: |
+          npm install pg resend dotenv
+
+      - name: 📧 Send BoostiSwap Sequence Email
+        run: |
+          echo "═══════════════════════════════════════════════════════════════"
+          echo "║   🤝 BOOSTISWAP - EMAIL SEQUENCE                            ║"
+          echo "═══════════════════════════════════════════════════════════════"
+          echo "📧 Sequence Number: ${{ github.event.inputs.sequence_number || '1' }}"
+          echo "📊 Max Emails: ${{ github.event.inputs.max_emails || '50' }}"
+          echo "🔄 Preview Mode: ${{ github.event.inputs.preview_mode || 'false' }}"
+          echo "───────────────────────────────────────────────────────────────"
+          
+          node scripts/boostiswap-sequence-sender.cjs \
+            --sequence=${{ github.event.inputs.sequence_number || '1' }} \
+            --max=${{ github.event.inputs.max_emails || '50' }} \
+            --preview=${{ github.event.inputs.preview_mode || 'false' }}
+        env:
+          SUPABASE_CONNECTION_STRING: ${{ secrets.SUPABASE_CONNECTION_STRING }}
+          RESEND_API_INDUSTRY: ${{ secrets.RESEND_API_INDUSTRY }}
+          PREVIEW_MODE: ${{ github.event.inputs.preview_mode || 'false' }}
+
+      - name: ✅ Sequence Complete
+        run: |
+          echo ""
+          echo "═══════════════════════════════════════════════════════════════"
+          echo "║   ✅ BOOSTISWAP SEQUENCE EMAIL SENT SUCCESSFULLY            ║"
+          echo "═══════════════════════════════════════════════════════════════"
+          echo ""
+          echo "📧 Email: #${{ github.event.inputs.sequence_number || '1' }} of 5"
+          echo "🤝 Focus: BoostiSwap Artist Collaboration Network"
+          echo "🔗 CTA: https://boostifymusic.com/boostiswap"
+          echo ""
+          echo "📋 Sequence Overview:"
+          echo "   1️⃣  The Concept - Swap Features with Artists"
+          echo "   2️⃣  How It Works - 3 Simple Steps"
+          echo "   3️⃣  The Community - 2,500+ Artists Waiting"
+          echo "   4️⃣  Success Stories - Real Collaboration Results"
+          echo "   5️⃣  Final Push - FREE Feature Swap Offer"
+          echo ""
