@@ -1914,6 +1914,10 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
         
         const transcriptionText = await transcribeAudio(selectedFile, authToken);
         logger.info('✅ Transcripción completada, length:', transcriptionText.length, 'characters');
+        logger.info('📝 LETRA DE LA CANCIÓN (primeros 500 caracteres):');
+        logger.info('═'.repeat(60));
+        logger.info(transcriptionText.substring(0, 500));
+        logger.info('═'.repeat(60));
         clearInterval(progressInterval);
         setProgressPercentage(100);
         await new Promise(resolve => setTimeout(resolve, 800));
@@ -2031,8 +2035,11 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
 
 
   const handleGenerateConcepts = useCallback(async (transcriptionText: string, director: DirectorProfile) => {
-    logger.info('🎬 [CONCEPTOS] Iniciando generación con contexto completo de letra');
-    logger.info('📝 [LYRICS CONTEXT] Letra disponible:', transcriptionText.substring(0, 100) + '...');
+    logger.info('═'.repeat(60));
+    logger.info('🎬 [CONCEPTOS] INICIANDO GENERACIÓN DE 3 CONCEPTOS');
+    logger.info('═'.repeat(60));
+    logger.info('📝 [LYRICS CONTEXT] Letra disponible:', transcriptionText.substring(0, 200) + '...');
+    logger.info('🎬 [DIRECTOR] Director seleccionado:', director.name);
     
     setIsGeneratingConcepts(true);
     setShowProgress(true);
@@ -2114,6 +2121,10 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       setShowProgress(false);
       
       // Mostrar modal INMEDIATAMENTE para que el usuario vea el progreso
+      logger.info('═'.repeat(60));
+      logger.info('🎨 [MODAL] ABRIENDO MODAL DE 3 CONCEPTOS');
+      logger.info(`📊 Conceptos disponibles: ${conceptsInitial.length}`);
+      logger.info('═'.repeat(60));
       setShowConceptSelection(true);
       
       // ⚡ Generar TODOS los posters EN PARALELO para máxima velocidad
@@ -2400,7 +2411,11 @@ DESIGN REQUIREMENTS:
       // que pueda ser usada por el servidor para análisis y lipsync
       const uploadAudioToFirebase = async () => {
         try {
-          logger.info('📤 [AUDIO UPLOAD] Subiendo audio a Firebase Storage...');
+          logger.info('═'.repeat(60));
+          logger.info('📤 [AUDIO UPLOAD] INICIANDO SUBIDA A FIREBASE STORAGE');
+          logger.info('═'.repeat(60));
+          logger.info(`📁 Archivo: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+          
           const storage = getStorage();
           const timestamp = Date.now();
           const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
@@ -2412,20 +2427,31 @@ DESIGN REQUIREMENTS:
           
           // ✅ Guardar URL de Firebase para usar en todo el flujo
           setAudioUrl(firebaseAudioUrl);
-          logger.info('✅ [AUDIO UPLOAD] Audio subido a Firebase:', firebaseAudioUrl.substring(0, 80) + '...');
+          logger.info('═'.repeat(60));
+          logger.info('✅ [AUDIO UPLOAD] AUDIO SUBIDO EXITOSAMENTE A FIREBASE');
+          logger.info(`🔗 URL: ${firebaseAudioUrl.substring(0, 100)}...`);
+          logger.info('═'.repeat(60));
           
           toast({
             title: "Audio uploaded",
             description: "Your audio file has been uploaded successfully",
           });
         } catch (uploadError) {
-          logger.error('❌ [AUDIO UPLOAD] Error subiendo audio a Firebase:', uploadError);
+          logger.error('═'.repeat(60));
+          logger.error('❌ [AUDIO UPLOAD] ERROR SUBIENDO AUDIO A FIREBASE');
+          logger.error(uploadError);
+          logger.error('═'.repeat(60));
+          
+          // 🔧 FALLBACK: Crear URL local (blob) para que el audio funcione
+          const localBlobUrl = URL.createObjectURL(file);
+          setAudioUrl(localBlobUrl);
+          logger.info(`🔧 [AUDIO FALLBACK] Usando URL local: ${localBlobUrl.substring(0, 50)}...`);
+          
           toast({
             title: "Upload warning",
-            description: "Audio uploaded locally. Some features may be limited.",
+            description: "Audio loaded locally. Some features may be limited.",
             variant: "default",
           });
-          // Continuar sin URL de Firebase - algunas funciones no funcionarán
         }
       };
       
@@ -2828,15 +2854,28 @@ DESIGN REQUIREMENTS:
       const cinematicPrompt = scene.visual_description || 
                                `${scene.shot_type || 'medium-shot'} of ${scene.description || scene.lyrics || 'scene'}, ${scene.lighting || 'dramatic lighting'}, ${scene.color_grading || 'cinematic colors'}, ${scene.mood || 'emotional'} atmosphere, ${scene.location || 'location'}, ${scene.camera_movement || 'smooth camera movement'}`;
       
+      // 🎤 Detectar si la escena necesita lipsync
+      const hasLyrics = scene.lyrics && scene.lyrics.trim().length > 0;
+      const isPerformanceScene = scene.shot_category === 'PERFORMANCE' || 
+                                 (scene.visual_description && (
+                                   scene.visual_description.toLowerCase().includes('singing') ||
+                                   scene.visual_description.toLowerCase().includes('cantando') ||
+                                   scene.visual_description.toLowerCase().includes('performing') ||
+                                   scene.visual_description.toLowerCase().includes('close-up face')
+                                 ));
+      const needsLipsync = scene.needs_lipsync ?? (hasLyrics && isPerformanceScene);
+      
       logger.info(`🎬 Creating clip ${sceneId}: start=${scene.start_time}s, duration=${scene.duration}s`);
       logger.info(`📝 Prompt: ${cinematicPrompt.substring(0, 100)}...`);
-      logger.info(`🎭 Shot Category: ${scene.shot_category || 'STORY'}, Use Reference: ${scene.use_artist_reference !== false}`);
+      logger.info(`🎭 Shot Category: ${scene.shot_category || 'STORY'}, Use Reference: ${scene.use_artist_reference !== false}, Lipsync: ${needsLipsync}`);
       
       segments.push({
         id: sceneId, // CRITICAL: Use numeric ID for React keys
         type: 'image', // Image type for proper display
         group: 1,
-        title: scene.title || `Scene ${scene.scene_id || scene.scene_number}`,
+        title: needsLipsync 
+          ? `🎤 ${scene.title || `Scene ${scene.scene_id || scene.scene_number}`}` 
+          : scene.title || `Scene ${scene.scene_id || scene.scene_number}`,
         start_time: startTime,
         end_time: endTime,
         duration: duration,
@@ -2845,6 +2884,10 @@ DESIGN REQUIREMENTS:
         imagePrompt: cinematicPrompt, // ✅ CORREGIDO: Usa visual_description del backend
         thumbnail: '', // Will be assigned when image is generated
         imageUrl: '', // Will be assigned when image is generated
+        
+        // 🎤 LIPSYNC: Marcar escenas que necesitan sincronización de labios
+        needsLipsync: needsLipsync,
+        hasVocals: hasLyrics,
         
         // 🎬 NUEVOS CAMPOS: Control de referencia del artista
         useArtistReference: scene.use_artist_reference !== false, // Default true for backward compatibility
@@ -2873,8 +2916,8 @@ DESIGN REQUIREMENTS:
         
         itemProps: {
           style: {
-            background: `hsl(${(index * 30) % 360}, 70%, 50%)`,
-            border: '1px solid rgba(255,255,255,0.3)',
+            background: needsLipsync ? 'linear-gradient(135deg, #f97316, #ea580c)' : `hsl(${(index * 30) % 360}, 70%, 50%)`,
+            border: needsLipsync ? '2px solid #fb923c' : '1px solid rgba(255,255,255,0.3)',
             borderRadius: '4px',
             color: 'white'
           }
@@ -2892,6 +2935,14 @@ DESIGN REQUIREMENTS:
           emotional_tone: scene.emotional_tone,
           transition: scene.transition,
           production_notes: scene.production_notes,
+          // � Lipsync info
+          needsLipsync: needsLipsync,
+          hasVocals: hasLyrics,
+          audioSegment: {
+            startTime: scene.start_time || 0,
+            endTime: (scene.start_time || 0) + (scene.duration || 3.5),
+            hasVocals: hasLyrics
+          },
           // 🆕 Preserve original script fields for debugging
           _original_shot_category: scene.shot_category,
           _original_use_artist_reference: scene.use_artist_reference,
@@ -2909,6 +2960,10 @@ DESIGN REQUIREMENTS:
       return acc;
     }, {} as Record<string, number>);
     logger.info(`📊 Shot categories breakdown: ${JSON.stringify(categories)}`);
+    
+    // 🎤 Log resumen de escenas con lipsync
+    const lipsyncCount = segments.filter(s => s.needsLipsync).length;
+    logger.info(`🎤 [LIPSYNC] ${lipsyncCount}/${segments.length} scenes marked for lipsync`);
     
     // 🎤 VALIDACIÓN: Verificar conexión LETRA ↔ ESCENAS
     const scenesWithLyrics = segments.filter(s => s.lyricsSegment && s.lyricsSegment.trim().length > 0);
@@ -5386,9 +5441,12 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
 
   // Mapa de clips organizados por capas para el editor profesional multicanal
   const clips: TimelineClip[] = useMemo(() => {
-    logger.info("🎬 Generando clips para timeline editor, items:", timelineItems.length);
-    logger.info("🔊 audioUrl:", audioUrl ? audioUrl.substring(0, 50) + '...' : 'NULL');
-    logger.info("⏱️ estimatedDuration:", estimatedDuration);
+    // Solo loggear cuando hay datos significativos para evitar spam en consola
+    if (timelineItems.length > 0 || audioUrl) {
+      logger.info("🎬 Generando clips para timeline editor, items:", timelineItems.length);
+      logger.info("🔊 audioUrl:", audioUrl ? audioUrl.substring(0, 50) + '...' : 'NULL');
+      logger.info("⏱️ estimatedDuration:", estimatedDuration);
+    }
     
     // Asegurar que siempre hay un clip de audio en la capa 2 si existe audioUrl
     // NOTA: Capa 2 = Audio Track en TimelineEditor/TimelineLayers
@@ -5409,7 +5467,10 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       })
     ] : [];
     
-    logger.info("🔊 Audio clips creados:", audioClips.length);
+    // Solo loggear si hay audio
+    if (audioClips.length > 0) {
+      logger.info("🔊 Audio clips creados:", audioClips.length);
+    }
     
     // Mapear los items de timeline a clips visuales
     const visualClips = timelineItems.map(item => {
@@ -5510,6 +5571,11 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
   };
 
   const handleClipUpdate = (clipId: number, updates: Partial<TimelineClip>) => {
+    // Ignorar actualizaciones si no hay items o clipId inválido
+    if (!clipId || timelineItems.length === 0) {
+      return;
+    }
+    
     const updatedItems = timelineItems.map(item => {
       if (item.id === clipId) {
         // Crear objeto de actualización base
@@ -5574,10 +5640,12 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       return item;
     });
     
-    setTimelineItems(updatedItems);
-    
-    // Depurar para verificar la actualización
-    logger.info(`Clip ${clipId} actualizado:`, updates);
+    // Solo actualizar si hubo un cambio real
+    const clipFound = timelineItems.some(item => item.id === clipId);
+    if (clipFound) {
+      setTimelineItems(updatedItems);
+      logger.info(`✅ Clip ${clipId} actualizado:`, updates);
+    }
   };
   
   // Función para manejar la división de clips en la línea de tiempo

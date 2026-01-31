@@ -164,10 +164,11 @@ export class ParallelImageGenerator {
   private pauseResolve: (() => void) | null = null;
 
   constructor(options: Partial<ParallelGenerationOptions>) {
+    // OPTIMIZADO para nano-banana-pro: 2x más rápido, mejor concurrencia
     this.options = {
-      maxConcurrent: options.maxConcurrent ?? 3,
-      requestDelayMs: options.requestDelayMs ?? 500,
-      rateLimitPerMinute: options.rateLimitPerMinute ?? 30,
+      maxConcurrent: options.maxConcurrent ?? 6,        // Aumentado de 3 a 6
+      requestDelayMs: options.requestDelayMs ?? 200,    // Reducido de 500 a 200ms
+      rateLimitPerMinute: options.rateLimitPerMinute ?? 60, // Aumentado de 30 a 60
       prioritizePerformance: options.prioritizePerformance ?? true,
       onProgress: options.onProgress ?? (() => {}),
       onImageComplete: options.onImageComplete ?? (() => {}),

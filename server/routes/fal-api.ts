@@ -873,7 +873,8 @@ router.get('/stable-audio/:requestId', async (req: Request, res: Response) => {
 });
 
 // ============================================================================
-// 🖼️ NANO-BANANA IMAGE GENERATION (fal-ai/nano-banana)
+// 🖼️ NANO-BANANA PRO IMAGE GENERATION (fal-ai/nano-banana-pro)
+// Modelo PRO: 2x más rápido, mejor coherencia visual, más realista
 // ============================================================================
 
 interface NanoBananaRequest {
@@ -885,7 +886,7 @@ interface NanoBananaRequest {
 
 /**
  * POST /api/fal/nano-banana/generate
- * Genera imágenes usando FAL nano-banana (reemplaza Gemini)
+ * Genera imágenes usando FAL nano-banana-pro (mejor coherencia y velocidad)
  */
 router.post('/nano-banana/generate', async (req: Request, res: Response) => {
   try {
@@ -905,15 +906,15 @@ router.post('/nano-banana/generate', async (req: Request, res: Response) => {
       });
     }
 
-    console.log('🍌 [FAL-BACKEND] Starting Nano-Banana image generation...');
+    console.log('🍌 [FAL-BACKEND] Starting Nano-Banana PRO image generation...');
     console.log('📝 Prompt:', prompt.substring(0, 80));
 
     const startTime = Date.now();
 
-    // Llamar a FAL nano-banana (text-to-image)
-    // IMPORTANTE: nano-banana usa 'aspect_ratio' con valores como '16:9', NO 'image_size'
+    // Llamar a FAL nano-banana-pro (text-to-image) - MODELO PRO
+    // IMPORTANTE: nano-banana-pro usa 'aspect_ratio' con valores como '16:9', NO 'image_size'
     const response = await fetchWithFailover(
-      'https://fal.run/fal-ai/nano-banana',
+      'https://fal.run/fal-ai/nano-banana-pro',
       {
         method: 'POST',
         headers: {
@@ -926,13 +927,13 @@ router.post('/nano-banana/generate', async (req: Request, res: Response) => {
           output_format: 'png'
         })
       },
-      'Nano-Banana Generate'
+      'Nano-Banana PRO Generate'
     );
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('❌ [FAL-BACKEND] Nano-Banana error:', errorData);
-      await logFalUsage('nano-banana', 0, JSON.stringify(errorData));
+      console.error('❌ [FAL-BACKEND] Nano-Banana PRO error:', errorData);
+      await logFalUsage('nano-banana-pro', 0, JSON.stringify(errorData));
       return res.status(500).json({
         success: false,
         error: `Error generating image: ${response.statusText}`,
@@ -943,8 +944,8 @@ router.post('/nano-banana/generate', async (req: Request, res: Response) => {
     const data = await response.json();
     const processingTime = (Date.now() - startTime) / 1000;
 
-    console.log(`✅ [FAL-BACKEND] Nano-Banana completed in ${processingTime.toFixed(1)}s!`);
-    await logFalUsage('nano-banana', data.images?.length || 1);
+    console.log(`✅ [FAL-BACKEND] Nano-Banana PRO completed in ${processingTime.toFixed(1)}s!`);
+    await logFalUsage('nano-banana-pro', data.images?.length || 1);
 
     // Devolver la primera imagen o todas
     const imageUrl = data.images?.[0]?.url;
@@ -958,8 +959,8 @@ router.post('/nano-banana/generate', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('❌ [FAL-BACKEND] Error in nano-banana:', error);
-    await logFalUsage('nano-banana', 0, error instanceof Error ? error.message : 'Unknown error');
+    console.error('❌ [FAL-BACKEND] Error in nano-banana-pro:', error);
+    await logFalUsage('nano-banana-pro', 0, error instanceof Error ? error.message : 'Unknown error');
     return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -969,7 +970,7 @@ router.post('/nano-banana/generate', async (req: Request, res: Response) => {
 
 /**
  * POST /api/fal/nano-banana/edit
- * Edita imágenes usando FAL nano-banana/edit
+ * Edita imágenes usando FAL nano-banana-pro/edit (mejor coherencia)
  */
 router.post('/nano-banana/edit', async (req: Request, res: Response) => {
   try {
@@ -989,12 +990,12 @@ router.post('/nano-banana/edit', async (req: Request, res: Response) => {
       });
     }
 
-    console.log('🍌✏️ [FAL-BACKEND] Starting Nano-Banana image edit...');
+    console.log('🍌✏️ [FAL-BACKEND] Starting Nano-Banana PRO image edit...');
 
     const startTime = Date.now();
 
     const response = await fetchWithFailover(
-      'https://fal.run/fal-ai/nano-banana/edit',
+      'https://fal.run/fal-ai/nano-banana-pro/edit',
       {
         method: 'POST',
         headers: {
@@ -1007,12 +1008,12 @@ router.post('/nano-banana/edit', async (req: Request, res: Response) => {
           enable_safety_checker: true
         })
       },
-      'Nano-Banana Edit'
+      'Nano-Banana PRO Edit'
     );
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('❌ [FAL-BACKEND] Nano-Banana edit error:', errorData);
+      console.error('❌ [FAL-BACKEND] Nano-Banana PRO edit error:', errorData);
       return res.status(500).json({
         success: false,
         error: `Error editing image: ${response.statusText}`,
@@ -1023,8 +1024,8 @@ router.post('/nano-banana/edit', async (req: Request, res: Response) => {
     const data = await response.json();
     const processingTime = (Date.now() - startTime) / 1000;
 
-    console.log(`✅ [FAL-BACKEND] Nano-Banana edit completed in ${processingTime.toFixed(1)}s!`);
-    await logFalUsage('nano-banana-edit', 1);
+    console.log(`✅ [FAL-BACKEND] Nano-Banana PRO edit completed in ${processingTime.toFixed(1)}s!`);
+    await logFalUsage('nano-banana-pro-edit', 1);
 
     res.json({
       success: true,
@@ -1034,7 +1035,7 @@ router.post('/nano-banana/edit', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('❌ [FAL-BACKEND] Error in nano-banana edit:', error);
+    console.error('❌ [FAL-BACKEND] Error in nano-banana-pro edit:', error);
     return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -1466,20 +1467,20 @@ router.get('/kling-video/:requestId', async (req: Request, res: Response) => {
 });
 
 // ============================================================================
-// 🎭 IMAGE GENERATION WITH FACE REFERENCE (nano-banana/edit for consistency)
+// 🎭 IMAGE GENERATION WITH FACE REFERENCE (nano-banana-pro/edit for consistency)
 // ============================================================================
 
 /**
  * POST /api/fal/nano-banana/generate-with-face
- * Genera imágenes manteniendo consistencia facial usando nano-banana/edit
- * Este modelo es más potente que flux-pulid para mantener identidad facial
+ * Genera imágenes manteniendo consistencia facial usando nano-banana-pro/edit
+ * Modelo PRO: mejor coherencia visual, más realista, 2x más rápido
  */
 router.post('/nano-banana/generate-with-face', async (req: Request, res: Response) => {
   // Handle client abort gracefully
   let isAborted = false;
   req.on('aborted', () => {
     isAborted = true;
-    console.log('⚠️ [FAL-BACKEND] Client aborted nano-banana/generate-with-face request');
+    console.log('⚠️ [FAL-BACKEND] Client aborted nano-banana-pro/generate-with-face request');
   });
   
   try {
@@ -1504,7 +1505,7 @@ router.post('/nano-banana/generate-with-face', async (req: Request, res: Respons
       });
     }
 
-    console.log(`🎭 [FAL-BACKEND] Starting image generation with face reference...`);
+    console.log(`🎭 [FAL-BACKEND] Starting Nano-Banana PRO image generation with face reference...`);
     console.log(`📝 Prompt: ${prompt.substring(0, 80)}...`);
     console.log(`🖼️ Reference images: ${referenceImages?.length || 0}`);
     console.log(`📐 Aspect ratio: ${aspectRatio}`);
@@ -1512,20 +1513,20 @@ router.post('/nano-banana/generate-with-face', async (req: Request, res: Respons
     const startTime = Date.now();
 
     // Determinar endpoint basado en si hay referencias faciales
-    let endpoint = 'https://fal.run/fal-ai/nano-banana';
+    let endpoint = 'https://fal.run/fal-ai/nano-banana-pro';
     let requestBody: any = {
       prompt,
-      aspect_ratio: aspectRatio, // CORRECTO: nano-banana usa 'aspect_ratio' con valores '16:9', '9:16', etc.
+      aspect_ratio: aspectRatio, // CORRECTO: nano-banana-pro usa 'aspect_ratio' con valores '16:9', '9:16', etc.
       num_images: 1,
       output_format: 'png'
     };
 
-    // Si hay referencias, usar nano-banana/edit para consistencia facial
-    // nano-banana/edit es MEJOR que flux-pulid para mantener identidad
+    // Si hay referencias, usar nano-banana-pro/edit para consistencia facial
+    // nano-banana-pro/edit es MEJOR para mantener identidad y coherencia visual
     if (referenceImages && referenceImages.length > 0) {
-      endpoint = 'https://fal.run/fal-ai/nano-banana/edit';
+      endpoint = 'https://fal.run/fal-ai/nano-banana-pro/edit';
       
-      // nano-banana/edit acepta múltiples imágenes de referencia como array
+      // nano-banana-pro/edit acepta múltiples imágenes de referencia como array
       const imageUrls = referenceImages.map((ref: string) => 
         ref.startsWith('data:') ? ref : ref
       );
@@ -1535,14 +1536,14 @@ router.post('/nano-banana/generate-with-face', async (req: Request, res: Respons
       
       requestBody = {
         prompt: enhancedPrompt,
-        image_urls: imageUrls, // ARRAY de URLs - nano-banana/edit acepta múltiples
+        image_urls: imageUrls, // ARRAY de URLs - nano-banana-pro/edit acepta múltiples
         num_images: 1,
         aspect_ratio: aspectRatio, // Usar el aspect ratio exacto: '16:9', '9:16', '1:1'
         output_format: 'png'
       };
       
-      console.log(`🎭 [FAL-BACKEND] Using nano-banana/edit for face consistency with ${imageUrls.length} reference(s)`);
-      console.log(`🎭 [FAL-BACKEND] nano-banana/edit requestBody:`, JSON.stringify(requestBody, null, 2));
+      console.log(`🎭 [FAL-BACKEND] Using nano-banana-pro/edit for face consistency with ${imageUrls.length} reference(s)`);
+      console.log(`🎭 [FAL-BACKEND] nano-banana-pro/edit requestBody:`, JSON.stringify(requestBody, null, 2));
     }
 
     const response = await fetchWithFailover(
@@ -1554,13 +1555,13 @@ router.post('/nano-banana/generate-with-face', async (req: Request, res: Respons
         },
         body: JSON.stringify(requestBody)
       },
-      'Image Generation with Face'
+      'Image Generation PRO with Face'
     );
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('❌ [FAL-BACKEND] Image generation error:', errorData);
-      await logFalUsage('nano-banana-face', 0, JSON.stringify(errorData));
+      console.error('❌ [FAL-BACKEND] Image generation PRO error:', errorData);
+      await logFalUsage('nano-banana-pro-face', 0, JSON.stringify(errorData));
       return res.status(500).json({
         success: false,
         error: `Error generating image: ${response.statusText}`,
@@ -1571,8 +1572,8 @@ router.post('/nano-banana/generate-with-face', async (req: Request, res: Respons
     const data = await response.json();
     const processingTime = (Date.now() - startTime) / 1000;
 
-    console.log(`✅ [FAL-BACKEND] Image with face completed in ${processingTime.toFixed(1)}s!`);
-    await logFalUsage('nano-banana-face', 1);
+    console.log(`✅ [FAL-BACKEND] Nano-Banana PRO with face completed in ${processingTime.toFixed(1)}s!`);
+    await logFalUsage('nano-banana-pro-face', 1);
 
     const imageUrl = data.images?.[0]?.url;
 
@@ -1588,11 +1589,11 @@ router.post('/nano-banana/generate-with-face', async (req: Request, res: Respons
   } catch (error: any) {
     // Ignore aborted requests - client disconnected
     if (isAborted || error?.code === 'ECONNABORTED' || error?.message?.includes('aborted')) {
-      console.log('⚠️ [FAL-BACKEND] generate-with-face request was aborted by client');
+      console.log('⚠️ [FAL-BACKEND] generate-with-face PRO request was aborted by client');
       return; // Don't send response to aborted client
     }
     
-    console.error('❌ [FAL-BACKEND] Error in generate-with-face:', error);
+    console.error('❌ [FAL-BACKEND] Error in generate-with-face PRO:', error);
     return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -1631,37 +1632,36 @@ router.post('/nano-banana/generate-batch', async (req: Request, res: Response) =
       });
     }
 
-    console.log(`🍌 [FAL-BACKEND] Starting batch generation for ${prompts.length} images...`);
+    console.log(`🍌 [FAL-BACKEND] Starting PARALLEL batch generation for ${prompts.length} images with nano-banana-pro...`);
 
     const startTime = Date.now();
-    const results: any[] = [];
     const useFaceRef = referenceImages && referenceImages.length > 0;
 
-    // Generar imágenes secuencialmente para evitar rate limits
-    for (let i = 0; i < prompts.length; i++) {
-      const prompt = prompts[i];
-      console.log(`🖼️ [${i + 1}/${prompts.length}] Generating...`);
+    // Función para generar una imagen individual
+    const generateSingleImage = async (prompt: string, index: number) => {
+      console.log(`🖼️ [${index + 1}/${prompts.length}] Generating...`);
 
       try {
-        let endpoint = 'https://fal.run/fal-ai/nano-banana';
+        // USAR NANO-BANANA-PRO para mejor coherencia y velocidad 2x
+        let endpoint = 'https://fal.run/fal-ai/nano-banana-pro';
         let requestBody: any = {
           prompt,
-          aspect_ratio: aspectRatio, // CORRECTO: usar 'aspect_ratio' con '16:9', '9:16', etc.
+          aspect_ratio: aspectRatio,
           num_images: 1,
           output_format: 'png'
         };
 
         if (useFaceRef) {
-          // Usar nano-banana/edit en lugar de flux-pulid para mejor consistencia
-          endpoint = 'https://fal.run/fal-ai/nano-banana/edit';
+          // Usar nano-banana-pro/edit para mejor consistencia de rostro
+          endpoint = 'https://fal.run/fal-ai/nano-banana-pro/edit';
           
           const enhancedPrompt = `${prompt}. Keep EXACT same face and identity from reference.`;
           
           requestBody = {
             prompt: enhancedPrompt,
-            image_urls: referenceImages, // Array de referencias
+            image_urls: referenceImages,
             num_images: 1,
-            aspect_ratio: aspectRatio, // Usar el aspect ratio exacto
+            aspect_ratio: aspectRatio,
             output_format: 'png'
           };
         }
@@ -1673,42 +1673,61 @@ router.post('/nano-banana/generate-batch', async (req: Request, res: Response) =
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody)
           },
-          `Batch Image ${i + 1}`
+          `Batch Image ${index + 1}`
         );
 
         if (response.ok) {
           const data = await response.json();
-          results.push({
+          return {
             success: true,
             imageUrl: data.images?.[0]?.url,
-            index: i
-          });
+            index
+          };
         } else {
-          results.push({
+          return {
             success: false,
             error: `HTTP ${response.status}`,
-            index: i
-          });
-        }
-
-        // Pequeña pausa entre requests para evitar rate limiting
-        if (i < prompts.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+            index
+          };
         }
       } catch (error) {
-        results.push({
+        return {
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error',
-          index: i
-        });
+          index
+        };
+      }
+    };
+
+    // PARALELISMO VERDADERO: procesar en lotes de 6 simultáneos
+    const BATCH_SIZE = 6;
+    const results: any[] = [];
+    
+    for (let i = 0; i < prompts.length; i += BATCH_SIZE) {
+      const batch = prompts.slice(i, i + BATCH_SIZE);
+      const batchPromises = batch.map((prompt, batchIndex) => 
+        generateSingleImage(prompt, i + batchIndex)
+      );
+      
+      console.log(`⚡ Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(prompts.length / BATCH_SIZE)} (${batch.length} images in parallel)`);
+      
+      const batchResults = await Promise.all(batchPromises);
+      results.push(...batchResults);
+      
+      // Pequeña pausa entre lotes para evitar rate limiting
+      if (i + BATCH_SIZE < prompts.length) {
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
     }
+    
+    // Ordenar resultados por índice original
+    results.sort((a, b) => a.index - b.index)
 
     const processingTime = (Date.now() - startTime) / 1000;
     const successCount = results.filter(r => r.success).length;
 
-    console.log(`✅ [FAL-BACKEND] Batch completed: ${successCount}/${prompts.length} in ${processingTime.toFixed(1)}s`);
-    await logFalUsage('nano-banana-batch', successCount);
+    console.log(`✅ [FAL-BACKEND] Batch completed: ${successCount}/${prompts.length} in ${processingTime.toFixed(1)}s (nano-banana-pro + parallel)`);
+    await logFalUsage('nano-banana-pro-batch', successCount);
 
     res.json({
       success: true,
@@ -1730,6 +1749,192 @@ router.post('/nano-banana/generate-batch', async (req: Request, res: Response) =
     return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+/**
+ * ============================================================
+ * MUSIC VIDEO SCENE - WORKFLOW COMPLETO CON GROK IMAGINE
+ * ============================================================
+ * POST /api/fal/music-video-scene
+ * 
+ * Workflow:
+ * 1. Genera imagen con nano-banana (Text-to-Image)
+ * 2. Convierte a video con Grok Imagine Video
+ * 3. (Opcional) Edita con Grok Edit Video
+ * 
+ * Body: { imagePrompt, motionPrompt, aspectRatio?, duration?, resolution?, editStyle? }
+ */
+router.post('/music-video-scene', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  
+  try {
+    const { imagePrompt, motionPrompt, aspectRatio, duration, resolution, editStyle } = req.body;
+    
+    if (!imagePrompt || !motionPrompt) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requieren imagePrompt y motionPrompt'
+      });
+    }
+    
+    console.log('🎬 [GROK WORKFLOW] Iniciando generación de Music Video Scene...');
+    console.log(`📝 Image Prompt: ${imagePrompt.substring(0, 100)}...`);
+    console.log(`🎭 Motion Prompt: ${motionPrompt.substring(0, 100)}...`);
+    
+    // Importar funciones del servicio FAL
+    const { generateMusicVideoScene } = await import('../services/fal-service');
+    
+    const result = await generateMusicVideoScene(imagePrompt, motionPrompt, {
+      aspectRatio: aspectRatio || '16:9',
+      duration: duration ? parseInt(duration) : 6,
+      resolution: resolution || '720p',
+      editStyle: editStyle
+    });
+    
+    const processingTime = (Date.now() - startTime) / 1000;
+    
+    if (result.success) {
+      console.log(`✅ [GROK WORKFLOW] Escena generada en ${processingTime.toFixed(1)}s`);
+      await logFalUsage('grok-music-video-scene', 1);
+      
+      return res.json({
+        success: true,
+        imageUrl: result.imageUrl,
+        videoUrl: result.videoUrl,
+        editedVideoUrl: result.editedVideoUrl,
+        processingTime
+      });
+    } else {
+      throw new Error(result.error || 'Error en workflow');
+    }
+    
+  } catch (error: any) {
+    console.error('❌ [GROK WORKFLOW] Error:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error generando escena de Music Video'
+    });
+  }
+});
+
+/**
+ * ============================================================
+ * GROK IMAGE-TO-VIDEO
+ * ============================================================
+ * POST /api/fal/grok-video
+ * 
+ * Convierte una imagen a video usando Grok Imagine Video
+ * 
+ * Body: { imageUrl, prompt, duration?, resolution?, aspectRatio? }
+ */
+router.post('/grok-video', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  
+  try {
+    const { imageUrl, prompt, duration, resolution, aspectRatio } = req.body;
+    
+    if (!imageUrl || !prompt) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requieren imageUrl y prompt'
+      });
+    }
+    
+    console.log('🎬 [GROK] Generando video desde imagen...');
+    
+    const { generateVideoWithGrok } = await import('../services/fal-service');
+    
+    const result = await generateVideoWithGrok(imageUrl, prompt, {
+      duration: duration ? parseInt(duration) : 6,
+      resolution: resolution || '720p',
+      aspectRatio: aspectRatio || 'auto'
+    });
+    
+    const processingTime = (Date.now() - startTime) / 1000;
+    
+    if (result.success) {
+      console.log(`✅ [GROK] Video generado en ${processingTime.toFixed(1)}s`);
+      await logFalUsage('grok-image-to-video', 1);
+      
+      return res.json({
+        success: true,
+        videoUrl: result.videoUrl,
+        duration: result.duration,
+        width: result.width,
+        height: result.height,
+        fps: result.fps,
+        processingTime
+      });
+    } else {
+      throw new Error(result.error || 'Error generando video');
+    }
+    
+  } catch (error: any) {
+    console.error('❌ [GROK] Error:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error generando video con Grok'
+    });
+  }
+});
+
+/**
+ * ============================================================
+ * GROK EDIT VIDEO
+ * ============================================================
+ * POST /api/fal/grok-edit
+ * 
+ * Edita un video existente con prompts de texto
+ * 
+ * Body: { videoUrl, editPrompt, resolution? }
+ */
+router.post('/grok-edit', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  
+  try {
+    const { videoUrl, editPrompt, resolution } = req.body;
+    
+    if (!videoUrl || !editPrompt) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requieren videoUrl y editPrompt'
+      });
+    }
+    
+    console.log('✏️ [GROK EDIT] Editando video...');
+    console.log(`🎨 Edit Prompt: ${editPrompt}`);
+    
+    const { editVideoWithGrok } = await import('../services/fal-service');
+    
+    const result = await editVideoWithGrok(videoUrl, editPrompt, {
+      resolution: resolution || 'auto'
+    });
+    
+    const processingTime = (Date.now() - startTime) / 1000;
+    
+    if (result.success) {
+      console.log(`✅ [GROK EDIT] Video editado en ${processingTime.toFixed(1)}s`);
+      await logFalUsage('grok-edit-video', 1);
+      
+      return res.json({
+        success: true,
+        videoUrl: result.videoUrl,
+        duration: result.duration,
+        width: result.width,
+        height: result.height,
+        processingTime
+      });
+    } else {
+      throw new Error(result.error || 'Error editando video');
+    }
+    
+  } catch (error: any) {
+    console.error('❌ [GROK EDIT] Error:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Error editando video con Grok'
     });
   }
 });

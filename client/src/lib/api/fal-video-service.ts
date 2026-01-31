@@ -4,6 +4,11 @@ import { logger } from "../logger";
 /**
  * FAL Video Generation Service
  * Integración completa con múltiples modelos de generación de video
+ * 
+ * WORKFLOW RECOMENDADO PARA MUSIC VIDEOS:
+ * 1. Generar imagen con nano-banana (Text-to-Image) - $0.039/imagen
+ * 2. Convertir a video con Grok Imagine Video - $0.05/segundo ($0.30/6s video)
+ * 3. Editar video con Grok Edit - $0.06/segundo input+output
  */
 
 // Configurar FAL con la clave de API
@@ -17,10 +22,11 @@ export interface VideoGenerationOptions {
   prompt: string;
   imageUrl?: string;
   referenceImages?: string[]; // Para O1 reference-to-video (imágenes del artista)
-  duration?: "5" | "10";
-  aspectRatio?: "16:9" | "9:16" | "1:1";
+  duration?: "5" | "6" | "10";
+  aspectRatio?: "16:9" | "9:16" | "1:1" | "auto";
   negativePrompt?: string;
   cfgScale?: number;
+  resolution?: "480p" | "720p";
 }
 
 export interface VideoGenerationResult {
@@ -28,12 +34,36 @@ export interface VideoGenerationResult {
   videoUrl?: string;
   error?: string;
   metadata?: any;
+  duration?: number;
+  width?: number;
+  height?: number;
+  fps?: number;
 }
 
 /**
  * Modelos disponibles en FAL para generación de video
  */
 export const FAL_VIDEO_MODELS = {
+  // ========== GROK IMAGINE VIDEO (xAI) - PRINCIPAL ==========
+  GROK_IMAGE_TO_VIDEO: {
+    id: "xai/grok-imagine-video/image-to-video",
+    name: "Grok Imagine Video ⭐",
+    description: "xAI's Grok - Genera videos de alta calidad desde imágenes con audio nativo",
+    type: "image-to-video",
+    maxDuration: 6,
+    pricing: "$0.30/6seg",
+    recommended: true
+  },
+  
+  GROK_EDIT_VIDEO: {
+    id: "xai/grok-imagine-video/edit-video",
+    name: "Grok Edit Video",
+    description: "Edita videos existentes con prompts de texto (colorizar, estilizar)",
+    type: "video-to-video",
+    maxDuration: 8,
+    pricing: "$0.06/seg"
+  },
+  
   // Google Veo 3 - El más avanzado del mundo
   VEO_3: {
     id: "fal-ai/veo3",
@@ -354,31 +384,44 @@ export async function generateMultipleVideos(
 export function getRecommendedModels(type: 'text-to-video' | 'image-to-video' | 'reference-to-video' | 'video-to-video' = 'image-to-video') {
   return Object.values(FAL_VIDEO_MODELS)
     .filter(model => {
-      // Para reference-to-video y image-to-video, incluir ambos tipos
+      // Para reference-to-video y image-to-video, incluir ambos tipos + Grok
       if (type === 'image-to-video' || type === 'reference-to-video') {
         return model.type === 'image-to-video' || model.type === 'reference-to-video';
+      }
+      if (type === 'video-to-video') {
+        return model.type === 'video-to-video';
       }
       return model.type === type || model.type === 'text-to-video';
     })
     .sort((a, b) => {
-      // Ordenar: O1 reference-to-video primero (mejor para music videos), luego por calidad
+      // Ordenar: Grok primero, luego O1 reference-to-video, luego por calidad
+      const aIsGrok = a.id.includes('grok') ? -2 : 0;
+      const bIsGrok = b.id.includes('grok') ? -2 : 0;
+      if (aIsGrok !== bIsGrok) return aIsGrok - bIsGrok;
+      
       const isAReference = a.type === 'reference-to-video' ? -1 : 0;
       const isBReference = b.type === 'reference-to-video' ? -1 : 0;
       if (isAReference !== isBReference) return isAReference - isBReference;
       
-      const order = { 'Premium': 0, 'Premium+': 1, 'Medio': 2, '$0.25/5seg': 3, '$0.30/5seg': 4 };
+      const order = { 'Premium': 0, 'Premium+': 1, 'Medio': 2, '$0.25/5seg': 3, '$0.30/5seg': 4, '$0.30/6seg': 5 };
       return (order[a.pricing as keyof typeof order] || 99) - (order[b.pricing as keyof typeof order] || 99);
     });
 }
 
 /**
- * Obtener modelos recomendados para Music Videos (prioriza reference-to-video)
+ * Obtener modelos recomendados para Music Videos
+ * Prioriza: Grok Imagine > O1 reference-to-video > otros image-to-video
  */
 export function getMusicVideoModels() {
   return Object.values(FAL_VIDEO_MODELS)
     .filter(model => model.type === 'image-to-video' || model.type === 'reference-to-video')
     .sort((a, b) => {
-      // O1 Reference-to-video primero (mantiene consistencia del artista)
+      // Grok primero (recomendado para Music Videos)
+      const aIsGrok = a.id.includes('grok') ? -2 : 0;
+      const bIsGrok = b.id.includes('grok') ? -2 : 0;
+      if (aIsGrok !== bIsGrok) return aIsGrok - bIsGrok;
+      
+      // O1 Reference-to-video segundo (mantiene consistencia del artista)
       if (a.type === 'reference-to-video' && b.type !== 'reference-to-video') return -1;
       if (b.type === 'reference-to-video' && a.type !== 'reference-to-video') return 1;
       return 0;
@@ -399,12 +442,74 @@ export function isReferenceToVideoModel(modelId: string): boolean {
   return modelId.includes('reference-to-video');
 }
 
+/**
+ * Verificar si un modelo es Grok
+ */
+export function isGrokModel(modelId: string): boolean {
+  return modelId.includes('grok-imagine-video');
+}
+
+/**
+ * Generar video usando el workflow recomendado (Grok Imagine)
+ * Primero genera imagen con nano-banana, luego la convierte a video
+ */
+export async function generateMusicVideoSceneWithGrok(
+  imagePrompt: string,
+  motionPrompt: string,
+  options: {
+    aspectRatio?: "16:9" | "9:16" | "1:1";
+    duration?: "6";
+    resolution?: "480p" | "720p";
+    editStyle?: string; // Opcional: estilo de post-producción
+  } = {}
+): Promise<{
+  success: boolean;
+  imageUrl?: string;
+  videoUrl?: string;
+  editedVideoUrl?: string;
+  error?: string;
+}> {
+  try {
+    logger.info(`🎬 [Grok Workflow] Generando escena de Music Video...`);
+    
+    // Este endpoint llama al servidor que tiene el workflow completo
+    const response = await fetch('/api/fal/music-video-scene', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        imagePrompt,
+        motionPrompt,
+        aspectRatio: options.aspectRatio || '16:9',
+        duration: options.duration || '6',
+        resolution: options.resolution || '720p',
+        editStyle: options.editStyle
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Error generando escena');
+    }
+    
+    return result;
+  } catch (error: any) {
+    logger.error('❌ [Grok Workflow] Error:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
 export default {
   models: FAL_VIDEO_MODELS,
   generate: generateVideoWithFAL,
   generateMultiple: generateMultipleVideos,
+  generateMusicVideoScene: generateMusicVideoSceneWithGrok,
   getRecommended: getRecommendedModels,
   getMusicVideo: getMusicVideoModels,
   getById: getModelById,
-  isReferenceModel: isReferenceToVideoModel
+  isReferenceModel: isReferenceToVideoModel,
+  isGrokModel: isGrokModel
 };

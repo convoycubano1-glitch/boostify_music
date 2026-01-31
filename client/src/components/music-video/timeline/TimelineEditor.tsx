@@ -19,8 +19,16 @@ import CameraAnglesModal from '../CameraAnglesModal';
 import { ImageEditorModal } from '../ImageEditorModal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 import { useAudioAnalysis } from '@/hooks/useAudioAnalysis';
+import { 
+  createProjectWithImages,
+  getUserProjects,
+  deleteVideoProject,
+  type VideoProject
+} from '@/lib/services/video-project-service';
 import { 
   Play as PlayIcon, Pause as PauseIcon, 
   Scissors as ScissorIcon, Hand as HandIcon,
@@ -133,8 +141,11 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
 }) => {
   // 🔊 DEBUG: Log audioPreviewUrl on mount and changes
   useEffect(() => {
-    console.log('🎵 [TIMELINE] audioPreviewUrl received:', audioPreviewUrl ? audioPreviewUrl.substring(0, 80) + '...' : 'NULL/UNDEFINED');
-    console.log('🎵 [TIMELINE] duration:', duration);
+    console.log('═'.repeat(60));
+    console.log('🎵 [TIMELINE] AUDIO PROP RECIBIDO');
+    console.log('🔗 audioPreviewUrl:', audioPreviewUrl ? audioPreviewUrl.substring(0, 80) + '...' : '❌ NULL/UNDEFINED');
+    console.log('⏱️ duration:', duration, 'segundos');
+    console.log('═'.repeat(60));
   }, [audioPreviewUrl, duration]);
   
   const [clips, setClips] = useState<TimelineClip[]>(() => normalizeClips(initialClips));
@@ -183,21 +194,76 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   const [showImageEditorModal, setShowImageEditorModal] = useState(false);
   const [imageEditorModalClip, setImageEditorModalClip] = useState<TimelineClip | null>(null);
   
-  // 📁 Proyectos Guardados
-  const [savedProjects, setSavedProjects] = useState<SavedProject[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const saved = localStorage.getItem('boostify_timeline_projects');
-      const parsed = saved ? JSON.parse(saved) : [];
-      console.log('📁 [INIT] Proyectos cargados de localStorage:', parsed?.length || 0, parsed);
-      return parsed;
-    } catch (error) {
-      console.error('❌ Error cargando proyectos de localStorage:', error);
-      return [];
-    }
-  });
+  // 📁 Proyectos Guardados - Firebase + localStorage como caché
+  const { user } = useAuth();
+  const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
+  const [firebaseProjects, setFirebaseProjects] = useState<VideoProject[]>([]);
   const [showProjectsPanel, setShowProjectsPanel] = useState(false);
   const [projectName, setProjectName] = useState('');
+  const [isSavingProject, setIsSavingProject] = useState(false);
+  const [saveProgress, setSaveProgress] = useState(0);
+  const [saveStatus, setSaveStatus] = useState('');
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  
+  // 🔥 Cargar proyectos desde Firebase al montar o cuando cambia el usuario
+  useEffect(() => {
+    const loadFirebaseProjects = async () => {
+      if (!user?.id) {
+        setFirebaseProjects([]);
+        return;
+      }
+      
+      setIsLoadingProjects(true);
+      try {
+        console.log('🔥 [FIREBASE] Cargando proyectos del usuario:', user.id);
+        const projects = await getUserProjects(user.id);
+        console.log('🔥 [FIREBASE] Proyectos cargados:', projects.length);
+        setFirebaseProjects(projects);
+        
+        // Convertir a formato SavedProject para compatibilidad
+        const converted: SavedProject[] = projects.map(p => ({
+          id: p.id,
+          name: p.name,
+          thumbnail: p.images?.[0]?.publicUrl,
+          clips: p.script?.scenes?.map((scene, i) => ({
+            id: i + 1,
+            start: scene.start_time || 0,
+            duration: scene.duration || 3,
+            layerId: 1,
+            type: ClipType.IMAGE,
+            url: p.images?.find(img => img.sceneId === `scene-${i + 1}`)?.publicUrl || '',
+            imageUrl: p.images?.find(img => img.sceneId === `scene-${i + 1}`)?.publicUrl || '',
+            label: scene.scene_description?.substring(0, 30) || `Escena ${i + 1}`,
+            metadata: { sceneData: scene }
+          })) || [],
+          generatedImages: p.images?.map((img, i) => ({
+            id: img.sceneId,
+            url: img.publicUrl,
+            sceneId: img.sceneId
+          })) || [],
+          duration: p.script?.duration || 60,
+          createdAt: p.createdAt,
+          updatedAt: p.updatedAt
+        }));
+        
+        setSavedProjects(converted);
+      } catch (error) {
+        console.error('❌ [FIREBASE] Error cargando proyectos:', error);
+        // Fallback a localStorage
+        try {
+          const saved = localStorage.getItem('boostify_timeline_projects');
+          const parsed = saved ? JSON.parse(saved) : [];
+          setSavedProjects(parsed);
+        } catch (e) {
+          setSavedProjects([]);
+        }
+      } finally {
+        setIsLoadingProjects(false);
+      }
+    };
+    
+    loadFirebaseProjects();
+  }, [user?.id]);
   
   // 🔄 CRITICAL: Sincronizar clips cuando initialClips cambian (ej: cuando se generan imágenes)
   useEffect(() => {
@@ -279,14 +345,28 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   }, [generatedImages]);
   
   // 🎵 AUTO-ADD: Crear clip de audio automáticamente cuando hay audioPreviewUrl
+  // También crear segmentos de audio para clips que necesitan lipsync
   useEffect(() => {
+    console.log('🎵 [AUTO-ADD EFFECT] Verificando condiciones para crear audio clip:');
+    console.log('  - audioPreviewUrl:', audioPreviewUrl ? '✅ ' + audioPreviewUrl.substring(0, 50) + '...' : '❌ NULL');
+    console.log('  - duration:', duration > 0 ? '✅ ' + duration + 's' : '❌ ' + duration);
+    
     if (audioPreviewUrl && duration > 0) {
       setClips(prevClips => {
-        // Verificar si ya hay un clip de audio
-        const hasAudioClip = prevClips.some(c => c.layerId === 2 || c.type === ClipType.AUDIO);
+        // Verificar si ya hay un clip de audio principal
+        const hasMainAudioClip = prevClips.some(c => 
+          (c.layerId === 2 || c.type === ClipType.AUDIO) && 
+          !c.metadata?.isLipsyncSegment
+        );
         
-        if (!hasAudioClip) {
-          logger.info(`🎵 [AUTO-ADD] Creando clip de audio: ${audioPreviewUrl.substring(0, 50)}...`);
+        const newClips = [...prevClips];
+        
+        if (!hasMainAudioClip) {
+          console.log('═'.repeat(60));
+          console.log('🎵 [AUTO-ADD] CREANDO CLIP DE AUDIO PRINCIPAL');
+          console.log(`🔗 URL: ${audioPreviewUrl.substring(0, 80)}...`);
+          console.log(`⏱️ Duración: ${duration} segundos`);
+          console.log('═'.repeat(60));
           const audioClip: TimelineClip = {
             id: 99999, // ID especial para audio
             layerId: 2,
@@ -294,18 +374,59 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
             start: 0,
             duration: duration,
             url: audioPreviewUrl,
-            title: 'Audio Track',
+            title: '🎵 Audio Principal',
             in: 0,
             out: duration,
             sourceStart: 0,
+            metadata: {
+              isMainAudio: true,
+              totalDuration: duration
+            }
           };
           console.log(`🎵 [AUTO-ADD] Audio clip creado:`, audioClip);
-          return [...prevClips, audioClip];
+          newClips.push(audioClip);
         }
-        return prevClips;
+        
+        // 🎤 LIPSYNC: Crear segmentos de audio para clips que necesitan lipsync
+        const clipsNeedingLipsync = prevClips.filter(c => 
+          c.layerId === 1 && 
+          (c.metadata?.needsLipsync || c.needsLipsync) &&
+          !prevClips.some(ac => ac.metadata?.parentSceneId === c.id && ac.metadata?.isLipsyncSegment)
+        );
+        
+        if (clipsNeedingLipsync.length > 0) {
+          logger.info(`🎤 [AUTO-ADD] Creando ${clipsNeedingLipsync.length} segmentos de lipsync`);
+          
+          clipsNeedingLipsync.forEach((clip, index) => {
+            const lipsyncSegment: TimelineClip = {
+              id: 90000 + index, // IDs especiales para segmentos lipsync
+              layerId: 3, // Capa 3 = Lipsync Segments
+              type: ClipType.AUDIO,
+              start: clip.start,
+              duration: clip.duration,
+              url: audioPreviewUrl,
+              title: `🎤 Vocal ${clip.id}`,
+              in: clip.start, // Punto de entrada en el audio
+              out: clip.start + clip.duration, // Punto de salida
+              sourceStart: clip.start,
+              metadata: {
+                isLipsyncSegment: true,
+                parentSceneId: clip.id,
+                lyrics: clip.metadata?.lyrics || '',
+                hasVocals: true,
+                inPoint: clip.start,
+                outPoint: clip.start + clip.duration
+              }
+            };
+            newClips.push(lipsyncSegment);
+            console.log(`🎤 [AUTO-ADD] Lipsync segment creado para clip ${clip.id}:`, lipsyncSegment);
+          });
+        }
+        
+        return newClips.length !== prevClips.length ? newClips : prevClips;
       });
     }
-  }, [audioPreviewUrl, duration]);
+  }, [audioPreviewUrl, duration, clips]);
   
   // 🎵 AUTO-ANALYZE: Analizar audio para obtener beats cuando se carga
   useEffect(() => {
@@ -329,8 +450,8 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     return beatsToUse.slice(0, 200); // Limitar para performance
   }, [audioAnalysis]);
   
-  // ⏱️ CRITICAL: Constante de duración máxima de clip (generaciones de video = 5s)
-  const MAX_CLIP_DURATION = 5;
+  // ⏱️ CRITICAL: Constante de duración máxima de clip (Grok Imagine = 6s)
+  const MAX_CLIP_DURATION = 6;
   
   // 🎬 CRITICAL: Calcular clip activo basado en currentTime para sincronización exacta
   const activeClip = useMemo(() => {
@@ -359,6 +480,43 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   const activeClipImageUrl = useMemo(() => {
     return getClipImageUrl(activeClip);
   }, [activeClip, getClipImageUrl]);
+
+  // 🎬 URL de video activo para el visor (si se generó video desde imagen)
+  const activeClipVideoUrl = useMemo(() => {
+    if (!activeClip) return null;
+    // Prioridad: lipsyncVideoUrl > videoUrl en metadata > videoUrl directo
+    return activeClip.metadata?.lipsyncVideoUrl || 
+           activeClip.metadata?.videoUrl || 
+           activeClip.videoUrl || 
+           null;
+  }, [activeClip]);
+  
+  // 🎥 Ref para el video del clip activo
+  const activeVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  // 🎬 CRITICAL: Sincronizar video del clip activo con el timeline
+  useEffect(() => {
+    const video = activeVideoRef.current;
+    if (!video || !activeClip || !activeClipVideoUrl) return;
+    
+    // Calcular tiempo local dentro del clip
+    const clipLocalTime = currentTime - activeClip.start;
+    
+    // Solo actualizar si el tiempo es válido
+    if (clipLocalTime >= 0 && clipLocalTime < (video.duration || 6)) {
+      // Evitar actualizaciones constantes - solo si diferencia > 0.1s
+      if (Math.abs(video.currentTime - clipLocalTime) > 0.1) {
+        video.currentTime = clipLocalTime;
+      }
+    }
+    
+    // Controlar play/pause
+    if (isPlaying && video.paused) {
+      video.play().catch(() => {}); // Ignorar errores de autoplay
+    } else if (!isPlaying && !video.paused) {
+      video.pause();
+    }
+  }, [isPlaying, currentTime, activeClip, activeClipVideoUrl]);
   
   // 🖱️ Menú Contextual (click derecho)
   const [contextMenu, setContextMenu] = useState<{
@@ -648,65 +806,118 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   }, [clips]);
 
   // 📁 Funciones de Proyectos Guardados (después de pushHistory)
-  const handleSaveProject = useCallback(() => {
+  const handleSaveProject = useCallback(async () => {
+    // Verificar usuario autenticado
+    if (!user?.id) {
+      toast({
+        title: "⚠️ Usuario no autenticado",
+        description: "Debes iniciar sesión para guardar proyectos de forma permanente",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const name = projectName.trim() || `Proyecto ${new Date().toLocaleDateString()}`;
-    const thumbnail = generatedImages.length > 0 ? generatedImages[0].url : undefined;
     
-    // Log detallado de clips antes de guardar
-    console.log('💾 [SAVE] Clips actuales antes de guardar:', clips.map(c => ({
-      id: c.id,
-      start: c.start,
-      duration: c.duration,
-      layerId: c.layerId,
-      type: c.type,
-      hasImage: !!(c.url || c.imageUrl)
-    })));
+    // Verificar que hay imágenes para guardar
+    const imagesWithUrls = generatedImages.filter(img => img.url);
+    if (imagesWithUrls.length === 0) {
+      toast({
+        title: "⚠️ Sin imágenes",
+        description: "Genera imágenes antes de guardar el proyecto",
+        variant: "destructive"
+      });
+      return;
+    }
     
-    // Normalizar clips antes de guardar para asegurar layerId, URLs y formato correcto
-    const clipsToSave: TimelineClip[] = clips.map(clip => {
-      const typeStr = String(clip.type || 'IMAGE').toUpperCase();
-      const normalizedType = (typeStr === 'AUDIO' ? ClipType.AUDIO : 
-                              typeStr === 'VIDEO' ? ClipType.VIDEO :
-                              typeStr === 'GENERATED_IMAGE' ? ClipType.GENERATED_IMAGE :
-                              ClipType.IMAGE);
-      return {
-        ...clip,
-        // Asegurar que guardamos en formato TimelineClip (segundos)
-        id: typeof clip.id === 'number' ? clip.id : parseInt(String(clip.id), 10) || 0,
-        layerId: clip.layerId || (normalizedType === ClipType.AUDIO ? 2 : 1),
-        start: clip.start ?? 0,
-        duration: clip.duration ?? 3,
-        type: normalizedType,
-        url: clip.url || clip.imageUrl || '',
-        imageUrl: clip.imageUrl || clip.url || '',
+    setIsSavingProject(true);
+    setSaveProgress(0);
+    setSaveStatus('Preparando proyecto...');
+    
+    try {
+      // Preparar datos del script para Firebase
+      const scriptData = {
+        scenes: clips.map((clip, i) => ({
+          scene_number: i + 1,
+          start_time: clip.start,
+          duration: clip.duration,
+          scene_description: clip.label || `Escena ${i + 1}`,
+          prompt: clip.metadata?.prompt || '',
+          camera: clip.metadata?.camera || 'Medium shot'
+        })),
+        duration: duration,
+        sceneCount: clips.length
       };
-    });
-    
-    console.log('💾 [SAVE] Clips normalizados a guardar:', clipsToSave.map(c => ({
-      id: c.id, start: c.start, duration: c.duration, layerId: c.layerId
-    })));
-    
-    const newProject: SavedProject = {
-      id: `project_${Date.now()}`,
-      name,
-      thumbnail,
-      clips: clipsToSave,
-      generatedImages: generatedImages,
-      duration: duration,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    
-    const updated = [newProject, ...savedProjects];
-    setSavedProjects(updated);
-    localStorage.setItem('boostify_timeline_projects', JSON.stringify(updated));
-    setProjectName('');
-    logger.info('✅ Proyecto guardado:', name, `${clipsToSave.length} clips con layerId asignado`);
-    toast({
-      title: "✅ Proyecto guardado",
-      description: `"${name}" guardado con ${clips.length} clips y ${generatedImages.length} imágenes`,
-    });
-  }, [clips, generatedImages, duration, projectName, savedProjects, toast]);
+      
+      // Preparar imágenes para subir a Firebase Storage
+      const imagesToUpload = imagesWithUrls.map((img, i) => ({
+        sceneId: `scene-${i + 1}`,
+        imageData: img.url // URL temporal de FAL que se convertirá a permanente
+      }));
+      
+      console.log('🔥 [FIREBASE] Guardando proyecto:', name, 'con', imagesToUpload.length, 'imágenes');
+      
+      // Crear proyecto con imágenes en Firebase
+      const { projectId, project } = await createProjectWithImages(
+        name,
+        user.id,
+        scriptData,
+        imagesToUpload,
+        {
+          createdFrom: 'TimelineEditor',
+          director: projectContext?.videoStyle?.selectedDirector?.name,
+          concept: projectContext?.selectedConcept
+        },
+        (progress, status) => {
+          setSaveProgress(progress);
+          setSaveStatus(status);
+        }
+      );
+      
+      console.log('✅ [FIREBASE] Proyecto guardado con ID:', projectId);
+      
+      // Actualizar lista de proyectos
+      const newProject: SavedProject = {
+        id: projectId,
+        name,
+        thumbnail: project.images?.[0]?.publicUrl,
+        clips: clips.map(c => ({
+          ...c,
+          // Actualizar URLs a las permanentes de Firebase
+          url: project.images?.find(img => img.sceneId === `scene-${c.id}`)?.publicUrl || c.url,
+          imageUrl: project.images?.find(img => img.sceneId === `scene-${c.id}`)?.publicUrl || c.imageUrl,
+        })),
+        generatedImages: project.images?.map((img, i) => ({
+          id: img.sceneId,
+          url: img.publicUrl, // URL permanente de Firebase Storage
+          sceneId: img.sceneId
+        })) || generatedImages,
+        duration: duration,
+        createdAt: project.createdAt,
+        updatedAt: project.updatedAt
+      };
+      
+      setSavedProjects(prev => [newProject, ...prev]);
+      setProjectName('');
+      
+      toast({
+        title: "✅ Proyecto guardado en la nube",
+        description: `"${name}" guardado con ${clips.length} clips. Las imágenes ahora son permanentes.`,
+      });
+      
+    } catch (error) {
+      console.error('❌ [FIREBASE] Error guardando proyecto:', error);
+      toast({
+        title: "❌ Error al guardar",
+        description: error instanceof Error ? error.message : 'Error desconocido',
+        variant: "destructive"
+      });
+    } finally {
+      setIsSavingProject(false);
+      setSaveProgress(0);
+      setSaveStatus('');
+    }
+  }, [clips, generatedImages, duration, projectName, user?.id, projectContext, toast]);
 
   const handleLoadProject = useCallback((project: SavedProject) => {
     logger.info(`📂 Cargando proyecto: ${project.name}`);
@@ -756,11 +967,28 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     });
   }, [pushHistory, toast]);
 
-  const handleDeleteProject = useCallback((projectId: string) => {
+  const handleDeleteProject = useCallback(async (projectId: string) => {
+    // Eliminar de Firebase si el usuario está autenticado
+    if (user?.id) {
+      try {
+        console.log('🗑️ [FIREBASE] Eliminando proyecto:', projectId);
+        await deleteVideoProject(projectId, user.id);
+        console.log('✅ [FIREBASE] Proyecto eliminado');
+      } catch (error) {
+        console.error('❌ [FIREBASE] Error eliminando proyecto:', error);
+        // Continuar con eliminación local de todas formas
+      }
+    }
+    
+    // Eliminar del estado local
     const updated = savedProjects.filter(p => p.id !== projectId);
     setSavedProjects(updated);
-    localStorage.setItem('boostify_timeline_projects', JSON.stringify(updated));
-  }, [savedProjects]);
+    
+    toast({
+      title: "🗑️ Proyecto eliminado",
+      description: "El proyecto y sus imágenes han sido eliminados",
+    });
+  }, [savedProjects, user?.id, toast]);
 
   // 🎬 EXPORT VIDEO - Genera el video final a partir del timeline
   const [isExporting, setIsExporting] = useState(false);
@@ -1387,11 +1615,11 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
     }
   }, [toast, updateClip, projectContext, clips]);
 
-  // 🎬 Generar Video desde Imagen - Usando FAL KLING
+  // 🎬 Generar Video desde Imagen - Usando GROK IMAGINE VIDEO (xAI)
   const [isGeneratingVideo, setIsGeneratingVideo] = useState<number | null>(null);
   
   const handleGenerateVideo = useCallback(async (clip: TimelineClip) => {
-    logger.info(`🎬 [Timeline] Generando video para clip ${clip.id}`);
+    logger.info(`🎬 [Timeline] Generando video para clip ${clip.id} con Grok Imagine Video`);
     setIsGeneratingVideo(clip.id);
     
     const imageUrl = clip.imageUrl || clip.url || clip.thumbnailUrl;
@@ -1408,7 +1636,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
 
     toast({
       title: "Generando video...",
-      description: "Convirtiendo imagen a video con FAL KLING AI (esto puede tardar 1-3 minutos)",
+      description: "Convirtiendo imagen a video con Grok Imagine (xAI) - esto puede tardar 1-3 minutos",
     });
 
     try {
@@ -1416,37 +1644,29 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
       
       // 🎬 Extraer metadata de la escena para instrucciones de movimiento
       const sceneMetadata = clip.metadata || {};
-      const motionInstructions = {
-        cameraMovement: sceneMetadata.camera_movement || sceneMetadata.cameraMovement || 'smooth',
-        movementDirection: sceneMetadata.movement_direction,
-        movementSpeed: sceneMetadata.audio_energy === 'high' ? 'fast' as const : 
-                       sceneMetadata.audio_energy === 'low' ? 'slow' as const : 'medium' as const,
-        isKeyMoment: sceneMetadata.is_key_moment || sceneMetadata.isKeyMoment || false,
-        keyMomentType: sceneMetadata.key_moment_type || sceneMetadata.keyMomentType,
-        keyMomentEffect: sceneMetadata.key_moment_effect || sceneMetadata.suggestedEffect,
-        audioEnergy: (sceneMetadata.audio_energy || 'medium') as 'low' | 'medium' | 'high',
-        audioSection: sceneMetadata.audio_section || sceneMetadata.music_section,
-        emotion: sceneMetadata.emotion || sceneMetadata.mood,
-      };
+      const cameraMovement = sceneMetadata.camera_movement || sceneMetadata.cameraMovement || 'smooth';
+      const audioEnergy = sceneMetadata.audio_energy || 'medium';
       
-      // ⏱️ Duración máxima 5 segundos para mejor calidad
-      const videoDuration = Math.min(clip.duration, 5) <= 5 ? '5' as const : '10' as const;
+      // Construir prompt mejorado con movimiento
+      const motionDesc = audioEnergy === 'high' ? 'dynamic, energetic movement' :
+                        audioEnergy === 'low' ? 'subtle, slow movement' : 'smooth, natural movement';
+      const enhancedPrompt = `${prompt}. ${cameraMovement} camera movement, ${motionDesc}, cinematic quality, professional music video style`;
       
-      logger.info(`🎬 [Timeline] Motion instructions:`, motionInstructions);
+      // ⏱️ Duración: Grok genera videos de 6 segundos
+      const videoDuration = Math.min(clip.duration, 6);
       
-      // Usar FAL Kling O1 PRO para image-to-video (mejor calidad)
-      const response = await fetch('/api/fal/kling-video/generate', {
+      logger.info(`🎬 [Timeline] Grok Prompt: ${enhancedPrompt}`);
+      
+      // Usar endpoint de Grok Video
+      const response = await fetch('/api/fal/grok-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: prompt,
           imageUrl: imageUrl,
-          model: 'o1-pro-i2v', // 🌟 KLING O1 PRO - Mejor modelo para music videos
+          prompt: enhancedPrompt,
           duration: videoDuration,
+          resolution: '720p',
           aspectRatio: '16:9',
-          motionInstructions, // 🎬 Pasar instrucciones de movimiento
-          cfgScale: 0.5,      // Balance entre prompt y creatividad
-          negativePrompt: 'blur, distort, low quality, static, frozen, no motion, jittery',
         }),
       });
 
@@ -1458,40 +1678,28 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
       const data = await response.json();
       
       if (data.videoUrl) {
-        // Video generado directamente (síncrono)
+        // Video generado exitosamente - actualizar clip con videoUrl
         updateClip(clip.id, {
+          videoUrl: data.videoUrl, // Propiedad raíz para acceso directo
           metadata: {
             ...clip.metadata,
             videoUrl: data.videoUrl,
             videoGeneratedAt: new Date().toISOString(),
             hasVideo: true,
-            generatedWith: 'fal-kling-o1',
+            generatedWith: 'grok-imagine-video',
+            videoDuration: data.duration,
+            videoWidth: data.width,
+            videoHeight: data.height,
           },
         });
 
         toast({
           title: "✅ Video generado",
-          description: "Video creado exitosamente con FAL KLING AI",
+          description: "Video creado exitosamente con Grok Imagine Video (xAI)",
         });
         logger.info(`✅ [Timeline] Video generado para clip ${clip.id}: ${data.videoUrl}`);
-      } else if (data.requestId) {
-        // Es asíncrono, guardar el requestId para polling
-        updateClip(clip.id, {
-          metadata: {
-            ...clip.metadata,
-            videoRequestId: data.requestId,
-            videoModel: data.model,
-            videoGenerating: true,
-          },
-        });
-        toast({
-          title: "⏳ Video en proceso",
-          description: `${data.estimatedTime}. Request ID: ${data.requestId}`,
-        });
-        logger.info(`⏳ [Timeline] Video en proceso para clip ${clip.id}, requestId: ${data.requestId}`);
-        
-        // Iniciar polling automático
-        pollVideoStatus(clip.id, data.requestId, data.model);
+      } else {
+        throw new Error('No se recibió URL del video');
       }
     } catch (error) {
       logger.error(`❌ [Timeline] Error generando video:`, error);
@@ -1913,10 +2121,15 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                 size="sm" 
                 variant="ghost" 
                 onClick={handleSaveProject}
+                disabled={isSavingProject}
                 className="p-1 h-6 w-6 bg-green-500/10 hover:bg-green-500/20"
-                title="Guardar"
+                title={user?.id ? "Guardar en la nube" : "Inicia sesión para guardar"}
               >
-                <Save size={11} className="text-green-400" />
+                {isSavingProject ? (
+                  <Loader2 size={11} className="text-green-400 animate-spin" />
+                ) : (
+                  <Save size={11} className="text-green-400" />
+                )}
               </Button>
               <Button 
                 size="sm" 
@@ -1972,19 +2185,49 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                 onChange={(e) => setProjectName(e.target.value)}
                 placeholder="Nombre del proyecto..."
                 className="flex-1 bg-black/30 border border-white/10 rounded px-2 py-1.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-blue-500/50"
+                disabled={isSavingProject}
               />
               <Button
                 size="sm"
                 onClick={handleSaveProject}
-                className="bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-400"
+                disabled={isSavingProject || !user?.id}
+                className="bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-400 disabled:opacity-50"
               >
-                <FolderPlus size={14} className="mr-1" />
-                Guardar
+                {isSavingProject ? (
+                  <>
+                    <Loader2 size={14} className="mr-1 animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <FolderPlus size={14} className="mr-1" />
+                    {user?.id ? 'Guardar en Nube' : 'Inicia sesión'}
+                  </>
+                )}
               </Button>
             </div>
             
+            {/* Barra de progreso de guardado */}
+            {isSavingProject && (
+              <div className="mb-3 space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-white/60">{saveStatus}</span>
+                  <span className="text-green-400">{Math.round(saveProgress)}%</span>
+                </div>
+                <Progress value={saveProgress} className="h-1.5" />
+              </div>
+            )}
+            
+            {/* Indicador de carga de proyectos */}
+            {isLoadingProjects && (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="w-5 h-5 text-blue-400 animate-spin mr-2" />
+                <span className="text-sm text-white/60">Cargando proyectos...</span>
+              </div>
+            )}
+            
             {/* Grid de proyectos */}
-            {savedProjects.length > 0 ? (
+            {!isLoadingProjects && savedProjects.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
                 {savedProjects.map((project) => (
                   <div
@@ -2032,13 +2275,13 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                   </div>
                 ))}
               </div>
-            ) : (
+            ) : !isLoadingProjects ? (
               <div className="flex flex-col items-center justify-center py-4 text-white/40">
                 <FolderOpen size={24} className="mb-1" />
-                <span className="text-xs">No hay proyectos guardados</span>
-                <span className="text-[10px]">Guarda tu proyecto actual para verlo aquí</span>
+                <span className="text-xs">{user?.id ? 'No hay proyectos guardados' : 'Inicia sesión para ver tus proyectos'}</span>
+                <span className="text-[10px]">{user?.id ? 'Guarda tu proyecto actual para verlo aquí' : 'Los proyectos se guardan en la nube de forma permanente'}</span>
               </div>
-            )}
+            ) : null}
           </div>
         )}
 
@@ -2186,8 +2429,40 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                   </div>
                 )}
               </div>
+            ) : activeClipVideoUrl ? (
+              // 🎬 CRITICAL: Mostrar VIDEO del clip activo (prioridad sobre imagen)
+              <div className="relative w-full h-full">
+                <video
+                  ref={activeVideoRef}
+                  src={activeClipVideoUrl}
+                  className="w-full h-full object-contain"
+                  playsInline
+                  muted
+                  loop
+                  autoPlay={isPlaying}
+                  key={`video-${activeClip?.id}-${activeClipVideoUrl}`}
+                  onLoadedMetadata={() => {
+                    // Sincronizar video con currentTime del clip
+                    if (activeVideoRef.current && activeClip) {
+                      const clipLocalTime = currentTime - activeClip.start;
+                      if (clipLocalTime >= 0 && clipLocalTime < (activeVideoRef.current.duration || 6)) {
+                        activeVideoRef.current.currentTime = clipLocalTime;
+                      }
+                    }
+                  }}
+                />
+                {/* Badge indicando que es video */}
+                <div className="absolute top-2 left-2 px-2 py-0.5 bg-orange-500/80 rounded text-[9px] text-white font-medium flex items-center gap-1">
+                  <Film size={10} />
+                  VIDEO • {activeClip?.title || `Escena ${activeClip?.id}`}
+                </div>
+                {/* Timecode */}
+                <div className="absolute top-2 right-2 px-2 py-0.5 bg-black/60 rounded font-mono text-[10px] text-orange-400">
+                  {formatTimecode(currentTime)}
+                </div>
+              </div>
             ) : activeClipImageUrl ? (
-              // 🎬 CRITICAL: Mostrar imagen del clip activo basado en currentTime
+              // 🖼️ Mostrar IMAGEN del clip activo (fallback cuando no hay video)
               <div className="relative w-full h-full">
                 <img 
                   src={activeClipImageUrl} 
@@ -2692,11 +2967,11 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
 };
 
 /** ---------- Helpers ---------- */
-// ⚠️ CRITICAL: Máxima duración de clip (generaciones de video = 5 segundos)
-const MAX_CLIP_DURATION_SECONDS = 5;
+// ⚠️ CRITICAL: Máxima duración de clip (Grok Imagine Video = 6 segundos)
+const MAX_CLIP_DURATION_SECONDS = 6;
 
 // Función que acepta clips en cualquier formato (TimelineClip o TimelineItem) y los normaliza
-// También segmenta clips mayores de 5 segundos para compatibilidad con generación de video
+// También segmenta clips mayores de 6 segundos para compatibilidad con generación de video
 function normalizeClips(clips: any[]): TimelineClip[] {
   if (!clips || !Array.isArray(clips)) return [];
   
@@ -2711,16 +2986,26 @@ function normalizeClips(clips: any[]): TimelineClip[] {
                      c.publicUrl || c.firebaseUrl || c.thumbnailUrl || '';
     
     // CRITICAL: Asignar layerId por defecto basado en el tipo de clip
-    // Capa 1 = Imágenes Generadas, Capa 2 = Audio
+    // Capa 1 = Video/Imágenes, Capa 2 = Audio Principal, Capa 3 = Lipsync Segments
     // NOTA: Aceptar tanto 'layerId' como 'layer' para compatibilidad con TimelineClipUnified
     const typeStr = typeof c.type === 'string' ? c.type.toUpperCase() : 'IMAGE';
     const normalizedType = (typeStr === 'AUDIO' ? ClipType.AUDIO : 
                             typeStr === 'VIDEO' ? ClipType.VIDEO :
                             typeStr === 'GENERATED_IMAGE' ? ClipType.GENERATED_IMAGE :
                             ClipType.IMAGE) as ClipType;
-    const layerId = c.layerId || c.layer || (normalizedType === ClipType.AUDIO ? 2 : 1);
     
-    console.log(`📍 [normalizeClips] Clip ${index}: type='${typeStr}', layer=${c.layer}, layerId=${c.layerId} -> finalLayerId=${layerId}`);
+    // Determinar layerId: 1=Video/Imagen, 2=Audio Principal, 3=Lipsync Segments
+    let layerId = c.layerId || c.layer;
+    if (!layerId) {
+      if (normalizedType === ClipType.AUDIO) {
+        // Si es segmento de lipsync, usar capa 3; sino capa 2
+        layerId = c.metadata?.isLipsyncSegment ? 3 : 2;
+      } else {
+        layerId = 1;
+      }
+    }
+    
+    console.log(`📍 [normalizeClips] Clip ${index}: type='${typeStr}', layer=${c.layer}, layerId=${c.layerId} -> finalLayerId=${layerId}, isLipsync=${c.metadata?.isLipsyncSegment || false}`);
     
     // CRITICAL: Convertir start_time/end_time (ms) a start/duration (segundos)
     // TimelineItem usa start_time en ms, TimelineClip usa start en segundos

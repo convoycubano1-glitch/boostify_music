@@ -20,16 +20,238 @@ const openai = new OpenAI({
 });
 
 /**
- * Genera contenido de texto usando OpenAI gpt-4o-mini
+ * 🎭 PERFILES COMPLETOS DE DIRECTORES
+ * Incluye técnicas cinematográficas, paletas de color, referencias y especialidades
+ */
+const DIRECTOR_FULL_PROFILES: Record<string, {
+  name: string;
+  signature_techniques: string[];
+  camera_work: string[];
+  color_palette: string[];
+  lighting_style: string;
+  editing_rhythm: string;
+  iconic_references: string[];
+  specialty: string;
+  music_video_approach: string;
+}> = {
+  'Spike Jonze': {
+    name: 'Spike Jonze',
+    signature_techniques: ['Single-take wonders', 'Practical effects over CGI', 'Intimate handheld moments', 'Surreal mundane juxtaposition'],
+    camera_work: ['Steadicam following subjects', 'Wide establishing shots', 'Close-up emotional beats', 'Dance choreography coverage'],
+    color_palette: ['Warm nostalgic yellows', 'Soft pastels', 'Natural daylight tones', 'Muted earth colors'],
+    lighting_style: 'Natural light preference, golden hour magic, soft diffused interiors',
+    editing_rhythm: 'Patient pacing with sudden bursts of kinetic energy, long takes broken by quick cuts',
+    iconic_references: ['Weapon of Choice (flying Walken)', 'Praise You (guerrilla dance)', 'Da Funk (lonely dog-man)'],
+    specialty: 'Making the absurd feel emotionally genuine',
+    music_video_approach: 'Simple high-concept ideas executed with heart and humor'
+  },
+  'Hype Williams': {
+    name: 'Hype Williams',
+    signature_techniques: ['Fisheye lens distortion', 'Slow-motion opulence', 'Reflective surfaces', 'Luxury car culture'],
+    camera_work: ['Extreme wide-angle close-ups', 'Circular dolly shots', 'Low angle power shots', 'Static glamour poses'],
+    color_palette: ['Rich golds', 'Deep purples', 'Neon accents', 'High-contrast blacks'],
+    lighting_style: 'Dramatic rim lighting, jewel-tone gels, high-key beauty lighting',
+    editing_rhythm: 'Slow, deliberate cuts that linger on luxury and beauty',
+    iconic_references: ['Mo Money Mo Problems', 'Hypnotize', 'California Love'],
+    specialty: 'Elevating hip-hop aesthetics to cinematic glamour',
+    music_video_approach: 'Maximum visual impact, aspirational wealth imagery, iconic artist positioning'
+  },
+  'Michel Gondry': {
+    name: 'Michel Gondry',
+    signature_techniques: ['In-camera magic tricks', 'Stop-motion integration', 'Handcrafted set pieces', 'Temporal manipulation'],
+    camera_work: ['Locked-off symmetry', 'Whip pans', 'Perspective tricks', 'Miniature photography'],
+    color_palette: ['Saturated primaries', 'Craft paper textures', 'Vintage film look', 'Playful patterns'],
+    lighting_style: 'Theatrical spotlights, practical bulbs visible in frame, DIY charm',
+    editing_rhythm: 'Rhythmic cuts synced perfectly to music, magical transitions, loop structures',
+    iconic_references: ['Around the World (Daft Punk)', 'Star Guitar (landscapes as music)', 'Everlong (dream logic)'],
+    specialty: 'Making impossible things feel handmade and warm',
+    music_video_approach: 'Visual puzzles and in-camera illusions that reward repeat viewing'
+  },
+  'David Fincher': {
+    name: 'David Fincher',
+    signature_techniques: ['Perfect symmetry', 'Impossible camera moves', 'Desaturated intensity', 'Meticulous control'],
+    camera_work: ['Smooth tracking shots', 'Top-down surveillance angles', 'Slow deliberate dollies', 'Through-the-wall movements'],
+    color_palette: ['Sickly greens', 'Steel blues', 'Copper browns', 'Deep shadows'],
+    lighting_style: 'Low-key noir lighting, motivated sources, harsh practical lights',
+    editing_rhythm: 'Precision cuts on beat, building tension through accumulation',
+    iconic_references: ['Vogue (Madonna)', 'Freedom 90', 'Only (Nine Inch Nails)'],
+    specialty: 'Dark psychological intensity with technical perfection',
+    music_video_approach: 'Every frame precisely designed, iconic imagery, narrative sophistication'
+  },
+  'Edgar Wright': {
+    name: 'Edgar Wright',
+    signature_techniques: ['Match cuts on everything', 'Whip pans with sound design', 'Visual comedy timing', 'Pop culture homage'],
+    camera_work: ['Snap zooms', 'Crash zooms', 'Wipe transitions', 'Synchronized multicam'],
+    color_palette: ['Bold saturated colors', 'British grays suddenly exploding with color', 'Neon nightlife'],
+    lighting_style: 'Punchy contrast, practical neons, dramatic color shifts',
+    editing_rhythm: 'Hyper-kinetic cuts synced to every beat and sound, zero dead space',
+    iconic_references: ['Scott Pilgrim style', 'Baby Driver car chase rhythm', 'Shaun of the Dead montages'],
+    specialty: 'Visual rhythm as comedy, music as editing driver',
+    music_video_approach: 'Every cut, every sound, every movement synced to the track perfectly'
+  },
+  'Denis Villeneuve': {
+    name: 'Denis Villeneuve',
+    signature_techniques: ['IMAX scale grandeur', 'Slow contemplative pace', 'Sci-fi minimalism', 'Sound design as character'],
+    camera_work: ['Massive wide shots', 'Slow push-ins', 'Aerial vistas', 'Geometric framing'],
+    color_palette: ['Desert oranges', 'Blade Runner neons', 'Fog grays', 'Monochromatic palettes'],
+    lighting_style: 'Natural epic lighting, volumetric atmospherics, silhouettes against vast skies',
+    editing_rhythm: 'Meditative long takes, building dread through restraint',
+    iconic_references: ['Dune sandworms scale', 'Arrival linguistics', 'Blade Runner 2049 neons'],
+    specialty: 'Making audiences feel small in an overwhelming beautiful world',
+    music_video_approach: 'Epic scale emotional journeys, cosmic significance, visual poetry'
+  },
+  'Baz Luhrmann': {
+    name: 'Baz Luhrmann',
+    signature_techniques: ['Theatrical excess', 'Mixed era aesthetics', 'Music-driven narratives', 'Romanticism'],
+    camera_work: ['Sweeping crane shots', 'Dizzying spins', 'Intimate then epic transitions', 'Dance coverage'],
+    color_palette: ['Bold reds', 'Gatsby golds', 'Saturated jewel tones', 'Glitter and sparkle'],
+    lighting_style: 'Theatrical spotlights, fairy lights, champagne bubbles catching light',
+    editing_rhythm: 'Frenetic during parties, languid during romance, always theatrical',
+    iconic_references: ['Moulin Rouge! (Roxanne tango)', 'Romeo + Juliet (aquarium)', 'Great Gatsby (parties)'],
+    specialty: 'Making everything feel like the most important moment in history',
+    music_video_approach: 'Every video is an epic romance, maximum emotion, visual extravagance'
+  },
+  'Wes Anderson': {
+    name: 'Wes Anderson',
+    signature_techniques: ['Perfect symmetry always', 'Planimetric framing', 'Whip pans between scenes', 'Title cards'],
+    camera_work: ['Centered subjects', 'Lateral tracking shots', 'Dollhouse cutaways', 'Top-down inserts'],
+    color_palette: ['Millennial pink', 'Mustard yellow', 'Mint green', 'Terracotta'],
+    lighting_style: 'Flat, even, storybook lighting with no harsh shadows',
+    editing_rhythm: 'Deadpan timing, held beats, comedic precision',
+    iconic_references: ['Grand Budapest Hotel (miniatures)', 'Moonrise Kingdom (pastoral)', 'Royal Tenenbaums (tableaux)'],
+    specialty: 'Making the quirky feel heartbreaking',
+    music_video_approach: 'Meticulous dollhouse worlds, each frame a photograph worth framing'
+  },
+  'Christopher Nolan': {
+    name: 'Christopher Nolan',
+    signature_techniques: ['Practical effects at scale', 'Non-linear storytelling', 'IMAX 70mm', 'Time manipulation'],
+    camera_work: ['Handheld intensity', 'IMAX wide establishing', 'Rotational environments', 'Zero gravity'],
+    color_palette: ['Steel blues', 'Warm ambers', 'High contrast', 'Natural desaturated'],
+    lighting_style: 'Available light preference, dramatic natural contrast, real locations',
+    editing_rhythm: 'Parallel timelines intercutting, building to crescendo, precise logic',
+    iconic_references: ['Inception (rotating hallway)', 'Interstellar (tesseract)', 'Dunkirk (ticking clock)'],
+    specialty: 'Making you think while making you feel',
+    music_video_approach: 'High-concept puzzles with emotional cores, reality-bending visuals'
+  },
+  'Quentin Tarantino': {
+    name: 'Quentin Tarantino',
+    signature_techniques: ['Trunk shots', 'Chapter structure', 'Pop culture dialogue', 'Revenge narratives'],
+    camera_work: ['Low angle hero shots', 'Long steadicam walks', 'Crash zooms', 'Mexican standoff coverage'],
+    color_palette: ['Grindhouse yellows', 'Blood reds', 'Retro color grades', '70s warmth'],
+    lighting_style: 'Stylized practical lighting, chiaroscuro for drama, neon for cool',
+    editing_rhythm: 'Tension building through dialogue, explosive violence release, musical cues',
+    iconic_references: ['Kill Bill (anime sequence)', 'Pulp Fiction (dance)', 'Django (Western vistas)'],
+    specialty: 'Making violence stylish and dialogue musical',
+    music_video_approach: 'Each video a mini revenge film or stylish character piece'
+  }
+};
+
+/**
+ * 🎵 Detecta el género musical basándose en la letra
+ */
+function detectMusicGenre(lyrics: string): { genre: string; subgenre: string; mood: string } {
+  const lyricsLower = lyrics.toLowerCase();
+  
+  // Patrones para detectar géneros
+  const genrePatterns = {
+    hiphop: /\b(flex|drip|gang|hood|hustle|money|bitch|nigga|trap|plug|ice|chain|whip|ride|squad|homie|flow)\b/gi,
+    reggaeton: /\b(perreo|dembow|baila|mami|papi|booty|sandungueo|bellaqueo|gatita|gata|loca|duro)\b/gi,
+    pop: /\b(love|heart|baby|forever|dream|star|shine|tonight|dance|feel)\b/gi,
+    rock: /\b(scream|fire|burn|rage|fight|thunder|rebel|crash|break|wild)\b/gi,
+    rnb: /\b(body|touch|skin|night|slow|groove|vibe|mood|sexy|sensual)\b/gi,
+    latin: /\b(corazón|amor|vida|loco|fuego|caliente|rumba|sabor|pasión)\b/gi,
+    electronic: /\b(bass|drop|rave|beat|pulse|synth|neon|club|dj)\b/gi,
+    country: /\b(truck|road|hometown|beer|whiskey|cowboy|boots|farm|southern)\b/gi,
+    indie: /\b(melancholy|wandering|aesthetic|vintage|nostalgia|dreaming|floating)\b/gi
+  };
+  
+  let maxMatches = 0;
+  let detectedGenre = 'pop';
+  
+  for (const [genre, pattern] of Object.entries(genrePatterns)) {
+    const matches = (lyricsLower.match(pattern) || []).length;
+    if (matches > maxMatches) {
+      maxMatches = matches;
+      detectedGenre = genre;
+    }
+  }
+  
+  // Subgéneros y moods asociados
+  const genreDetails: Record<string, { subgenre: string; mood: string }> = {
+    hiphop: { subgenre: 'trap/boom-bap', mood: 'confident and bold' },
+    reggaeton: { subgenre: 'perreo/urbano', mood: 'sensual and energetic' },
+    pop: { subgenre: 'mainstream/dance-pop', mood: 'uplifting and catchy' },
+    rock: { subgenre: 'alternative/hard rock', mood: 'intense and rebellious' },
+    rnb: { subgenre: 'contemporary R&B', mood: 'smooth and sensual' },
+    latin: { subgenre: 'latin pop/salsa', mood: 'passionate and romantic' },
+    electronic: { subgenre: 'EDM/house', mood: 'energetic and euphoric' },
+    country: { subgenre: 'modern country', mood: 'nostalgic and authentic' },
+    indie: { subgenre: 'indie/alternative', mood: 'introspective and artistic' }
+  };
+  
+  return {
+    genre: detectedGenre,
+    ...genreDetails[detectedGenre]
+  };
+}
+
+/**
+ * 🎭 Analiza las emociones principales de la letra
+ */
+function analyzeEmotions(lyrics: string): { primary: string; secondary: string; arc: string } {
+  const lyricsLower = lyrics.toLowerCase();
+  
+  const emotionPatterns = {
+    love: /\b(love|heart|kiss|hold|forever|together|baby|darling|sweetheart)\b/gi,
+    heartbreak: /\b(cry|tears|pain|hurt|broken|lost|gone|leave|alone|miss)\b/gi,
+    empowerment: /\b(strong|power|rise|fight|win|queen|king|boss|unstoppable|fearless)\b/gi,
+    party: /\b(dance|party|club|night|drink|celebrate|wild|fun|crazy|lit)\b/gi,
+    nostalgia: /\b(remember|yesterday|old|past|memory|young|childhood|back then)\b/gi,
+    desire: /\b(want|need|crave|body|touch|feel|close|hot|fire)\b/gi,
+    rebellion: /\b(fuck|shit|rebel|break|rules|free|escape|riot|against)\b/gi,
+    hope: /\b(dream|hope|believe|tomorrow|future|shine|light|faith)\b/gi
+  };
+  
+  const scores: Record<string, number> = {};
+  for (const [emotion, pattern] of Object.entries(emotionPatterns)) {
+    scores[emotion] = (lyricsLower.match(pattern) || []).length;
+  }
+  
+  const sorted = Object.entries(scores).sort(([,a], [,b]) => b - a);
+  const primary = sorted[0]?.[0] || 'love';
+  const secondary = sorted[1]?.[0] || 'empowerment';
+  
+  // Arco emocional basado en combinación
+  const arcs: Record<string, string> = {
+    'love+heartbreak': 'From passion to pain - a love story with tragic ending',
+    'heartbreak+hope': 'Rising from ashes - healing journey after loss',
+    'empowerment+rebellion': 'Breaking free - triumphant liberation',
+    'party+desire': 'Night of abandon - hedonistic celebration',
+    'nostalgia+love': 'Bittersweet memories - longing for past love',
+    'desire+love': 'Burning passion - intense romantic pursuit',
+    'hope+empowerment': 'Inspirational anthem - overcoming obstacles'
+  };
+  
+  const arcKey = `${primary}+${secondary}`;
+  const arc = arcs[arcKey] || `Journey from ${primary} to ${secondary} - emotional transformation`;
+  
+  return { primary, secondary, arc };
+}
+
+/**
+ * Genera contenido de texto usando OpenAI GPT-4o (modelo completo para mejor creatividad)
  */
 async function generateTextWithOpenAI(prompt: string, options: {
   temperature?: number;
   maxTokens?: number;
+  useFullModel?: boolean;
 } = {}): Promise<string> {
-  console.log(`🤖 Generando texto con OpenAI gpt-4o-mini...`);
+  // Usar GPT-4o completo para conceptos creativos, gpt-4o-mini para tareas simples
+  const model = options.useFullModel ? 'gpt-4o' : 'gpt-4o-mini';
+  console.log(`🤖 Generando texto con OpenAI ${model}...`);
   
   const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model,
     messages: [
       {
         role: 'user',
@@ -45,7 +267,7 @@ async function generateTextWithOpenAI(prompt: string, options: {
     throw new Error('No content received from OpenAI');
   }
   
-  console.log(`✅ Texto generado con OpenAI`);
+  console.log(`✅ Texto generado con OpenAI ${model}`);
   return content;
 }
 
@@ -179,7 +401,13 @@ async function generateConceptImage(
 
 /**
  * POST /api/music-video/generate-concepts
- * Genera 3 propuestas de conceptos visuales para un video musical
+ * Genera 3 propuestas de conceptos visuales DIFERENCIADOS para un video musical
+ * 
+ * 🚀 MEJORAS v2:
+ * - Usa GPT-4o completo para mayor creatividad
+ * - Incluye perfil completo del director
+ * - 3 arquetipos diferenciados: Narrativo, Abstracto, Performance
+ * - Detecta género musical y emociones de la letra
  */
 router.post("/generate-concepts", async (req: Request, res: Response) => {
   try {
@@ -199,72 +427,159 @@ router.post("/generate-concepts", async (req: Request, res: Response) => {
       : artistGender === 'androgynous' ? 'androgynous artist/performer'
       : 'artist/performer';
 
-    console.log(`🎬 Generando 3 conceptos de video musical con OpenAI...`);
+    // 🎵 NUEVO: Detectar género musical de la letra
+    const musicGenre = detectMusicGenre(lyrics);
+    console.log(`🎵 Género detectado: ${musicGenre.genre} (${musicGenre.subgenre}) - Mood: ${musicGenre.mood}`);
+
+    // 🎭 NUEVO: Analizar emociones de la letra
+    const emotions = analyzeEmotions(lyrics);
+    console.log(`💫 Emociones: ${emotions.primary} + ${emotions.secondary}`);
+    console.log(`📈 Arco emocional: ${emotions.arc}`);
+
+    // 🎬 NUEVO: Obtener perfil completo del director
+    const directorProfile = DIRECTOR_FULL_PROFILES[directorName] || null;
+
+    console.log(`🎬 Generando 3 conceptos DIFERENCIADOS con GPT-4o...`);
     console.log(`📝 Letra: ${lyrics.substring(0, 100)}...`);
     console.log(`🎭 Director: ${directorName || 'Unknown'}`);
     console.log(`👤 Género del artista: ${artistGender || 'no especificado'} → ${genderDescription}`);
 
-    const prompt = `Based on these lyrics and director style, create three distinct, creative music video concepts. Each concept should showcase a different visual and narrative approach to the same song.
+    // 🎬 PROMPT MEJORADO con perfil de director, género musical y emociones
+    const prompt = `You are ${directorName}, the legendary music video director. Create THREE RADICALLY DIFFERENT concepts for this song, each exploring a completely different approach.
 
-LYRICS:
+═══════════════════════════════════════════════════════════════
+📝 SONG LYRICS:
+═══════════════════════════════════════════════════════════════
 ${lyrics}
 
-DIRECTOR: ${directorName || 'Creative Director'}
-${audioDuration ? `DURATION: ${Math.floor(audioDuration)} seconds` : ''}
+═══════════════════════════════════════════════════════════════
+🎵 MUSIC ANALYSIS:
+═══════════════════════════════════════════════════════════════
+• Genre: ${musicGenre.genre.toUpperCase()} (${musicGenre.subgenre})
+• Overall Mood: ${musicGenre.mood}
+• Duration: ${audioDuration ? Math.floor(audioDuration) + ' seconds' : 'Standard length'}
 
-🎭 CRITICAL - ARTIST IDENTITY:
-The main performer is a ${genderDescription}. ALL visual descriptions, wardrobe, and character references MUST accurately represent this gender. Do NOT describe the artist with incorrect gender characteristics.
-${characterReference && characterReference.length > 0 ? `NOTE: The artist has ${characterReference.length} reference images provided for visual consistency. Use these to inform accurate character depiction.` : ''}
+═══════════════════════════════════════════════════════════════
+💫 EMOTIONAL ANALYSIS:
+═══════════════════════════════════════════════════════════════
+• Primary Emotion: ${emotions.primary.toUpperCase()}
+• Secondary Emotion: ${emotions.secondary}
+• Emotional Arc: ${emotions.arc}
 
-Create three complete concepts, each with:
-1. A unique title (creative, catchy, cinema-style)
-2. A compelling story/narrative concept
-3. Visual theme and aesthetic (cinematography style, color palette, mood)
-4. Key scenes and moments
-5. Wardrobe and styling details
-6. Location/setting descriptions
+═══════════════════════════════════════════════════════════════
+🎭 ARTIST PROFILE:
+═══════════════════════════════════════════════════════════════
+• Performer: ${genderDescription}
+${characterReference && characterReference.length > 0 ? `• Reference Images: ${characterReference.length} provided for visual consistency` : '• No reference images - create generic but consistent character'}
 
-Return ONLY a valid JSON object with this exact structure (no markdown, no extra text):
+${directorProfile ? `
+═══════════════════════════════════════════════════════════════
+🎬 YOUR DIRECTORIAL SIGNATURE (${directorName}):
+═══════════════════════════════════════════════════════════════
+• Signature Techniques: ${directorProfile.signature_techniques.join(', ')}
+• Camera Work: ${directorProfile.camera_work.join(', ')}
+• Color Palette: ${directorProfile.color_palette.join(', ')}
+• Lighting Style: ${directorProfile.lighting_style}
+• Editing Rhythm: ${directorProfile.editing_rhythm}
+• Your Specialty: ${directorProfile.specialty}
+• Your Approach to Music Videos: ${directorProfile.music_video_approach}
+• Iconic References: ${directorProfile.iconic_references.join(', ')}
+` : ''}
+
+═══════════════════════════════════════════════════════════════
+🎯 THE THREE CONCEPTS (MUST BE RADICALLY DIFFERENT):
+═══════════════════════════════════════════════════════════════
+
+📖 CONCEPT 1 - "NARRATIVE" (Story-Driven)
+Create a SHORT FILM with a compelling story arc. Think mini-movie with:
+- Clear protagonist journey
+- Beginning, middle, climactic ending
+- Character development
+- Plot twists or emotional revelations
+- The song as the soundtrack to a cinematic story
+
+🌀 CONCEPT 2 - "ABSTRACT/ARTISTIC" (Visual Poetry)
+Create a VISUAL ART PIECE without literal narrative. Think:
+- Symbolic imagery and metaphors
+- Surreal or dreamlike sequences
+- Dance/movement as expression
+- Experimental visuals and effects
+- The song as inspiration for visual art
+
+🎤 CONCEPT 3 - "PERFORMANCE" (Artist-Centric)
+Create a STAR-MAKING performance video. Think:
+- Iconic looks and poses
+- Multiple stunning locations or sets
+- Fashion-forward styling
+- The artist as the absolute center
+- Moments designed to go viral and become GIFs
+
+═══════════════════════════════════════════════════════════════
+⚠️ CRITICAL REQUIREMENTS:
+═══════════════════════════════════════════════════════════════
+1. Each concept MUST feel like it could be from a DIFFERENT director (while using your techniques)
+2. Each concept MUST have a UNIQUE title that sounds like a movie/art piece
+3. The ${genderDescription} MUST be accurately represented in ALL descriptions
+4. Apply your signature ${directorProfile?.color_palette?.[0] || 'cinematic'} color palette
+5. Include at least 3 specific ICONIC MOMENTS per concept (scenes that would become famous)
+6. Each concept should be AWARD-WORTHY and FRESH
+
+Return ONLY valid JSON with this structure:
 {
   "concepts": [
     {
-      "title": "Concept Title",
-      "story_concept": "The narrative story...",
-      "visual_theme": "Visual aesthetic and cinematography style...",
+      "title": "Evocative Cinema Title",
+      "concept_type": "narrative|abstract|performance",
+      "story_concept": "Detailed narrative/concept description (200+ words)...",
+      "visual_theme": "Cinematography style, visual approach...",
+      "director_techniques_used": ["technique1", "technique2"],
       "color_palette": {
         "primary_colors": ["color1", "color2"],
         "accent_colors": ["color3"],
-        "mood_colors": "Description of color mood"
+        "mood_colors": "How colors support the emotion"
       },
       "wardrobe": {
-        "main_outfit": "Description...",
-        "color_scheme": "Colors...",
-        "style_notes": "Style details..."
+        "main_outfit": "Detailed description...",
+        "alternative_looks": ["look2", "look3"],
+        "style_notes": "Fashion direction..."
       },
-      "key_scenes": [
+      "iconic_moments": [
         {
           "timestamp": "0:30",
-          "description": "What happens at this moment",
-          "visual_style": "How it looks"
+          "description": "The moment that would become famous",
+          "why_iconic": "What makes this visually memorable"
         }
       ],
-      "locations": ["Location 1", "Location 2"],
-      "mood": "Overall emotional tone"
+      "key_scenes": [
+        {
+          "timestamp": "0:00-0:30",
+          "description": "Scene description",
+          "visual_style": "How it looks",
+          "camera_movement": "Specific camera work"
+        }
+      ],
+      "locations": [
+        {
+          "name": "Location name",
+          "description": "Detailed description",
+          "mood": "Emotional purpose"
+        }
+      ],
+      "mood": "Overall emotional tone",
+      "music_video_references": ["Similar iconic videos for inspiration"]
     }
   ]
 }`;
 
-    const fullPrompt = `You are an expert music video creative director working with ${directorName}. Create three distinct, creative concepts that showcase different approaches to the same song. Return ONLY valid JSON, no markdown formatting.
-
-${prompt}`;
-
-    const textContent = await generateTextWithOpenAI(fullPrompt, {
-      temperature: 0.9,
-      maxTokens: 8192
+    // 🚀 USAR GPT-4o COMPLETO para conceptos creativos premium
+    const textContent = await generateTextWithOpenAI(prompt, {
+      temperature: 0.95, // Alta creatividad
+      maxTokens: 12000, // Más espacio para conceptos detallados
+      useFullModel: true // 🚀 GPT-4o completo
     });
     
     if (!textContent) {
-      throw new Error('No content received from Gemini');
+      throw new Error('No content received from GPT-4o');
     }
 
     // Limpiar cualquier markdown que pueda haber en la respuesta
@@ -278,7 +593,7 @@ ${prompt}`;
     const result = JSON.parse(cleanedContent);
     const concepts = result.concepts || [];
 
-    console.log(`✅ Generados ${concepts.length} conceptos de video musical`);
+    console.log(`✅ Generados ${concepts.length} conceptos DIFERENCIADOS de video musical`);
     console.log(`📸 Generando ${concepts.length} imágenes de póster EN PARALELO...`);
 
     // Generar las 3 imágenes EN PARALELO (mucho más rápido que secuencial)
@@ -303,7 +618,10 @@ ${prompt}`;
         coverImage: imageResult.imageUrl || null,
         isGenerating: false,
         error: imageResult.success ? null : imageResult.error,
-        imageProvider: imageResult.provider || 'none'
+        imageProvider: imageResult.provider || 'none',
+        // 🎵 Añadir metadata de análisis
+        musicGenre: musicGenre.genre,
+        emotionalArc: emotions.arc
       };
     });
 

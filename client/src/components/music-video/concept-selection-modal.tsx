@@ -26,6 +26,20 @@ export function ConceptSelectionModal({
   const [selectedConcept, setSelectedConcept] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Log cuando el modal se abre o cambia
+  if (open) {
+    logger.info('═'.repeat(60));
+    logger.info(`🎬 [CONCEPT MODAL] Modal ABIERTO`);
+    logger.info(`📊 Conceptos recibidos: ${concepts?.length || 0}`);
+    logger.info(`🎭 Director: ${directorName}`);
+    if (concepts?.length > 0) {
+      concepts.forEach((c, i) => {
+        logger.info(`  ${i+1}. ${c.title || 'Sin título'} - Poster: ${c.coverImage ? '✅' : '⏳ Generando...'}`);
+      });
+    }
+    logger.info('═'.repeat(60));
+  }
+
   const handleContinue = async () => {
     if (selectedConcept && !isLoading) {
       setIsLoading(true);

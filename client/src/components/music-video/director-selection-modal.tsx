@@ -139,7 +139,7 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
                 </Badge>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-2 gap-2 sm:gap-3">
                 {directors.map((director, index) => {
                   const pairedDP = getDirectorCinematographer(director.id);
                   return (
@@ -151,20 +151,20 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
                     >
                       <Card
                         className={cn(
-                          "p-5 cursor-pointer transition-all hover:border-orange-500/50 hover:shadow-2xl hover:scale-[1.03] relative overflow-hidden group bg-gradient-to-br from-background to-background/80",
+                          "p-2 sm:p-4 md:p-5 cursor-pointer transition-all hover:border-orange-500/50 hover:shadow-2xl hover:scale-[1.02] relative overflow-hidden group bg-gradient-to-br from-background to-background/80",
                           selectedDirector?.id === director.id && "border-2 border-orange-500 bg-gradient-to-br from-orange-500/25 to-orange-600/15 shadow-2xl shadow-orange-500/40"
                         )}
                         onClick={() => setSelectedDirector(director)}
                         data-testid={`director-${director.id}`}
                       >
                         {/* Animated Background Accent */}
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-500/20 to-orange-600/0 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-500" />
+                        <div className="absolute top-0 right-0 w-16 sm:w-32 h-16 sm:h-32 bg-gradient-to-br from-orange-500/20 to-orange-600/0 rounded-full -mr-6 sm:-mr-12 -mt-6 sm:-mt-12 group-hover:scale-150 transition-transform duration-500" />
                         
-                        <div className="flex flex-col gap-4 relative z-10">
-                          {/* Avatar Section - ENHANCED */}
+                        <div className="flex flex-col gap-2 sm:gap-4 relative z-10">
+                          {/* Avatar Section - Responsive for mobile */}
                           <div className={cn(
-                            "w-full aspect-square rounded-xl flex-shrink-0 overflow-hidden bg-gradient-to-br from-orange-500/30 to-orange-600/20 flex items-center justify-center transition-all border-3 border-orange-500/40 shadow-lg",
-                            selectedDirector?.id === director.id && "ring-4 ring-orange-500/50 border-orange-500/70 shadow-xl shadow-orange-500/40"
+                            "w-full aspect-[4/3] sm:aspect-square rounded-lg sm:rounded-xl flex-shrink-0 overflow-hidden bg-gradient-to-br from-orange-500/30 to-orange-600/20 flex items-center justify-center transition-all border-2 sm:border-3 border-orange-500/40 shadow-md sm:shadow-lg",
+                            selectedDirector?.id === director.id && "ring-2 sm:ring-4 ring-orange-500/50 border-orange-500/70 shadow-xl shadow-orange-500/40"
                           )}>
                             {director.imageUrl ? (
                               <img
@@ -179,17 +179,17 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
                               />
                             ) : (
                               <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-orange-600 via-orange-700 to-red-800">
-                                <Clapperboard className="h-12 w-12 text-white/80" />
+                                <Clapperboard className="h-8 w-8 sm:h-12 sm:w-12 text-white/80" />
                               </div>
                             )}
                           </div>
                           
                           {/* Director Info Section */}
-                          <div className="space-y-3">
-                            <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1 sm:space-y-3">
+                            <div className="flex items-start justify-between gap-1 sm:gap-2">
                               <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-lg line-clamp-1">{director.name}</h4>
-                                <p className="text-sm font-semibold text-orange-500 mb-1">
+                                <h4 className="font-bold text-xs sm:text-lg line-clamp-1">{director.name}</h4>
+                                <p className="text-[10px] sm:text-sm font-semibold text-orange-500 mb-0.5 sm:mb-1 line-clamp-1">
                                   {director.specialty}
                                 </p>
                               </div>
@@ -197,26 +197,26 @@ export function DirectorSelectionModal({ open, onSelect, preSelectedDirector }: 
                                 <motion.div
                                   initial={{ scale: 0 }}
                                   animate={{ scale: 1 }}
-                                  className="h-6 w-6 rounded-full bg-orange-500 text-white flex items-center justify-center flex-shrink-0 shadow-lg"
+                                  className="h-4 w-4 sm:h-6 sm:w-6 rounded-full bg-orange-500 text-white flex items-center justify-center flex-shrink-0 shadow-lg"
                                 >
-                                  <Check className="h-4 w-4" />
+                                  <Check className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
                                 </motion.div>
                               )}
                             </div>
                             
-                            {/* Rating Badge */}
-                            <div className="flex items-center gap-2 bg-orange-500/15 px-3 py-2 rounded-lg border border-orange-500/30 w-fit">
-                              <Star className="h-4 w-4 fill-orange-500 text-orange-500" />
-                              <span className="text-sm font-bold text-orange-600 dark:text-orange-400">{director.rating || 4.5}/5</span>
+                            {/* Rating Badge - Smaller on mobile */}
+                            <div className="hidden xs:flex items-center gap-1 sm:gap-2 bg-orange-500/15 px-1.5 sm:px-3 py-1 sm:py-2 rounded-md sm:rounded-lg border border-orange-500/30 w-fit">
+                              <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-orange-500 text-orange-500" />
+                              <span className="text-[10px] sm:text-sm font-bold text-orange-600 dark:text-orange-400">{director.rating || 4.5}/5</span>
                             </div>
                             
-                            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                            <p className="hidden sm:block text-xs text-muted-foreground line-clamp-2 leading-relaxed">
                               {director.experience}
                             </p>
 
-                            {/* Paired Cinematographer with enhanced styling */}
+                            {/* Paired Cinematographer - Hidden on mobile */}
                             {pairedDP && (
-                              <div className="space-y-2 mt-2 pt-3 border-t border-orange-500/20">
+                              <div className="hidden sm:block space-y-2 mt-2 pt-3 border-t border-orange-500/20">
                                 <div className="flex items-center gap-2 bg-gradient-to-r from-orange-500/20 to-orange-500/10 p-3 rounded-lg border border-orange-500/30">
                                   <Video className="h-4 w-4 text-orange-500 flex-shrink-0" />
                                   <div className="flex-1 min-w-0">

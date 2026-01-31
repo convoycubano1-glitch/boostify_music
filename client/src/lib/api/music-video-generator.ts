@@ -13,6 +13,16 @@ export interface ScenePrompt {
   prompt: string;
   negative_prompt?: string;
   lyrics_segment?: string;
+  // 🎤 Lipsync - Marcar escenas que necesitan sincronización de labios
+  needsLipsync?: boolean;
+  // Tipo de escena: performance (artista cantando), narrative (historia), visual (abstracto)
+  sceneType?: 'performance' | 'narrative' | 'visual';
+  // 🎵 Audio segment info para lipsync
+  audioSegment?: {
+    startTime: number;
+    endTime: number;
+    hasVocals: boolean;
+  };
 }
 
 export interface MusicVideoScript {
@@ -87,6 +97,7 @@ export async function generateMusicVideoPrompts(
 
 /**
  * Ajusta las duraciones de las escenas para que encajen exactamente en la duración total
+ * También detecta automáticamente qué escenas necesitan lipsync basado en lyrics_segment
  */
 function adjustSceneDurations(scenes: ScenePrompt[], targetDuration: number): ScenePrompt[] {
   if (scenes.length === 0) return [];
@@ -98,11 +109,37 @@ function adjustSceneDurations(scenes: ScenePrompt[], targetDuration: number): Sc
   let cumulativeTime = 0;
   const adjusted = scenes.map((scene, index) => {
     const scaledDuration = scene.duration * scaleFactor;
-    const adjustedScene = {
+    
+    // 🎤 Detectar si la escena necesita lipsync
+    // - Tiene lyrics_segment con texto
+    // - Es una escena de "performance" (artista cantando)
+    const hasLyrics = scene.lyrics_segment && scene.lyrics_segment.trim().length > 0;
+    const isPerformance = scene.sceneType === 'performance' || 
+                          (scene.prompt && (
+                            scene.prompt.toLowerCase().includes('singing') ||
+                            scene.prompt.toLowerCase().includes('cantando') ||
+                            scene.prompt.toLowerCase().includes('rapper') ||
+                            scene.prompt.toLowerCase().includes('performing') ||
+                            scene.prompt.toLowerCase().includes('vocalist') ||
+                            scene.prompt.toLowerCase().includes('artist face') ||
+                            scene.prompt.toLowerCase().includes('close-up face')
+                          ));
+    
+    const adjustedScene: ScenePrompt = {
       ...scene,
       start_time: cumulativeTime,
-      duration: scaledDuration
+      duration: scaledDuration,
+      // 🎤 Auto-detectar lipsync para escenas con letra y performance
+      needsLipsync: scene.needsLipsync ?? (hasLyrics && isPerformance),
+      sceneType: scene.sceneType || (isPerformance ? 'performance' : hasLyrics ? 'narrative' : 'visual'),
+      // 🎵 Crear segmento de audio para esta escena
+      audioSegment: {
+        startTime: cumulativeTime,
+        endTime: cumulativeTime + scaledDuration,
+        hasVocals: hasLyrics || false
+      }
     };
+    
     cumulativeTime += scaledDuration;
     return adjustedScene;
   });
@@ -111,7 +148,14 @@ function adjustSceneDurations(scenes: ScenePrompt[], targetDuration: number): Sc
   if (adjusted.length > 0) {
     const lastScene = adjusted[adjusted.length - 1];
     lastScene.duration = targetDuration - lastScene.start_time;
+    if (lastScene.audioSegment) {
+      lastScene.audioSegment.endTime = targetDuration;
+    }
   }
+  
+  // Log de escenas con lipsync
+  const lipsyncScenes = adjusted.filter(s => s.needsLipsync);
+  logger.info(`🎤 [Lipsync] ${lipsyncScenes.length}/${adjusted.length} escenas marcadas para lipsync`);
   
   return adjusted;
 }

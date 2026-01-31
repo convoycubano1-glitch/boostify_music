@@ -12,28 +12,31 @@
  */
 
 import express, { Router, Request, Response } from 'express';
-import multer from 'multer';
+import { UploadedFile } from 'express-fileupload';
 import { logger } from '../utils/logger';
 import VoiceAIService from '../services/voice-ai-service';
 
 const router: Router = express.Router();
 
-// Configurar multer para subida de archivos de audio
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage,
-  limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB máximo
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedMimes = ['audio/wav', 'audio/mp3', 'audio/mpeg', 'audio/ogg', 'audio/webm', 'audio/m4a'];
-    if (allowedMimes.includes(file.mimetype) || file.mimetype.startsWith('audio/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Solo se permiten archivos de audio'));
-    }
-  },
-});
+// Helper para validar archivos de audio
+function isValidAudioFile(file: UploadedFile): boolean {
+  const allowedMimes = ['audio/wav', 'audio/mp3', 'audio/mpeg', 'audio/ogg', 'audio/webm', 'audio/m4a', 'audio/x-m4a'];
+  return allowedMimes.includes(file.mimetype) || file.mimetype.startsWith('audio/');
+}
+
+// Tipo para los archivos de express-fileupload
+interface FileUploadRequest {
+  audio?: UploadedFile | UploadedFile[];
+}
+
+// Helper para obtener archivo de audio de la request
+function getAudioFile(req: Request): UploadedFile | null {
+  const files = req.files as FileUploadRequest | null | undefined;
+  if (!files || !files.audio) return null;
+  const file = files.audio;
+  // express-fileupload puede devolver array o single file
+  return Array.isArray(file) ? file[0] : file;
+}
 
 /**
  * POST /api/voice-ai/clone
@@ -42,19 +45,29 @@ const upload = multer({
  * Body: { audioUrl: string, referenceText?: string }
  * O File upload: audio file + referenceText en body
  */
-router.post('/clone', upload.single('audio'), async (req: Request, res: Response) => {
+router.post('/clone', async (req: Request, res: Response) => {
   try {
     logger.info('[VoiceAI API] POST /clone');
     
     let audioUrl = req.body.audioUrl;
     const referenceText = req.body.referenceText;
+    const voiceName = req.body.voiceName || 'my_voice';
     
-    // Si se subió un archivo, primero lo guardamos
-    if (req.file) {
-      logger.info(`[VoiceAI API] Archivo recibido: ${req.file.originalname} (${req.file.size} bytes)`);
+    // Si se subió un archivo via express-fileupload
+    const audioFile = getAudioFile(req);
+    if (audioFile) {
+      // Validar tipo de archivo
+      if (!isValidAudioFile(audioFile)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Solo se permiten archivos de audio (wav, mp3, ogg, webm, m4a)',
+        });
+      }
+      
+      logger.info(`[VoiceAI API] Archivo recibido: ${audioFile.name} (${audioFile.size} bytes)`);
       audioUrl = await VoiceAIService.uploadAudioToStorage(
-        req.file.buffer,
-        req.file.mimetype,
+        audioFile.data,
+        audioFile.mimetype,
         'voice-samples'
       );
     }
@@ -130,18 +143,26 @@ router.post('/tts', async (req: Request, res: Response) => {
  * Body: { audioUrl: string, targetVoiceId: string }
  * O File upload: audio file + targetVoiceId en body
  */
-router.post('/change-voice', upload.single('audio'), async (req: Request, res: Response) => {
+router.post('/change-voice', async (req: Request, res: Response) => {
   try {
     logger.info('[VoiceAI API] POST /change-voice');
     
     let audioUrl = req.body.audioUrl;
     const targetVoiceId = req.body.targetVoiceId;
     
-    // Si se subió un archivo, primero lo guardamos
-    if (req.file) {
+    // Si se subió un archivo via express-fileupload
+    const audioFile = getAudioFile(req);
+    if (audioFile) {
+      if (!isValidAudioFile(audioFile)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Solo se permiten archivos de audio',
+        });
+      }
+      
       audioUrl = await VoiceAIService.uploadAudioToStorage(
-        req.file.buffer,
-        req.file.mimetype,
+        audioFile.data,
+        audioFile.mimetype,
         'songs-to-convert'
       );
     }

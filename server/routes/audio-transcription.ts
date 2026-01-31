@@ -226,6 +226,11 @@ router.post('/transcribe', requireAuth, async (req: Request, res: Response) => {
         });
 
         console.log('✅ Transcripción FAL exitosa');
+        console.log('📝 LETRA DE LA CANCIÓN (primeros 500 caracteres):');
+        console.log('═'.repeat(60));
+        console.log(falResult.data.text?.substring(0, 500) || 'Sin texto');
+        console.log('═'.repeat(60));
+        console.log('📊 Total caracteres:', falResult.data.text?.length || 0);
         
         // Limpiar el archivo temporal
         if (fs.existsSync(tempPathWithExtension)) {

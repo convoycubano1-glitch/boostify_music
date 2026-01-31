@@ -84,6 +84,7 @@ export interface TimelineClip {
   locked?: boolean;         // Si el clip está bloqueado
   generated?: boolean;      // Si fue generado automáticamente
   generatedImage?: boolean; // Si es una imagen generada por IA
+  videoUrl?: string;        // URL del video generado desde imagen (Grok Imagine)
   
   // Propiedades de edición/recorte de video
   sourceStart?: number;     // Punto de inicio dentro del clip fuente (para recortar)

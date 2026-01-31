@@ -400,7 +400,7 @@ const ClipItem: React.FC<ClipItemProps> = ({
         )}
         
         {/* Indicador de video generado */}
-        {clip.videoUrl && (
+        {(clip.videoUrl || clip.metadata?.videoUrl || clip.metadata?.hasVideo) && (
           <div className="clip-video-badge" title="Video generado">
             <VideoIcon size={8} /> Video
           </div>

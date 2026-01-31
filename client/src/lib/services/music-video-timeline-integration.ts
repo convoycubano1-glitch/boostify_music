@@ -67,6 +67,7 @@ export interface GenerateVideosOptions {
 
 /**
  * Convertir script JSON a clips del timeline
+ * Incluye clips de audio segmentados para cada escena que necesita lipsync
  */
 export function convertScriptToTimelineClips(
   options: ScriptToTimelineOptions
@@ -84,43 +85,88 @@ export function convertScriptToTimelineClips(
     },
     {
       id: 'audio-track',
-      name: 'Audio',
+      name: 'Audio Principal',
+      type: 'audio',
+      visible: true,
+      locked: false
+    },
+    {
+      id: 'audio-segments-track',
+      name: 'Audio Segments (Lipsync)',
       type: 'audio',
       visible: true,
       locked: false
     }
   ];
 
-  // Convertir escenas a clips
+  // Convertir escenas a clips de video
   const clips: TimelineClip[] = script.scenes.map((scene, index) => ({
     id: `scene-${scene.scene_id || index}`,
-    title: `Escena ${scene.scene_id || index + 1}`,
+    title: scene.needsLipsync 
+      ? `🎤 Escena ${scene.scene_id || index + 1}` 
+      : `Escena ${scene.scene_id || index + 1}`,
     type: 'image' as const,
     start: scene.start_time,
     duration: scene.duration,
     trackId: 'video-track',
     url: '', // Se llenará con las imágenes generadas
-    color: getColorForScene(index, script.scenes.length),
+    color: scene.needsLipsync ? '#f97316' : getColorForScene(index, script.scenes.length), // Naranja para lipsync
     locked: false,
     metadata: {
       prompt: scene.prompt,
       negativePrompt: scene.negative_prompt,
       lyrics: scene.lyrics_segment,
-      sceneId: scene.scene_id || index
+      sceneId: scene.scene_id || index,
+      // 🎤 Info de lipsync
+      needsLipsync: scene.needsLipsync || false,
+      sceneType: scene.sceneType || 'visual',
+      audioSegment: scene.audioSegment,
+      hasVocals: scene.audioSegment?.hasVocals || false
     }
   }));
 
-  // Agregar clip de audio
+  // 🎵 Agregar clip de audio principal (track completo)
   clips.push({
     id: 'audio-main',
-    title: 'Audio Principal',
+    title: '🎵 Audio Principal',
     type: 'audio',
     start: 0,
     duration: script.total_duration,
     trackId: 'audio-track',
     url: audioUrl,
     color: '#22c55e',
-    locked: false
+    locked: false,
+    metadata: {
+      isMainAudio: true,
+      totalDuration: script.total_duration
+    }
+  });
+
+  // 🎤 Crear segmentos de audio para cada escena que necesita lipsync
+  const lipsyncScenes = script.scenes.filter(s => s.needsLipsync);
+  logger.info(`🎤 [Timeline] Creando ${lipsyncScenes.length} segmentos de audio para lipsync`);
+  
+  lipsyncScenes.forEach((scene, index) => {
+    clips.push({
+      id: `audio-segment-${scene.scene_id || index}`,
+      title: `🎤 Vocal ${scene.scene_id || index + 1}`,
+      type: 'audio',
+      start: scene.start_time,
+      duration: scene.duration,
+      trackId: 'audio-segments-track',
+      url: audioUrl, // Mismo audio, diferente segmento
+      color: '#f97316', // Naranja para lipsync
+      locked: false,
+      metadata: {
+        isLipsyncSegment: true,
+        parentSceneId: scene.scene_id || index,
+        lyrics: scene.lyrics_segment,
+        // Puntos de entrada/salida en el audio original
+        inPoint: scene.start_time,
+        outPoint: scene.start_time + scene.duration,
+        hasVocals: true
+      }
+    });
   });
 
   return { clips, tracks };

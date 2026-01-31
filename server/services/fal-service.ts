@@ -4,11 +4,14 @@
  * MODELOS PRINCIPALES DE LA PLATAFORMA:
  * 
  * 🎨 GENERACIÓN DE IMÁGENES (Text-to-Image):
- *    - fal-ai/nano-banana: Google's Gemini 2.5 Flash - $0.039/imagen
+ *    - fal-ai/nano-banana-pro: Google's Gemini 2.5 Pro - $0.078/imagen
+ *    - 2x más rápido que nano-banana, mejor coherencia visual
+ *    - Ideal para videos musicales realistas y orgánicos
  *    - Parámetros: prompt, aspect_ratio, num_images, output_format
  * 
  * ✏️ EDICIÓN DE IMÁGENES (Image-to-Image):
- *    - fal-ai/nano-banana/edit: Edición con coherencia visual - $0.039/imagen
+ *    - fal-ai/nano-banana-pro/edit: Edición con coherencia visual PRO - $0.078/imagen
+ *    - Mejor respeto al guión y coherencia entre escenas
  *    - Parámetros: prompt, image_urls (ARRAY), aspect_ratio, num_images
  *    - IMPORTANTE: image_urls es ARRAY, no image_url singular
  * 
@@ -26,23 +29,40 @@ const FAL_API_KEY = process.env.FAL_API_KEY || '';
 const FAL_BASE_URL = 'https://fal.run';
 
 /**
- * MODELOS FAL PRINCIPALES - NANO BANANA & MINIMAX MUSIC
+ * MODELOS FAL PRINCIPALES - NANO BANANA, GROK IMAGINE VIDEO & MINIMAX MUSIC
+ * 
+ * WORKFLOW RECOMENDADO PARA MUSIC VIDEOS:
+ * 1. Generar imagen con nano-banana (Text-to-Image) - $0.039/imagen
+ * 2. Convertir a video con Grok Imagine Video - $0.05/segundo ($0.30/6s video)
+ * 3. Editar video con Grok Edit - $0.06/segundo input+output
+ * 
  * Imágenes: $0.039 por imagen (~25 imágenes por $1)
+ * Videos: $0.05/segundo (~3 videos de 6s por $1)
  * Música: $0.03 por generación (~33 canciones por $1)
  */
 export const FAL_MODELS = {
-  // ========== IMÁGENES ==========
-  // Generación Text-to-Image (solo prompt)
-  IMAGE_GENERATION: 'fal-ai/nano-banana',
+  // ========== IMÁGENES - NANO BANANA PRO ==========
+  // Generación Text-to-Image (solo prompt) - PRINCIPAL
+  // PRO: 2x más rápido, mejor coherencia visual, más realista ($0.078/imagen)
+  IMAGE_GENERATION: 'fal-ai/nano-banana-pro',
   // Edición Image-to-Image (requiere image_urls como ARRAY)
-  IMAGE_EDIT: 'fal-ai/nano-banana/edit',
+  IMAGE_EDIT: 'fal-ai/nano-banana-pro/edit',
   // Merchandise (alias de edición)
-  MERCHANDISE_EDIT: 'fal-ai/nano-banana/edit',
+  MERCHANDISE_EDIT: 'fal-ai/nano-banana-pro/edit',
   
-  // ========== VIDEO ==========
+  // ========== VIDEO - GROK IMAGINE (xAI) - PRINCIPAL ==========
+  // Grok Imagine Video: Image-to-Video de alta calidad con audio
+  // Duración: 6 segundos, Resolución: 480p/720p, Incluye audio nativo
+  GROK_IMAGE_TO_VIDEO: 'xai/grok-imagine-video/image-to-video',
+  // Grok Edit Video: Video-to-Video para ediciones y transformaciones
+  // Edita videos existentes con prompts de texto (colorizar, estilizar, etc.)
+  GROK_EDIT_VIDEO: 'xai/grok-imagine-video/edit-video',
+  
+  // ========== VIDEO - FALLBACK ==========
   // Wan 2.6 Image-to-Video: Convierte imágenes estáticas a videos animados
   // Duración: ~5 segundos, resolución 480p/720p
   IMAGE_TO_VIDEO: 'fal-ai/wan/v2.6/image-to-video',
+  IMAGE_TO_VIDEO_FALLBACK: 'fal-ai/wan/v2.6/image-to-video',
   
   // ========== MÚSICA ==========
   // MiniMax Music V2: Canciones completas con voces y letras
@@ -73,8 +93,12 @@ export interface FalVideoResult {
   success: boolean;
   videoUrl?: string;
   duration?: number;
+  width?: number;
+  height?: number;
+  fps?: number;
+  numFrames?: number;
   error?: string;
-  provider?: 'fal-wan-image-to-video';
+  provider?: 'fal-grok-image-to-video' | 'fal-grok-edit-video' | 'fal-wan-image-to-video';
 }
 
 export interface FalMusicResult {
@@ -1771,13 +1795,534 @@ export async function generateArtistMerchandise(
   return generatedProducts;
 }
 
+// URL para queue de FAL (operaciones que toman tiempo)
+const FAL_QUEUE_URL = 'https://queue.fal.run';
+
 /**
  * ============================================================
- * GENERACIÓN DE VIDEO - FAL AI WAN 2.6 (Image-to-Video)
+ * GENERACIÓN DE VIDEO - GROK IMAGINE VIDEO (xAI) - PRINCIPAL
+ * ============================================================
+ * Modelo: xai/grok-imagine-video/image-to-video
+ * Genera videos de alta calidad desde imágenes con audio nativo
+ * Precio: $0.05/segundo ($0.30 para video de 6s)
+ * 
+ * WORKFLOW RECOMENDADO PARA MUSIC VIDEOS:
+ * 1. Generar imagen con nano-banana
+ * 2. Convertir a video con Grok Imagine
+ * 3. Editar/estilizar con Grok Edit Video
+ * 
+ * @param imageUrl - URL de la imagen a convertir en video
+ * @param prompt - Descripción del movimiento/estilo deseado
+ * @param options - Opciones: duration (6s), resolution (480p/720p), aspect_ratio
+ */
+export async function generateVideoWithGrok(
+  imageUrl: string,
+  prompt: string,
+  options: {
+    duration?: number; // segundos (default 6)
+    resolution?: '480p' | '720p';
+    aspectRatio?: 'auto' | '16:9' | '4:3' | '3:2' | '1:1' | '2:3' | '3:4' | '9:16';
+  } = {}
+): Promise<FalVideoResult> {
+  try {
+    if (!FAL_API_KEY) {
+      throw new Error('FAL_API_KEY no configurada');
+    }
+
+    logger.log(`[FAL] 🎬 Generando video con Grok Imagine Video (xAI)...`);
+    logger.log(`[FAL] Image URL: ${imageUrl.substring(0, 80)}...`);
+    logger.log(`[FAL] Motion Prompt: ${prompt.substring(0, 100)}...`);
+
+    // Parámetros para xai/grok-imagine-video/image-to-video
+    const requestBody = {
+      prompt: prompt,
+      image_url: imageUrl,
+      duration: options.duration || 6, // Default 6 segundos
+      resolution: options.resolution || '720p', // Alta calidad por defecto
+      aspect_ratio: options.aspectRatio || 'auto'
+    };
+
+    logger.log(`[FAL] Request a Grok Imagine:`, JSON.stringify(requestBody));
+
+    // Usar queue para operaciones largas
+    const response = await axios.post(
+      `${FAL_QUEUE_URL}/${FAL_MODELS.GROK_IMAGE_TO_VIDEO}`,
+      requestBody,
+      {
+        headers: {
+          'Authorization': `Key ${FAL_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000 // 30s para el submit
+      }
+    );
+
+    // FAL devuelve request_id, status_url y response_url
+    const requestId = response.data.request_id;
+    const statusUrl = response.data.status_url;
+    const responseUrl = response.data.response_url;
+    
+    logger.log(`[FAL] Grok Request ID: ${requestId}`);
+
+    // Polling para obtener el resultado
+    let result = null;
+    let attempts = 0;
+    const maxAttempts = 120; // 4 minutos max
+
+    while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 2000)); // 2 segundos
+
+      const statusResponse = await axios.get(statusUrl, {
+        headers: { 'Authorization': `Key ${FAL_API_KEY}` }
+      });
+
+      logger.log(`[FAL] Grok Status: ${statusResponse.data.status} (attempt ${attempts + 1})`);
+
+      if (statusResponse.data.status === 'COMPLETED') {
+        const resultResponse = await axios.get(responseUrl, {
+          headers: { 'Authorization': `Key ${FAL_API_KEY}` }
+        });
+        result = resultResponse.data;
+        break;
+      } else if (statusResponse.data.status === 'FAILED') {
+        throw new Error(statusResponse.data.error || 'Grok video generation failed');
+      }
+
+      attempts++;
+    }
+
+    if (!result) {
+      throw new Error('Grok video generation timeout');
+    }
+
+    // Extraer datos del video
+    const videoData = result.video;
+    if (!videoData?.url) {
+      throw new Error('No se recibió URL de video de Grok');
+    }
+
+    logger.log(`[FAL] ✅ Video Grok generado: ${videoData.url.substring(0, 80)}...`);
+
+    // Subir a Firebase Storage para URL permanente
+    try {
+      const videoResponse = await axios.get(videoData.url, {
+        responseType: 'arraybuffer',
+        timeout: 120000
+      });
+
+      if (storage) {
+        const timestamp = Date.now();
+        const randomId = Math.random().toString(36).substring(7);
+        const fileName = `grok-videos/${timestamp}_${randomId}.mp4`;
+
+        const bucket = storage.bucket();
+        const file = bucket.file(fileName);
+
+        await file.save(Buffer.from(videoResponse.data), {
+          metadata: { contentType: 'video/mp4' },
+          public: true,
+          validation: false,
+        });
+
+        await file.makePublic();
+        const permanentUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+
+        logger.log(`[FAL] ✅ Video Grok subido a Storage: ${permanentUrl}`);
+
+        return {
+          success: true,
+          videoUrl: permanentUrl,
+          duration: videoData.duration || options.duration || 6,
+          width: videoData.width,
+          height: videoData.height,
+          fps: videoData.fps,
+          numFrames: videoData.num_frames,
+          provider: 'fal-grok-image-to-video'
+        };
+      }
+    } catch (uploadError: any) {
+      logger.warn(`[FAL] ⚠️ Error subiendo video Grok a Storage: ${uploadError.message}`);
+    }
+
+    return {
+      success: true,
+      videoUrl: videoData.url,
+      duration: videoData.duration || options.duration || 6,
+      width: videoData.width,
+      height: videoData.height,
+      fps: videoData.fps,
+      numFrames: videoData.num_frames,
+      provider: 'fal-grok-image-to-video'
+    };
+
+  } catch (error: any) {
+    logger.error('[FAL] Error generando video con Grok:', error.message);
+    
+    // Fallback a Wan si Grok falla
+    logger.warn('[FAL] Intentando fallback con Wan 2.6...');
+    return generateVideoFromImageWithWan(imageUrl, prompt, {
+      resolution: options.resolution,
+      aspectRatio: options.aspectRatio === 'auto' ? '16:9' : options.aspectRatio as any,
+      duration: options.duration
+    });
+  }
+}
+
+/**
+ * ============================================================
+ * EDICIÓN DE VIDEO - GROK IMAGINE VIDEO EDIT (xAI)
+ * ============================================================
+ * Modelo: xai/grok-imagine-video/edit-video
+ * Edita videos existentes con instrucciones de texto
+ * Casos de uso: colorizar, estilizar, transformar
+ * Precio: $0.06/segundo (input + output)
+ * 
+ * @param videoUrl - URL del video a editar (max 8 segundos, 854x480)
+ * @param editPrompt - Instrucciones de edición (ej: "Colorize the video", "Add cyberpunk style")
+ * @param options - Opciones de resolución
+ */
+export async function editVideoWithGrok(
+  videoUrl: string,
+  editPrompt: string,
+  options: {
+    resolution?: 'auto' | '480p' | '720p';
+  } = {}
+): Promise<FalVideoResult> {
+  try {
+    if (!FAL_API_KEY) {
+      throw new Error('FAL_API_KEY no configurada');
+    }
+
+    logger.log(`[FAL] ✏️ Editando video con Grok Edit Video (xAI)...`);
+    logger.log(`[FAL] Video URL: ${videoUrl.substring(0, 80)}...`);
+    logger.log(`[FAL] Edit Prompt: ${editPrompt}`);
+
+    // Parámetros para xai/grok-imagine-video/edit-video
+    const requestBody = {
+      prompt: editPrompt,
+      video_url: videoUrl,
+      resolution: options.resolution || 'auto'
+    };
+
+    logger.log(`[FAL] Request a Grok Edit:`, JSON.stringify(requestBody));
+
+    // Usar queue para operaciones largas
+    const response = await axios.post(
+      `${FAL_QUEUE_URL}/${FAL_MODELS.GROK_EDIT_VIDEO}`,
+      requestBody,
+      {
+        headers: {
+          'Authorization': `Key ${FAL_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000
+      }
+    );
+
+    const requestId = response.data.request_id;
+    const statusUrl = response.data.status_url;
+    const responseUrl = response.data.response_url;
+
+    logger.log(`[FAL] Grok Edit Request ID: ${requestId}`);
+
+    // Polling para obtener el resultado
+    let result = null;
+    let attempts = 0;
+    const maxAttempts = 120;
+
+    while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const statusResponse = await axios.get(statusUrl, {
+        headers: { 'Authorization': `Key ${FAL_API_KEY}` }
+      });
+
+      logger.log(`[FAL] Grok Edit Status: ${statusResponse.data.status} (attempt ${attempts + 1})`);
+
+      if (statusResponse.data.status === 'COMPLETED') {
+        const resultResponse = await axios.get(responseUrl, {
+          headers: { 'Authorization': `Key ${FAL_API_KEY}` }
+        });
+        result = resultResponse.data;
+        break;
+      } else if (statusResponse.data.status === 'FAILED') {
+        throw new Error(statusResponse.data.error || 'Grok video edit failed');
+      }
+
+      attempts++;
+    }
+
+    if (!result) {
+      throw new Error('Grok video edit timeout');
+    }
+
+    const videoData = result.video;
+    if (!videoData?.url) {
+      throw new Error('No se recibió URL de video editado de Grok');
+    }
+
+    logger.log(`[FAL] ✅ Video editado con Grok: ${videoData.url.substring(0, 80)}...`);
+
+    // Subir a Firebase Storage
+    try {
+      const videoResponse = await axios.get(videoData.url, {
+        responseType: 'arraybuffer',
+        timeout: 120000
+      });
+
+      if (storage) {
+        const timestamp = Date.now();
+        const randomId = Math.random().toString(36).substring(7);
+        const fileName = `grok-edited-videos/${timestamp}_${randomId}.mp4`;
+
+        const bucket = storage.bucket();
+        const file = bucket.file(fileName);
+
+        await file.save(Buffer.from(videoResponse.data), {
+          metadata: { contentType: 'video/mp4' },
+          public: true,
+          validation: false,
+        });
+
+        await file.makePublic();
+        const permanentUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+
+        return {
+          success: true,
+          videoUrl: permanentUrl,
+          duration: videoData.duration,
+          width: videoData.width,
+          height: videoData.height,
+          fps: videoData.fps,
+          provider: 'fal-grok-edit-video'
+        };
+      }
+    } catch (uploadError: any) {
+      logger.warn(`[FAL] ⚠️ Error subiendo video editado a Storage: ${uploadError.message}`);
+    }
+
+    return {
+      success: true,
+      videoUrl: videoData.url,
+      duration: videoData.duration,
+      width: videoData.width,
+      height: videoData.height,
+      fps: videoData.fps,
+      provider: 'fal-grok-edit-video'
+    };
+
+  } catch (error: any) {
+    logger.error('[FAL] Error editando video con Grok:', error.message);
+    return {
+      success: false,
+      error: error.message || 'Error editando video con Grok',
+      provider: 'fal-grok-edit-video'
+    };
+  }
+}
+
+/**
+ * ============================================================
+ * WORKFLOW COMPLETO: Imagen → Video con Grok
+ * ============================================================
+ * Genera imagen con nano-banana y la convierte a video con Grok
+ * 
+ * @param imagePrompt - Prompt para generar la imagen
+ * @param motionPrompt - Prompt para el movimiento del video
+ * @param options - Opciones de aspecto ratio, duración, etc.
+ */
+export async function generateMusicVideoScene(
+  imagePrompt: string,
+  motionPrompt: string,
+  options: {
+    aspectRatio?: '16:9' | '9:16' | '1:1';
+    duration?: number;
+    resolution?: '480p' | '720p';
+    editStyle?: string; // Opcional: estilo de post-producción
+  } = {}
+): Promise<{
+  success: boolean;
+  imageUrl?: string;
+  videoUrl?: string;
+  editedVideoUrl?: string;
+  error?: string;
+}> {
+  try {
+    logger.log('[FAL] 🎬 Generando escena completa de Music Video...');
+    logger.log(`[FAL] Image Prompt: ${imagePrompt.substring(0, 100)}...`);
+    logger.log(`[FAL] Motion Prompt: ${motionPrompt.substring(0, 100)}...`);
+
+    // Paso 1: Generar imagen con nano-banana
+    const nanoBananaAspect = options.aspectRatio === '9:16' ? '9:16' : 
+                             options.aspectRatio === '1:1' ? '1:1' : '16:9';
+    
+    const imageResult = await generateImageWithNanoBanana(imagePrompt, {
+      aspectRatio: nanoBananaAspect as NanoBananaAspectRatio
+    });
+
+    if (!imageResult.success || !imageResult.imageUrl) {
+      throw new Error(`Error generando imagen: ${imageResult.error}`);
+    }
+
+    logger.log(`[FAL] ✅ Imagen generada: ${imageResult.imageUrl.substring(0, 60)}...`);
+
+    // Paso 2: Convertir a video con Grok Imagine
+    const videoResult = await generateVideoWithGrok(imageResult.imageUrl, motionPrompt, {
+      duration: options.duration || 6,
+      resolution: options.resolution || '720p',
+      aspectRatio: options.aspectRatio || '16:9'
+    });
+
+    if (!videoResult.success || !videoResult.videoUrl) {
+      throw new Error(`Error generando video: ${videoResult.error}`);
+    }
+
+    logger.log(`[FAL] ✅ Video generado: ${videoResult.videoUrl.substring(0, 60)}...`);
+
+    // Paso 3 (Opcional): Editar/estilizar con Grok Edit
+    let editedVideoUrl: string | undefined;
+    if (options.editStyle) {
+      const editResult = await editVideoWithGrok(videoResult.videoUrl, options.editStyle);
+      if (editResult.success && editResult.videoUrl) {
+        editedVideoUrl = editResult.videoUrl;
+        logger.log(`[FAL] ✅ Video editado: ${editedVideoUrl.substring(0, 60)}...`);
+      }
+    }
+
+    return {
+      success: true,
+      imageUrl: imageResult.imageUrl,
+      videoUrl: videoResult.videoUrl,
+      editedVideoUrl
+    };
+
+  } catch (error: any) {
+    logger.error('[FAL] Error en workflow de Music Video Scene:', error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * ============================================================
+ * GENERACIÓN DE VIDEO - FAL AI WAN 2.6 (Image-to-Video) - FALLBACK
  * ============================================================
  * Modelo: fal-ai/wan/v2.6/image-to-video
  * Convierte una imagen estática en un video animado
- * Ideal para crear loop videos de perfil de artistas
+ * Usado como fallback cuando Grok falla
+ * 
+ * @param imageUrl - URL de la imagen a convertir en video
+ * @param prompt - Descripción del movimiento/animación deseada
+ * @param options - Opciones adicionales (resolution, duration, etc.)
+ */
+export async function generateVideoFromImageWithWan(
+  imageUrl: string,
+  prompt: string,
+  options: {
+    resolution?: '480p' | '720p';
+    aspectRatio?: '16:9' | '9:16' | '1:1';
+    duration?: number;
+  } = {}
+): Promise<FalVideoResult> {
+  try {
+    if (!FAL_API_KEY) {
+      throw new Error('FAL_API_KEY no configurada');
+    }
+
+    logger.log(`[FAL] 🎬 Generando video con Wan 2.6 (Fallback)...`);
+    logger.log(`[FAL] Image URL: ${imageUrl.substring(0, 80)}...`);
+
+    const requestBody = {
+      image_url: imageUrl,
+      prompt: prompt,
+      negative_prompt: "blurry, distorted, low quality, deformed face, ugly",
+      num_frames: options.duration ? options.duration * 8 : 40,
+      resolution: options.resolution || '480p',
+      aspect_ratio: options.aspectRatio || '1:1',
+      seed: Math.floor(Math.random() * 1000000)
+    };
+
+    const response = await axios.post(
+      `${FAL_BASE_URL}/${FAL_MODELS.IMAGE_TO_VIDEO_FALLBACK}`,
+      requestBody,
+      {
+        headers: {
+          'Authorization': `Key ${FAL_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 300000
+      }
+    );
+
+    let videoUrl = response.data?.video?.url ||
+                   response.data?.video_url ||
+                   response.data?.output?.video_url;
+
+    if (videoUrl) {
+      logger.log(`[FAL] ✅ Video Wan generado: ${videoUrl.substring(0, 80)}...`);
+
+      // Subir a Firebase Storage
+      try {
+        const videoResponse = await axios.get(videoUrl, {
+          responseType: 'arraybuffer',
+          timeout: 60000
+        });
+
+        if (storage) {
+          const timestamp = Date.now();
+          const randomId = Math.random().toString(36).substring(7);
+          const fileName = `wan-videos/${timestamp}_${randomId}.mp4`;
+
+          const bucket = storage.bucket();
+          const file = bucket.file(fileName);
+
+          await file.save(Buffer.from(videoResponse.data), {
+            metadata: { contentType: 'video/mp4' },
+            public: true,
+            validation: false,
+          });
+
+          await file.makePublic();
+          const permanentUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+
+          return {
+            success: true,
+            videoUrl: permanentUrl,
+            duration: options.duration || 5,
+            provider: 'fal-wan-image-to-video'
+          };
+        }
+      } catch (uploadError: any) {
+        logger.warn(`[FAL] ⚠️ Error subiendo video Wan a Storage: ${uploadError.message}`);
+      }
+
+      return {
+        success: true,
+        videoUrl: videoUrl,
+        duration: options.duration || 5,
+        provider: 'fal-wan-image-to-video'
+      };
+    }
+
+    throw new Error('No se recibió URL de video en la respuesta de Wan');
+
+  } catch (error: any) {
+    logger.error('[FAL] Error generando video con Wan:', error.message);
+    return {
+      success: false,
+      error: error.message,
+      provider: 'fal-wan-image-to-video'
+    };
+  }
+}
+
+/**
+ * ============================================================
+ * GENERACIÓN DE VIDEO - WRAPPER PRINCIPAL
+ * ============================================================
+ * Usa Grok como primario y Wan como fallback
  * 
  * @param imageUrl - URL de la imagen a convertir en video
  * @param prompt - Descripción del movimiento/animación deseada
@@ -1789,114 +2334,24 @@ export async function generateVideoFromImage(
   options: {
     resolution?: '480p' | '720p';
     aspectRatio?: '16:9' | '9:16' | '1:1';
-    duration?: number; // segundos (default 5)
+    duration?: number; // segundos (default 6 para Grok, 5 para Wan)
+    useGrok?: boolean; // true por defecto - usa Grok como primario
   } = {}
 ): Promise<FalVideoResult> {
-  try {
-    if (!FAL_API_KEY) {
-      throw new Error('FAL_API_KEY no configurada');
-    }
-
-    logger.log(`[FAL] 🎬 Generando video desde imagen con Wan 2.6...`);
-    logger.log(`[FAL] Image URL: ${imageUrl.substring(0, 80)}...`);
-    logger.log(`[FAL] Motion Prompt: ${prompt.substring(0, 100)}...`);
-
-    // Parámetros para wan/v2.6/image-to-video
-    const requestBody = {
-      image_url: imageUrl,
-      prompt: prompt,
-      negative_prompt: "blurry, distorted, low quality, deformed face, ugly",
-      num_frames: options.duration ? options.duration * 8 : 40, // ~5 segundos a 8fps
-      resolution: options.resolution || '480p',
-      aspect_ratio: options.aspectRatio || '1:1',
-      seed: Math.floor(Math.random() * 1000000)
-    };
-
-    logger.log(`[FAL] Request a wan/v2.6/image-to-video:`, JSON.stringify(requestBody));
-
-    const response = await axios.post(
-      `${FAL_BASE_URL}/${FAL_MODELS.IMAGE_TO_VIDEO}`,
-      requestBody,
-      {
-        headers: {
-          'Authorization': `Key ${FAL_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 300000 // 5 minutos - la generación de video tarda más
-      }
-    );
-
-    logger.log(`[FAL] Response:`, JSON.stringify(response.data).substring(0, 500));
-
-    // El modelo puede retornar video en diferentes formatos
-    let videoUrl = response.data?.video?.url || 
-                   response.data?.video_url ||
-                   response.data?.output?.video_url ||
-                   response.data?.result?.video_url;
-
-    if (videoUrl) {
-      logger.log(`[FAL] ✅ Video generado: ${videoUrl.substring(0, 80)}...`);
-
-      // Descargar y subir a Firebase Storage para URL permanente
-      try {
-        const videoResponse = await axios.get(videoUrl, {
-          responseType: 'arraybuffer',
-          timeout: 60000
-        });
-        
-        if (storage) {
-          const timestamp = Date.now();
-          const randomId = Math.random().toString(36).substring(7);
-          const fileName = `artist-videos/${timestamp}_${randomId}.mp4`;
-          
-          const bucket = storage.bucket();
-          const file = bucket.file(fileName);
-          
-          await file.save(Buffer.from(videoResponse.data), {
-            metadata: { contentType: 'video/mp4' },
-            public: true,
-            validation: false,
-          });
-          
-          await file.makePublic();
-          const permanentUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
-          
-          logger.log(`[FAL] ✅ Video subido a Storage: ${permanentUrl}`);
-          
-          return {
-            success: true,
-            videoUrl: permanentUrl,
-            duration: options.duration || 5,
-            provider: 'fal-wan-image-to-video'
-          };
-        }
-      } catch (uploadError: any) {
-        logger.warn(`[FAL] ⚠️ Error subiendo video a Storage, usando URL temporal: ${uploadError.message}`);
-      }
-
-      return {
-        success: true,
-        videoUrl: videoUrl,
-        duration: options.duration || 5,
-        provider: 'fal-wan-image-to-video'
-      };
-    }
-
-    throw new Error('No se recibió URL de video en la respuesta');
-
-  } catch (error: any) {
-    logger.error(`[FAL] ❌ Error generando video:`, error.message);
-    
-    // Log más detalles si hay respuesta
-    if (error.response?.data) {
-      logger.error(`[FAL] Response data:`, JSON.stringify(error.response.data));
-    }
-
-    return {
-      success: false,
-      error: error.message || 'Error desconocido generando video',
-      provider: 'fal-wan-image-to-video'
-    };
+  // Por defecto usar Grok Imagine Video como primario
+  const useGrokPrimary = options.useGrok !== false;
+  
+  if (useGrokPrimary) {
+    logger.log(`[FAL] 🎬 Usando Grok Imagine Video como primario...`);
+    return generateVideoWithGrok(imageUrl, prompt, {
+      duration: options.duration || 6,
+      resolution: options.resolution || '720p',
+      aspectRatio: options.aspectRatio || '16:9'
+    });
+  } else {
+    // Fallback directo a Wan
+    logger.log(`[FAL] 🎬 Usando Wan 2.6 directamente...`);
+    return generateVideoFromImageWithWan(imageUrl, prompt, options);
   }
 }
 
@@ -2027,15 +2482,32 @@ Seamless loop, high production value, artistic music performance.`;
 
 // Exportar todas las funciones
 export default {
+  // Imágenes
   generateImageWithNanoBanana,
   editImageWithNanoBanana,
   generateImageWithFaceReference,
-  generateMusicWithMiniMax,
-  generateArtistImagesWithFAL,
-  generateArtistSongWithFAL,
-  generateMerchandiseImage,
-  generateArtistMerchandise,
+  
+  // Videos - Grok Imagine (Principal)
+  generateVideoWithGrok,
+  editVideoWithGrok,
+  generateMusicVideoScene,
+  
+  // Videos - Wan (Fallback)
+  generateVideoFromImageWithWan,
+  
+  // Videos - Wrapper (usa Grok con fallback a Wan)
   generateVideoFromImage,
   generateArtistProfileVideo,
+  
+  // Música
+  generateMusicWithMiniMax,
+  generateArtistSongWithFAL,
+  
+  // Artistas
+  generateArtistImagesWithFAL,
+  generateMerchandiseImage,
+  generateArtistMerchandise,
+  
+  // Constantes
   FAL_MODELS
 };

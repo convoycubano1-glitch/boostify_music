@@ -76,16 +76,21 @@ export function VideoProcessingModal({
   const [queuePosition, setQueuePosition] = useState<number | null>(null);
   const [estimatedTime, setEstimatedTime] = useState('8-12 minutos');
 
-  // Reset state when modal opens
+  // Track if modal was previously open to detect actual open transition
+  const [wasOpen, setWasOpen] = useState(false);
+
+  // Reset state only when modal actually opens (transition from closed to open)
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !wasOpen) {
+      // Modal just opened - initialize state
       setEmail(initialEmail);
       setArtistName(projectData.artistName || '');
-      setSongName(projectData.songName || '');
+      setSongName(projectData.songName || projectData.songName === '' ? '' : 'Tu Canción');
       setStep('form');
       setIsSubmitting(false);
     }
-  }, [isOpen, initialEmail, projectData]);
+    setWasOpen(isOpen);
+  }, [isOpen]); // Only depend on isOpen, not on projectData which changes every render
 
   // Generate profile slug from artist name
   const generateSlug = (name: string): string => {

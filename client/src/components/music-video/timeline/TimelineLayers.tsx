@@ -86,13 +86,13 @@ export const TimelineLayers: React.FC<TimelineLayersProps> = ({
   const [layers, setLayers] = useState<LayerConfig[]>([]);
   
   // Inicializa las capas al montar el componente
-  // BOOSTIFY: Solo 2 capas - Imágenes Generadas y Audio (todo viene pre-editado)
+  // BOOSTIFY: 3 capas - Imágenes Generadas, Audio Principal, y Segmentos Lipsync
   useEffect(() => {
-    // Solo 2 capas: Imágenes generadas por IA y Audio
+    // 3 capas: Imágenes generadas, Audio principal, y Segmentos de audio para lipsync
     const defaultLayers: LayerConfig[] = [
       {
         id: 1,
-        name: 'Imágenes Generadas',
+        name: '🎬 Video/Imágenes',
         type: LayerType.IMAGEN,
         locked: false,
         visible: true,
@@ -101,12 +101,21 @@ export const TimelineLayers: React.FC<TimelineLayersProps> = ({
       },
       {
         id: 2,
-        name: 'Audio',
+        name: '🎵 Audio Principal',
         type: LayerType.AUDIO,
         locked: false,
         visible: true,
         height: DEFAULT_LAYER_HEIGHT,
         color: LAYER_COLORS[LayerType.AUDIO]
+      },
+      {
+        id: 3,
+        name: '🎤 Lipsync Segments',
+        type: LayerType.AUDIO,
+        locked: false,
+        visible: true,
+        height: DEFAULT_LAYER_HEIGHT,
+        color: '#f97316' // Naranja para lipsync
       }
     ];
     

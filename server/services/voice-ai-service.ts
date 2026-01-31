@@ -18,7 +18,6 @@
 import axios from 'axios';
 import { logger } from '../utils/logger';
 import { storage } from '../firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 
 const FAL_API_KEY = process.env.FAL_API_KEY || process.env.FAL_KEY || '';
@@ -106,7 +105,8 @@ function getFalHeaders() {
 }
 
 /**
- * Sube audio a Firebase Storage y devuelve URL pública
+ * Sube audio a FAL Storage y devuelve URL pública
+ * FAL Storage es accesible por todos los modelos de FAL.ai
  */
 async function uploadAudioToStorage(
   audioBuffer: Buffer,
@@ -114,22 +114,84 @@ async function uploadAudioToStorage(
   folder: string = 'voice-samples'
 ): Promise<string> {
   try {
-    if (!storage) {
-      logger.warn('[VoiceAI] Firebase Storage no disponible');
-      throw new Error('Storage not available');
+    // Determinar extensión correcta para el archivo
+    const mimeToExt: Record<string, string> = {
+      'audio/mpeg': 'mp3',
+      'audio/mp3': 'mp3',
+      'audio/wav': 'wav',
+      'audio/wave': 'wav',
+      'audio/ogg': 'ogg',
+      'audio/webm': 'webm',
+      'audio/m4a': 'm4a',
+      'audio/x-m4a': 'm4a',
+      'audio/aac': 'aac',
+    };
+    const ext = mimeToExt[mimeType] || mimeType.split('/')[1] || 'mp3';
+    const fileName = `${folder}/${uuidv4()}.${ext}`;
+    
+    // Subir a FAL Storage usando su API
+    const FormData = (await import('form-data')).default;
+    const formData = new FormData();
+    formData.append('file', audioBuffer, {
+      filename: `${uuidv4()}.${ext}`,
+      contentType: mimeType,
+    });
+    
+    const uploadResponse = await axios.post(
+      'https://fal.run/fal-ai/storage/upload',
+      formData,
+      {
+        headers: {
+          ...formData.getHeaders(),
+          'Authorization': `Key ${FAL_API_KEY}`,
+        },
+        timeout: 60000,
+      }
+    );
+    
+    if (uploadResponse.data && uploadResponse.data.url) {
+      logger.info(`[VoiceAI] Audio subido a FAL Storage: ${uploadResponse.data.url}`);
+      return uploadResponse.data.url;
     }
     
-    const fileName = `${folder}/${uuidv4()}.${mimeType.split('/')[1] || 'wav'}`;
-    const storageRef = ref(storage, fileName);
+    throw new Error('No se recibió URL de FAL Storage');
+  } catch (error: any) {
+    logger.error('[VoiceAI] Error subiendo a FAL Storage:', error.message);
     
-    await uploadBytes(storageRef, audioBuffer, { contentType: mimeType });
-    const downloadUrl = await getDownloadURL(storageRef);
-    
-    logger.info(`[VoiceAI] Audio subido: ${fileName}`);
-    return downloadUrl;
-  } catch (error) {
-    logger.error('[VoiceAI] Error subiendo audio:', error);
-    throw error;
+    // Fallback: guardar localmente (solo funciona si el servidor es accesible públicamente)
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      
+      const mimeToExt: Record<string, string> = {
+        'audio/mpeg': 'mp3',
+        'audio/mp3': 'mp3',
+        'audio/wav': 'wav',
+        'audio/wave': 'wav',
+        'audio/ogg': 'ogg',
+        'audio/webm': 'webm',
+        'audio/m4a': 'm4a',
+        'audio/x-m4a': 'm4a',
+        'audio/aac': 'aac',
+      };
+      const ext = mimeToExt[mimeType] || mimeType.split('/')[1] || 'mp3';
+      const fileName = `${uuidv4()}.${ext}`;
+      const uploadsDir = path.join(process.cwd(), 'uploads', folder);
+      
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      
+      const filePath = path.join(uploadsDir, fileName);
+      fs.writeFileSync(filePath, audioBuffer);
+      
+      const localUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/uploads/${folder}/${fileName}`;
+      logger.info(`[VoiceAI] Fallback: Audio guardado localmente: ${filePath}`);
+      return localUrl;
+    } catch (fallbackError) {
+      logger.error('[VoiceAI] Error en fallback local:', fallbackError);
+      throw error;
+    }
   }
 }
 
@@ -169,11 +231,14 @@ export async function cloneVoice(
       { headers: getFalHeaders(), timeout: 120000 }
     );
     
-    // FAL devuelve un request_id para el queue
+    // FAL devuelve un request_id para el queue y las URLs para polling
     const requestId = response.data.request_id;
+    const statusUrl = response.data.status_url;
+    const responseUrl = response.data.response_url;
     logger.info(`[VoiceAI] Request ID: ${requestId}`);
+    logger.info(`[VoiceAI] Status URL: ${statusUrl}`);
     
-    // Polling para obtener el resultado
+    // Polling para obtener el resultado usando las URLs que FAL devuelve
     let result = null;
     let attempts = 0;
     const maxAttempts = 60; // 2 minutos max
@@ -182,13 +247,15 @@ export async function cloneVoice(
       await new Promise(resolve => setTimeout(resolve, 2000)); // 2 segundos
       
       const statusResponse = await axios.get(
-        `${FAL_QUEUE_URL}/${VOICE_AI_MODELS.CLONE_VOICE}/requests/${requestId}/status`,
+        statusUrl,
         { headers: getFalHeaders() }
       );
       
+      logger.info(`[VoiceAI] Status: ${statusResponse.data.status} (attempt ${attempts + 1})`);
+      
       if (statusResponse.data.status === 'COMPLETED') {
         const resultResponse = await axios.get(
-          `${FAL_QUEUE_URL}/${VOICE_AI_MODELS.CLONE_VOICE}/requests/${requestId}`,
+          responseUrl,
           { headers: getFalHeaders() }
         );
         result = resultResponse.data;
