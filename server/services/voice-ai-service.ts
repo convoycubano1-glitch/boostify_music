@@ -140,39 +140,81 @@ async function uploadAudioToStorage(
  * Zero-shot: no requiere entrenamiento previo.
  * 
  * @param audioUrl URL del audio de referencia de la voz
- * @param voiceName Nombre para identificar la voz clonada
- * @returns voiceId para usar en TTS
+ * @param referenceText Texto opcional que se dice en el audio (mejora calidad)
+ * @returns speaker_embedding URL para usar en TTS
  */
 export async function cloneVoice(
   audioUrl: string,
-  voiceName: string = 'my_voice'
+  referenceText?: string
 ): Promise<VoiceCloneResult> {
   try {
-    logger.info(`[VoiceAI] Clonando voz: ${voiceName}`);
+    logger.info(`[VoiceAI] Clonando voz desde audio: ${audioUrl}`);
     
     if (!FAL_API_KEY) {
       throw new Error('FAL_API_KEY no configurada');
     }
     
+    // Usar el cliente FAL con subscribe para manejar el queue
+    const requestBody: any = {
+      audio_url: audioUrl,
+    };
+    
+    if (referenceText) {
+      requestBody.reference_text = referenceText;
+    }
+    
     const response = await axios.post(
-      `${FAL_BASE_URL}/${VOICE_AI_MODELS.CLONE_VOICE}`,
-      {
-        audio_url: audioUrl,
-        voice_name: voiceName,
-      },
+      `${FAL_QUEUE_URL}/${VOICE_AI_MODELS.CLONE_VOICE}`,
+      requestBody,
       { headers: getFalHeaders(), timeout: 120000 }
     );
     
+    // FAL devuelve un request_id para el queue
+    const requestId = response.data.request_id;
+    logger.info(`[VoiceAI] Request ID: ${requestId}`);
+    
+    // Polling para obtener el resultado
+    let result = null;
+    let attempts = 0;
+    const maxAttempts = 60; // 2 minutos max
+    
+    while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 2000)); // 2 segundos
+      
+      const statusResponse = await axios.get(
+        `${FAL_QUEUE_URL}/${VOICE_AI_MODELS.CLONE_VOICE}/requests/${requestId}/status`,
+        { headers: getFalHeaders() }
+      );
+      
+      if (statusResponse.data.status === 'COMPLETED') {
+        const resultResponse = await axios.get(
+          `${FAL_QUEUE_URL}/${VOICE_AI_MODELS.CLONE_VOICE}/requests/${requestId}`,
+          { headers: getFalHeaders() }
+        );
+        result = resultResponse.data;
+        break;
+      } else if (statusResponse.data.status === 'FAILED') {
+        throw new Error(statusResponse.data.error || 'Voice cloning failed');
+      }
+      
+      attempts++;
+    }
+    
+    if (!result) {
+      throw new Error('Voice cloning timeout');
+    }
+    
     logger.info('[VoiceAI] Voz clonada exitosamente');
     
+    // El resultado contiene speaker_embedding con la URL del archivo safetensors
     return {
       success: true,
-      voiceId: response.data.voice_id || response.data.id,
-      voiceUrl: response.data.voice_url || audioUrl,
+      voiceId: result.speaker_embedding?.url || result.speaker_embedding,
+      voiceUrl: result.speaker_embedding?.url || result.speaker_embedding,
       provider: 'qwen-3-tts-clone',
     };
   } catch (error: any) {
-    logger.error('[VoiceAI] Error clonando voz:', error.message);
+    logger.error('[VoiceAI] Error clonando voz:', error.response?.data || error.message);
     return {
       success: false,
       error: error.response?.data?.detail || error.message,
@@ -185,47 +227,90 @@ export async function cloneVoice(
  * 2. TEXT-TO-SPEECH con Voz Clonada
  * 
  * Genera audio hablado/cantado usando la voz clonada del usuario.
+ * El voiceId es la URL del speaker_embedding (archivo .safetensors)
  * 
  * @param text Texto o letra a convertir en audio
- * @param voiceId ID de la voz clonada
- * @param options Opciones adicionales (speed, emotion)
+ * @param speakerEmbeddingUrl URL del speaker embedding de la voz clonada
+ * @param options Opciones adicionales (language, referenceText)
  */
 export async function textToSpeechWithVoice(
   text: string,
-  voiceId: string,
+  speakerEmbeddingUrl: string,
   options: {
-    speed?: number;
-    emotion?: 'neutral' | 'happy' | 'sad' | 'angry' | 'fearful';
+    language?: 'Auto' | 'English' | 'Spanish' | 'French' | 'German' | 'Italian' | 'Japanese' | 'Korean' | 'Portuguese' | 'Russian' | 'Chinese';
+    referenceText?: string;
+    temperature?: number;
   } = {}
 ): Promise<TextToSpeechResult> {
   try {
-    logger.info(`[VoiceAI] Generando TTS con voz: ${voiceId}`);
+    logger.info(`[VoiceAI] Generando TTS con voz clonada`);
     
     if (!FAL_API_KEY) {
       throw new Error('FAL_API_KEY no configurada');
     }
     
+    const requestBody: any = {
+      text,
+      speaker_voice_embedding_file_url: speakerEmbeddingUrl,
+      language: options.language || 'Auto',
+      temperature: options.temperature || 0.9,
+    };
+    
+    if (options.referenceText) {
+      requestBody.reference_text = options.referenceText;
+    }
+    
+    // Usar queue para manejar el proceso
     const response = await axios.post(
-      `${FAL_BASE_URL}/${VOICE_AI_MODELS.TTS_WITH_VOICE}`,
-      {
-        text,
-        voice_id: voiceId,
-        speed: options.speed || 1.0,
-        emotion: options.emotion || 'neutral',
-      },
+      `${FAL_QUEUE_URL}/${VOICE_AI_MODELS.TTS_WITH_VOICE}`,
+      requestBody,
       { headers: getFalHeaders(), timeout: 120000 }
     );
+    
+    const requestId = response.data.request_id;
+    logger.info(`[VoiceAI] TTS Request ID: ${requestId}`);
+    
+    // Polling para obtener el resultado
+    let result = null;
+    let attempts = 0;
+    const maxAttempts = 60;
+    
+    while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const statusResponse = await axios.get(
+        `${FAL_QUEUE_URL}/${VOICE_AI_MODELS.TTS_WITH_VOICE}/requests/${requestId}/status`,
+        { headers: getFalHeaders() }
+      );
+      
+      if (statusResponse.data.status === 'COMPLETED') {
+        const resultResponse = await axios.get(
+          `${FAL_QUEUE_URL}/${VOICE_AI_MODELS.TTS_WITH_VOICE}/requests/${requestId}`,
+          { headers: getFalHeaders() }
+        );
+        result = resultResponse.data;
+        break;
+      } else if (statusResponse.data.status === 'FAILED') {
+        throw new Error(statusResponse.data.error || 'TTS generation failed');
+      }
+      
+      attempts++;
+    }
+    
+    if (!result) {
+      throw new Error('TTS generation timeout');
+    }
     
     logger.info('[VoiceAI] TTS generado exitosamente');
     
     return {
       success: true,
-      audioUrl: response.data.audio?.url || response.data.audio_url,
-      duration: response.data.duration,
+      audioUrl: result.audio?.url || result.audio_url,
+      duration: result.audio?.duration || result.duration,
       provider: 'qwen-3-tts',
     };
   } catch (error: any) {
-    logger.error('[VoiceAI] Error en TTS:', error.message);
+    logger.error('[VoiceAI] Error en TTS:', error.response?.data || error.message);
     return {
       success: false,
       error: error.response?.data?.detail || error.message,
@@ -373,64 +458,208 @@ export async function enhanceAudio(audioUrl: string): Promise<TextToSpeechResult
 }
 
 /**
- * 6. WORKFLOW COMPLETO: Canción con Tu Voz
+ * 6. TRANSCRIBIR AUDIO - ElevenLabs Scribe V2
  * 
- * Pipeline completo para generar una canción con la voz del usuario:
- * 1. Tomar canción generada (con vocals AI)
- * 2. Separar vocals e instrumental
- * 3. Aplicar voz del usuario a los vocals
- * 4. Mezclar de nuevo con instrumental
+ * Transcribe el audio de vocals para obtener la letra.
  * 
- * @param songUrl URL de la canción original (generada con AI)
- * @param userVoiceId ID de la voz clonada del usuario
+ * @param audioUrl URL del audio a transcribir
+ */
+export async function transcribeAudio(audioUrl: string): Promise<{
+  success: boolean;
+  text?: string;
+  words?: Array<{text: string; start: number; end: number}>;
+  error?: string;
+}> {
+  try {
+    logger.info(`[VoiceAI] Transcribiendo audio: ${audioUrl}`);
+    
+    if (!FAL_API_KEY) {
+      throw new Error('FAL_API_KEY no configurada');
+    }
+    
+    const response = await axios.post(
+      `${FAL_QUEUE_URL}/fal-ai/elevenlabs/speech-to-text/scribe-v2`,
+      {
+        audio_url: audioUrl,
+        diarize: false,
+        tag_audio_events: false,
+      },
+      { headers: getFalHeaders(), timeout: 120000 }
+    );
+    
+    const requestId = response.data.request_id;
+    
+    // Polling
+    let result = null;
+    let attempts = 0;
+    while (attempts < 60) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const statusResponse = await axios.get(
+        `${FAL_QUEUE_URL}/fal-ai/elevenlabs/speech-to-text/scribe-v2/requests/${requestId}/status`,
+        { headers: getFalHeaders() }
+      );
+      
+      if (statusResponse.data.status === 'COMPLETED') {
+        const resultResponse = await axios.get(
+          `${FAL_QUEUE_URL}/fal-ai/elevenlabs/speech-to-text/scribe-v2/requests/${requestId}`,
+          { headers: getFalHeaders() }
+        );
+        result = resultResponse.data;
+        break;
+      } else if (statusResponse.data.status === 'FAILED') {
+        throw new Error('Transcription failed');
+      }
+      attempts++;
+    }
+    
+    if (!result) {
+      throw new Error('Transcription timeout');
+    }
+    
+    logger.info('[VoiceAI] Transcripción completada');
+    
+    return {
+      success: true,
+      text: result.text,
+      words: result.words,
+    };
+  } catch (error: any) {
+    logger.error('[VoiceAI] Error transcribiendo:', error.message);
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message,
+    };
+  }
+}
+
+/**
+ * 7. WORKFLOW COMPLETO: Canción con Tu Voz
+ * 
+ * Pipeline completo para poner TU VOZ en una canción generada:
+ * 
+ * PRERREQUISITO: Usuario ya tiene su voz clonada (speaker_embedding URL)
+ * 
+ * STEPS:
+ * 1. Separar canción en VOCALS + INSTRUMENTAL
+ * 2. Transcribir los VOCALS para obtener la letra
+ * 3. Generar TTS con TU VOZ CLONADA usando la letra
+ * 4. El resultado es: INSTRUMENTAL + TU VOZ (mezcla manual si es necesario)
+ * 
+ * @param songUrl URL de la canción generada (con vocals AI originales)
+ * @param speakerEmbeddingUrl URL del speaker_embedding de tu voz clonada
+ * @param options Opciones adicionales
  */
 export async function createSongWithUserVoice(
   songUrl: string,
-  userVoiceId: string
+  speakerEmbeddingUrl: string,
+  options: {
+    language?: 'Auto' | 'English' | 'Spanish';
+    enhanceOutput?: boolean;
+  } = {}
 ): Promise<{
   success: boolean;
   finalAudioUrl?: string;
+  instrumentalUrl?: string;
+  newVocalsUrl?: string;
+  lyrics?: string;
   steps?: {
     separation?: AudioSeparationResult;
-    voiceChange?: VoiceChangerResult;
+    transcription?: { text: string };
+    tts?: TextToSpeechResult;
+    enhance?: TextToSpeechResult;
   };
   error?: string;
 }> {
   try {
-    logger.info('[VoiceAI] Iniciando workflow: Canción con voz del usuario');
+    logger.info('[VoiceAI] 🎤 Iniciando workflow: Canción con TU VOZ');
+    logger.info(`[VoiceAI] Canción original: ${songUrl}`);
+    logger.info(`[VoiceAI] Speaker embedding: ${speakerEmbeddingUrl}`);
     
-    // Paso 1: Separar vocals e instrumental
-    logger.info('[VoiceAI] Paso 1: Separando audio...');
+    // ═══════════════════════════════════════════════════════════════
+    // PASO 1: Separar la canción en VOCALS + INSTRUMENTAL
+    // ═══════════════════════════════════════════════════════════════
+    logger.info('[VoiceAI] 📀 Paso 1/4: Separando audio en vocals + instrumental...');
     const separation = await separateAudio(songUrl, 'vocals');
     
-    if (!separation.success || !separation.vocalsUrl) {
-      throw new Error('Error separando audio: ' + separation.error);
+    if (!separation.success || !separation.vocalsUrl || !separation.instrumentalUrl) {
+      throw new Error('Error separando audio: ' + (separation.error || 'No se obtuvieron las pistas'));
     }
     
-    // Paso 2: Cambiar voz en los vocals
-    logger.info('[VoiceAI] Paso 2: Aplicando voz del usuario...');
-    const voiceChange = await changeVoice(separation.vocalsUrl, userVoiceId);
+    logger.info(`[VoiceAI] ✅ Vocals: ${separation.vocalsUrl}`);
+    logger.info(`[VoiceAI] ✅ Instrumental: ${separation.instrumentalUrl}`);
     
-    if (!voiceChange.success || !voiceChange.audioUrl) {
-      throw new Error('Error cambiando voz: ' + voiceChange.error);
+    // ═══════════════════════════════════════════════════════════════
+    // PASO 2: Transcribir los vocals para obtener la letra
+    // ═══════════════════════════════════════════════════════════════
+    logger.info('[VoiceAI] 📝 Paso 2/4: Transcribiendo vocals para obtener letra...');
+    const transcription = await transcribeAudio(separation.vocalsUrl);
+    
+    if (!transcription.success || !transcription.text) {
+      throw new Error('Error transcribiendo: ' + (transcription.error || 'No se obtuvo texto'));
     }
     
-    // Paso 3: El audio resultante del voice changer es la mezcla final
-    // (ElevenLabs combina la nueva voz con el contexto musical)
-    // Si necesitamos mezcla manual, usaríamos FFmpeg en el servidor
+    const lyrics = transcription.text;
+    logger.info(`[VoiceAI] ✅ Letra obtenida: "${lyrics.substring(0, 100)}..."`);
     
-    logger.info('[VoiceAI] Workflow completado exitosamente');
+    // ═══════════════════════════════════════════════════════════════
+    // PASO 3: Generar TTS con TU VOZ CLONADA usando la letra
+    // ═══════════════════════════════════════════════════════════════
+    logger.info('[VoiceAI] 🎙️ Paso 3/4: Generando nuevos vocals con TU VOZ...');
+    const tts = await textToSpeechWithVoice(lyrics, speakerEmbeddingUrl, {
+      language: options.language || 'Auto',
+    });
+    
+    if (!tts.success || !tts.audioUrl) {
+      throw new Error('Error generando TTS: ' + (tts.error || 'No se generó audio'));
+    }
+    
+    logger.info(`[VoiceAI] ✅ Nuevos vocals generados: ${tts.audioUrl}`);
+    
+    // ═══════════════════════════════════════════════════════════════
+    // PASO 4 (Opcional): Mejorar calidad del audio
+    // ═══════════════════════════════════════════════════════════════
+    let finalVocalsUrl = tts.audioUrl;
+    let enhance: TextToSpeechResult | undefined;
+    
+    if (options.enhanceOutput) {
+      logger.info('[VoiceAI] ✨ Paso 4/4: Mejorando calidad de audio...');
+      enhance = await enhanceAudio(tts.audioUrl);
+      
+      if (enhance.success && enhance.audioUrl) {
+        finalVocalsUrl = enhance.audioUrl;
+        logger.info(`[VoiceAI] ✅ Audio mejorado: ${finalVocalsUrl}`);
+      }
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    // RESULTADO FINAL
+    // ═══════════════════════════════════════════════════════════════
+    // Nota: Para mezclar INSTRUMENTAL + NUEVOS VOCALS necesitamos FFmpeg
+    // Por ahora devolvemos ambas pistas separadas para que el usuario
+    // las mezcle en un DAW o usemos un servicio de mezcla
+    
+    logger.info('[VoiceAI] 🎉 Workflow completado exitosamente!');
+    logger.info('[VoiceAI] 📦 Resultados:');
+    logger.info(`[VoiceAI]    - Instrumental: ${separation.instrumentalUrl}`);
+    logger.info(`[VoiceAI]    - Nuevos Vocals (TU VOZ): ${finalVocalsUrl}`);
     
     return {
       success: true,
-      finalAudioUrl: voiceChange.audioUrl,
+      // Por ahora usamos los vocals como "final" - idealmente mezclaríamos
+      finalAudioUrl: finalVocalsUrl,
+      instrumentalUrl: separation.instrumentalUrl,
+      newVocalsUrl: finalVocalsUrl,
+      lyrics,
       steps: {
         separation,
-        voiceChange,
+        transcription: { text: lyrics },
+        tts,
+        enhance,
       },
     };
   } catch (error: any) {
-    logger.error('[VoiceAI] Error en workflow:', error.message);
+    logger.error('[VoiceAI] ❌ Error en workflow:', error.message);
     return {
       success: false,
       error: error.message,
@@ -490,6 +719,7 @@ export default {
   changeVoice,
   separateAudio,
   enhanceAudio,
+  transcribeAudio,
   createSongWithUserVoice,
   designVoice,
   uploadAudioToStorage,

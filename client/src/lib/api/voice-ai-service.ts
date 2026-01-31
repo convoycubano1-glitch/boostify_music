@@ -53,9 +53,14 @@ export interface AudioSeparationResult {
 export interface CreateSongResult {
   success: boolean;
   finalAudioUrl?: string;
+  instrumentalUrl?: string;
+  newVocalsUrl?: string;
+  lyrics?: string;
   steps?: {
     separation?: AudioSeparationResult;
-    voiceChange?: VoiceChangerResult;
+    transcription?: { text: string };
+    tts?: TextToSpeechResult;
+    enhance?: TextToSpeechResult;
   };
   error?: string;
 }
@@ -355,27 +360,39 @@ export async function enhanceAudio(audioUrl: string): Promise<TextToSpeechResult
 /**
  * Workflow completo: Crea una canción con la voz del usuario
  * 
+ * WORKFLOW DETALLADO:
  * 1. Toma una canción generada (con AI vocals)
- * 2. Separa vocals e instrumental
- * 3. Reemplaza vocals con la voz del usuario
- * 4. Devuelve canción final
+ * 2. Separa vocals e instrumental (SAM Audio)
+ * 3. Transcribe los vocals para obtener la letra (ElevenLabs Scribe)
+ * 4. Genera nuevos vocals con TU VOZ usando la letra (Qwen3 TTS)
+ * 5. Devuelve: instrumental + nuevos vocals (tu voz) + letra
  * 
  * @param songUrl URL de la canción original (generada con AI)
- * @param userVoiceId ID de la voz clonada del usuario
+ * @param speakerEmbeddingUrl URL del speaker_embedding de tu voz clonada
+ * @param options Opciones adicionales
  */
 export async function createSongWithUserVoice(
   songUrl: string,
-  userVoiceId: string
+  speakerEmbeddingUrl: string,
+  options: {
+    language?: 'Auto' | 'English' | 'Spanish';
+    enhanceOutput?: boolean;
+  } = {}
 ): Promise<CreateSongResult> {
   try {
-    logger.info(`[VoiceAI Client] Creando canción con voz del usuario`);
+    logger.info(`[VoiceAI Client] 🎤 Iniciando workflow completo: Canción con TU voz`);
     
     const response = await fetch(`${API_BASE}/create-song`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ songUrl, userVoiceId }),
+      body: JSON.stringify({ 
+        songUrl, 
+        speakerEmbeddingUrl,
+        language: options.language || 'Auto',
+        enhanceOutput: options.enhanceOutput || false,
+      }),
     });
     
     const data = await response.json();
@@ -383,6 +400,8 @@ export async function createSongWithUserVoice(
     if (!response.ok) {
       throw new Error(data.error || 'Error creando canción');
     }
+    
+    logger.info(`[VoiceAI Client] ✅ Canción con tu voz creada exitosamente`);
     
     return data;
   } catch (error: any) {

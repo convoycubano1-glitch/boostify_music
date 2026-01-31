@@ -39,15 +39,15 @@ const upload = multer({
  * POST /api/voice-ai/clone
  * Clona la voz del usuario desde un audio de referencia
  * 
- * Body: { audioUrl: string, voiceName?: string }
- * O File upload: audio file + voiceName en body
+ * Body: { audioUrl: string, referenceText?: string }
+ * O File upload: audio file + referenceText en body
  */
 router.post('/clone', upload.single('audio'), async (req: Request, res: Response) => {
   try {
     logger.info('[VoiceAI API] POST /clone');
     
     let audioUrl = req.body.audioUrl;
-    const voiceName = req.body.voiceName || 'my_voice';
+    const referenceText = req.body.referenceText;
     
     // Si se subió un archivo, primero lo guardamos
     if (req.file) {
@@ -66,7 +66,7 @@ router.post('/clone', upload.single('audio'), async (req: Request, res: Response
       });
     }
     
-    const result = await VoiceAIService.cloneVoice(audioUrl, voiceName);
+    const result = await VoiceAIService.cloneVoice(audioUrl, referenceText);
     
     if (result.success) {
       res.json(result);
@@ -86,24 +86,27 @@ router.post('/clone', upload.single('audio'), async (req: Request, res: Response
  * POST /api/voice-ai/tts
  * Text-to-Speech con voz clonada
  * 
- * Body: { text: string, voiceId: string, speed?: number, emotion?: string }
+ * Body: { text: string, speakerEmbeddingUrl: string, language?: string, referenceText?: string }
  */
 router.post('/tts', async (req: Request, res: Response) => {
   try {
     logger.info('[VoiceAI API] POST /tts');
     
-    const { text, voiceId, speed, emotion } = req.body;
+    const { text, speakerEmbeddingUrl, voiceId, language, referenceText } = req.body;
     
-    if (!text || !voiceId) {
+    // Aceptar tanto speakerEmbeddingUrl como voiceId para compatibilidad
+    const embeddingUrl = speakerEmbeddingUrl || voiceId;
+    
+    if (!text || !embeddingUrl) {
       return res.status(400).json({
         success: false,
-        error: 'Se requiere text y voiceId',
+        error: 'Se requiere text y speakerEmbeddingUrl (o voiceId)',
       });
     }
     
-    const result = await VoiceAIService.textToSpeechWithVoice(text, voiceId, {
-      speed,
-      emotion,
+    const result = await VoiceAIService.textToSpeechWithVoice(text, embeddingUrl, {
+      language,
+      referenceText,
     });
     
     if (result.success) {
@@ -240,22 +243,39 @@ router.post('/enhance', async (req: Request, res: Response) => {
  * POST /api/voice-ai/create-song
  * Workflow completo: Crear canción con la voz del usuario
  * 
- * Body: { songUrl: string, userVoiceId: string }
+ * Este es el endpoint principal que hace TODO el proceso:
+ * 1. Separa la canción en vocals + instrumental
+ * 2. Transcribe los vocals para obtener la letra
+ * 3. Genera nuevos vocals con TU voz clonada
+ * 4. Devuelve instrumental + nuevos vocals para mezclar
+ * 
+ * Body: { 
+ *   songUrl: string,           // URL de la canción generada con AI
+ *   speakerEmbeddingUrl: string, // URL del speaker_embedding de tu voz clonada
+ *   language?: string,         // Idioma (Auto, English, Spanish)
+ *   enhanceOutput?: boolean    // Mejorar calidad del audio final
+ * }
  */
 router.post('/create-song', async (req: Request, res: Response) => {
   try {
-    logger.info('[VoiceAI API] POST /create-song');
+    logger.info('[VoiceAI API] POST /create-song - WORKFLOW COMPLETO');
     
-    const { songUrl, userVoiceId } = req.body;
+    const { songUrl, speakerEmbeddingUrl, userVoiceId, language, enhanceOutput } = req.body;
     
-    if (!songUrl || !userVoiceId) {
+    // Aceptar tanto speakerEmbeddingUrl como userVoiceId para compatibilidad
+    const embeddingUrl = speakerEmbeddingUrl || userVoiceId;
+    
+    if (!songUrl || !embeddingUrl) {
       return res.status(400).json({
         success: false,
-        error: 'Se requiere songUrl y userVoiceId',
+        error: 'Se requiere songUrl y speakerEmbeddingUrl (la URL de tu voz clonada)',
       });
     }
     
-    const result = await VoiceAIService.createSongWithUserVoice(songUrl, userVoiceId);
+    const result = await VoiceAIService.createSongWithUserVoice(songUrl, embeddingUrl, {
+      language: language || 'Auto',
+      enhanceOutput: enhanceOutput || false,
+    });
     
     if (result.success) {
       res.json(result);
@@ -264,6 +284,41 @@ router.post('/create-song', async (req: Request, res: Response) => {
     }
   } catch (error: any) {
     logger.error('[VoiceAI API] Error en /create-song:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/voice-ai/transcribe
+ * Transcribe audio a texto
+ * 
+ * Body: { audioUrl: string }
+ */
+router.post('/transcribe', async (req: Request, res: Response) => {
+  try {
+    logger.info('[VoiceAI API] POST /transcribe');
+    
+    const { audioUrl } = req.body;
+    
+    if (!audioUrl) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere audioUrl',
+      });
+    }
+    
+    const result = await VoiceAIService.transcribeAudio(audioUrl);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error: any) {
+    logger.error('[VoiceAI API] Error en /transcribe:', error);
     res.status(500).json({
       success: false,
       error: error.message,
