@@ -227,32 +227,34 @@ async function sendArtistSequence() {
   const client = await pool.connect();
 
   try {
-    // Get leads that are at this sequence stage
-    const leadsResult = await client.query(`
-      SELECT l.*, ls.current_sequence, ls.id as status_id
-      FROM leads l
-      JOIN lead_status ls ON l.id = ls.lead_id
-      WHERE ls.status = 'sequence'
-        AND ls.current_sequence = $1 - 1
-        AND l.source IN ('instagram_scrape', 'spotify_scrape', 'artist_list', 'csv_import')
-      ORDER BY l.created_at ASC
-      LIMIT $2
-    `, [SEQUENCE_NUMBER, MAX_EMAILS]);
-
-    // If no leads at current sequence, get new leads for sequence 1
-    let leads = leadsResult.rows;
-    if (leads.length === 0 && SEQUENCE_NUMBER === 1) {
-      const newLeadsResult = await client.query(`
-        SELECT l.*, ls.current_sequence, ls.id as status_id
+    // For sequence 1, get leads that completed warmup or any lead with lead_status
+    // For sequences 2-10, get leads that received previous sequence (tracked by emails_sent)
+    let leads = [];
+    
+    if (SEQUENCE_NUMBER === 1) {
+      // Get leads that completed warmup (warmup_stage >= 3) or have status 'new'
+      const leadsResult = await client.query(`
+        SELECT l.*, ls.warmup_stage, ls.emails_sent, ls.id as status_id
         FROM leads l
         JOIN lead_status ls ON l.id = ls.lead_id
-        WHERE ls.status = 'warming'
-          AND ls.warmup_stage >= 3
-          AND l.source IN ('instagram_scrape', 'spotify_scrape', 'artist_list', 'csv_import')
+        WHERE (ls.warmup_stage >= 3 OR ls.status = 'new')
+          AND (ls.emails_sent IS NULL OR ls.emails_sent < 4)
         ORDER BY l.created_at ASC
         LIMIT $1
       `, [MAX_EMAILS]);
-      leads = newLeadsResult.rows;
+      leads = leadsResult.rows;
+    } else {
+      // Get leads that have received the previous sequence email
+      const leadsResult = await client.query(`
+        SELECT l.*, ls.warmup_stage, ls.emails_sent, ls.id as status_id
+        FROM leads l
+        JOIN lead_status ls ON l.id = ls.lead_id
+        WHERE ls.emails_sent = $1 + 2
+          AND ls.last_email_at < NOW() - INTERVAL '2 days'
+        ORDER BY l.created_at ASC
+        LIMIT $2
+      `, [SEQUENCE_NUMBER, MAX_EMAILS]);
+      leads = leadsResult.rows;
     }
 
     console.log(`\n📋 Leads encontrados: ${leads.length}`);
@@ -295,9 +297,10 @@ async function sendArtistSequence() {
           await client.query(`
             UPDATE lead_status 
             SET status = 'sequence',
-                current_sequence = $1,
+                emails_sent = COALESCE(emails_sent, 0) + 1,
                 last_email_at = NOW(),
-                next_email_at = NOW() + INTERVAL '3 days'
+                next_email_at = NOW() + INTERVAL '3 days',
+                notes = COALESCE(notes, '') || ' | Seq #' || $1
             WHERE id = $2
           `, [SEQUENCE_NUMBER, lead.status_id]);
 
