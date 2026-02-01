@@ -19,12 +19,18 @@ const secrets = {
   // Supabase
   supabase: process.env.SUPABASE_CONNECTION_STRING || 'postgresql://postgres.twlflkphpowpvjvoyrae:Metafeed2024%40@aws-0-us-west-2.pooler.supabase.com:6543/postgres',
   
-  // Brevo API (para boostifymusic.com - reemplaza RESEND_API_INDUSTRY)
-  brevo: process.env.BREVO_API_KEY || '',
+  // Brevo API (para todas las campañas - reemplaza Resend)
+  brevo: {
+    INDUSTRY: process.env.BREVO_API_KEY || '',
+    ARTISTS_1: process.env.BREVO_API_KEY || '',
+    ARTISTS_2: process.env.BREVO_API_KEY || '',
+    ARTISTS_3: process.env.BREVO_API_KEY || '',
+    ARTISTS_4: process.env.BREVO_API_KEY || '',
+  },
   
-  // Resend APIs por campaña (para otros dominios como boostifymusic.site)
+  // Resend APIs por campaña (deprecated - usar brevo)
   resend: {
-    INDUSTRY: process.env.BREVO_API_KEY || '', // Ahora usa Brevo
+    INDUSTRY: process.env.BREVO_API_KEY || '', // Migrado a Brevo
     ARTISTS_1: process.env.RESEND_API_ARTISTS_1 || '',
     ARTISTS_2: process.env.RESEND_API_ARTISTS_2 || '',
     ARTISTS_3: process.env.RESEND_API_ARTISTS_3 || '',

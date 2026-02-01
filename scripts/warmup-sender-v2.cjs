@@ -13,7 +13,7 @@
 
 const { Pool } = require('pg');
 const OpenAI = require('openai');
-const { Resend } = require('resend');
+const SibApiV3Sdk = require('@getbrevo/brevo');
 const loadCampaign = require('./campaigns/campaign-loader.cjs');
 
 // Obtener campaña desde argumentos
@@ -30,7 +30,10 @@ const openai = new OpenAI({
   apiKey: config.apis.openai
 });
 
-const resend = new Resend(config.apis.resend);
+// Configurar Brevo API
+const brevoApiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+const brevoApiKey = brevoApiInstance.authentications['apiKey'];
+brevoApiKey.apiKey = config.apis.brevo;
 
 // Configuración - PREVIEW_MODE controlado por variable de entorno o argumento
 // Por defecto FALSE para producción real
@@ -38,6 +41,7 @@ const PREVIEW_MODE = process.env.PREVIEW_MODE === 'true' || process.argv.include
 const PREVIEW_EMAIL = process.env.PREVIEW_EMAIL || 'convoycubano@gmail.com';
 
 console.log(`\n🔧 MODO: ${PREVIEW_MODE ? '⚠️ PREVIEW (emails a ' + PREVIEW_EMAIL + ')' : '✅ PRODUCCIÓN (emails reales)'}`);
+console.log(`📧 Usando: BREVO para ${config.domain}`);
 
 // 🎲 SUBJECT TEMPLATES aleatorios
 const subjectTemplates = [
@@ -210,19 +214,22 @@ async function sendWarmupEmails() {
       const toEmail = PREVIEW_MODE ? PREVIEW_EMAIL : lead.email;
       
       try {
-        const emailResult = await resend.emails.send({
-          from: `${config.fromName} <${config.fromEmail}>`,
-          to: toEmail,
-          reply_to: ['convoycubano@gmail.com', config.fromEmail], // 📬 Respuestas a Gmail + copia en Resend
-          subject: subject,
-          text: body
-        });
+        // Preparar email para Brevo
+        const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+        sendSmtpEmail.sender = { name: config.fromName, email: config.fromEmail };
+        sendSmtpEmail.to = [{ email: toEmail, name: `${lead.first_name} ${lead.last_name}` }];
+        sendSmtpEmail.replyTo = { email: 'convoycubano@gmail.com', name: 'Boostify Support' };
+        sendSmtpEmail.subject = subject;
+        sendSmtpEmail.textContent = body;
+        
+        const emailResult = await brevoApiInstance.sendTransacEmail(sendSmtpEmail);
+        const messageId = emailResult?.messageId || emailResult?.body?.messageId || `brevo_${Date.now()}`;
 
         // Guardar en email_sends
         await client.query(`
           INSERT INTO email_sends (lead_id, resend_id, from_email, to_email, subject, body, email_type, status)
           VALUES ($1, $2, $3, $4, $5, $6, $7, 'sent')
-        `, [lead.id, emailResult.data?.id, config.fromEmail, toEmail, subject, body, emailType]);
+        `, [lead.id, messageId, config.fromEmail, toEmail, subject, body, emailType]);
 
         // Actualizar lead_status
         await client.query(`
