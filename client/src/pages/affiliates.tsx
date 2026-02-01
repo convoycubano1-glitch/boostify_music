@@ -18,6 +18,7 @@ import { AffiliateMarketingMaterials } from "../components/affiliates/marketing-
 import { useAuth } from "../hooks/use-auth";
 import { db, auth } from "../lib/firebase";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+import { isAdminEmail } from "../../../shared/constants";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { 
@@ -42,7 +43,9 @@ import {
   Headphones as HeadphonesIcon,
   Ticket,
   Globe,
-  UserPlus
+  UserPlus,
+  BookOpen,
+  Download
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
 
@@ -79,8 +82,11 @@ export default function AffiliatesPage() {
     ? affiliateApiData.affiliate 
     : null;
 
+  // Admin users (convoycubano@gmail.com) always have full access
+  const isAdmin = isAdminEmail(user?.email);
+
   // Determine if we should show the registration form or the affiliate dashboard
-  const isAffiliate = !!affiliateData;
+  const isAffiliate = isAdmin || !!affiliateData;
   
   // Use real affiliate data from API
   const currentAffiliateData = affiliateData || {
@@ -332,6 +338,17 @@ export default function AffiliatesPage() {
                       <span className="text-xs">Settings</span>
                     </TabsTrigger>
                   </TabsList>
+                  
+                  <TabsList className="grid grid-cols-2 gap-2">
+                    <TabsTrigger value="resources" className="flex flex-col items-center gap-1.5 py-2.5">
+                      <Download className="h-4 w-4" />
+                      <span className="text-xs">Resources</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="support" className="flex flex-col items-center gap-1.5 py-2.5">
+                      <LifeBuoy className="h-4 w-4" />
+                      <span className="text-xs">Support</span>
+                    </TabsTrigger>
+                  </TabsList>
                 </div>
                 
                 {/* Tabs para escritorio: scrollable horizontal */}
@@ -373,6 +390,14 @@ export default function AffiliatesPage() {
                       <TabsTrigger value="content" className="flex items-center gap-1.5 px-4">
                         <Sparkles className="h-4 w-4" />
                         <span>Content</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="resources" className="flex items-center gap-1.5 px-4">
+                        <Download className="h-4 w-4" />
+                        <span>Resources</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="support" className="flex items-center gap-1.5 px-4">
+                        <LifeBuoy className="h-4 w-4" />
+                        <span>Support</span>
                       </TabsTrigger>
                       <TabsTrigger value="settings" className="flex items-center gap-1.5 px-4">
                         <Settings2 className="h-4 w-4" />

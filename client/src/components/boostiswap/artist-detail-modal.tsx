@@ -34,7 +34,7 @@ import { useWeb3 } from "@/hooks/use-web3";
 import { useBTF2300 } from "@/hooks/use-btf2300";
 import { ArtistProfile } from "@/data/artist-profiles";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { TOKEN_PREFIXES } from "@/lib/btf2300-config";
+import { TOKEN_PREFIXES, CONTRACT_PRICE_MATIC, getContractTokenId, hasContractToken } from "@/lib/btf2300-token-mapping";
 import { ArtistProgressWidget } from "./artist-progress-widget";
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
@@ -113,8 +113,12 @@ function ArtistDetailModalContent({
     }));
   };
 
-  const totalCostMatic = (parseFloat(pricePerToken) * tokenAmount).toFixed(4);
-  const tokenId = TOKEN_PREFIXES.ARTIST + artist.id;
+  // IMPORTANTE: Los tokens comprables son SONGS (2000000000+), no ARTISTS
+  // El contrato tiene canciones en tokenIds 2000000001 - 2000000008 con precio 0.001 MATIC
+  const songTokenId = Number(getContractTokenId(artist.id)); // Usar función de mapeo
+  const contractPrice = CONTRACT_PRICE_MATIC; // Precio real del contrato: 0.001 MATIC
+  const totalCostMatic = (parseFloat(contractPrice) * tokenAmount).toFixed(4);
+  const isTokenAvailable = hasContractToken(artist.id); // Verificar si hay token disponible
 
   const handleBuyTokens = async (selectedArtist: ArtistProfile) => {
     if (!isConnected) {
@@ -137,15 +141,15 @@ function ArtistDetailModalContent({
 
     try {
       console.log("🛒 Comprando tokens para:", selectedArtist.name);
-      console.log(`📊 Token ID: ${tokenId}, Cantidad: ${tokenAmount}, Precio: ${pricePerToken} MATIC`);
+      console.log(`📊 Song Token ID: ${songTokenId}, Cantidad: ${tokenAmount}, Precio: ${contractPrice} MATIC`);
 
-      // Use the BTF-2300 hook to buy tokens
-      const result = await btf2300.buyTokensDirect(tokenId, tokenAmount, pricePerToken);
+      // Use the BTF-2300 hook to buy tokens - usando el tokenId de CANCIÓN
+      const result = await btf2300.buyTokensDirect(songTokenId, tokenAmount, contractPrice);
       
       if (result.success) {
         setIsSuccess(true);
         // Refresh balance
-        btf2300.getTokenBalance(tokenId).then((balance) => {
+        btf2300.getTokenBalance(songTokenId).then((balance) => {
           setUserBalance(balance.toString());
         });
       }
@@ -420,7 +424,7 @@ function ArtistDetailModalContent({
                   <p className="text-xs text-blue-300 font-semibold">Artista verificado en Polygon</p>
                 </div>
                 <p className="text-xs text-slate-400">
-                  Token ID: {tokenId} • {artistOnChain.isVerified ? '✓ Verificado' : 'Pendiente'}
+                  Token ID: {songTokenId} • {artistOnChain.isVerified ? '✓ Verificado' : 'Pendiente'}
                 </p>
               </div>
             )}
@@ -488,36 +492,47 @@ function ArtistDetailModalContent({
                   </Button>
                 )
               ) : (
-                <Button 
-                  onClick={() => handleBuyTokens(artist)}
-                  disabled={btf2300.isLoading || isSuccess}
-                  className="w-full font-semibold text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  data-testid="button-buy-artist-token"
-                >
-                  {btf2300.isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Procesando en Polygon...
-                    </>
-                  ) : isSuccess ? (
-                    <>
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                      ¡Compra exitosa!
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      Comprar {tokenAmount} Tokens - {totalCostMatic} MATIC
-                    </>
-                  )}
-                </Button>
+                <>
+                  <Button 
+                    onClick={() => handleBuyTokens(artist)}
+                    disabled={btf2300.isLoading || isSuccess}
+                    className="w-full font-semibold text-white bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    data-testid="button-buy-artist-token"
+                  >
+                    {btf2300.isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Procesando en Polygon...
+                      </>
+                    ) : isSuccess ? (
+                      <>
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        ¡Compra exitosa!
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Comprar {tokenAmount} Tokens - {totalCostMatic} MATIC
+                      </>
+                    )}
+                  </Button>
+                  
+                  {/* Botón de desconectar wallet - muestra dirección truncada */}
+                  <div className="w-full flex justify-center">
+                    <ConnectButton 
+                      showBalance={false}
+                      chainStatus="icon"
+                      accountStatus="address"
+                    />
+                  </div>
+                </>
               )}
               
               <p className="text-xs text-slate-400 text-center">
                 {isConnected ? (
-                  <>💳 {tokenAmount} tokens @ {pricePerToken} MATIC • Transacción real en Polygon Mainnet</>
+                  <>💎 {tokenAmount} tokens @ {contractPrice} MATIC cada uno • Total: {totalCostMatic} MATIC</>
                 ) : (
-                  <>Conecta tu MetaMask para comprar</>
+                  <>Conecta tu MetaMask para comprar tokens</>
                 )}
               </p>
               

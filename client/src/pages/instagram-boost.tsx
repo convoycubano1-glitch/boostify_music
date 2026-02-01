@@ -6,7 +6,7 @@ import { Badge } from "../components/ui/badge";
 import { Progress } from "../components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense, lazy } from "react";
 import { useAuth } from "../hooks/use-auth";
 import { PlanTierGuard } from "../components/youtube-views/plan-tier-guard";
 import { useToast } from "../hooks/use-toast";
@@ -58,8 +58,14 @@ import {
   ArrowDownRight,
   TrendingDown,
   Zap,
-  Award
+  Award,
+  Play
 } from "lucide-react";
+
+// Lazy load the Instagram Animation Player
+const InstagramAnimationPlayer = lazy(() => 
+  import("../components/remotion/InstagramAnimationPlayer").then(mod => ({ default: mod.InstagramAnimationPlayer }))
+);
 
 export default function InstagramBoostPage() {
   const { user, userSubscription, isAdmin } = useAuth();
@@ -390,57 +396,173 @@ export default function InstagramBoostPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1 pt-20">
-        <div className="flex-1 space-y-6 p-4 sm:p-6 lg:p-8 pt-6">
-          {/* Hero Section - Compact */}
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <SiInstagram className="h-8 w-8 text-primary" />
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-foreground">
-                    Instagram Growth Suite
-                  </h1>
-                </div>
-                <p className="text-muted-foreground text-sm sm:text-base">
-                  All-in-one platform for Instagram growth and engagement
-                </p>
-              </div>
-              <Link href="/dashboard">
-                <Button
-                  variant="outline"
-                  className="w-full sm:w-auto"
-                  data-testid="button-dashboard"
-                >
-                  <BarChart2 className="mr-2 h-4 w-4" />
-                  Dashboard
-                </Button>
-              </Link>
+        <div className="flex-1 space-y-8 p-4 sm:p-6 lg:p-8 pt-6">
+          
+          {/* Modern Hero Section with Animation */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6 }}
+            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#833ab4]/10 via-[#fd1d1d]/10 to-[#fcb045]/10 border border-primary/20 p-6 lg:p-8"
+          >
+            {/* Background Glow Effects */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#833ab4]/20 rounded-full blur-3xl animate-pulse" />
+              <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-[#fd1d1d]/20 rounded-full blur-3xl animate-pulse delay-1000" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[#fcb045]/15 rounded-full blur-3xl animate-pulse delay-500" />
             </div>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { icon: Users, label: "Active Users", value: "10K+" },
-              { icon: TrendingUp, label: "Growth Rate", value: "85%" },
-              { icon: MessageCircle, label: "Engagement", value: "95%" },
-              { icon: Globe, label: "Countries", value: "150+" }
-            ].map((stat, index) => (
+            
+            <div className="relative z-10 grid lg:grid-cols-2 gap-8 items-center">
+              {/* Left Side - Text Content */}
+              <div className="space-y-6">
+                <motion.div 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#833ab4]/20 to-[#fd1d1d]/20 border border-[#fd1d1d]/30"
+                >
+                  <Zap className="w-4 h-4 text-[#fcb045]" />
+                  <span className="text-sm font-medium text-foreground">AI-Powered Growth Platform</span>
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                >
+                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight">
+                    <span className="text-foreground">Instagram</span>
+                    <br />
+                    <span className="bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] bg-clip-text text-transparent">
+                      Growth Suite
+                    </span>
+                  </h1>
+                </motion.div>
+                
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="text-lg text-muted-foreground max-w-lg"
+                >
+                  Harness the power of AI to create viral captions, find perfect hashtags, 
+                  and grow your audience 10x faster with our all-in-one toolkit.
+                </motion.p>
+                
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                  className="flex flex-wrap gap-4"
+                >
+                  <Button 
+                    size="lg" 
+                    className="bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] hover:opacity-90 text-white font-bold px-8 py-6 rounded-2xl shadow-lg shadow-[#fd1d1d]/25 transition-all hover:scale-105"
+                    onClick={() => setActiveTab("ai-tools")}
+                  >
+                    <Rocket className="mr-2 h-5 w-5" />
+                    Start Growing Now
+                  </Button>
+                  <Link href="/dashboard">
+                    <Button 
+                      size="lg" 
+                      variant="outline" 
+                      className="border-2 border-primary/30 hover:border-primary hover:bg-primary/10 px-8 py-6 rounded-2xl font-bold transition-all"
+                    >
+                      <BarChart2 className="mr-2 h-5 w-5" />
+                      View Dashboard
+                    </Button>
+                  </Link>
+                </motion.div>
+                
+                {/* Quick Stats */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                  className="flex flex-wrap gap-6 pt-4"
+                >
+                  {[
+                    { value: "10K+", label: "Active Users" },
+                    { value: "85%", label: "Avg Growth" },
+                    { value: "5M+", label: "Posts Generated" },
+                  ].map((stat, index) => (
+                    <div key={stat.label} className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span className="font-black text-foreground">{stat.value}</span>
+                      <span className="text-sm text-muted-foreground">{stat.label}</span>
+                    </div>
+                  ))}
+                </motion.div>
+              </div>
+              
+              {/* Right Side - Animation */}
               <motion.div
-                key={stat.label}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="hidden lg:block relative"
+              >
+                <Suspense fallback={
+                  <div className="w-full h-[400px] rounded-2xl bg-gradient-to-br from-[#833ab4]/20 via-[#fd1d1d]/20 to-[#fcb045]/20 animate-pulse flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-4">
+                      <SiInstagram className="w-16 h-16 text-[#fd1d1d] animate-bounce" />
+                      <span className="text-muted-foreground">Loading animation...</span>
+                    </div>
+                  </div>
+                }>
+                  <InstagramAnimationPlayer 
+                    width="100%" 
+                    height={400}
+                    autoPlay={true}
+                    loop={true}
+                  />
+                </Suspense>
+              </motion.div>
+            </div>
+          </motion.div>
+
+          {/* Feature Cards - Modern Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { icon: Brain, label: "AI Caption Generator", description: "Create viral captions", color: "#833ab4" },
+              { icon: Hash, label: "Hashtag Research", description: "Find trending tags", color: "#fd1d1d" },
+              { icon: Lightbulb, label: "Content Ideas", description: "Never run out of ideas", color: "#fcb045" },
+              { icon: Clock, label: "Best Time to Post", description: "Maximize reach", color: "#E1306C" }
+            ].map((feature, index) => (
+              <motion.div
+                key={feature.label}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.05 }}
-                className="bg-card border border-border p-6 hover:border-primary/30 transition-colors"
-                data-testid={`stat-${stat.label.toLowerCase().replace(' ', '-')}`}
+                transition={{ duration: 0.4, delay: 0.1 * index }}
+                whileHover={{ scale: 1.02, y: -4 }}
+                className="group relative p-5 rounded-2xl bg-card border border-border hover:border-primary/40 transition-all cursor-pointer overflow-hidden"
+                onClick={() => {
+                  setActiveTab("ai-tools");
+                  if (feature.label === "AI Caption Generator") setAiToolTab("captions");
+                  if (feature.label === "Hashtag Research") setAiToolTab("hashtags");
+                  if (feature.label === "Content Ideas") setAiToolTab("ideas");
+                  if (feature.label === "Best Time to Post") setAiToolTab("timing");
+                }}
               >
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-primary/10 flex items-center justify-center">
-                    <stat.icon className="h-5 w-5 text-primary" />
+                {/* Hover Glow */}
+                <div 
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                  style={{ background: `radial-gradient(circle at center, ${feature.color}15 0%, transparent 70%)` }}
+                />
+                
+                <div className="relative z-10">
+                  <div 
+                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110"
+                    style={{ backgroundColor: `${feature.color}20` }}
+                  >
+                    <feature.icon className="w-6 h-6" style={{ color: feature.color }} />
                   </div>
-                  <span className="text-sm font-medium text-muted-foreground">{stat.label}</span>
+                  <h3 className="font-bold text-foreground mb-1">{feature.label}</h3>
+                  <p className="text-sm text-muted-foreground">{feature.description}</p>
                 </div>
-                <p className="text-3xl font-black text-foreground">{stat.value}</p>
+                
+                <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
               </motion.div>
             ))}
           </div>
@@ -448,45 +570,45 @@ export default function InstagramBoostPage() {
           {/* Main Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <div className="w-full overflow-x-auto">
-              <TabsList className="inline-flex w-full sm:w-auto min-w-full sm:min-w-0 p-1 bg-card border border-border">
+              <TabsList className="inline-flex w-full sm:w-auto min-w-full sm:min-w-0 p-1.5 bg-card/80 backdrop-blur-sm border border-border rounded-2xl">
                 <TabsTrigger 
                   value="ai-tools" 
-                  className="flex-1 sm:flex-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap" 
+                  className="flex-1 sm:flex-none data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#833ab4] data-[state=active]:to-[#fd1d1d] data-[state=active]:text-white px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold whitespace-nowrap rounded-xl transition-all" 
                   data-testid="tab-ai-tools"
                 >
-                  <Brain className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <Brain className="w-4 h-4 sm:mr-2" />
                   <span className="hidden sm:inline">AI Tools</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="community" 
-                  className="flex-1 sm:flex-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap" 
+                  className="flex-1 sm:flex-none data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#833ab4] data-[state=active]:to-[#fd1d1d] data-[state=active]:text-white px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold whitespace-nowrap rounded-xl transition-all" 
                   data-testid="tab-community"
                 >
-                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <Calendar className="w-4 h-4 sm:mr-2" />
                   <span className="hidden sm:inline">Community</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="influencers" 
-                  className="flex-1 sm:flex-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap" 
+                  className="flex-1 sm:flex-none data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#833ab4] data-[state=active]:to-[#fd1d1d] data-[state=active]:text-white px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold whitespace-nowrap rounded-xl transition-all" 
                   data-testid="tab-influencers"
                 >
-                  <UserPlus className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <UserPlus className="w-4 h-4 sm:mr-2" />
                   <span className="hidden sm:inline">Influencers</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="strategies" 
-                  className="flex-1 sm:flex-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap" 
+                  className="flex-1 sm:flex-none data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#833ab4] data-[state=active]:to-[#fd1d1d] data-[state=active]:text-white px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold whitespace-nowrap rounded-xl transition-all" 
                   data-testid="tab-strategies"
                 >
-                  <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <Sparkles className="w-4 h-4 sm:mr-2" />
                   <span className="hidden sm:inline">Strategies</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="reports" 
-                  className="flex-1 sm:flex-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold whitespace-nowrap" 
+                  className="flex-1 sm:flex-none data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#833ab4] data-[state=active]:to-[#fd1d1d] data-[state=active]:text-white px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold whitespace-nowrap rounded-xl transition-all" 
                   data-testid="tab-reports"
                 >
-                  <BarChart2 className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <BarChart2 className="w-4 h-4 sm:mr-2" />
                   <span className="hidden sm:inline">Reports</span>
                 </TabsTrigger>
               </TabsList>

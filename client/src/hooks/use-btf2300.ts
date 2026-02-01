@@ -385,6 +385,7 @@ export function useBTF2300() {
 
   /**
    * Buy tokens directly from ArtistToken contract
+   * NOTA: En modo beta, simula la compra ya que los tokens aún no están tokenizados en el contrato
    */
   const buyTokensDirect = useCallback(async (
     tokenId: number,
@@ -402,6 +403,35 @@ export function useBTF2300() {
 
     setIsLoading(true);
     try {
+      // PRODUCTION MODE: Los tokens están registrados en el contrato BTF-2300
+      // TokenIds de canciones: 2000000001 - 2000000008 (8 canciones tokenizadas)
+      const isBetaMode = false; // Modo producción habilitado
+      
+      if (isBetaMode) {
+        const priceWei = parseEther(maxPricePerToken);
+        const totalValue = priceWei * BigInt(amount);
+        
+        toast({
+          title: "🧪 Modo Beta",
+          description: `Simulando compra de ${amount} tokens por ${formatEther(totalValue)} MATIC`,
+        });
+        
+        // Simular delay de transacción
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Generar un hash simulado
+        const simulatedHash = `0x${'0'.repeat(63)}1` as `0x${string}`;
+        setTxHash(simulatedHash);
+        
+        toast({
+          title: "✅ Compra simulada exitosa!",
+          description: "Los tokens reales estarán disponibles cuando el sistema salga de beta. Tu interés ha sido registrado.",
+        });
+        
+        return { hash: simulatedHash, success: true };
+      }
+      
+      // Modo producción - compra real
       const walletClient = await getWalletClient();
       const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600); // 1 hour
       const priceWei = parseEther(maxPricePerToken);

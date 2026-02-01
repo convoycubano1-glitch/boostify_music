@@ -28,8 +28,9 @@ export default function MusicVideoCreator() {
   return (
     <PlanTierGuard 
       requiredPlan="premium" 
-      bypassForAdmin={isAdmin}
+      isAdmin={isAdmin}
       featureName="Music Video Creator"
+      userSubscription={user?.subscriptionTier || null}
     >
       <div className="min-h-screen flex flex-col bg-background">
         <Header />

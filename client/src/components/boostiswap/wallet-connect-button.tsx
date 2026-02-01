@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useDisconnect } from 'wagmi';
 import { Button } from "../ui/button";
 import { useWeb3 } from "../../hooks/use-web3";
 import { useWeb3Ready } from "../../lib/context/web3-context";
@@ -16,6 +17,7 @@ import {
 
 export function WalletConnectButton() {
   const { address, isConnected, isWeb3Ready } = useWeb3();
+  const { disconnect } = useDisconnect();
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
@@ -65,31 +67,32 @@ export function WalletConnectButton() {
           <ChevronDown className="h-3 w-3 text-orange-400" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Billetera Conectada</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <div className="px-2 py-2 bg-slate-900/50 rounded text-xs text-muted-foreground break-all">
-          {address}
-        </div>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuLabel className="text-xs">🔗 Wallet Conectada</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => {
           navigator.clipboard.writeText(address || "");
+          toast({
+            title: "📋 Dirección copiada",
+            description: truncatedAddress,
+          });
         }}>
           📋 Copiar Dirección
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <ConnectButton.Custom>
-          {({ account, chain, openChainModal, openConnectModal, authenticationStatus, mounted }) => {
-            return (
-              <DropdownMenuItem
-                onClick={openConnectModal}
-                className="text-red-400 hover:text-red-300"
-              >
-                🔌 Desconectar
-              </DropdownMenuItem>
-            );
+        <DropdownMenuItem
+          onClick={() => {
+            disconnect();
+            setIsOpen(false);
+            toast({
+              title: "🔌 Wallet desconectada",
+              description: "Tu billetera ha sido desconectada correctamente.",
+            });
           }}
-        </ConnectButton.Custom>
+          className="text-red-400 hover:text-red-300 hover:bg-red-500/10 cursor-pointer"
+        >
+          🔌 Desconectar
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

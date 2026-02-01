@@ -14,6 +14,7 @@ export function ArtistTokensMarketplace() {
   const [selectedArtist, setSelectedArtist] = useState<string | null>(null);
   const [selectedArtistProfile, setSelectedArtistProfile] =
     useState<ArtistProfile | null>(null);
+  const [selectedArtistImage, setSelectedArtistImage] = useState<string | undefined>(undefined);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { data: artists = [], isLoading } = useQuery({
@@ -50,8 +51,8 @@ export function ArtistTokensMarketplace() {
     return profile?.tracks || [];
   };
 
-  const handleTokenCardClick = (songId: number, artistName?: string) => {
-    console.log("🎯 Clicked token card for song ID:", songId, "Artist:", artistName);
+  const handleTokenCardClick = (songId: number, artistName?: string, artistImageUrl?: string) => {
+    console.log("🎯 Clicked token card for song ID:", songId, "Artist:", artistName, "Image:", artistImageUrl);
     
     // Find the profile by searching through all profiles for matching name
     let profile: ArtistProfile | null = null;
@@ -85,8 +86,10 @@ export function ArtistTokensMarketplace() {
     }
     
     if (profile) {
-      console.log("📊 Opening modal for artist:", profile.name);
+      console.log("📊 Opening modal for artist:", profile.name, "with image:", artistImageUrl);
       setSelectedArtistProfile(profile);
+      // Use the image from the card, not from getArtistImage
+      setSelectedArtistImage(artistImageUrl);
       setIsModalOpen(true);
     } else {
       console.warn("❌ No profile found for song:", songId);
@@ -95,7 +98,7 @@ export function ArtistTokensMarketplace() {
 
   return (
     <div className="w-full space-y-4 sm:space-y-6">
-      <ArtistDetailModal artist={selectedArtistProfile} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} artistImage={selectedArtistProfile ? getArtistImage(selectedArtistProfile.id) : undefined} />
+      <ArtistDetailModal artist={selectedArtistProfile} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} artistImage={selectedArtistImage} />
       <div>
         <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 sm:mb-2">👤 Artist Tokens</h2>
         <p className="text-xs sm:text-sm text-muted-foreground">Trade tokenized artist profiles</p>
@@ -129,7 +132,7 @@ export function ArtistTokensMarketplace() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
           {filteredArtists.map((artist: any) => (
             <div key={artist.id} className="group cursor-pointer" data-testid={`artist-token-${artist.id}`}>
-              <div className="mb-2 sm:mb-3 transform transition group-hover:scale-105" onClick={() => handleTokenCardClick(artist.id, artist.name)}>
+              <div className="mb-2 sm:mb-3 transform transition group-hover:scale-105" onClick={() => handleTokenCardClick(artist.id, artist.name, artist.imageUrl)}>
                 <TokenCardVisual songName={artist.name} artistName={artist.name} tokenSymbol={artist.tokenSymbol} price={artist.pricePerTokenUsd} artistImage={artist.imageUrl} songImageUrl={artist.imageUrl} change24h={artist.change24h || 0} tracks={getArtistTracks(artist.name)} />
               </div>
               <div className="bg-slate-800/50 rounded-lg p-2 sm:p-3 border border-slate-700 space-y-2 text-xs sm:text-sm">
@@ -148,7 +151,7 @@ export function ArtistTokensMarketplace() {
                   <p className="font-semibold text-green-400">${(artist.volume24h / 1000).toFixed(0)}K</p>
                 </div>
                 {artist.description && <p className="text-xs text-muted-foreground line-clamp-1">{artist.description}</p>}
-                <Button onClick={() => handleTokenCardClick(artist.id, artist.name)} className="w-full gap-2 bg-orange-500 hover:bg-orange-600 text-xs sm:text-sm py-2 h-auto" data-testid={`button-buy-artist-${artist.id}`}>
+                <Button onClick={() => handleTokenCardClick(artist.id, artist.name, artist.imageUrl)} className="w-full gap-2 bg-orange-500 hover:bg-orange-600 text-xs sm:text-sm py-2 h-auto" data-testid={`button-buy-artist-${artist.id}`}>
                   <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
                   Buy
                 </Button>
