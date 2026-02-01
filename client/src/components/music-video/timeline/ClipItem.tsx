@@ -174,7 +174,7 @@ const ClipItem: React.FC<ClipItemProps> = ({
         return 'grab'; // Cursor de mano para mover
       case 'select':
       default:
-        return 'pointer'; // Cursor de selección por defecto
+        return 'grab'; // Cambiado a grab para indicar que se puede arrastrar
     }
   };
 
@@ -254,9 +254,10 @@ const ClipItem: React.FC<ClipItemProps> = ({
   };
 
   const handleMoveStart = (e: MouseEvent) => {
-    e.stopPropagation();
+    // Solo bloquear propagación si vamos a iniciar un drag
+    // No bloquear para herramientas que no hacen drag
     
-    console.log(`[ClipItem] MoveStart - Tool: ${tool}, clipId: ${clip.id}`);
+    console.log(`🎬 [ClipItem] MoveStart - Tool: ${tool}, clipId: ${clip.id}, isAudio: ${isAudioClip}`);
     
     // Si es herramienta trim, no permitir mover (solo resize)
     if (tool === 'trim') {
@@ -265,16 +266,18 @@ const ClipItem: React.FC<ClipItemProps> = ({
     }
     
     // Si es herramienta razor, NO iniciar movimiento
-    // El handleClipClick en onClick manejará el corte
     if (tool === 'razor') {
       console.log('[ClipItem] ✂️ Razor mode - blocking drag for cut');
-      // No prevenir default para que onClick funcione
       return;
     }
     
     // Solo con select o hand: iniciar arrastre
-    console.log(`[ClipItem] 🖐️ Starting drag for clip ${clip.id}`);
+    console.log(`[ClipItem] 🖐️ Starting drag for clip ${clip.id} - calling onMoveStart`);
+    
+    // IMPORTANTE: Bloquear propagación y prevenir default AQUÍ
+    e.stopPropagation();
     e.preventDefault();
+    
     // Primero seleccionar el clip
     onSelect(clip.id);
     // Luego iniciar el arrastre
@@ -319,6 +322,7 @@ const ClipItem: React.FC<ClipItemProps> = ({
       className={`clip-item ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''} ${isAudioClip ? 'audio-clip' : ''} tool-${tool}`}
       style={clipStyle}
       onClick={handleClipClick}
+      onMouseDown={tool !== 'razor' && tool !== 'trim' ? handleMoveStart : undefined}
       onContextMenu={handleContextMenu}
     >
       {/* Overlay oscuro para legibilidad del texto sobre imagen */}
@@ -337,6 +341,7 @@ const ClipItem: React.FC<ClipItemProps> = ({
           gap: '1px',
           padding: '0 4px',
           overflow: 'hidden',
+          pointerEvents: 'none', // Permitir que los clicks pasen al clip-drag-zone
         }}>
           {/* Barras de waveform simuladas */}
           {Array.from({ length: Math.min(100, Math.floor(clipWidth / 3)) }).map((_, i) => (
@@ -366,10 +371,8 @@ const ClipItem: React.FC<ClipItemProps> = ({
       {/* Zona central para arrastrar - más visible */}
       <div 
         className={`clip-drag-zone ${tool === 'razor' ? 'razor-mode' : ''}`}
-        onMouseDown={tool !== 'razor' ? handleMoveStart : undefined}
-        onClick={handleClipClick}
         title={tool === 'razor' ? 'Click para cortar' : tool === 'trim' ? 'Usa los bordes para recortar' : 'Arrastrar para mover'}
-        style={{ cursor: getCursor() }}
+        style={{ cursor: getCursor(), pointerEvents: 'none' }}
       >
         <div className="drag-indicator">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -646,7 +649,7 @@ const ClipItem: React.FC<ClipItemProps> = ({
       </div>
 
       {/* Estilos del componente */}
-      <style jsx>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         .clip-item {
           position: absolute;
           height: calc(100% - 4px);
@@ -715,11 +718,11 @@ const ClipItem: React.FC<ClipItemProps> = ({
         .clip-drag-zone {
           position: absolute;
           top: 0;
-          left: 22px;
-          right: 22px;
+          left: 18px;
+          right: 18px;
           height: 100%;
           cursor: grab;
-          z-index: 10;
+          z-index: 15;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -909,7 +912,7 @@ const ClipItem: React.FC<ClipItemProps> = ({
           .clip-ai-badge { top: 4px; right: 4px; }
           .clip-video-badge { top: 4px; left: 4px; }
         }
-      `}</style>
+      `}} />
     </div>
   );
 };

@@ -151,7 +151,10 @@ export const LayerRow: React.FC<LayerRowProps> = ({
   // ====== ARRASTRAR CLIPS (OPTIMIZADO CON RAF) ======
   const handleDragMove = React.useCallback((e: MouseEvent) => {
     const state = dragStateRef.current;
-    if (!state.clipId) return;
+    if (!state.clipId) {
+      console.log('⚠️ [LayerRow] handleDragMove - no clipId in state');
+      return;
+    }
     
     // Guardar el delta actual
     state.currentDeltaX = e.clientX - state.startX;
@@ -163,7 +166,10 @@ export const LayerRow: React.FC<LayerRowProps> = ({
     
     state.rafId = requestAnimationFrame(() => {
       const clipElement = state.clipElement;
-      if (!clipElement) return;
+      if (!clipElement) {
+        console.log('⚠️ [LayerRow] handleDragMove RAF - no clipElement');
+        return;
+      }
       
       // Aplicar transform CSS directamente (sin re-render React)
       clipElement.style.transform = `translateX(${state.currentDeltaX}px)`;
@@ -217,18 +223,35 @@ export const LayerRow: React.FC<LayerRowProps> = ({
   }, [clips, zoom, duration, layer.id, onMoveClip, handleDragMove, onDragEndCallback]);
   
   const handleDragStart = React.useCallback((clipId: number, e: React.MouseEvent) => {
-    if (isLocked) return;
+    console.log(`🎯 [LayerRow] handleDragStart called - clipId: ${clipId}, isLocked: ${isLocked}`);
+    
+    if (isLocked) {
+      console.log('🔒 [LayerRow] Layer is locked, aborting drag');
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
     
     const clip = clips.find(c => c.id === clipId);
-    if (!clip) return;
+    if (!clip) {
+      console.log('❌ [LayerRow] Clip not found:', clipId);
+      return;
+    }
+    
+    console.log(`✅ [LayerRow] Starting drag for clip ${clipId}:`, { start: clip.start, duration: clip.duration, layerId: clip.layerId });
     
     // Notificar al editor que empieza un drag para guardar estado inicial
     onDragStartCallback?.();
     
-    // Buscar el elemento DOM del clip
-    const clipElement = (e.target as HTMLElement).closest('[data-clip-id]') as HTMLElement;
+    // Buscar el elemento DOM del clip usando el selector de data-clip-id
+    // Usar querySelector en lugar de closest para mayor confiabilidad
+    const clipElement = document.querySelector(`[data-clip-id="${clipId}"]`) as HTMLElement;
+    console.log('📦 [LayerRow] clipElement found via querySelector:', clipElement ? 'yes' : 'no');
+    
+    if (!clipElement) {
+      console.log('❌ [LayerRow] Could not find clip element, aborting');
+      return;
+    }
     
     // Guardar estado en ref para evitar closures obsoletos
     dragStateRef.current = {
@@ -418,7 +441,8 @@ export const LayerRow: React.FC<LayerRowProps> = ({
     width: '2px',
     backgroundColor: '#f97316', // orange-500
     zIndex: 10,
-    boxShadow: '0 0 4px rgba(249, 115, 22, 0.5)'
+    boxShadow: '0 0 4px rgba(249, 115, 22, 0.5)',
+    pointerEvents: 'none' as const, // No bloquear eventos de mouse
   };
 
   // Height resize handlers
@@ -644,7 +668,7 @@ export const LayerRow: React.FC<LayerRowProps> = ({
 
           {/* Hidden overlay */}
           {!isVisible && (
-            <div className="absolute inset-0 bg-gray-900/60 z-20 flex items-center justify-center">
+            <div className="absolute inset-0 bg-gray-900/60 z-20 flex items-center justify-center pointer-events-none">
               <div className="flex items-center gap-1 text-gray-400 bg-gray-500/10 px-2 py-1 rounded border border-gray-500/20">
                 <EyeOff size={12} />
                 <span className="text-[10px] font-medium">HIDDEN</span>
@@ -654,7 +678,7 @@ export const LayerRow: React.FC<LayerRowProps> = ({
 
           {/* Muted overlay for audio */}
           {isMuted && isAudioLayer && isVisible && !isLocked && (
-            <div className="absolute inset-0 bg-gray-900/50 z-20 flex items-center justify-center">
+            <div className="absolute inset-0 bg-gray-900/50 z-20 flex items-center justify-center pointer-events-none">
               <div className="flex items-center gap-1 text-red-400 bg-red-500/10 px-2 py-1 rounded">
                 <VolumeX size={12} />
                 <span className="text-[10px] font-medium">MUTED</span>

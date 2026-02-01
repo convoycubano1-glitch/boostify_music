@@ -469,3 +469,78 @@
     box-shadow: 0 3px 12px rgba(249, 115, 22, 0.5);
   }
 }
+
+/* ========================================
+   CLERK AUTH MOBILE OPTIMIZATIONS
+   ======================================== */
+@layer components {
+  /* Fix Clerk modal/form overflow on mobile */
+  .cl-rootBox,
+  .cl-card,
+  .cl-main,
+  .cl-form {
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+  
+  /* Ensure Clerk inputs don't overflow */
+  .cl-formFieldInput,
+  .cl-phoneInputBox,
+  .cl-selectButton {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Fix Clerk button widths */
+  .cl-formButtonPrimary,
+  .cl-socialButtonsBlockButton,
+  .cl-alternativeMethodsBlockButton {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+  
+  /* Fix OTP code field on mobile */
+  .cl-otpCodeField {
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+  
+  /* Smaller OTP inputs on very small screens */
+  @media (max-width: 350px) {
+    .cl-otpCodeFieldInput {
+      width: 36px !important;
+      height: 40px !important;
+      font-size: 16px !important;
+    }
+  }
+  
+  /* Fix social buttons text wrapping */
+  .cl-socialButtonsBlockButtonText {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  
+  /* Mobile-specific Clerk modal */
+  @media (max-width: 640px) {
+    .cl-modalContent {
+      width: 95vw !important;
+      max-width: 95vw !important;
+      margin: 10px !important;
+      padding: 16px !important;
+    }
+    
+    .cl-card {
+      padding: 0 !important;
+    }
+    
+    .cl-formFieldRow {
+      margin-bottom: 8px !important;
+    }
+    
+    .cl-dividerRow {
+      margin: 8px 0 !important;
+    }
+  }
+}

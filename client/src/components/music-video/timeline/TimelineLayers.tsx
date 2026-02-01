@@ -212,42 +212,41 @@ export const TimelineLayers: React.FC<TimelineLayersProps> = ({
         ))}
       </div>
       
-      <style jsx>
-        {`
-          .timeline-layers {
-            border-radius: 6px;
-            scrollbar-width: thin;
-            scrollbar-color: #3f3f46 #18181b;
-            background: linear-gradient(180deg, #0a0a0a 0%, #141414 100%);
-          }
-          
+      {/* Estilos para scrollbar personalizados */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        .timeline-layers {
+          border-radius: 6px;
+          scrollbar-width: thin;
+          scrollbar-color: #3f3f46 #18181b;
+          background: linear-gradient(180deg, #0a0a0a 0%, #141414 100%);
+        }
+        
+        .timeline-layers::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        
+        .timeline-layers::-webkit-scrollbar-track {
+          background: #2a2a2a;
+          border-radius: 4px;
+        }
+        
+        .timeline-layers::-webkit-scrollbar-thumb {
+          background: #555;
+          border-radius: 4px;
+        }
+        
+        .timeline-layers::-webkit-scrollbar-thumb:hover {
+          background: #666;
+        }
+        
+        @media (max-width: 640px) {
           .timeline-layers::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 4px;
+            height: 4px;
           }
-          
-          .timeline-layers::-webkit-scrollbar-track {
-            background: #2a2a2a;
-            border-radius: 4px;
-          }
-          
-          .timeline-layers::-webkit-scrollbar-thumb {
-            background: #555;
-            border-radius: 4px;
-          }
-          
-          .timeline-layers::-webkit-scrollbar-thumb:hover {
-            background: #666;
-          }
-          
-          @media (max-width: 640px) {
-            .timeline-layers::-webkit-scrollbar {
-              width: 4px;
-              height: 4px;
-            }
-          }
-        `}
-      </style>
+        }
+      `}} />
     </div>
   );
 };

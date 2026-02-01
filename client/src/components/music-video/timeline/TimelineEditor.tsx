@@ -1,6 +1,6 @@
-﻿/**
+/**
  * Editor de timeline principal
- * Componente principal para la edición de videos con timeline multiples capas
+ * Componente principal para la edici�n de videos con timeline multiples capas
  * 
  * BOOSTIFY 2025 - Con acciones sobre clips:
  * - Edit Image (Nano Banana AI)
@@ -20,6 +20,7 @@ import { ImageEditorModal } from '../ImageEditorModal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useAudioAnalysis } from '@/hooks/useAudioAnalysis';
@@ -36,12 +37,13 @@ import {
   ZoomIn as ZoomInIcon, ZoomOut as ZoomOutIcon,
   Redo as RedoIcon, Undo as UndoIcon,
   Magnet as MagnetIcon, Trash as TrashIcon,
-  Video as VideoIcon, Volume2 as VolumeIcon, Wand2 as MotionIcon,
+  Video as VideoIcon, Volume2 as VolumeIcon, VolumeX as VolumeMuteIcon, Volume1 as VolumeLowIcon, Wand2 as MotionIcon,
   Image as ImageIcon, Plus as PlusIcon, GripVertical, X as XIcon,
-  FolderOpen, Save, FolderPlus, Clock,
+  FolderOpen, Save, FolderPlus, Clock, AlertCircle,
   SkipBack, SkipForward, Rewind, FastForward,
   Copy, ClipboardPaste, Split, Layers, Lock, Unlock, Eye, EyeOff, MoreHorizontal,
-  Download, RefreshCw, Film, Pencil, Music, Camera, Sparkles, Loader2
+  Download, RefreshCw, Film, Pencil, Music, Camera, Sparkles, Loader2,
+  HelpCircle, Upload, FileAudio, FileVideo, ImagePlus
 } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import type { MusicVideoScene } from '@/types/music-video-scene';
@@ -50,7 +52,7 @@ import {
   TimelineClip, LayerConfig, ClipType, LayerType, TimelineMarker 
 } from '@/interfaces/timeline';
 
-// Responsive layer width - se calcula dinámicamente
+// Responsive layer width - se calcula din�micamente
 const getLayerLabelWidth = () => {
   if (typeof window === 'undefined') return 120;
   if (window.innerWidth < 480) return 50;
@@ -83,7 +85,7 @@ export interface SavedProject {
   updatedAt: Date;
 }
 
-// Contexto del proyecto para regeneración coherente
+// Contexto del proyecto para regeneraci�n coherente
 export interface ProjectContext {
   scriptContent?: string;
   selectedConcept?: {
@@ -120,7 +122,7 @@ interface TimelineEditorProps {
   genreHint?: string;
   generatedImages?: GeneratedImage[];
   onAddImageToTimeline?: (image: GeneratedImage) => void;
-  // 🔗 Contexto del proyecto para regeneración coherente
+  // ?? Contexto del proyecto para regeneraci�n coherente
   projectContext?: ProjectContext;
 }
 
@@ -139,13 +141,13 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   onAddImageToTimeline,
   projectContext,
 }) => {
-  // 🔊 DEBUG: Log audioPreviewUrl on mount and changes
+  // ?? DEBUG: Log audioPreviewUrl on mount and changes
   useEffect(() => {
-    console.log('═'.repeat(60));
-    console.log('🎵 [TIMELINE] AUDIO PROP RECIBIDO');
-    console.log('🔗 audioPreviewUrl:', audioPreviewUrl ? audioPreviewUrl.substring(0, 80) + '...' : '❌ NULL/UNDEFINED');
-    console.log('⏱️ duration:', duration, 'segundos');
-    console.log('═'.repeat(60));
+    console.log('-'.repeat(60));
+    console.log('?? [TIMELINE] AUDIO PROP RECIBIDO');
+    console.log('?? audioPreviewUrl:', audioPreviewUrl ? audioPreviewUrl.substring(0, 80) + '...' : '? NULL/UNDEFINED');
+    console.log('?? duration:', duration, 'segundos');
+    console.log('-'.repeat(60));
   }, [audioPreviewUrl, duration]);
   
   const [clips, setClips] = useState<TimelineClip[]>(() => normalizeClips(initialClips));
@@ -153,26 +155,34 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedClipId, setSelectedClipId] = useState<number | null>(null);
+  const [selectedClipIds, setSelectedClipIds] = useState<Set<number>>(new Set()); // ?? Multi-select
+  const [playbackRate, setPlaybackRate] = useState(1); // ?? J/K/L playback control
   const [tool, setTool] = useState<Tool>('select');
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [rippleEnabled, setRippleEnabled] = useState(false);
+  
+  // 🔊 Audio volume control - Estado para controlar volumen como Adobe Premiere
+  const [volume, setVolume] = useState(1); // 0 a 1
+  const [isMuted, setIsMuted] = useState(false);
+  const [audioReady, setAudioReady] = useState(false);
+  const [audioError, setAudioError] = useState<string | null>(null);
   const [selectedGalleryImage, setSelectedGalleryImage] = useState<GeneratedImage | null>(null);
   const [layerLabelWidth, setLayerLabelWidth] = useState(getLayerLabelWidth);
   
   // Estados para paneles redimensionables
   const [viewerHeight, setViewerHeight] = useState(55); // Altura del visor en % - Por defecto abierto
-  const [galleryWidth, setGalleryWidth] = useState(180); // Ancho de la galería en px
+  const [galleryWidth, setGalleryWidth] = useState(180); // Ancho de la galer�a en px
   const [layerPanelWidth, setLayerPanelWidth] = useState(100); // Ancho de los labels de capas en px
   
   // Estados de arrastre
   const [isDraggingVertical, setIsDraggingVertical] = useState(false); // Divisor horizontal (visor/timeline)
-  const [isDraggingGallery, setIsDraggingGallery] = useState(false); // Divisor vertical (visor/galería)
+  const [isDraggingGallery, setIsDraggingGallery] = useState(false); // Divisor vertical (visor/galer�a)
   const [isDraggingLayers, setIsDraggingLayers] = useState(false); // Divisor vertical (labels/tracks)
   
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
-  // � Audio Analysis para sincronización con beats
+  //  Audio Analysis para sincronizaci�n con beats
   const { 
     analysis: audioAnalysis, 
     isAnalyzing: isAnalyzingAudio, 
@@ -181,12 +191,12 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     getNearestBeat 
   } = useAudioAnalysis();
   
-  // �🎬 Motion Control & Video Generation
+  // ?? Motion Control & Video Generation
   const [motionPanelOpen, setMotionPanelOpen] = useState(false);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [selectedScene, setSelectedScene] = useState<MusicVideoScene | null>(null);
   
-  // 🖌️ Modales de Acciones sobre Clips
+  // ??? Modales de Acciones sobre Clips
   const [showMusicianModal, setShowMusicianModal] = useState(false);
   const [musicianModalClip, setMusicianModalClip] = useState<TimelineClip | null>(null);
   const [showCameraAnglesModal, setShowCameraAnglesModal] = useState(false);
@@ -194,7 +204,20 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   const [showImageEditorModal, setShowImageEditorModal] = useState(false);
   const [imageEditorModalClip, setImageEditorModalClip] = useState<TimelineClip | null>(null);
   
-  // 📁 Proyectos Guardados - Firebase + localStorage como caché
+  // 📥 Importacion de archivos multimedia
+  const [showImportMenu, setShowImportMenu] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importType, setImportType] = useState<'image' | 'audio' | 'video' | 'all'>('all');
+  
+  // 📂 Menu contextual de la galeria (click derecho para importar)
+  const [galleryContextMenu, setGalleryContextMenu] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+  }>({ visible: false, x: 0, y: 0 });
+  
+  // 📁 Proyectos Guardados - Firebase + localStorage como cache
   const { user } = useAuth();
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
   const [firebaseProjects, setFirebaseProjects] = useState<VideoProject[]>([]);
@@ -205,7 +228,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   const [saveStatus, setSaveStatus] = useState('');
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
   
-  // 🔥 Cargar proyectos desde Firebase al montar o cuando cambia el usuario
+  // ?? Cargar proyectos desde Firebase al montar o cuando cambia el usuario
   useEffect(() => {
     const loadFirebaseProjects = async () => {
       if (!user?.id) {
@@ -215,9 +238,9 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
       
       setIsLoadingProjects(true);
       try {
-        console.log('🔥 [FIREBASE] Cargando proyectos del usuario:', user.id);
+        console.log('?? [FIREBASE] Cargando proyectos del usuario:', user.id);
         const projects = await getUserProjects(user.id);
-        console.log('🔥 [FIREBASE] Proyectos cargados:', projects.length);
+        console.log('?? [FIREBASE] Proyectos cargados:', projects.length);
         setFirebaseProjects(projects);
         
         // Convertir a formato SavedProject para compatibilidad
@@ -248,7 +271,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         
         setSavedProjects(converted);
       } catch (error) {
-        console.error('❌ [FIREBASE] Error cargando proyectos:', error);
+        console.error('? [FIREBASE] Error cargando proyectos:', error);
         // Fallback a localStorage
         try {
           const saved = localStorage.getItem('boostify_timeline_projects');
@@ -265,29 +288,29 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     loadFirebaseProjects();
   }, [user?.id]);
   
-  // 🔄 CRITICAL: Sincronizar clips cuando initialClips cambian (ej: cuando se generan imágenes)
+  // ?? CRITICAL: Sincronizar clips cuando initialClips cambian (ej: cuando se generan im�genes)
   useEffect(() => {
     if (initialClips && initialClips.length > 0) {
       const normalizedClips = normalizeClips(initialClips);
       
-      // Verificar si hay cambios reales (comparar URLs de imágenes)
+      // Verificar si hay cambios reales (comparar URLs de im�genes)
       const currentHasImages = clips.some(c => c.url || c.imageUrl || c.thumbnailUrl);
       const newHasImages = normalizedClips.some(c => c.url || c.imageUrl || c.thumbnailUrl);
       
-      // Si los nuevos clips tienen imágenes que los actuales no tienen, actualizar
+      // Si los nuevos clips tienen im�genes que los actuales no tienen, actualizar
       if (newHasImages || normalizedClips.length !== clips.length) {
-        logger.info(`🔄 [SYNC] Actualizando clips internos: ${normalizedClips.length} clips, imágenes: ${newHasImages}`);
+        logger.info(`?? [SYNC] Actualizando clips internos: ${normalizedClips.length} clips, im�genes: ${newHasImages}`);
         
-        // Preservar las imágenes existentes y actualizar con las nuevas
+        // Preservar las im�genes existentes y actualizar con las nuevas
         setClips(prevClips => {
           return normalizedClips.map(newClip => {
             const existingClip = prevClips.find(c => c.id === newClip.id);
             if (existingClip) {
-              // Merge: priorizar imágenes nuevas, pero mantener datos existentes
+              // Merge: priorizar im�genes nuevas, pero mantener datos existentes
               return {
                 ...existingClip,
                 ...newClip,
-                // Priorizar URL no vacía
+                // Priorizar URL no vac�a
                 url: newClip.url || newClip.imageUrl || existingClip.url || existingClip.imageUrl || '',
                 imageUrl: newClip.imageUrl || newClip.url || existingClip.imageUrl || existingClip.url || '',
                 thumbnailUrl: newClip.thumbnailUrl || existingClip.thumbnailUrl || newClip.url || newClip.imageUrl || '',
@@ -300,10 +323,10 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     }
   }, [initialClips]);
   
-  // 🖼️ CRITICAL: Auto-sincronizar imágenes generadas con clips del timeline
+  // ??? CRITICAL: Auto-sincronizar im�genes generadas con clips del timeline
   useEffect(() => {
     if (generatedImages && generatedImages.length > 0) {
-      logger.info(`🖼️ [AUTO-SYNC] ${generatedImages.length} imágenes generadas detectadas, sincronizando con timeline...`);
+      logger.info(`??? [AUTO-SYNC] ${generatedImages.length} im�genes generadas detectadas, sincronizando con timeline...`);
       
       setClips(prevClips => {
         let updated = false;
@@ -318,10 +341,10 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
           
           if (matchingImage && matchingImage.url && !clip.url && !clip.imageUrl) {
             updated = true;
-            logger.info(`🖼️ [AUTO-SYNC] Clip ${clip.id} → Imagen ${matchingImage.id}`);
+            logger.info(`??? [AUTO-SYNC] Clip ${clip.id} ? Imagen ${matchingImage.id}`);
             return {
               ...clip,
-              layerId: clip.layerId || 1, // Asegurar layerId para capa de imágenes
+              layerId: clip.layerId || 1, // Asegurar layerId para capa de im�genes
               url: matchingImage.url,
               imageUrl: matchingImage.url,
               thumbnailUrl: matchingImage.url,
@@ -336,7 +359,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         });
         
         if (updated) {
-          logger.info(`✅ [AUTO-SYNC] Timeline actualizado con imágenes generadas`);
+          logger.info(`? [AUTO-SYNC] Timeline actualizado con im�genes generadas`);
         }
         
         return updated ? newClips : prevClips;
@@ -344,12 +367,12 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     }
   }, [generatedImages]);
   
-  // 🎵 AUTO-ADD: Crear clip de audio automáticamente cuando hay audioPreviewUrl
-  // También crear segmentos de audio para clips que necesitan lipsync
+  // ?? AUTO-ADD: Crear clip de audio autom�ticamente cuando hay audioPreviewUrl
+  // Tambi�n crear segmentos de audio para clips que necesitan lipsync
   useEffect(() => {
-    console.log('🎵 [AUTO-ADD EFFECT] Verificando condiciones para crear audio clip:');
-    console.log('  - audioPreviewUrl:', audioPreviewUrl ? '✅ ' + audioPreviewUrl.substring(0, 50) + '...' : '❌ NULL');
-    console.log('  - duration:', duration > 0 ? '✅ ' + duration + 's' : '❌ ' + duration);
+    console.log('?? [AUTO-ADD EFFECT] Verificando condiciones para crear audio clip:');
+    console.log('  - audioPreviewUrl:', audioPreviewUrl ? '? ' + audioPreviewUrl.substring(0, 50) + '...' : '? NULL');
+    console.log('  - duration:', duration > 0 ? '? ' + duration + 's' : '? ' + duration);
     
     if (audioPreviewUrl && duration > 0) {
       setClips(prevClips => {
@@ -362,11 +385,11 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         const newClips = [...prevClips];
         
         if (!hasMainAudioClip) {
-          console.log('═'.repeat(60));
-          console.log('🎵 [AUTO-ADD] CREANDO CLIP DE AUDIO PRINCIPAL');
-          console.log(`🔗 URL: ${audioPreviewUrl.substring(0, 80)}...`);
-          console.log(`⏱️ Duración: ${duration} segundos`);
-          console.log('═'.repeat(60));
+          console.log('-'.repeat(60));
+          console.log('?? [AUTO-ADD] CREANDO CLIP DE AUDIO PRINCIPAL');
+          console.log(`?? URL: ${audioPreviewUrl.substring(0, 80)}...`);
+          console.log(`?? Duraci�n: ${duration} segundos`);
+          console.log('-'.repeat(60));
           const audioClip: TimelineClip = {
             id: 99999, // ID especial para audio
             layerId: 2,
@@ -374,7 +397,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
             start: 0,
             duration: duration,
             url: audioPreviewUrl,
-            title: '🎵 Audio Principal',
+            title: '?? Audio Principal',
             in: 0,
             out: duration,
             sourceStart: 0,
@@ -383,11 +406,11 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
               totalDuration: duration
             }
           };
-          console.log(`🎵 [AUTO-ADD] Audio clip creado:`, audioClip);
+          console.log(`?? [AUTO-ADD] Audio clip creado:`, audioClip);
           newClips.push(audioClip);
         }
         
-        // 🎤 LIPSYNC: Crear segmentos de audio para clips que necesitan lipsync
+        // ?? LIPSYNC: Crear segmentos de audio para clips que necesitan lipsync
         const clipsNeedingLipsync = prevClips.filter(c => 
           c.layerId === 1 && 
           (c.metadata?.needsLipsync || c.needsLipsync) &&
@@ -395,7 +418,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         );
         
         if (clipsNeedingLipsync.length > 0) {
-          logger.info(`🎤 [AUTO-ADD] Creando ${clipsNeedingLipsync.length} segmentos de lipsync`);
+          logger.info(`?? [AUTO-ADD] Creando ${clipsNeedingLipsync.length} segmentos de lipsync`);
           
           clipsNeedingLipsync.forEach((clip, index) => {
             const lipsyncSegment: TimelineClip = {
@@ -405,7 +428,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
               start: clip.start,
               duration: clip.duration,
               url: audioPreviewUrl,
-              title: `🎤 Vocal ${clip.id}`,
+              title: `?? Vocal ${clip.id}`,
               in: clip.start, // Punto de entrada en el audio
               out: clip.start + clip.duration, // Punto de salida
               sourceStart: clip.start,
@@ -419,7 +442,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
               }
             };
             newClips.push(lipsyncSegment);
-            console.log(`🎤 [AUTO-ADD] Lipsync segment creado para clip ${clip.id}:`, lipsyncSegment);
+            console.log(`?? [AUTO-ADD] Lipsync segment creado para clip ${clip.id}:`, lipsyncSegment);
           });
         }
         
@@ -428,14 +451,14 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     }
   }, [audioPreviewUrl, duration, clips]);
   
-  // 🎵 AUTO-ANALYZE: Analizar audio para obtener beats cuando se carga
+  // ?? AUTO-ANALYZE: Analizar audio para obtener beats cuando se carga
   useEffect(() => {
     if (audioPreviewUrl && !audioAnalysis && !isAnalyzingAudio) {
-      console.log('🎵 [AUTO-ANALYZE] Iniciando análisis de audio para beats...');
+      console.log('?? [AUTO-ANALYZE] Iniciando an�lisis de audio para beats...');
       analyzeAudio(audioPreviewUrl).then(() => {
-        console.log('🎵 [AUTO-ANALYZE] Análisis de audio completado:', audioAnalysis);
+        console.log('?? [AUTO-ANALYZE] An�lisis de audio completado:', audioAnalysis);
       }).catch((err) => {
-        console.warn('⚠️ [AUTO-ANALYZE] Error analizando audio:', err);
+        console.warn('?? [AUTO-ANALYZE] Error analizando audio:', err);
       });
     }
   }, [audioPreviewUrl, audioAnalysis, isAnalyzingAudio, analyzeAudio]);
@@ -443,19 +466,19 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   // Generar marcadores de beat para el timeline
   const beatGuides = useMemo(() => {
     if (!audioAnalysis?.beats) return [];
-    // Usar beats o downbeats para las guías visuales
+    // Usar beats o downbeats para las gu�as visuales
     const beatsToUse = audioAnalysis.downbeats?.length > 0 
       ? audioAnalysis.downbeats 
       : audioAnalysis.beats.filter((_, i) => i % 4 === 0); // Cada 4 beats si no hay downbeats
     return beatsToUse.slice(0, 200); // Limitar para performance
   }, [audioAnalysis]);
   
-  // ⏱️ CRITICAL: Constante de duración máxima de clip (Grok Imagine = 6s)
+  // ?? CRITICAL: Constante de duraci�n m�xima de clip (Grok Imagine = 6s)
   const MAX_CLIP_DURATION = 6;
   
-  // 🎬 CRITICAL: Calcular clip activo basado en currentTime para sincronización exacta
+  // ?? CRITICAL: Calcular clip activo basado en currentTime para sincronizaci�n exacta
   const activeClip = useMemo(() => {
-    // Buscar clip de imagen (layerId 1) que esté en el tiempo actual
+    // Buscar clip de imagen (layerId 1) que est� en el tiempo actual
     const imageClips = clips.filter(c => c.layerId === 1 || c.type === ClipType.IMAGE || c.type === ClipType.GENERATED_IMAGE);
     
     for (const clip of imageClips) {
@@ -468,7 +491,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     return null;
   }, [clips, currentTime]);
   
-  // 🖼️ Función helper para obtener URL de imagen de un clip
+  // ??? Funci�n helper para obtener URL de imagen de un clip
   const getClipImageUrl = useCallback((clip: TimelineClip | null): string | null => {
     if (!clip) return null;
     return clip.imageUrl || clip.thumbnailUrl || clip.url || 
@@ -481,7 +504,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     return getClipImageUrl(activeClip);
   }, [activeClip, getClipImageUrl]);
 
-  // 🎬 URL de video activo para el visor (si se generó video desde imagen)
+  // ?? URL de video activo para el visor (si se gener� video desde imagen)
   const activeClipVideoUrl = useMemo(() => {
     if (!activeClip) return null;
     // Prioridad: lipsyncVideoUrl > videoUrl en metadata > videoUrl directo
@@ -491,10 +514,10 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
            null;
   }, [activeClip]);
   
-  // 🎥 Ref para el video del clip activo
+  // ?? Ref para el video del clip activo
   const activeVideoRef = useRef<HTMLVideoElement | null>(null);
 
-  // 🎬 CRITICAL: Sincronizar video del clip activo con el timeline
+  // ?? CRITICAL: Sincronizar video del clip activo con el timeline
   useEffect(() => {
     const video = activeVideoRef.current;
     if (!video || !activeClip || !activeClipVideoUrl) return;
@@ -502,7 +525,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     // Calcular tiempo local dentro del clip
     const clipLocalTime = currentTime - activeClip.start;
     
-    // Solo actualizar si el tiempo es válido
+    // Solo actualizar si el tiempo es v�lido
     if (clipLocalTime >= 0 && clipLocalTime < (video.duration || 6)) {
       // Evitar actualizaciones constantes - solo si diferencia > 0.1s
       if (Math.abs(video.currentTime - clipLocalTime) > 0.1) {
@@ -518,7 +541,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     }
   }, [isPlaying, currentTime, activeClip, activeClipVideoUrl]);
   
-  // 🖱️ Menú Contextual (click derecho)
+  // ??? Men� Contextual (click derecho)
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;
     x: number;
@@ -528,11 +551,11 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   }>({ visible: false, x: 0, y: 0, clipId: null, time: 0 });
   const [clipboardClip, setClipboardClip] = useState<TimelineClip | null>(null);
 
-  // 🎬 Framerate para timecode
+  // ?? Framerate para timecode
   const [framerate, setFramerate] = useState<24 | 30 | 60>(30);
-  const frameInterval = 1 / framerate; // Duración de un frame en segundos
+  const frameInterval = 1 / framerate; // Duraci�n de un frame en segundos
 
-  // Función para formatear timecode según framerate (HH:MM:SS:FF)
+  // Funci�n para formatear timecode seg�n framerate (HH:MM:SS:FF)
   const formatTimecode = useCallback((seconds: number): string => {
     const totalFrames = Math.floor(seconds * framerate);
     const frames = totalFrames % framerate;
@@ -547,7 +570,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}:${String(frames).padStart(2, '0')}`;
   }, [framerate]);
 
-  // Snap al frame más cercano
+  // Snap al frame m�s cercano
   const snapToFrame = useCallback((time: number): number => {
     return Math.round(time * framerate) / framerate;
   }, [framerate]);
@@ -576,7 +599,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     };
   }, [isDraggingVertical]);
 
-  // Manejador del divisor horizontal (visor/galería)
+  // Manejador del divisor horizontal (visor/galer�a)
   useEffect(() => {
     if (!isDraggingGallery) return;
     
@@ -625,6 +648,56 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // 📥 Cerrar menu de importacion al hacer clic fuera
+  useEffect(() => {
+    if (!showImportMenu) return;
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-import-menu]')) {
+        setShowImportMenu(false);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showImportMenu]);
+
+  // 📂 Cerrar menu contextual de galeria al hacer clic fuera
+  useEffect(() => {
+    if (!galleryContextMenu.visible) return;
+    
+    const handleClickOutside = () => {
+      setGalleryContextMenu({ visible: false, x: 0, y: 0 });
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [galleryContextMenu.visible]);
+
+  // Handler para menu contextual de la galeria
+  const handleGalleryContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const menuWidth = 180;
+    const menuHeight = 150;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    let x = e.clientX;
+    let y = e.clientY;
+    
+    if (x + menuWidth > viewportWidth - 20) {
+      x = viewportWidth - menuWidth - 20;
+    }
+    if (y + menuHeight > viewportHeight - 20) {
+      y = viewportHeight - menuHeight - 20;
+    }
+    
+    setGalleryContextMenu({ visible: true, x, y });
+  }, []);
+
   // Undo/redo
   const [history, setHistory] = useState<{ past: TimelineClip[][]; future: TimelineClip[][] }>({
     past: [],
@@ -636,11 +709,11 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   const playingRaf = useRef<number | null>(null);
   const lastFrameTime = useRef<number>(0);
 
-  // Beats como array simple - ahora usa audioAnalysis si está disponible, sino markers
-  // (beatGuides ya está definido arriba con audioAnalysis)
+  // Beats como array simple - ahora usa audioAnalysis si est� disponible, sino markers
+  // (beatGuides ya est� definido arriba con audioAnalysis)
   const sectionGuides = useMemo(() => markers.filter(m => m.type === 'section').map(m => m.time), [markers]);
 
-  // Play loop con tiempo real y exacto basado en framerate
+  // ?? Play loop con tiempo real, framerate exacto y soporte J/K/L (playbackRate)
   useEffect(() => {
     if (!isPlaying) {
       if (videoRef.current) videoRef.current.pause();
@@ -650,37 +723,44 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
       return;
     }
     
-    // 🎯 CRITICAL: Usar el audio como fuente de tiempo real para sincronización exacta
-    // El audio es la única fuente de verdad para el tiempo
+    // ?? CRITICAL: Usar el audio como fuente de tiempo real para sincronizaci�n exacta
     const startPlaybackTime = performance.now();
     const startCurrentTime = currentTime;
     
     const tick = () => {
-      // Método 1: Si hay audio, usar su tiempo como referencia (más preciso)
-      if (audioRef.current && !audioRef.current.paused) {
+      // M�todo 1: Si hay audio Y playbackRate es 1x positivo, usar audio como referencia
+      if (audioRef.current && !audioRef.current.paused && playbackRate === 1) {
         const audioTime = audioRef.current.currentTime;
-        // Snap al frame más cercano para display
         const snappedTime = Math.round(audioTime * framerate) / framerate;
         
-        if (snappedTime >= duration) {
+        if (snappedTime >= duration || snappedTime < 0) {
           setIsPlaying(false);
-          setCurrentTime(0);
+          setCurrentTime(snappedTime >= duration ? 0 : 0);
+          setPlaybackRate(1);
           return;
         }
         
         setCurrentTime(snappedTime);
       } else {
-        // Método 2: Sin audio, usar performance.now() para tiempo real
+        // M�todo 2: Sin audio o con playbackRate != 1 (J/K/L control)
         const elapsedMs = performance.now() - startPlaybackTime;
-        const elapsedSeconds = elapsedMs / 1000;
+        const elapsedSeconds = (elapsedMs / 1000) * playbackRate; // Aplicar velocidad
         let newTime = startCurrentTime + elapsedSeconds;
         
         // Snap al frame exacto
         newTime = Math.round(newTime * framerate) / framerate;
         
+        // Limites
         if (newTime >= duration) {
           setIsPlaying(false);
           setCurrentTime(0);
+          setPlaybackRate(1);
+          return;
+        }
+        if (newTime < 0) {
+          setIsPlaying(false);
+          setCurrentTime(0);
+          setPlaybackRate(1);
           return;
         }
         
@@ -695,19 +775,54 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     // Sincronizar media con el tiempo actual al iniciar
     if (videoRef.current) {
       videoRef.current.currentTime = currentTime;
-      videoRef.current.playbackRate = 1;
-      videoRef.current.play().catch(() => {});
+      videoRef.current.playbackRate = Math.abs(playbackRate); // Video no soporta negativo
+      if (playbackRate > 0) {
+        videoRef.current.play().catch((err) => {
+          console.warn('🎬 [Video] Error al reproducir:', err.message);
+        });
+      } else {
+        videoRef.current.pause(); // Pausar si vamos hacia atrás
+      }
     }
     if (audioRef.current) {
+      // 🔊 Aplicar volumen antes de reproducir
+      audioRef.current.volume = isMuted ? 0 : volume;
       audioRef.current.currentTime = currentTime;
-      audioRef.current.playbackRate = 1;
-      audioRef.current.play().catch(() => {});
+      // Audio solo soporta rates positivos normales
+      if (playbackRate === 1) {
+        audioRef.current.playbackRate = 1;
+        audioRef.current.play()
+          .then(() => {
+            console.log('🔊 [Audio] Reproduciendo correctamente');
+            setAudioReady(true);
+            setAudioError(null);
+          })
+          .catch((err) => {
+            console.warn('🔊 [Audio] Error al reproducir:', err.message);
+            // Si es error de autoplay, mostrar mensaje útil
+            if (err.name === 'NotAllowedError') {
+              setAudioError('Haz clic para activar audio');
+            } else {
+              setAudioError(err.message);
+            }
+          });
+      } else {
+        audioRef.current.pause(); // Silenciar en velocidades especiales
+      }
     }
     
     return () => {
       if (playingRaf.current) cancelAnimationFrame(playingRaf.current);
     };
-  }, [isPlaying, duration, framerate]);
+  }, [isPlaying, duration, framerate, playbackRate, volume, isMuted]);
+
+  // 🔊 Sincronizar volumen con el elemento de audio
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : volume;
+      audioRef.current.muted = isMuted;
+    }
+  }, [volume, isMuted]);
 
   // Sync media time on currentTime change if paused
   useEffect(() => {
@@ -722,81 +837,6 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     onChange?.(clips);
   }, [clips, onChange]);
 
-  // Shortcuts
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey) {
-        if (e.key.toLowerCase() === 'z') {
-          e.preventDefault();
-          doUndo();
-        } else if (e.key.toLowerCase() === 'y') {
-          e.preventDefault();
-          doRedo();
-        }
-      }
-      if (e.code === 'Space') {
-        e.preventDefault();
-        setIsPlaying(p => !p);
-      }
-      if (e.code === 'KeyV') setTool('select');
-      if (e.code === 'KeyC') setTool('razor');
-      if (e.code === 'KeyT') setTool('trim');
-      if (e.code === 'KeyH') setTool('hand');
-      if (e.code === 'Equal' || e.code === 'Plus') {
-        e.preventDefault();
-        zoomIn();
-      }
-      if (e.code === 'Minus') {
-        e.preventDefault();
-        zoomOut();
-      }
-      // Navegación del timeline con flechas (basada en frames)
-      if (e.code === 'ArrowLeft') {
-        e.preventDefault();
-        setCurrentTime(t => {
-          // Shift = 1 frame, normal = 1 segundo, Ctrl = 5 segundos
-          const step = e.shiftKey ? (1 / framerate) : e.ctrlKey ? 5 : 1;
-          const newTime = Math.max(0, t - step);
-          // Snap al frame exacto
-          return Math.round(newTime * framerate) / framerate;
-        });
-      }
-      if (e.code === 'ArrowRight') {
-        e.preventDefault();
-        setCurrentTime(t => {
-          const step = e.shiftKey ? (1 / framerate) : e.ctrlKey ? 5 : 1;
-          const newTime = Math.min(duration, t + step);
-          return Math.round(newTime * framerate) / framerate;
-        });
-      }
-      // Comma/Period para avanzar frame por frame (estándar de edición)
-      if (e.code === 'Comma') {
-        e.preventDefault();
-        setCurrentTime(t => {
-          const newTime = Math.max(0, t - (1 / framerate));
-          return Math.round(newTime * framerate) / framerate;
-        });
-      }
-      if (e.code === 'Period') {
-        e.preventDefault();
-        setCurrentTime(t => {
-          const newTime = Math.min(duration, t + (1 / framerate));
-          return Math.round(newTime * framerate) / framerate;
-        });
-      }
-      if (e.code === 'Home') {
-        e.preventDefault();
-        setCurrentTime(0);
-      }
-      if (e.code === 'End') {
-        e.preventDefault();
-        setCurrentTime(Math.round(duration * framerate) / framerate);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [duration, framerate]);
-
   const pushHistory = useCallback((newClips: TimelineClip[]) => {
     setHistory(h => ({
       past: [...h.past, clips],
@@ -805,13 +845,13 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     setClips(newClips);
   }, [clips]);
 
-  // 📁 Funciones de Proyectos Guardados (después de pushHistory)
+  // ?? Funciones de Proyectos Guardados (despu�s de pushHistory)
   const handleSaveProject = useCallback(async () => {
     // Verificar usuario autenticado
     if (!user?.id) {
       toast({
-        title: "⚠️ Usuario no autenticado",
-        description: "Debes iniciar sesión para guardar proyectos de forma permanente",
+        title: "?? Usuario no autenticado",
+        description: "Debes iniciar sesi�n para guardar proyectos de forma permanente",
         variant: "destructive"
       });
       return;
@@ -819,12 +859,12 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     
     const name = projectName.trim() || `Proyecto ${new Date().toLocaleDateString()}`;
     
-    // Verificar que hay imágenes para guardar
+    // Verificar que hay im�genes para guardar
     const imagesWithUrls = generatedImages.filter(img => img.url);
     if (imagesWithUrls.length === 0) {
       toast({
-        title: "⚠️ Sin imágenes",
-        description: "Genera imágenes antes de guardar el proyecto",
+        title: "?? Sin im�genes",
+        description: "Genera im�genes antes de guardar el proyecto",
         variant: "destructive"
       });
       return;
@@ -849,15 +889,15 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         sceneCount: clips.length
       };
       
-      // Preparar imágenes para subir a Firebase Storage
+      // Preparar im�genes para subir a Firebase Storage
       const imagesToUpload = imagesWithUrls.map((img, i) => ({
         sceneId: `scene-${i + 1}`,
-        imageData: img.url // URL temporal de FAL que se convertirá a permanente
+        imageData: img.url // URL temporal de FAL que se convertir� a permanente
       }));
       
-      console.log('🔥 [FIREBASE] Guardando proyecto:', name, 'con', imagesToUpload.length, 'imágenes');
+      console.log('?? [FIREBASE] Guardando proyecto:', name, 'con', imagesToUpload.length, 'im�genes');
       
-      // Crear proyecto con imágenes en Firebase
+      // Crear proyecto con im�genes en Firebase
       const { projectId, project } = await createProjectWithImages(
         name,
         user.id,
@@ -874,7 +914,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         }
       );
       
-      console.log('✅ [FIREBASE] Proyecto guardado con ID:', projectId);
+      console.log('? [FIREBASE] Proyecto guardado con ID:', projectId);
       
       // Actualizar lista de proyectos
       const newProject: SavedProject = {
@@ -901,14 +941,14 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
       setProjectName('');
       
       toast({
-        title: "✅ Proyecto guardado en la nube",
-        description: `"${name}" guardado con ${clips.length} clips. Las imágenes ahora son permanentes.`,
+        title: "? Proyecto guardado en la nube",
+        description: `"${name}" guardado con ${clips.length} clips. Las im�genes ahora son permanentes.`,
       });
       
     } catch (error) {
-      console.error('❌ [FIREBASE] Error guardando proyecto:', error);
+      console.error('? [FIREBASE] Error guardando proyecto:', error);
       toast({
-        title: "❌ Error al guardar",
+        title: "? Error al guardar",
         description: error instanceof Error ? error.message : 'Error desconocido',
         variant: "destructive"
       });
@@ -920,17 +960,17 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   }, [clips, generatedImages, duration, projectName, user?.id, projectContext, toast]);
 
   const handleLoadProject = useCallback((project: SavedProject) => {
-    logger.info(`📂 Cargando proyecto: ${project.name}`);
-    logger.info(`📊 Clips: ${project.clips?.length || 0}, Imágenes: ${project.generatedImages?.length || 0}`);
+    logger.info(`?? Cargando proyecto: ${project.name}`);
+    logger.info(`?? Clips: ${project.clips?.length || 0}, Im�genes: ${project.generatedImages?.length || 0}`);
     
     // Log para debug - ver estructura de clips guardados
-    console.log('📂 [DEBUG] Clips del proyecto (raw):', JSON.stringify(project.clips, null, 2));
-    console.log('📂 [DEBUG] Imágenes del proyecto:', project.generatedImages);
+    console.log('?? [DEBUG] Clips del proyecto (raw):', JSON.stringify(project.clips, null, 2));
+    console.log('?? [DEBUG] Im�genes del proyecto:', project.generatedImages);
     
-    // Usar normalizeClips para manejar la conversión de formato
+    // Usar normalizeClips para manejar la conversi�n de formato
     const normalizedClips = normalizeClips(project.clips || []);
     
-    // Asociar imágenes generadas a los clips normalizados
+    // Asociar im�genes generadas a los clips normalizados
     const loadedClips = normalizedClips.map((clip, index) => {
       // Buscar si hay una imagen generada correspondiente
       const matchingImage = (project.generatedImages || []).find(img => {
@@ -943,7 +983,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
       // Si el clip no tiene imagen pero hay una matching, asignarla
       const finalImageUrl = clip.url || clip.imageUrl || matchingImage?.url || '';
       
-      console.log(`📍 [LOAD] Clip ${clip.id}: start=${clip.start?.toFixed(2)}s, dur=${clip.duration?.toFixed(2)}s, layerId=${clip.layerId}, img=${!!finalImageUrl}`);
+      console.log(`?? [LOAD] Clip ${clip.id}: start=${clip.start?.toFixed(2)}s, dur=${clip.duration?.toFixed(2)}s, layerId=${clip.layerId}, img=${!!finalImageUrl}`);
       
       return {
         ...clip,
@@ -953,30 +993,30 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
       };
     });
     
-    logger.info(`✅ ${loadedClips.filter(c => c.url || c.imageUrl).length} clips con imágenes cargados`);
-    logger.info(`📊 Clips por capa: Capa 1: ${loadedClips.filter(c => c.layerId === 1).length}, Capa 2: ${loadedClips.filter(c => c.layerId === 2).length}`);
-    console.log('📂 [DEBUG] Clips finales a setear:', loadedClips.map(c => ({id: c.id, start: c.start, duration: c.duration, layerId: c.layerId, hasImg: !!(c.url || c.imageUrl)})));
+    logger.info(`? ${loadedClips.filter(c => c.url || c.imageUrl).length} clips con im�genes cargados`);
+    logger.info(`?? Clips por capa: Capa 1: ${loadedClips.filter(c => c.layerId === 1).length}, Capa 2: ${loadedClips.filter(c => c.layerId === 2).length}`);
+    console.log('?? [DEBUG] Clips finales a setear:', loadedClips.map(c => ({id: c.id, start: c.start, duration: c.duration, layerId: c.layerId, hasImg: !!(c.url || c.imageUrl)})));
     
     setClips(loadedClips);
     pushHistory(loadedClips);
     setShowProjectsPanel(false);
     
     toast({
-      title: "✅ Proyecto cargado",
+      title: "? Proyecto cargado",
       description: `"${project.name}" con ${loadedClips.length} clips`,
     });
   }, [pushHistory, toast]);
 
   const handleDeleteProject = useCallback(async (projectId: string) => {
-    // Eliminar de Firebase si el usuario está autenticado
+    // Eliminar de Firebase si el usuario est� autenticado
     if (user?.id) {
       try {
-        console.log('🗑️ [FIREBASE] Eliminando proyecto:', projectId);
+        console.log('??? [FIREBASE] Eliminando proyecto:', projectId);
         await deleteVideoProject(projectId, user.id);
-        console.log('✅ [FIREBASE] Proyecto eliminado');
+        console.log('? [FIREBASE] Proyecto eliminado');
       } catch (error) {
-        console.error('❌ [FIREBASE] Error eliminando proyecto:', error);
-        // Continuar con eliminación local de todas formas
+        console.error('? [FIREBASE] Error eliminando proyecto:', error);
+        // Continuar con eliminaci�n local de todas formas
       }
     }
     
@@ -985,19 +1025,19 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     setSavedProjects(updated);
     
     toast({
-      title: "🗑️ Proyecto eliminado",
-      description: "El proyecto y sus imágenes han sido eliminados",
+      title: "??? Proyecto eliminado",
+      description: "El proyecto y sus im�genes han sido eliminados",
     });
   }, [savedProjects, user?.id, toast]);
 
-  // 🎬 EXPORT VIDEO - Genera el video final a partir del timeline
+  // ?? EXPORT VIDEO - Genera el video final a partir del timeline
   const [isExporting, setIsExporting] = useState(false);
   
   const handleExportVideo = useCallback(async () => {
     if (clips.length === 0) {
       toast({
         title: "Sin clips",
-        description: "Añade clips al timeline para exportar",
+        description: "A�ade clips al timeline para exportar",
         variant: "destructive",
       });
       return;
@@ -1005,7 +1045,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
 
     setIsExporting(true);
     toast({
-      title: "🎬 Iniciando exportación...",
+      title: "?? Iniciando exportaci�n...",
       description: "Preparando video para renderizado",
     });
 
@@ -1029,7 +1069,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         projectName: projectName || `Export_${new Date().toISOString().slice(0,10)}`,
       };
 
-      // Llamar al endpoint de exportación
+      // Llamar al endpoint de exportaci�n
       const response = await fetch('/api/video-projects/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1047,22 +1087,22 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         // Descargar directamente
         window.open(data.downloadUrl, '_blank');
         toast({
-          title: "✅ Exportación completa",
-          description: "Tu video está listo para descargar",
+          title: "? Exportaci�n completa",
+          description: "Tu video est� listo para descargar",
         });
       } else if (data.jobId) {
-        // El renderizado está en proceso
+        // El renderizado est� en proceso
         toast({
-          title: "⏳ Renderizando video...",
-          description: `Job ID: ${data.jobId}. Te notificaremos cuando esté listo.`,
+          title: "? Renderizando video...",
+          description: `Job ID: ${data.jobId}. Te notificaremos cuando est� listo.`,
         });
       }
 
-      logger.info('🎬 [Export] Video exportado exitosamente', data);
+      logger.info('?? [Export] Video exportado exitosamente', data);
     } catch (error) {
-      logger.error('❌ [Export] Error exportando video:', error);
+      logger.error('? [Export] Error exportando video:', error);
       toast({
-        title: "Error en exportación",
+        title: "Error en exportaci�n",
         description: error instanceof Error ? error.message : 'Error desconocido',
         variant: "destructive",
       });
@@ -1071,10 +1111,10 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     }
   }, [clips, duration, audioPreviewUrl, projectName, toast]);
 
-  //  CRITICAL: Auto-sincronizar imágenes generadas con clips del timeline
+  //  CRITICAL: Auto-sincronizar im�genes generadas con clips del timeline
   useEffect(() => {
     if (generatedImages && generatedImages.length > 0) {
-      logger.info(` [AUTO-SYNC] ${generatedImages.length} imágenes generadas detectadas, sincronizando con timeline...`);
+      logger.info(` [AUTO-SYNC] ${generatedImages.length} im�genes generadas detectadas, sincronizando con timeline...`);
       
       setClips(prevClips => {
         let updated = false;
@@ -1102,7 +1142,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         });
         
         if (updated) {
-          logger.info(` [AUTO-SYNC] Timeline actualizado con imágenes generadas`);
+          logger.info(` [AUTO-SYNC] Timeline actualizado con im�genes generadas`);
         }
         
         return updated ? newClips : prevClips;
@@ -1110,7 +1150,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     }
   }, [generatedImages]);
   
-  //  Menú Contextual
+  //  Men� Contextual
   const handleContextMenu = useCallback((e: React.MouseEvent, clipId?: number) => {
     e.preventDefault();
     const rect = containerRef.current?.getBoundingClientRect();
@@ -1129,7 +1169,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
       const clip = clips.find(c => c.id === contextMenu.clipId);
       if (clip) {
         setClipboardClip({ ...clip });
-        logger.info('📋 Clip copiado:', clip.id);
+        logger.info('?? Clip copiado:', clip.id);
       }
     }
     closeContextMenu();
@@ -1143,7 +1183,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         start: currentTime,
       };
       pushHistory([...clips, newClip]);
-      logger.info('📋 Clip pegado en:', currentTime);
+      logger.info('?? Clip pegado en:', currentTime);
     }
     closeContextMenu();
   }, [clipboardClip, clips, currentTime, pushHistory, closeContextMenu]);
@@ -1158,7 +1198,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
           start: clip.start + clip.duration + 0.1,
         };
         pushHistory([...clips, newClip]);
-        logger.info('🔄 Clip duplicado:', clip.id);
+        logger.info('?? Clip duplicado:', clip.id);
       }
     }
     closeContextMenu();
@@ -1169,7 +1209,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
       const newClips = clips.filter(c => c.id !== contextMenu.clipId);
       pushHistory(newClips);
       setSelectedClipId(null);
-      logger.info('🗑️ Clip eliminado:', contextMenu.clipId);
+      logger.info('??? Clip eliminado:', contextMenu.clipId);
     }
     closeContextMenu();
   }, [clips, contextMenu.clipId, pushHistory, closeContextMenu]);
@@ -1190,7 +1230,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
           c.id === contextMenu.clipId ? { ...c, duration: splitTime } : c
         );
         pushHistory([...updatedClips, newClip]);
-        logger.info('✂️ Clip dividido en:', currentTime);
+        logger.info('?? Clip dividido en:', currentTime);
       }
     }
     closeContextMenu();
@@ -1201,7 +1241,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     closeContextMenu();
   }, [contextMenu.time, closeContextMenu]);
 
-  // Cerrar menú al hacer click fuera
+  // Cerrar men� al hacer click fuera
   useEffect(() => {
     const handleClickOutside = () => {
       if (contextMenu.visible) closeContextMenu();
@@ -1240,9 +1280,47 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     });
   }, []);
 
-  const handleSelectClip = useCallback((id: number | null) => {
+  // ??? Selecci�n de clips con soporte para multi-select (Shift+Click, Ctrl+Click)
+  const handleSelectClip = useCallback((id: number | null, event?: React.MouseEvent) => {
+    if (id === null) {
+      setSelectedClipId(null);
+      setSelectedClipIds(new Set());
+      return;
+    }
+    
+    // Shift+Click: Seleccionar rango de clips
+    if (event?.shiftKey && selectedClipId !== null) {
+      const sortedClips = [...clips].sort((a, b) => a.start - b.start);
+      const startIdx = sortedClips.findIndex(c => c.id === selectedClipId);
+      const endIdx = sortedClips.findIndex(c => c.id === id);
+      
+      if (startIdx !== -1 && endIdx !== -1) {
+        const [from, to] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
+        const rangeIds = sortedClips.slice(from, to + 1).map(c => c.id);
+        setSelectedClipIds(new Set([...Array.from(selectedClipIds), ...rangeIds]));
+      }
+      return;
+    }
+    
+    // Ctrl/Cmd+Click: Toggle individual en multi-select
+    if (event?.ctrlKey || event?.metaKey) {
+      setSelectedClipIds(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(id)) {
+          newSet.delete(id);
+        } else {
+          newSet.add(id);
+        }
+        return newSet;
+      });
+      setSelectedClipId(id);
+      return;
+    }
+    
+    // Click normal: Selecci�n simple
     setSelectedClipId(id);
-  }, []);
+    setSelectedClipIds(new Set([id]));
+  }, [clips, selectedClipId, selectedClipIds]);
 
   const handleDeleteClip = useCallback((id: number) => {
     if (readOnly) return;
@@ -1262,6 +1340,12 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
       }
     }
     pushHistory(newClips);
+    setSelectedClipId(null);
+    setSelectedClipIds(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(id);
+      return newSet;
+    });
   }, [clips, pushHistory, readOnly, rippleEnabled]);
 
   // Ref para guardar el estado antes de empezar a mover/redimensionar
@@ -1359,7 +1443,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     const currentClips = clipsRef.current;
     const clip = currentClips.find(c => c.id === id);
     if (!clip) return;
-    // Permitir redimensionar hasta duración mínima de 0.1s
+    // Permitir redimensionar hasta duraci�n m�nima de 0.1s
     const newClips = currentClips.map(c => {
       if (c.id === id) {
         return {
@@ -1377,7 +1461,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     handleSplitClip(clipId, timeAtClipGlobal);
   }, [handleSplitClip]);
 
-  // Click en timeline/ruler: posiciona el cursor en el frame más cercano
+  // Click en timeline/ruler: posiciona el cursor en el frame m�s cercano
   const handleTimelineClick = (timeGlobal: number) => {
     const clampedTime = clamp(timeGlobal, 0, duration);
     // Snap al frame exacto
@@ -1388,20 +1472,320 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   const zoomIn = () => setZoom(z => Math.min(z * 1.2, 800));
   const zoomOut = () => setZoom(z => Math.max(z / 1.2, 20));
 
+  // ?? Shortcuts Profesionales (J/K/L, Ctrl+Z, Multi-select, etc)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      // Ignorar si estamos en un input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      
+      // Ctrl/Cmd shortcuts
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          if (e.shiftKey) {
+            doRedo();
+          } else {
+            doUndo();
+          }
+        } else if (e.key.toLowerCase() === 'y') {
+          e.preventDefault();
+          doRedo();
+        } else if (e.key.toLowerCase() === 'a') {
+          e.preventDefault();
+          const allIds = new Set(clips.map(c => c.id));
+          setSelectedClipIds(allIds);
+          const firstId = clips.length > 0 ? clips[0].id : null;
+          if (firstId !== null) setSelectedClipId(firstId);
+        } else if (e.key.toLowerCase() === 'd') {
+          e.preventDefault();
+          setSelectedClipIds(new Set());
+          setSelectedClipId(null);
+        }
+        return;
+      }
+      
+      // ?? J/K/L Playback Control
+      if (e.code === 'KeyJ') {
+        e.preventDefault();
+        setPlaybackRate(prev => prev > 0 ? -1 : Math.max(-4, prev - 1));
+        setIsPlaying(true);
+      }
+      if (e.code === 'KeyK') {
+        e.preventDefault();
+        setIsPlaying(false);
+        setPlaybackRate(1);
+      }
+      if (e.code === 'KeyL') {
+        e.preventDefault();
+        if (!isPlaying) {
+          setIsPlaying(true);
+          setPlaybackRate(1);
+        } else {
+          setPlaybackRate(prev => prev < 0 ? 1 : Math.min(4, prev + 1));
+        }
+      }
+      
+      // Space = Play/Pause
+      if (e.code === 'Space') {
+        e.preventDefault();
+        setIsPlaying(p => !p);
+        setPlaybackRate(1);
+      }
+      
+      // Tool shortcuts
+      if (e.code === 'KeyV') setTool('select');
+      if (e.code === 'KeyC') setTool('razor');
+      if (e.code === 'KeyT') setTool('trim');
+      if (e.code === 'KeyH') setTool('hand');
+      
+      // Delete selected clips
+      if (e.code === 'Delete' || e.code === 'Backspace') {
+        e.preventDefault();
+        if (selectedClipIds.size > 0) {
+          const newClips = clips.filter(c => !selectedClipIds.has(c.id));
+          pushHistory(newClips);
+          setSelectedClipIds(new Set());
+          setSelectedClipId(null);
+        } else if (selectedClipId !== null) {
+          const newClips = clips.filter(c => c.id !== selectedClipId);
+          pushHistory(newClips);
+          setSelectedClipId(null);
+        }
+      }
+      
+      // Zoom
+      if (e.code === 'Equal' || e.code === 'Plus') {
+        e.preventDefault();
+        zoomIn();
+      }
+      if (e.code === 'Minus') {
+        e.preventDefault();
+        zoomOut();
+      }
+      
+      // Navigation
+      if (e.code === 'ArrowLeft') {
+        e.preventDefault();
+        const step = e.shiftKey ? (1 / framerate) : e.ctrlKey ? 5 : 1;
+        setCurrentTime(t => Math.round(Math.max(0, t - step) * framerate) / framerate);
+      }
+      if (e.code === 'ArrowRight') {
+        e.preventDefault();
+        const step = e.shiftKey ? (1 / framerate) : e.ctrlKey ? 5 : 1;
+        setCurrentTime(t => Math.round(Math.min(duration, t + step) * framerate) / framerate);
+      }
+      if (e.code === 'Comma') {
+        e.preventDefault();
+        setCurrentTime(t => Math.round(Math.max(0, t - (1 / framerate)) * framerate) / framerate);
+      }
+      if (e.code === 'Period') {
+        e.preventDefault();
+        setCurrentTime(t => Math.round(Math.min(duration, t + (1 / framerate)) * framerate) / framerate);
+      }
+      if (e.code === 'Home') {
+        e.preventDefault();
+        setCurrentTime(0);
+      }
+      if (e.code === 'End') {
+        e.preventDefault();
+        setCurrentTime(Math.round(duration * framerate) / framerate);
+      }
+      if (e.code === 'Escape') {
+        setSelectedClipIds(new Set());
+        setSelectedClipId(null);
+        setShowImportMenu(false);
+      }
+      
+      // ?? Import shortcut
+      if (e.code === 'KeyI' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        handleOpenFilePicker('all');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [duration, framerate, clips, selectedClipId, selectedClipIds, isPlaying, doUndo, doRedo, pushHistory]);
+
   // ===== HANDLERS PARA ACCIONES SOBRE CLIPS =====
 
-  // Actualizar un clip específico
+  // Actualizar un clip espec�fico
   const updateClip = useCallback((clipId: number, updates: Partial<TimelineClip>) => {
     setClips(prevClips => prevClips.map(c => 
       c.id === clipId ? { ...c, ...updates } : c
     ));
   }, []);
 
-  // ✏️ Editar Imagen con Nano Banana AI
+  // ===== ?? IMPORTACI�N DE ARCHIVOS MULTIMEDIA =====
+  
+  // Obtener tipos de archivo aceptados seg�n el tipo de importaci�n
+  const getAcceptedFileTypes = useCallback((type: 'image' | 'audio' | 'video' | 'all') => {
+    switch (type) {
+      case 'image':
+        return 'image/jpeg,image/png,image/gif,image/webp';
+      case 'audio':
+        return 'audio/mpeg,audio/wav,audio/ogg,audio/mp3,audio/aac,audio/m4a';
+      case 'video':
+        return 'video/mp4,video/webm,video/quicktime,video/x-msvideo';
+      case 'all':
+      default:
+        return 'image/jpeg,image/png,image/gif,image/webp,audio/mpeg,audio/wav,audio/ogg,audio/mp3,video/mp4,video/webm,video/quicktime';
+    }
+  }, []);
+
+  // Detectar tipo de archivo
+  const detectFileType = useCallback((file: File): 'image' | 'audio' | 'video' | null => {
+    if (file.type.startsWith('image/')) return 'image';
+    if (file.type.startsWith('audio/')) return 'audio';
+    if (file.type.startsWith('video/')) return 'video';
+    return null;
+  }, []);
+
+  // Abrir selector de archivos
+  const handleOpenFilePicker = useCallback((type: 'image' | 'audio' | 'video' | 'all' = 'all') => {
+    setImportType(type);
+    setShowImportMenu(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.accept = getAcceptedFileTypes(type);
+      fileInputRef.current.click();
+    }
+  }, [getAcceptedFileTypes]);
+
+  // Procesar archivos seleccionados
+  const handleFileImport = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsImporting(true);
+    logger.info(`?? [Import] Procesando ${files.length} archivo(s)...`);
+
+    try {
+      const newClips: TimelineClip[] = [];
+      const maxClipId = clips.reduce((max, c) => Math.max(max, typeof c.id === 'number' ? c.id : 0), 0);
+      let clipIdCounter = maxClipId + 1000; // Offset para nuevos clips importados
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileType = detectFileType(file);
+        
+        if (!fileType) {
+          toast({
+            title: "Tipo no soportado",
+            description: `El archivo "${file.name}" no es compatible`,
+            variant: "destructive"
+          });
+          continue;
+        }
+
+        // Crear URL temporal para el archivo
+        const objectUrl = URL.createObjectURL(file);
+        
+        // Calcular posici�n de inicio (despu�s del �ltimo clip de ese tipo)
+        const existingClipsOfType = clips.filter(c => {
+          if (fileType === 'image') return c.layerId === 1;
+          if (fileType === 'audio') return c.layerId === 2;
+          if (fileType === 'video') return c.layerId === 1;
+          return false;
+        });
+        const lastClipEnd = existingClipsOfType.length > 0 
+          ? Math.max(...existingClipsOfType.map(c => c.start + c.duration))
+          : 0;
+
+        // Obtener duraci�n para audio/video
+        let fileDuration = 3; // Default para im�genes
+        
+        if (fileType === 'audio' || fileType === 'video') {
+          fileDuration = await new Promise<number>((resolve) => {
+            const media = fileType === 'audio' 
+              ? new Audio() 
+              : document.createElement('video');
+            media.onloadedmetadata = () => {
+              resolve(media.duration || 3);
+            };
+            media.onerror = () => resolve(3);
+            media.src = objectUrl;
+          });
+        }
+
+        const newClip: TimelineClip = {
+          id: clipIdCounter++,
+          layerId: fileType === 'audio' ? 2 : 1, // Audio en capa 2, imagen/video en capa 1
+          type: fileType === 'image' ? ClipType.IMAGE 
+              : fileType === 'audio' ? ClipType.AUDIO 
+              : ClipType.VIDEO,
+          start: currentTime > 0 ? currentTime : lastClipEnd, // Insertar en playhead o al final
+          duration: Math.min(fileDuration, Math.max(0.5, duration - (currentTime > 0 ? currentTime : lastClipEnd))),
+          url: objectUrl,
+          imageUrl: fileType === 'image' ? objectUrl : undefined,
+          title: file.name,
+          // Campos necesarios para el sistema de arrastre
+          in: 0,
+          out: fileDuration,
+          sourceStart: 0,
+          metadata: {
+            isImported: true,
+            originalFileName: file.name,
+            fileSize: file.size,
+            mimeType: file.type,
+            importedAt: new Date().toISOString()
+          }
+        };
+
+        newClips.push(newClip);
+        logger.info(`?? [Import] Clip creado: ${file.name} (${fileType})`);
+      }
+
+      if (newClips.length > 0) {
+        pushHistory(clips);
+        setClips(prev => [...prev, ...newClips]);
+        
+        toast({
+          title: "? Archivos importados",
+          description: `${newClips.length} archivo(s) a�adido(s) al timeline`,
+        });
+      }
+
+    } catch (error) {
+      logger.error('? [Import] Error importando archivos:', error);
+      toast({
+        title: "Error de importaci�n",
+        description: "No se pudieron importar los archivos",
+        variant: "destructive"
+      });
+    } finally {
+      setIsImporting(false);
+      // Limpiar el input para permitir reimportar el mismo archivo
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }, [clips, currentTime, duration, detectFileType, pushHistory, toast]);
+
+  // Drag & Drop handler para el timeline completo
+  const handleTimelineDrop = useCallback(async (event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const files = event.dataTransfer.files;
+    if (!files || files.length === 0) return;
+
+    // Simular el evento de input
+    const fakeEvent = {
+      target: { files }
+    } as React.ChangeEvent<HTMLInputElement>;
+    
+    await handleFileImport(fakeEvent);
+  }, [handleFileImport]);
+
+  const handleTimelineDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  }, []);
+
+  // ?? Editar Imagen con Nano Banana AI
   const handleEditImage = useCallback((clip: TimelineClip) => {
     setImageEditorModalClip(clip);
     setShowImageEditorModal(true);
-    logger.info(`✏️ [Timeline] Abriendo editor de imagen para clip ${clip.id}`);
+    logger.info(`?? [Timeline] Abriendo editor de imagen para clip ${clip.id}`);
   }, []);
 
   const handleImageEdited = useCallback((newImageUrl: string, newPrompt: string) => {
@@ -1418,17 +1802,17 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         title: "Imagen editada",
         description: "La imagen ha sido actualizada con Nano Banana AI",
       });
-      logger.info(`✅ [Timeline] Imagen editada para clip ${imageEditorModalClip.id}`);
+      logger.info(`? [Timeline] Imagen editada para clip ${imageEditorModalClip.id}`);
     }
     setShowImageEditorModal(false);
     setImageEditorModalClip(null);
   }, [imageEditorModalClip, updateClip, toast]);
 
-  // 🎸 Agregar Músico
+  // ?? Agregar M�sico
   const handleAddMusician = useCallback((clip: TimelineClip) => {
     setMusicianModalClip(clip);
     setShowMusicianModal(true);
-    logger.info(`🎸 [Timeline] Abriendo modal de músico para clip ${clip.id}`);
+    logger.info(`?? [Timeline] Abriendo modal de m�sico para clip ${clip.id}`);
   }, []);
 
   const handleMusicianAdded = useCallback((musicianData: any) => {
@@ -1441,20 +1825,20 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         }
       });
       toast({
-        title: "Músico agregado",
-        description: `${musicianData.musicianType || 'Músico'} añadido al timeline`,
+        title: "M�sico agregado",
+        description: `${musicianData.musicianType || 'M�sico'} a�adido al timeline`,
       });
-      logger.info(`✅ [Timeline] Músico agregado a clip ${musicianModalClip.id}`);
+      logger.info(`? [Timeline] M�sico agregado a clip ${musicianModalClip.id}`);
     }
     setShowMusicianModal(false);
     setMusicianModalClip(null);
   }, [musicianModalClip, updateClip, toast]);
 
-  // 📷 Ángulos de Cámara
+  // ?? �ngulos de C�mara
   const handleCameraAngles = useCallback((clip: TimelineClip) => {
     setCameraAnglesModalClip(clip);
     setShowCameraAnglesModal(true);
-    logger.info(`📷 [Timeline] Abriendo modal de cámara para clip ${clip.id}`);
+    logger.info(`?? [Timeline] Abriendo modal de c�mara para clip ${clip.id}`);
   }, []);
 
   const handleCameraAngleSelected = useCallback((imageUrl: string, angleName: string) => {
@@ -1468,18 +1852,18 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         },
       });
       toast({
-        title: "Ángulo aplicado",
-        description: `Ángulo "${angleName}" aplicado al clip`,
+        title: "�ngulo aplicado",
+        description: `�ngulo "${angleName}" aplicado al clip`,
       });
-      logger.info(`✅ [Timeline] Ángulo de cámara aplicado a clip ${cameraAnglesModalClip.id}`);
+      logger.info(`? [Timeline] �ngulo de c�mara aplicado a clip ${cameraAnglesModalClip.id}`);
     }
   }, [cameraAnglesModalClip, updateClip, toast]);
 
-  // 🔄 Regenerar Imagen - Usando FAL Nano-Banana CON CONTEXTO DEL PROYECTO
+  // ?? Regenerar Imagen - Usando FAL Nano-Banana CON CONTEXTO DEL PROYECTO
   const [isRegenerating, setIsRegenerating] = useState<number | null>(null);
   
   const handleRegenerateImage = useCallback(async (clip: TimelineClip) => {
-    logger.info(`🔄 [Timeline] Regenerando imagen para clip ${clip.id} CON CONTEXTO`);
+    logger.info(`?? [Timeline] Regenerando imagen para clip ${clip.id} CON CONTEXTO`);
     setIsRegenerating(clip.id);
     
     toast({
@@ -1488,7 +1872,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     });
 
     try {
-      // 🎯 Construir prompt ENRIQUECIDO con contexto del proyecto
+      // ?? Construir prompt ENRIQUECIDO con contexto del proyecto
       const basePrompt = clip.metadata?.imagePrompt || clip.title || '';
       
       // Extraer contexto del proyecto
@@ -1503,7 +1887,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         try {
           const parsedScript = JSON.parse(projectContext.scriptContent);
           const scenes = parsedScript.scenes || parsedScript;
-          // Buscar la escena que corresponde al clip por timing o índice
+          // Buscar la escena que corresponde al clip por timing o �ndice
           const clipIndex = clips.findIndex(c => c.id === clip.id);
           const scene = scenes[clipIndex];
           
@@ -1539,7 +1923,7 @@ TECHNICAL:
 High production quality, cinematic, 16:9 aspect ratio, professional lighting, cohesive with music video narrative.
 ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim();
       
-      logger.info(`🎬 [Timeline] Prompt enriquecido:`, enrichedPrompt.substring(0, 200) + '...');
+      logger.info(`?? [Timeline] Prompt enriquecido:`, enrichedPrompt.substring(0, 200) + '...');
       
       // Determinar si usar referencia del artista
       const shouldUseReference = hasReferenceImages && 
@@ -1566,7 +1950,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
             aspectRatio: '16:9'
           };
       
-      logger.info(`🔄 [Timeline] Usando endpoint: ${endpoint}, con referencia: ${shouldUseReference}`);
+      logger.info(`?? [Timeline] Usando endpoint: ${endpoint}, con referencia: ${shouldUseReference}`);
       
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -1598,13 +1982,13 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
         });
 
         toast({
-          title: "✅ Imagen regenerada",
+          title: "? Imagen regenerada",
           description: "Nueva imagen generada coherente con el concepto",
         });
-        logger.info(`✅ [Timeline] Imagen regenerada para clip ${clip.id} con contexto del proyecto`);
+        logger.info(`? [Timeline] Imagen regenerada para clip ${clip.id} con contexto del proyecto`);
       }
     } catch (error) {
-      logger.error(`❌ [Timeline] Error regenerando imagen:`, error);
+      logger.error(`? [Timeline] Error regenerando imagen:`, error);
       toast({
         title: "Error regenerando",
         description: error instanceof Error ? error.message : 'Error desconocido',
@@ -1615,11 +1999,11 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
     }
   }, [toast, updateClip, projectContext, clips]);
 
-  // 🎬 Generar Video desde Imagen - Usando GROK IMAGINE VIDEO (xAI)
+  // ?? Generar Video desde Imagen - Usando GROK IMAGINE VIDEO (xAI)
   const [isGeneratingVideo, setIsGeneratingVideo] = useState<number | null>(null);
   
   const handleGenerateVideo = useCallback(async (clip: TimelineClip) => {
-    logger.info(`🎬 [Timeline] Generando video para clip ${clip.id} con Grok Imagine Video`);
+    logger.info(`?? [Timeline] Generando video para clip ${clip.id} con Grok Imagine Video`);
     setIsGeneratingVideo(clip.id);
     
     const imageUrl = clip.imageUrl || clip.url || clip.thumbnailUrl;
@@ -1642,7 +2026,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
     try {
       const prompt = clip.metadata?.imagePrompt || clip.title || 'cinematic motion, smooth camera movement';
       
-      // 🎬 Extraer metadata de la escena para instrucciones de movimiento
+      // ?? Extraer metadata de la escena para instrucciones de movimiento
       const sceneMetadata = clip.metadata || {};
       const cameraMovement = sceneMetadata.camera_movement || sceneMetadata.cameraMovement || 'smooth';
       const audioEnergy = sceneMetadata.audio_energy || 'medium';
@@ -1652,10 +2036,10 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                         audioEnergy === 'low' ? 'subtle, slow movement' : 'smooth, natural movement';
       const enhancedPrompt = `${prompt}. ${cameraMovement} camera movement, ${motionDesc}, cinematic quality, professional music video style`;
       
-      // ⏱️ Duración: Grok genera videos de 6 segundos
+      // ?? Duraci�n: Grok genera videos de 6 segundos
       const videoDuration = Math.min(clip.duration, 6);
       
-      logger.info(`🎬 [Timeline] Grok Prompt: ${enhancedPrompt}`);
+      logger.info(`?? [Timeline] Grok Prompt: ${enhancedPrompt}`);
       
       // Usar endpoint de Grok Video
       const response = await fetch('/api/fal/grok-video', {
@@ -1680,7 +2064,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
       if (data.videoUrl) {
         // Video generado exitosamente - actualizar clip con videoUrl
         updateClip(clip.id, {
-          videoUrl: data.videoUrl, // Propiedad raíz para acceso directo
+          videoUrl: data.videoUrl, // Propiedad ra�z para acceso directo
           metadata: {
             ...clip.metadata,
             videoUrl: data.videoUrl,
@@ -1694,15 +2078,15 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
         });
 
         toast({
-          title: "✅ Video generado",
+          title: "? Video generado",
           description: "Video creado exitosamente con Grok Imagine Video (xAI)",
         });
-        logger.info(`✅ [Timeline] Video generado para clip ${clip.id}: ${data.videoUrl}`);
+        logger.info(`? [Timeline] Video generado para clip ${clip.id}: ${data.videoUrl}`);
       } else {
-        throw new Error('No se recibió URL del video');
+        throw new Error('No se recibi� URL del video');
       }
     } catch (error) {
-      logger.error(`❌ [Timeline] Error generando video:`, error);
+      logger.error(`? [Timeline] Error generando video:`, error);
       toast({
         title: "Error generando video",
         description: error instanceof Error ? error.message : 'Error desconocido',
@@ -1713,9 +2097,9 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
     }
   }, [toast, updateClip]);
   
-  // Polling para videos asíncronos de FAL Kling
+  // Polling para videos as�ncronos de FAL Kling
   const pollVideoStatus = useCallback(async (clipId: number, requestId: string, model: string) => {
-    const maxAttempts = 60; // 5 minutos máximo (cada 5 segundos)
+    const maxAttempts = 60; // 5 minutos m�ximo (cada 5 segundos)
     let attempts = 0;
     
     const checkStatus = async () => {
@@ -1734,7 +2118,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
             },
           });
           toast({
-            title: "✅ Video listo",
+            title: "? Video listo",
             description: "Tu video ha sido generado exitosamente",
           });
           return;
@@ -1748,21 +2132,21 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
             },
           });
           toast({
-            title: "❌ Error en video",
-            description: data.error || 'La generación de video falló',
+            title: "? Error en video",
+            description: data.error || 'La generaci�n de video fall�',
             variant: "destructive",
           });
           return;
         }
         
-        // Aún procesando
+        // A�n procesando
         attempts++;
         if (attempts < maxAttempts) {
           setTimeout(checkStatus, 5000); // Revisar cada 5 segundos
         } else {
           toast({
-            title: "⏰ Tiempo excedido",
-            description: "La generación está tomando más tiempo del esperado. Revisa más tarde.",
+            title: "? Tiempo excedido",
+            description: "La generaci�n est� tomando m�s tiempo del esperado. Revisa m�s tarde.",
             variant: "destructive",
           });
         }
@@ -1771,20 +2155,20 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
       }
     };
     
-    // Iniciar después de 10 segundos
+    // Iniciar despu�s de 10 segundos
     setTimeout(checkStatus, 10000);
   }, [updateClip, toast]);
 
   // ============================================================================
-  // 🎤 LIPSYNC - Aplicar sincronización de labios a clips PERFORMANCE
+  // ?? LIPSYNC - Aplicar sincronizaci�n de labios a clips PERFORMANCE
   // ============================================================================
-  // WORKFLOW: Video (ya generado) + Audio Segment → Video con Lipsync
+  // WORKFLOW: Video (ya generado) + Audio Segment ? Video con Lipsync
   const [isApplyingLipsync, setIsApplyingLipsync] = useState<number | null>(null);
 
   const handleApplyLipsync = useCallback(async (clip: TimelineClip) => {
-    logger.info(`🎤 [Timeline] Aplicando lipsync a clip ${clip.id}`);
+    logger.info(`?? [Timeline] Aplicando lipsync a clip ${clip.id}`);
     
-    // 1️⃣ Verificar que el clip tiene video
+    // 1?? Verificar que el clip tiene video
     const videoUrl = clip.metadata?.videoUrl;
     if (!videoUrl) {
       toast({
@@ -1795,7 +2179,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
       return;
     }
 
-    // 2️⃣ Verificar que tenemos audioBuffer disponible
+    // 2?? Verificar que tenemos audioBuffer disponible
     if (!audioBuffer) {
       toast({
         title: "Sin audio",
@@ -1805,15 +2189,15 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
       return;
     }
 
-    // 3️⃣ Verificar que el clip tiene timestamps válidos
+    // 3?? Verificar que el clip tiene timestamps v�lidos
     // NOTA: TimelineClip usa 'start' no 'startTime'
     const startTime = clip.start;
     const endTime = clip.start + clip.duration;
     
     if (startTime === undefined || endTime === undefined || endTime <= startTime) {
       toast({
-        title: "Timestamps inválidos",
-        description: "El clip no tiene tiempos válidos para cortar audio",
+        title: "Timestamps inv�lidos",
+        description: "El clip no tiene tiempos v�lidos para cortar audio",
         variant: "destructive",
       });
       return;
@@ -1822,21 +2206,21 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
     setIsApplyingLipsync(clip.id);
 
     toast({
-      title: "🎤 Aplicando lipsync...",
+      title: "?? Aplicando lipsync...",
       description: `Sincronizando labios con audio (${startTime.toFixed(1)}s - ${endTime.toFixed(1)}s)`,
     });
 
     try {
-      // 4️⃣ Cortar el segmento de audio correspondiente al clip
-      logger.info(`✂️ [Timeline] Cortando audio: ${startTime}s - ${endTime}s`);
+      // 4?? Cortar el segmento de audio correspondiente al clip
+      logger.info(`?? [Timeline] Cortando audio: ${startTime}s - ${endTime}s`);
       
-      // Importar la función de corte de audio
+      // Importar la funci�n de corte de audio
       const { cutAudioSegment } = await import('@/lib/services/audio-segmentation');
       const audioSegment = await cutAudioSegment(audioBuffer, startTime, endTime);
       
-      logger.info(`✅ [Timeline] Audio cortado: ${(audioSegment.blob.size / 1024).toFixed(2)}KB`);
+      logger.info(`? [Timeline] Audio cortado: ${(audioSegment.blob.size / 1024).toFixed(2)}KB`);
 
-      // 5️⃣ Subir el audio a un servidor temporal para obtener URL
+      // 5?? Subir el audio a un servidor temporal para obtener URL
       // Usamos FormData para subir el audio como archivo
       const audioFormData = new FormData();
       audioFormData.append('file', audioSegment.blob, `clip_${clip.id}_audio.wav`);
@@ -1848,8 +2232,8 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
 
       if (!uploadResponse.ok) {
         // Si no hay endpoint de upload, usamos la URL local directamente
-        // PixVerse debería poder aceptar data URLs o necesitamos un workaround
-        logger.warn('⚠️ No hay endpoint de upload, intentando con data URL');
+        // PixVerse deber�a poder aceptar data URLs o necesitamos un workaround
+        logger.warn('?? No hay endpoint de upload, intentando con data URL');
         
         // Convertir blob a base64 data URL
         const reader = new FileReader();
@@ -1861,7 +2245,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
         
         // Por ahora, loggeamos que necesitamos un endpoint de upload
         toast({
-          title: "⚠️ Pendiente",
+          title: "?? Pendiente",
           description: "Se requiere implementar endpoint de upload de audio temporal",
           variant: "destructive",
         });
@@ -1872,9 +2256,9 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
       const uploadData = await uploadResponse.json();
       const audioUrl = uploadData.url;
       
-      logger.info(`📤 [Timeline] Audio subido: ${audioUrl}`);
+      logger.info(`?? [Timeline] Audio subido: ${audioUrl}`);
 
-      // 6️⃣ Llamar al endpoint de lipsync con video + audio
+      // 6?? Llamar al endpoint de lipsync con video + audio
       const lipsyncResponse = await fetch('/api/fal/pixverse/lipsync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1893,7 +2277,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
       const lipsyncData = await lipsyncResponse.json();
 
       if (lipsyncData.success && lipsyncData.videoUrl) {
-        // 7️⃣ Actualizar el clip con el video sincronizado
+        // 7?? Actualizar el clip con el video sincronizado
         updateClip(clip.id, {
           metadata: {
             ...clip.metadata,
@@ -1905,17 +2289,17 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
         });
 
         toast({
-          title: "✅ Lipsync aplicado",
+          title: "? Lipsync aplicado",
           description: `Labios sincronizados en ${lipsyncData.processingTime?.toFixed(1) || '?'}s`,
         });
         
-        logger.info(`✅ [Timeline] Lipsync aplicado a clip ${clip.id}: ${lipsyncData.videoUrl}`);
+        logger.info(`? [Timeline] Lipsync aplicado a clip ${clip.id}: ${lipsyncData.videoUrl}`);
       } else {
-        throw new Error('No se recibió URL del video con lipsync');
+        throw new Error('No se recibi� URL del video con lipsync');
       }
 
     } catch (error) {
-      logger.error(`❌ [Timeline] Error aplicando lipsync:`, error);
+      logger.error(`? [Timeline] Error aplicando lipsync:`, error);
       toast({
         title: "Error en lipsync",
         description: error instanceof Error ? error.message : 'Error desconocido',
@@ -1928,15 +2312,27 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
 
   return (
     <>
+      {/* ?? Input oculto para importaci�n de archivos */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={handleFileImport}
+        accept={getAcceptedFileTypes('all')}
+      />
+      
       <div 
         ref={containerRef} 
         className="flex flex-col bg-neutral-900 text-white rounded-md overflow-hidden h-full select-none"
         onContextMenu={(e) => handleContextMenu(e)}
+        onDrop={handleTimelineDrop}
+        onDragOver={handleTimelineDragOver}
       >
         {/* Toolbar Principal - Compact & Professional */}
         <div className="flex flex-wrap items-center justify-between px-1.5 sm:px-2 py-1 border-b border-white/10 bg-neutral-950 gap-1 flex-shrink-0">
           
-          {/* Herramientas de edición */}
+          {/* Herramientas de edici�n */}
           <div className="flex items-center gap-0.5">
             {/* Tools */}
             <div className="flex items-center gap-px">
@@ -2001,6 +2397,62 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                 <TrashIcon size={12} />
               </Button>
             </div>
+
+            <div className="mx-0.5 h-4 w-px bg-white/10" />
+
+            {/* ?? Import Media */}
+            <div className="relative flex items-center gap-px" data-import-menu>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={() => setShowImportMenu(!showImportMenu)}
+                disabled={isImporting}
+                className="p-1 h-6 px-2 bg-cyan-500/10 hover:bg-cyan-500/20 gap-0.5"
+                title="Importar Media (I)"
+              >
+                {isImporting ? (
+                  <Loader2 size={12} className="text-cyan-400 animate-spin" />
+                ) : (
+                  <Upload size={12} className="text-cyan-400" />
+                )}
+                <span className="hidden sm:inline text-[10px] text-cyan-400">Import</span>
+              </Button>
+              
+              {/* Dropdown Menu de Importaci�n */}
+              {showImportMenu && (
+                <div className="absolute top-full left-0 mt-1 z-50 bg-neutral-900 border border-white/20 rounded-lg shadow-xl py-1 min-w-[140px]" data-import-menu>
+                  <button
+                    onClick={() => handleOpenFilePicker('all')}
+                    className="w-full px-3 py-1.5 text-left text-xs hover:bg-white/10 flex items-center gap-2 text-white/90"
+                  >
+                    <Upload size={12} className="text-cyan-400" />
+                    Todos los archivos
+                  </button>
+                  <div className="h-px bg-white/10 my-1" />
+                  <button
+                    onClick={() => handleOpenFilePicker('image')}
+                    className="w-full px-3 py-1.5 text-left text-xs hover:bg-white/10 flex items-center gap-2 text-white/90"
+                  >
+                    <ImagePlus size={12} className="text-green-400" />
+                    Im�genes
+                  </button>
+                  <button
+                    onClick={() => handleOpenFilePicker('audio')}
+                    className="w-full px-3 py-1.5 text-left text-xs hover:bg-white/10 flex items-center gap-2 text-white/90"
+                  >
+                    <FileAudio size={12} className="text-yellow-400" />
+                    Audio
+                  </button>
+                  <button
+                    onClick={() => handleOpenFilePicker('video')}
+                    className="w-full px-3 py-1.5 text-left text-xs hover:bg-white/10 flex items-center gap-2 text-white/90"
+                  >
+                    <FileVideo size={12} className="text-purple-400" />
+                    Video
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Playback Controls - Centro */}
@@ -2054,6 +2506,83 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
             <Badge variant="outline" className="font-mono text-[9px] px-1 py-0 bg-black/30 ml-1">
               {formatTime(currentTime)}
             </Badge>
+            
+            {/* 🎯 Indicador de velocidad J/K/L */}
+            {playbackRate !== 1 && (
+              <Badge 
+                variant="outline" 
+                className={`font-mono text-[9px] px-1 py-0 ml-0.5 ${
+                  playbackRate < 0 ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50' : 
+                  playbackRate > 1 ? 'bg-green-500/20 text-green-400 border-green-500/50' : 
+                  'bg-black/30'
+                }`}
+              >
+                {playbackRate > 0 ? `${playbackRate}x` : `${playbackRate}x ◀`}
+              </Badge>
+            )}
+            
+            {/* 🔊 Control de Volumen - Estilo Adobe Premiere */}
+            <div className="flex items-center gap-1 ml-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  // Si hay error de autoplay, intentar reproducir con interacción
+                  if (audioError && audioRef.current) {
+                    audioRef.current.play()
+                      .then(() => {
+                        setAudioError(null);
+                        setAudioReady(true);
+                        console.log('🔊 [Audio] Desbloqueado por interacción');
+                      })
+                      .catch(err => {
+                        setAudioError(err.message);
+                      });
+                  } else {
+                    setIsMuted(m => !m);
+                  }
+                }}
+                className={`p-0.5 h-5 w-5 ${isMuted || audioError ? 'text-red-400' : audioReady ? 'text-green-400' : 'text-white/50'}`}
+                title={audioError ? `Clic para activar audio: ${audioError}` : isMuted ? 'Activar audio' : `Volumen: ${Math.round(volume * 100)}%`}
+              >
+                {audioError ? (
+                  <AlertCircle size={11} />
+                ) : isMuted || volume === 0 ? (
+                  <VolumeMuteIcon size={11} />
+                ) : volume < 0.5 ? (
+                  <VolumeLowIcon size={11} />
+                ) : (
+                  <VolumeIcon size={11} />
+                )}
+              </Button>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={isMuted ? 0 : volume}
+                onChange={(e) => {
+                  const newVol = parseFloat(e.target.value);
+                  setVolume(newVol);
+                  if (newVol > 0 && isMuted) setIsMuted(false);
+                }}
+                className="w-12 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                style={{
+                  background: `linear-gradient(to right, #f97316 0%, #f97316 ${(isMuted ? 0 : volume) * 100}%, rgba(255,255,255,0.2) ${(isMuted ? 0 : volume) * 100}%, rgba(255,255,255,0.2) 100%)`
+                }}
+                title={`Volumen: ${Math.round(volume * 100)}%`}
+              />
+            </div>
+            
+            {/* 📌 Indicador de multi-selección */}
+            {selectedClipIds.size > 1 && (
+              <Badge 
+                variant="outline" 
+                className="font-mono text-[9px] px-1 py-0 ml-0.5 bg-blue-500/20 text-blue-400 border-blue-500/50"
+              >
+                {selectedClipIds.size} sel
+              </Badge>
+            )}
 
             <div className="mx-0.5 h-4 w-px bg-white/10" />
 
@@ -2123,7 +2652,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                 onClick={handleSaveProject}
                 disabled={isSavingProject}
                 className="p-1 h-6 w-6 bg-green-500/10 hover:bg-green-500/20"
-                title={user?.id ? "Guardar en la nube" : "Inicia sesión para guardar"}
+                title={user?.id ? "Guardar en la nube" : "Inicia sesi�n para guardar"}
               >
                 {isSavingProject ? (
                   <Loader2 size={11} className="text-green-400 animate-spin" />
@@ -2140,6 +2669,42 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
               >
                 <Download size={11} className="text-orange-400" />
               </Button>
+              
+              {/* ?? Bot�n de Shortcuts */}
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="p-1 h-6 w-6 hover:bg-white/10"
+                    >
+                      <HelpCircle size={11} className="text-white/50" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="bg-neutral-900 border-white/20 text-white p-3 max-w-xs">
+                    <div className="text-xs space-y-1.5">
+                      <p className="font-bold text-orange-400 mb-2">?? Atajos de Teclado</p>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                        <span className="text-white/70">Space</span><span>Play/Pause</span>
+                        <span className="text-white/70">J / K / L</span><span>? Pause ?</span>
+                        <span className="text-white/70">? ?</span><span>�1s (Shift: frame)</span>
+                        <span className="text-white/70">, .</span><span>Frame anterior/siguiente</span>
+                        <span className="text-white/70">Home / End</span><span>Inicio / Final</span>
+                        <span className="text-white/70">V / C / T / H</span><span>Select/Razor/Trim/Hand</span>
+                        <span className="text-white/70">I</span><span>Importar archivos</span>
+                        <span className="text-white/70">Ctrl+Z / Y</span><span>Undo / Redo</span>
+                        <span className="text-white/70">Ctrl+A / D</span><span>Seleccionar / Deseleccionar</span>
+                        <span className="text-white/70">Shift+Click</span><span>Multi-selecci�n</span>
+                        <span className="text-white/70">Delete</span><span>Eliminar clips</span>
+                        <span className="text-white/70">+ / -</span><span>Zoom In/Out</span>
+                      </div>
+                      <p className="text-white/50 mt-2 text-[10px]">?? Tambi�n puedes arrastrar archivos al timeline</p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
               <div className="hidden md:block">
                 <EditorAgentPanel 
                   timeline={clips.map((c, i) => ({
@@ -2201,7 +2766,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                 ) : (
                   <>
                     <FolderPlus size={14} className="mr-1" />
-                    {user?.id ? 'Guardar en Nube' : 'Inicia sesión'}
+                    {user?.id ? 'Guardar en Nube' : 'Inicia sesi�n'}
                   </>
                 )}
               </Button>
@@ -2256,7 +2821,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                       <div className="flex items-center gap-1 text-[8px] sm:text-[9px] text-white/50">
                         <Clock size={8} />
                         <span>{formatTime(project.duration)}</span>
-                        <span>•</span>
+                        <span>�</span>
                         <span>{project.clips.length} clips</span>
                       </div>
                     </div>
@@ -2278,14 +2843,14 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
             ) : !isLoadingProjects ? (
               <div className="flex flex-col items-center justify-center py-4 text-white/40">
                 <FolderOpen size={24} className="mb-1" />
-                <span className="text-xs">{user?.id ? 'No hay proyectos guardados' : 'Inicia sesión para ver tus proyectos'}</span>
-                <span className="text-[10px]">{user?.id ? 'Guarda tu proyecto actual para verlo aquí' : 'Los proyectos se guardan en la nube de forma permanente'}</span>
+                <span className="text-xs">{user?.id ? 'No hay proyectos guardados' : 'Inicia sesi�n para ver tus proyectos'}</span>
+                <span className="text-[10px]">{user?.id ? 'Guarda tu proyecto actual para verlo aqu�' : 'Los proyectos se guardan en la nube de forma permanente'}</span>
               </div>
             ) : null}
           </div>
         )}
 
-        {/* 🎬 Panel de Acciones del Clip Seleccionado */}
+        {/* ?? Panel de Acciones del Clip Seleccionado */}
         {selectedClipId && (
           <div className="px-1.5 py-1 bg-gradient-to-r from-purple-900/20 via-neutral-900 to-orange-900/20 border-b border-white/10 flex-shrink-0">
             <div className="flex items-center justify-between gap-1 flex-wrap">
@@ -2299,12 +2864,12 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                     Clip #{selectedClipId}
                   </span>
                   <span className="text-[8px] text-white/50 leading-tight">
-                    {clips.find(c => c.id === selectedClipId)?.title || 'Sin título'}
+                    {clips.find(c => c.id === selectedClipId)?.title || 'Sin t�tulo'}
                   </span>
                 </div>
               </div>
               
-              {/* Botones de Acción */}
+              {/* Botones de Acci�n */}
               <div className="flex items-center gap-0.5">
                 {/* Edit Image */}
                 <Button
@@ -2329,7 +2894,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                     if (clip) handleAddMusician(clip);
                   }}
                   className="p-1 h-6 w-6 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20"
-                  title="Agregar Músico"
+                  title="Agregar M�sico"
                 >
                   <Music size={11} className="text-green-400" />
                 </Button>
@@ -2343,7 +2908,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                     if (clip) handleCameraAngles(clip);
                   }}
                   className="p-1 h-6 w-6 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20"
-                  title="Ángulos de Cámara"
+                  title="�ngulos de C�mara"
                 >
                   <Camera size={11} className="text-purple-400" />
                 </Button>
@@ -2401,7 +2966,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
           </div>
         )}
 
-        {/* Visor de Video + Galería de Imágenes - Altura ajustable */}
+        {/* Visor de Video + Galer�a de Im�genes - Altura ajustable */}
         <div 
           className="flex items-stretch px-2 sm:px-3 py-2 bg-neutral-950 flex-shrink-0"
           style={{ height: `${viewerHeight}%`, minHeight: '100px', maxHeight: '70%' }}
@@ -2409,7 +2974,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
           {/* Visor Principal */}
           <div className="relative flex-1 min-w-0 bg-black/70 rounded-md overflow-hidden border border-white/5">
             {selectedGalleryImage ? (
-              // Mostrar imagen seleccionada de la galería
+              // Mostrar imagen seleccionada de la galer�a
               <div className="relative w-full h-full">
                 <img 
                   src={selectedGalleryImage.url} 
@@ -2430,7 +2995,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                 )}
               </div>
             ) : activeClipVideoUrl ? (
-              // 🎬 CRITICAL: Mostrar VIDEO del clip activo (prioridad sobre imagen)
+              // ?? CRITICAL: Mostrar VIDEO del clip activo (prioridad sobre imagen)
               <div className="relative w-full h-full">
                 <video
                   ref={activeVideoRef}
@@ -2454,7 +3019,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                 {/* Badge indicando que es video */}
                 <div className="absolute top-2 left-2 px-2 py-0.5 bg-orange-500/80 rounded text-[9px] text-white font-medium flex items-center gap-1">
                   <Film size={10} />
-                  VIDEO • {activeClip?.title || `Escena ${activeClip?.id}`}
+                  VIDEO � {activeClip?.title || `Escena ${activeClip?.id}`}
                 </div>
                 {/* Timecode */}
                 <div className="absolute top-2 right-2 px-2 py-0.5 bg-black/60 rounded font-mono text-[10px] text-orange-400">
@@ -2462,7 +3027,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                 </div>
               </div>
             ) : activeClipImageUrl ? (
-              // 🖼️ Mostrar IMAGEN del clip activo (fallback cuando no hay video)
+              // ??? Mostrar IMAGEN del clip activo (fallback cuando no hay video)
               <div className="relative w-full h-full">
                 <img 
                   src={activeClipImageUrl} 
@@ -2504,33 +3069,44 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
             )}
           </div>
 
-          {/* Divisor Vertical - Entre Visor y Galería */}
+          {/* Divisor Vertical - Entre Visor y Galer�a */}
           <div 
             className={`w-2 cursor-col-resize flex items-center justify-center transition-colors flex-shrink-0 hidden sm:flex ${
               isDraggingGallery ? 'bg-orange-500' : 'bg-neutral-800 hover:bg-orange-500/50'
             }`}
             onMouseDown={() => setIsDraggingGallery(true)}
-            title="Arrastra para ajustar ancho de galería"
+            title="Arrastra para ajustar ancho de galer�a"
           >
             <div className="h-8 w-0.5 bg-white/20 rounded-full" />
           </div>
 
-          {/* Galería de Imágenes Generadas */}
+          {/* Galeria de Imagenes Generadas */}
           <div 
             className="hidden sm:flex flex-col flex-shrink-0 bg-neutral-900/50 rounded-md border border-white/5 overflow-hidden"
             style={{ width: `${galleryWidth}px`, minWidth: '80px', maxWidth: '350px' }}
+            onContextMenu={handleGalleryContextMenu}
           >
             <div className="flex items-center justify-between px-2 py-1 border-b border-white/10 bg-neutral-900">
               <div className="flex items-center gap-1">
                 <ImageIcon size={10} className="text-orange-400" />
-                <span className="text-[9px] sm:text-[10px] font-medium text-white/80">Imágenes</span>
+                <span className="text-[9px] sm:text-[10px] font-medium text-white/80">Imagenes</span>
               </div>
-              <Badge variant="outline" className="text-[8px] px-1 py-0 bg-orange-500/10 border-orange-500/30 text-orange-400">
-                {generatedImages.length}
-              </Badge>
+              <div className="flex items-center gap-1">
+                {/* Boton de importar rapido */}
+                <button
+                  onClick={() => handleOpenFilePicker('image')}
+                  className="p-0.5 hover:bg-white/10 rounded transition-colors"
+                  title="Importar imagenes"
+                >
+                  <Upload size={10} className="text-cyan-400" />
+                </button>
+                <Badge variant="outline" className="text-[8px] px-1 py-0 bg-orange-500/10 border-orange-500/30 text-orange-400">
+                  {generatedImages.length}
+                </Badge>
+              </div>
             </div>
             
-            {/* Grid de imágenes */}
+            {/* Grid de imagenes */}
             <div className="p-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 flex-1">
               {generatedImages.length > 0 ? (
                 <div className="grid grid-cols-2 gap-1">
@@ -2550,7 +3126,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                         className="w-full h-full object-cover"
                         loading="lazy"
                       />
-                      {/* Overlay con botón de agregar */}
+                      {/* Overlay con bot�n de agregar */}
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                         {onAddImageToTimeline && (
                           <button
@@ -2577,8 +3153,32 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
             </div>
           </div>
           
+          {/* 🔊 Audio Element - Mejorado con manejo de eventos */}
           {audioPreviewUrl && (
-            <audio ref={audioRef} src={audioPreviewUrl} preload="auto" />
+            <audio 
+              ref={audioRef} 
+              src={audioPreviewUrl} 
+              preload="auto"
+              onCanPlayThrough={() => {
+                setAudioReady(true);
+                setAudioError(null);
+                console.log('🔊 [Audio] Listo para reproducir');
+              }}
+              onError={(e) => {
+                const error = e.currentTarget.error;
+                const errorMsg = error ? `Error ${error.code}: ${error.message}` : 'Error desconocido';
+                setAudioError(errorMsg);
+                setAudioReady(false);
+                console.error('🔊 [Audio] Error cargando audio:', errorMsg);
+              }}
+              onPlay={() => console.log('🔊 [Audio] Reproduciendo...')}
+              onPause={() => console.log('🔊 [Audio] Pausado')}
+              onEnded={() => {
+                console.log('🔊 [Audio] Terminado');
+                setIsPlaying(false);
+                setCurrentTime(0);
+              }}
+            />
           )}
         </div>
 
@@ -2689,15 +3289,15 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
           <div className="flex items-center gap-2 sm:gap-4">
             <span>Clips: {clips.length}</span>
             <span className="hidden sm:inline">|</span>
-            <span className="hidden sm:inline">Duración: {formatTime(duration)}</span>
-            {/* BPM y estado de análisis */}
+            <span className="hidden sm:inline">Duraci�n: {formatTime(duration)}</span>
+            {/* BPM y estado de an�lisis */}
             {isAnalyzingAudio && (
               <span className="text-blue-400 flex items-center gap-1">
                 <Loader2 size={10} className="animate-spin" /> Analizando...
               </span>
             )}
             {audioAnalysis?.bpm && (
-              <span className="text-green-400">♪ {Math.round(audioAnalysis.bpm)} BPM</span>
+              <span className="text-green-400">? {Math.round(audioAnalysis.bpm)} BPM</span>
             )}
             {beatGuides.length > 0 && (
               <span className="hidden md:inline text-purple-400">{beatGuides.length} beats</span>
@@ -2717,7 +3317,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
         onClose={() => setMotionPanelOpen(false)}
         scenes={[]}
         onApplyMotion={(scenes) => {
-          logger.info(`✅ [Timeline] Motion aplicado a ${scenes.length} escenas`);
+          logger.info(`? [Timeline] Motion aplicado a ${scenes.length} escenas`);
           setMotionPanelOpen(false);
         }}
       />
@@ -2730,15 +3330,15 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
         videoUrl={selectedScene?.video_url}
         isGenerating={selectedScene?.video_status === 'generating'}
         onApprove={(scene) => {
-          logger.info(`✅ [Preview] Video aprobado para ${scene.scene_id}`);
+          logger.info(`? [Preview] Video aprobado para ${scene.scene_id}`);
           setPreviewModalOpen(false);
         }}
         onRegenerate={(scene) => {
-          logger.info(`🔄 [Preview] Regenerando video para ${scene.scene_id}`);
+          logger.info(`?? [Preview] Regenerando video para ${scene.scene_id}`);
         }}
       />
 
-      {/* 🎸 Modal de Músico */}
+      {/* ?? Modal de M�sico */}
       {showMusicianModal && musicianModalClip && (
         <MusicianModal
           open={showMusicianModal}
@@ -2756,7 +3356,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
         />
       )}
 
-      {/* 📷 Modal de Ángulos de Cámara */}
+      {/* ?? Modal de �ngulos de C�mara */}
       {showCameraAnglesModal && cameraAnglesModalClip && (
         <CameraAnglesModal
           open={showCameraAnglesModal}
@@ -2769,7 +3369,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
         />
       )}
 
-      {/* ✏️ Modal de Editor de Imagen (Nano Banana AI) */}
+      {/* ?? Modal de Editor de Imagen (Nano Banana AI) */}
       {showImageEditorModal && imageEditorModalClip && (
         <ImageEditorModal
           open={showImageEditorModal}
@@ -2783,14 +3383,14 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
         />
       )}
 
-      {/* 🖱️ Menú Contextual (Click Derecho) */}
+      {/* ??? Men� Contextual (Click Derecho) */}
       {contextMenu.visible && (
         <div 
           className="fixed z-50 bg-neutral-900 border border-white/20 rounded-lg shadow-2xl py-1 min-w-[180px] animate-in fade-in zoom-in-95 duration-100"
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header del menú */}
+          {/* Header del men� */}
           <div className="px-3 py-1.5 border-b border-white/10 mb-1">
             <span className="text-[10px] text-white/50 uppercase tracking-wide">
               {contextMenu.clipId ? 'Opciones del Clip' : 'Timeline'}
@@ -2829,7 +3429,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
 
               <div className="my-1 border-t border-white/10" />
 
-              {/* 🎬 Generar Video */}
+              {/* ?? Generar Video */}
               {(() => {
                 const clip = clips.find(c => c.id === contextMenu.clipId);
                 const hasImage = clip?.imageUrl || clip?.url || clip?.thumbnailUrl;
@@ -2853,7 +3453,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                 );
               })()}
 
-              {/* 🎤 Aplicar Lipsync - Solo para clips PERFORMANCE con video */}
+              {/* ?? Aplicar Lipsync - Solo para clips PERFORMANCE con video */}
               {(() => {
                 const clip = clips.find(c => c.id === contextMenu.clipId);
                 const hasVideo = clip?.metadata?.videoUrl;
@@ -2873,19 +3473,19 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                     ) : (
                       <Music size={14} />
                     )}
-                    <span>🎤 Aplicar Lipsync</span>
+                    <span>?? Aplicar Lipsync</span>
                   </button>
                 );
               })()}
 
-              {/* 🎤 Mostrar si ya tiene lipsync aplicado */}
+              {/* ?? Mostrar si ya tiene lipsync aplicado */}
               {(() => {
                 const clip = clips.find(c => c.id === contextMenu.clipId);
                 const hasLipsync = clip?.metadata?.lipsyncApplied;
                 return hasLipsync && (
                   <div className="w-full flex items-center gap-2 px-3 py-2 text-sm text-green-400">
                     <Music size={14} />
-                    <span>✓ Lipsync aplicado</span>
+                    <span>? Lipsync aplicado</span>
                   </div>
                 );
               })()}
@@ -2916,7 +3516,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                 }`}
               >
                 <ClipboardPaste size={14} />
-                <span>Pegar aquí</span>
+                <span>Pegar aqu�</span>
                 <span className="ml-auto text-[10px] text-white/40">Ctrl+V</span>
               </button>
 
@@ -2925,7 +3525,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white/90 hover:bg-orange-500/20 hover:text-orange-400 transition-colors"
               >
                 <MoreHorizontal size={14} />
-                <span>Mover playhead aquí</span>
+                <span>Mover playhead aqu�</span>
               </button>
 
               <div className="my-1 border-t border-white/10" />
@@ -2935,7 +3535,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white/90 hover:bg-white/10 transition-colors"
               >
                 <MagnetIcon size={14} className={snapEnabled ? 'text-orange-400' : ''} />
-                <span>Snap magnético</span>
+                <span>Snap magn�tico</span>
                 <span className={`ml-auto text-[10px] ${snapEnabled ? 'text-orange-400' : 'text-white/40'}`}>
                   {snapEnabled ? 'ON' : 'OFF'}
                 </span>
@@ -2962,20 +3562,69 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
           </div>
         </div>
       )}
+
+      {/* 📂 Menu Contextual de la Galeria (Click Derecho) */}
+      {galleryContextMenu.visible && (
+        <div
+          className="fixed z-50 bg-neutral-900 border border-white/20 rounded-lg shadow-2xl py-1 min-w-[160px] animate-in fade-in zoom-in-95 duration-100"
+          style={{ left: galleryContextMenu.x, top: galleryContextMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="px-3 py-1.5 border-b border-white/10 mb-1">
+            <span className="text-[10px] text-white/50 uppercase tracking-wide">
+              Importar Media
+            </span>
+          </div>
+          
+          <button
+            onClick={() => { handleOpenFilePicker('image'); setGalleryContextMenu({ visible: false, x: 0, y: 0 }); }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white/90 hover:bg-green-500/20 hover:text-green-400 transition-colors"
+          >
+            <ImagePlus size={14} />
+            <span>Importar Imagenes</span>
+          </button>
+          
+          <button
+            onClick={() => { handleOpenFilePicker('audio'); setGalleryContextMenu({ visible: false, x: 0, y: 0 }); }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white/90 hover:bg-yellow-500/20 hover:text-yellow-400 transition-colors"
+          >
+            <FileAudio size={14} />
+            <span>Importar Audio</span>
+          </button>
+          
+          <button
+            onClick={() => { handleOpenFilePicker('video'); setGalleryContextMenu({ visible: false, x: 0, y: 0 }); }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white/90 hover:bg-purple-500/20 hover:text-purple-400 transition-colors"
+          >
+            <FileVideo size={14} />
+            <span>Importar Video</span>
+          </button>
+          
+          <div className="my-1 border-t border-white/10" />
+          
+          <button
+            onClick={() => { handleOpenFilePicker('all'); setGalleryContextMenu({ visible: false, x: 0, y: 0 }); }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white/90 hover:bg-cyan-500/20 hover:text-cyan-400 transition-colors"
+          >
+            <Upload size={14} />
+            <span>Todos los archivos</span>
+          </button>
+        </div>
+      )}
     </>
   );
 };
 
 /** ---------- Helpers ---------- */
-// ⚠️ CRITICAL: Máxima duración de clip (Grok Imagine Video = 6 segundos)
+// ?? CRITICAL: M�xima duraci�n de clip (Grok Imagine Video = 6 segundos)
 const MAX_CLIP_DURATION_SECONDS = 6;
 
-// Función que acepta clips en cualquier formato (TimelineClip o TimelineItem) y los normaliza
-// También segmenta clips mayores de 6 segundos para compatibilidad con generación de video
+// Funci�n que acepta clips en cualquier formato (TimelineClip o TimelineItem) y los normaliza
+// Tambi�n segmenta clips mayores de 6 segundos para compatibilidad con generaci�n de video
 function normalizeClips(clips: any[]): TimelineClip[] {
   if (!clips || !Array.isArray(clips)) return [];
   
-  console.log('📊 [normalizeClips] Input clips:', clips?.length, clips);
+  console.log('?? [normalizeClips] Input clips:', clips?.length, clips);
   
   const normalizedClips: TimelineClip[] = [];
   let globalId = 1;
@@ -2986,7 +3635,7 @@ function normalizeClips(clips: any[]): TimelineClip[] {
                      c.publicUrl || c.firebaseUrl || c.thumbnailUrl || '';
     
     // CRITICAL: Asignar layerId por defecto basado en el tipo de clip
-    // Capa 1 = Video/Imágenes, Capa 2 = Audio Principal, Capa 3 = Lipsync Segments
+    // Capa 1 = Video/Im�genes, Capa 2 = Audio Principal, Capa 3 = Lipsync Segments
     // NOTA: Aceptar tanto 'layerId' como 'layer' para compatibilidad con TimelineClipUnified
     const typeStr = typeof c.type === 'string' ? c.type.toUpperCase() : 'IMAGE';
     const normalizedType = (typeStr === 'AUDIO' ? ClipType.AUDIO : 
@@ -3005,7 +3654,7 @@ function normalizeClips(clips: any[]): TimelineClip[] {
       }
     }
     
-    console.log(`📍 [normalizeClips] Clip ${index}: type='${typeStr}', layer=${c.layer}, layerId=${c.layerId} -> finalLayerId=${layerId}, isLipsync=${c.metadata?.isLipsyncSegment || false}`);
+    console.log(`?? [normalizeClips] Clip ${index}: type='${typeStr}', layer=${c.layer}, layerId=${c.layerId} -> finalLayerId=${layerId}, isLipsync=${c.metadata?.isLipsyncSegment || false}`);
     
     // CRITICAL: Convertir start_time/end_time (ms) a start/duration (segundos)
     // TimelineItem usa start_time en ms, TimelineClip usa start en segundos
@@ -3029,11 +3678,11 @@ function normalizeClips(clips: any[]): TimelineClip[] {
       durationSeconds = typeof c.duration === 'number' ? c.duration : 3;
     }
     
-    // 🔥 CRITICAL: Segmentar clips mayores de MAX_CLIP_DURATION_SECONDS
+    // ?? CRITICAL: Segmentar clips mayores de MAX_CLIP_DURATION_SECONDS
     // Las generaciones de video solo soportan hasta 5 segundos
     if (durationSeconds > MAX_CLIP_DURATION_SECONDS && normalizedType !== ClipType.AUDIO) {
       const segmentCount = Math.ceil(durationSeconds / MAX_CLIP_DURATION_SECONDS);
-      console.log(`⚡ [normalizeClips] Segmentando clip ${c.id} de ${durationSeconds.toFixed(2)}s en ${segmentCount} partes`);
+      console.log(`? [normalizeClips] Segmentando clip ${c.id} de ${durationSeconds.toFixed(2)}s en ${segmentCount} partes`);
       
       for (let i = 0; i < segmentCount; i++) {
         const segmentStart = startSeconds + (i * MAX_CLIP_DURATION_SECONDS);
@@ -3054,17 +3703,17 @@ function normalizeClips(clips: any[]): TimelineClip[] {
           imageUrl: imageUrl,
           thumbnailUrl: c.thumbnailUrl || imageUrl,
           title: c.title ? `${c.title} (${i + 1}/${segmentCount})` : `Escena ${globalId - 1}`,
-          // Marcar como segmento para posible regeneración
+          // Marcar como segmento para posible regeneraci�n
           isSegment: true,
           originalDuration: durationSeconds,
           segmentIndex: i,
         } as TimelineClip);
         
-        console.log(`   📍 Segmento ${i + 1}: start=${segmentStart.toFixed(2)}s, duration=${segmentDuration.toFixed(2)}s`);
+        console.log(`   ?? Segmento ${i + 1}: start=${segmentStart.toFixed(2)}s, duration=${segmentDuration.toFixed(2)}s`);
       }
     } else {
-      // Clip dentro de límites - agregar normalmente
-      console.log(`📍 [normalizeClips] Clip ${index}: id=${c.id}, start=${startSeconds.toFixed(2)}s, duration=${durationSeconds.toFixed(2)}s, layerId=${layerId}, hasImage=${!!imageUrl}`);
+      // Clip dentro de l�mites - agregar normalmente
+      console.log(`?? [normalizeClips] Clip ${index}: id=${c.id}, start=${startSeconds.toFixed(2)}s, duration=${durationSeconds.toFixed(2)}s, layerId=${layerId}, hasImage=${!!imageUrl}`);
       
       normalizedClips.push({
         ...c,
@@ -3083,7 +3732,7 @@ function normalizeClips(clips: any[]): TimelineClip[] {
     }
   });
   
-  console.log(`📊 [normalizeClips] Output: ${normalizedClips.length} clips (segmentados de ${clips.length} originales)`);
+  console.log(`?? [normalizeClips] Output: ${normalizedClips.length} clips (segmentados de ${clips.length} originales)`);
   return normalizedClips;
 }
 
@@ -3101,7 +3750,7 @@ function formatTime(sec: number) {
 const Ruler: React.FC<{ zoom: number; duration: number; labelWidth: number; onRulerClick?: (time: number) => void; framerate?: number }> = ({ zoom, duration, labelWidth, onRulerClick, framerate = 30 }) => {
   const ticks = Math.ceil(duration);
   
-  // Determinar niveles de detalle según zoom
+  // Determinar niveles de detalle seg�n zoom
   const zoomLevel = zoom < 40 ? 'low' : zoom < 80 ? 'medium' : zoom < 150 ? 'high' : 'ultra';
   
   // Mostrar marcas principales cada X segundos
@@ -3142,7 +3791,7 @@ const Ruler: React.FC<{ zoom: number; duration: number; labelWidth: number; onRu
         const time = sec + f / framerate;
         if (time > duration) break;
         const x = time * zoom;
-        // Subdivisiones: cada 5 frames más visible, cada 10 aún más
+        // Subdivisiones: cada 5 frames m�s visible, cada 10 a�n m�s
         const isMidFrame = f === Math.floor(framerate / 2);
         const isQuarterFrame = f % Math.floor(framerate / 4) === 0;
         const height = isMidFrame ? 40 : isQuarterFrame ? 28 : 16;
@@ -3173,7 +3822,7 @@ const Ruler: React.FC<{ zoom: number; duration: number; labelWidth: number; onRu
       {/* Fondo degradado profesional */}
       <div className="absolute inset-0 bg-gradient-to-b from-neutral-800/80 via-neutral-900/90 to-black" />
       
-      {/* Línea base inferior */}
+      {/* L�nea base inferior */}
       <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-orange-500/50 via-orange-400/30 to-orange-500/50" />
       
       {/* Marcas de frames */}
@@ -3192,13 +3841,13 @@ const Ruler: React.FC<{ zoom: number; duration: number; labelWidth: number; onRu
         
         return (
           <div key={`s-${sec}`} className="absolute h-full pointer-events-none" style={{ left: x }}>
-            {/* Línea vertical */}
+            {/* L�nea vertical */}
             <div 
               className={`absolute bottom-0 ${color} ${isMajor ? 'shadow-sm shadow-orange-500/50' : ''}`}
               style={{ width, height: `${height}%` }}
             />
             
-            {/* Número de timecode */}
+            {/* N�mero de timecode */}
             {isMajor && (
               <div className="absolute top-[3px] -translate-x-1/2" style={{ left: 0 }}>
                 <div className="flex flex-col items-center">
@@ -3215,7 +3864,7 @@ const Ruler: React.FC<{ zoom: number; duration: number; labelWidth: number; onRu
                     {zoomLevel === 'ultra' ? formatTimecode(sec) : formatShort(sec)}
                   </span>
                   
-                  {/* Número de frame pequeño (solo en zoom ultra) */}
+                  {/* N�mero de frame peque�o (solo en zoom ultra) */}
                   {zoomLevel === 'ultra' && (
                     <span 
                       className="font-mono text-orange-300/60 mt-0.5 leading-none"
