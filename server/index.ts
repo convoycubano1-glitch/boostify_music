@@ -47,12 +47,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com https://*.googleapis.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://js.stripe.com https://translate.google.com https://*.coinbase.com; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com https://*.googleapis.com https://*.firebasestorage.app https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://js.stripe.com https://translate.google.com https://*.coinbase.com; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-    "img-src 'self' data: https: blob: *; " +
+    "img-src 'self' data: https: blob: * https://storage.googleapis.com https://*.firebasestorage.app https://firebasestorage.googleapis.com; " +
     "font-src 'self' https://fonts.gstatic.com https://r2cdn.perplexity.ai data:; " +
-    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.freepik.com https://api.piapi.ai https://api.fal.ai https://*.unsplash.com wss://*.firebaseio.com https://*.clerk.accounts.dev https://*.clerk.com https://*.stripe.com https://*.coinbase.com *; " +
-    "media-src 'self' https: blob: *; " +
+    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebasestorage.app https://firebasestorage.googleapis.com https://*.freepik.com https://api.piapi.ai https://api.fal.ai https://*.unsplash.com wss://*.firebaseio.com https://*.clerk.accounts.dev https://*.clerk.com https://*.stripe.com https://*.coinbase.com *; " +
+    "media-src 'self' https: blob: * https://*.firebasestorage.app; " +
     "worker-src 'self' blob:; " +
     "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://open.spotify.com https://*.spotify.com https://js.stripe.com https://*.stripe.com https://*.coinbase.com;"
   );
