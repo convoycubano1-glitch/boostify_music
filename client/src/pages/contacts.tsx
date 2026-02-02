@@ -709,150 +709,161 @@ export default function ContactsPage() {
         <ScrollArea className="flex-1">
           <div className="container mx-auto px-4 py-6">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-              <div>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-pink-500">
-                    Music Industry Contacts
-                  </h1>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowHowItWorks(true)}
-                    className="group border-purple-500/30 hover:border-purple-500 hover:bg-purple-500/10"
-                  >
-                    <Sparkles className="w-4 h-4 mr-1.5 text-purple-400 group-hover:text-purple-300" />
-                    <span className="text-purple-400 group-hover:text-purple-300">How it Works</span>
-                  </Button>
+            <div className="flex flex-col gap-4 mb-6 lg:mb-8">
+              {/* Title Row */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-pink-500">
+                      Industry Contacts
+                    </h1>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowHowItWorks(true)}
+                      className="group border-purple-500/30 hover:border-purple-500 hover:bg-purple-500/10 h-7 px-2 text-xs sm:h-8 sm:px-3 sm:text-sm"
+                    >
+                      <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1 text-purple-400" />
+                      <span className="text-purple-400 hidden sm:inline">How it Works</span>
+                      <span className="text-purple-400 sm:hidden">?</span>
+                    </Button>
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                    {stats?.total?.toLocaleString() || 0} contacts • Labels, publishers & sync
+                  </p>
                 </div>
-                <p className="text-muted-foreground mt-2">
-                  {stats?.total?.toLocaleString() || 0} contacts • Outreach to labels, publishers & more
-                </p>
               </div>
               
-              {/* Quota Display */}
-              <Card className="p-4 bg-gradient-to-r from-purple-900/20 to-pink-900/20 border-purple-500/30">
-                <div className="flex items-center gap-4">
+              {/* Quota Display - Responsive */}
+              <Card className="p-3 sm:p-4 bg-gradient-to-r from-purple-900/20 to-pink-900/20 border-purple-500/30 w-full sm:w-auto sm:self-start">
+                <div className="flex items-center justify-around sm:justify-start gap-3 sm:gap-4">
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-purple-400">{quota?.remaining || 0}</p>
-                    <p className="text-xs text-muted-foreground">Emails Left Today</p>
+                    <p className="text-lg sm:text-2xl font-bold text-purple-400">{quota?.remaining || 0}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">Left Today</p>
                   </div>
-                  <div className="h-10 w-px bg-purple-500/30" />
+                  <div className="h-8 sm:h-10 w-px bg-purple-500/30" />
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-pink-400">{quota?.sent || 0}</p>
-                    <p className="text-xs text-muted-foreground">Sent Today</p>
+                    <p className="text-lg sm:text-2xl font-bold text-pink-400">{quota?.sent || 0}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">Sent</p>
                   </div>
-                  <div className="h-10 w-px bg-purple-500/30" />
+                  <div className="h-8 sm:h-10 w-px bg-purple-500/30" />
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-green-400">{quota?.limit || 20}</p>
-                    <p className="text-xs text-muted-foreground">Daily Limit</p>
+                    <p className="text-lg sm:text-2xl font-bold text-green-400">{quota?.limit || 20}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">Limit</p>
                   </div>
                 </div>
               </Card>
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
               {stats?.byStatus?.slice(0, 4).map(stat => (
-                <Card key={stat.status} className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground capitalize">{stat.status?.replace('_', ' ')}</p>
-                      <p className="text-2xl font-bold">{stat.count}</p>
+                <Card key={stat.status} className="p-2.5 sm:p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-[10px] sm:text-sm text-muted-foreground capitalize truncate">{stat.status?.replace('_', ' ')}</p>
+                      <p className="text-lg sm:text-2xl font-bold">{stat.count}</p>
                     </div>
-                    <Badge className={statusColors[stat.status] || "bg-gray-500/20"}>
-                      {stat.status === 'opened' && <Eye className="h-3 w-3" />}
-                      {stat.status === 'clicked' && <MousePointerClick className="h-3 w-3" />}
-                      {stat.status === 'responded' && <MessageSquare className="h-3 w-3" />}
-                      {stat.status === 'contacted' && <Mail className="h-3 w-3" />}
+                    <Badge className={`${statusColors[stat.status] || "bg-gray-500/20"} flex-shrink-0 p-1 sm:p-1.5`}>
+                      {stat.status === 'opened' && <Eye className="h-2.5 w-2.5 sm:h-3 sm:w-3" />}
+                      {stat.status === 'clicked' && <MousePointerClick className="h-2.5 w-2.5 sm:h-3 sm:w-3" />}
+                      {stat.status === 'responded' && <MessageSquare className="h-2.5 w-2.5 sm:h-3 sm:w-3" />}
+                      {stat.status === 'contacted' && <Mail className="h-2.5 w-2.5 sm:h-3 sm:w-3" />}
                     </Badge>
                   </div>
                 </Card>
               ))}
             </div>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="bg-background border">
-                <TabsTrigger value="industry" className="data-[state=active]:bg-purple-500/20">
-                  <Globe className="h-4 w-4 mr-2" />
-                  Industry Database
-                </TabsTrigger>
-                <TabsTrigger value="email-preview" className="data-[state=active]:bg-green-500/20">
-                  <Mail className="h-4 w-4 mr-2" />
-                  Email Preview
-                </TabsTrigger>
-                <TabsTrigger value="templates" className="data-[state=active]:bg-pink-500/20">
-                  <LayoutTemplate className="h-4 w-4 mr-2" />
-                  Email Templates
-                </TabsTrigger>
-                <TabsTrigger value="my-contacts" className="data-[state=active]:bg-orange-500/20">
-                  <Users className="h-4 w-4 mr-2" />
-                  My Contacts
-                </TabsTrigger>
-              </TabsList>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+              <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                <TabsList className="bg-background border inline-flex w-auto min-w-full sm:min-w-0">
+                  <TabsTrigger value="industry" className="data-[state=active]:bg-purple-500/20 text-xs sm:text-sm px-2 sm:px-4 flex-1 sm:flex-none">
+                    <Globe className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden xs:inline">Industry</span>
+                    <span className="xs:hidden">DB</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="email-preview" className="data-[state=active]:bg-green-500/20 text-xs sm:text-sm px-2 sm:px-4 flex-1 sm:flex-none">
+                    <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Email Preview</span>
+                    <span className="sm:hidden">Preview</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="templates" className="data-[state=active]:bg-pink-500/20 text-xs sm:text-sm px-2 sm:px-4 flex-1 sm:flex-none">
+                    <LayoutTemplate className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Templates</span>
+                    <span className="sm:hidden">Email</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="my-contacts" className="data-[state=active]:bg-orange-500/20 text-xs sm:text-sm px-2 sm:px-4 flex-1 sm:flex-none">
+                    <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">My Contacts</span>
+                    <span className="sm:hidden">Mine</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
               {/* Email Preview Tab - Shows artists and their email templates */}
-              <TabsContent value="email-preview" className="space-y-6">
-                <Card className="p-6">
-                  <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                    <Mail className="h-5 w-5 text-green-500" />
+              <TabsContent value="email-preview" className="space-y-4 sm:space-y-6">
+                <Card className="p-4 sm:p-6">
+                  <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 flex items-center gap-2">
+                    <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
                     Artist Email Templates
                   </h3>
-                  <p className="text-muted-foreground mb-6">
-                    Select an artist to preview their personalized email template. Each template is automatically generated based on the artist's landing page data.
+                  <p className="text-sm text-muted-foreground mb-4 sm:mb-6">
+                    Select an artist to preview their personalized email template.
                   </p>
                   
                   {/* Artist Selection Grid */}
                   {isLoadingArtists ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-8 w-8 animate-spin text-green-500" />
+                    <div className="flex items-center justify-center py-6 sm:py-8">
+                      <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-green-500" />
                     </div>
                   ) : !myArtists || myArtists.length === 0 ? (
-                    <div className="text-center py-8 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                      <Users className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                      <p className="text-muted-foreground">No artists found</p>
-                      <p className="text-sm text-muted-foreground mt-1">Create an artist to generate email templates</p>
+                    <div className="text-center py-6 sm:py-8 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                      <Users className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-muted-foreground mb-2 sm:mb-3" />
+                      <p className="text-muted-foreground text-sm sm:text-base">No artists found</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">Create an artist to generate templates</p>
                       <Button 
                         variant="outline" 
-                        className="mt-4"
+                        size="sm"
+                        className="mt-3 sm:mt-4"
                         onClick={() => setLocation('/my-artists')}
                       >
                         Go to My Artists
                       </Button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                       {myArtists.map((artist: any) => (
                         <Card 
                           key={artist.id} 
-                          className={`p-4 cursor-pointer transition-all hover:border-green-500/50 ${
+                          className={`p-3 sm:p-4 cursor-pointer transition-all hover:border-green-500/50 ${
                             previewArtistId === artist.id ? 'border-green-500 bg-green-500/5' : ''
                           }`}
                           onClick={() => setPreviewArtistId(artist.id)}
                         >
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-3 sm:gap-4">
                             {artist.profileImage ? (
                               <img 
                                 src={artist.profileImage} 
                                 alt={artist.name}
-                                className="w-16 h-16 rounded-full object-cover border-2 border-purple-500/50"
+                                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-purple-500/50 flex-shrink-0"
                               />
                             ) : (
-                              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white text-xl font-bold">
+                              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white text-lg sm:text-xl font-bold flex-shrink-0">
                                 {artist.name?.charAt(0) || 'A'}
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold truncate">{artist.name || 'Unnamed Artist'}</h4>
-                              <p className="text-sm text-muted-foreground truncate">
+                              <h4 className="font-semibold truncate text-sm sm:text-base">{artist.name || 'Unnamed'}</h4>
+                              <p className="text-xs sm:text-sm text-muted-foreground truncate">
                                 {artist.genres?.join(', ') || 'Music'}
                               </p>
                               {artist.isAIGenerated && (
-                                <Badge className="mt-1 bg-purple-500/20 text-purple-400 text-xs">AI Generated</Badge>
+                                <Badge className="mt-1 bg-purple-500/20 text-purple-400 text-[10px] sm:text-xs px-1.5">AI</Badge>
                               )}
                             </div>
                             {previewArtistId === artist.id && (
-                              <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                              <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
                             )}
                           </div>
                         </Card>
@@ -877,32 +888,34 @@ export default function ContactsPage() {
                 {/* Email Preview Iframe */}
                 {showEmailPreview && previewArtistId && (
                   <Card className="overflow-hidden">
-                    <div className="flex items-center justify-between p-4 border-b bg-muted/50">
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-5 w-5 text-green-500" />
-                        <span className="font-semibold">Email Preview</span>
+                    <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-muted/50 gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
+                        <span className="font-semibold text-sm sm:text-base truncate">Email Preview</span>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1 sm:gap-2 flex-shrink-0">
                         <Button 
                           variant="outline" 
                           size="sm"
+                          className="h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm"
                           onClick={() => window.open(`/api/outreach/artist-preview/${previewArtistId}`, '_blank')}
                         >
-                          <Target className="h-4 w-4 mr-1" />
-                          Open in New Tab
+                          <Target className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                          <span className="hidden sm:inline">New Tab</span>
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm"
+                          className="h-7 sm:h-8 px-2"
                           onClick={() => setShowEmailPreview(false)}
                         >
-                          <X className="h-4 w-4" />
+                          <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </Button>
                       </div>
                     </div>
                     <iframe 
                       src={`/api/outreach/artist-preview/${previewArtistId}`}
-                      className="w-full h-[700px] border-0"
+                      className="w-full h-[400px] sm:h-[500px] lg:h-[700px] border-0"
                       title="Email Preview"
                     />
                   </Card>
@@ -910,64 +923,69 @@ export default function ContactsPage() {
               </TabsContent>
 
               {/* Industry Database Tab */}
-              <TabsContent value="industry" className="space-y-4">
+              <TabsContent value="industry" className="space-y-3 sm:space-y-4">
                 {/* Filters & Actions Bar */}
-                <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                  <div className="flex flex-wrap gap-3 items-center">
+                <div className="flex flex-col gap-3">
+                  {/* Search and Filters Row */}
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     {/* Search */}
-                    <div className="relative">
+                    <div className="relative flex-1">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="Search contacts..."
+                        placeholder="Search..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 w-64"
+                        className="pl-9 w-full text-sm h-9"
                       />
                     </div>
                     
-                    {/* Category Filter */}
-                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                      <SelectTrigger className="w-48">
-                        <SelectValue placeholder="All Categories" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Categories</SelectItem>
-                        {Object.entries(categoryLabels).map(([key, label]) => (
-                          <SelectItem key={key} value={key}>{label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    
-                    {/* Status Filter */}
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue placeholder="All Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="new">New</SelectItem>
-                        <SelectItem value="contacted">Contacted</SelectItem>
-                        <SelectItem value="opened">Opened</SelectItem>
-                        <SelectItem value="responded">Responded</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {/* Filters Row */}
+                    <div className="flex gap-2">
+                      {/* Category Filter */}
+                      <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                        <SelectTrigger className="w-full sm:w-40 h-9 text-xs sm:text-sm">
+                          <SelectValue placeholder="Category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Categories</SelectItem>
+                          {Object.entries(categoryLabels).map(([key, label]) => (
+                            <SelectItem key={key} value={key}>{label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      
+                      {/* Status Filter */}
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-full sm:w-32 h-9 text-xs sm:text-sm">
+                          <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Status</SelectItem>
+                          <SelectItem value="new">New</SelectItem>
+                          <SelectItem value="contacted">Contacted</SelectItem>
+                          <SelectItem value="opened">Opened</SelectItem>
+                          <SelectItem value="responded">Responded</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   
-                  {/* Actions */}
-                  <div className="flex gap-2">
+                  {/* Actions Row */}
+                  <div className="flex gap-2 justify-between sm:justify-end">
                     {selectedContacts.length > 0 && (
                       <Button
                         onClick={() => setIsSendDialogOpen(true)}
-                        className="bg-gradient-to-r from-purple-600 to-pink-600"
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 text-xs sm:text-sm h-8 sm:h-9 px-3 sm:px-4"
                         disabled={!quota || quota.remaining === 0}
+                        size="sm"
                       >
-                        <Send className="h-4 w-4 mr-2" />
-                        Send to {selectedContacts.length} ({quota?.remaining || 0} left)
+                        <Send className="h-3.5 w-3.5 mr-1.5" />
+                        Send ({selectedContacts.length})
                       </Button>
                     )}
-                    <Button variant="outline" onClick={selectAllOnPage}>
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      {contacts.every(c => selectedContacts.includes(c.id)) ? "Deselect All" : "Select Page"}
+                    <Button variant="outline" onClick={selectAllOnPage} size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                      {contacts.every(c => selectedContacts.includes(c.id)) ? "Deselect" : "Select All"}
                     </Button>
                   </div>
                 </div>
@@ -978,16 +996,73 @@ export default function ContactsPage() {
                     <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
                   </div>
                 ) : contacts.length === 0 ? (
-                  <Card className="p-12 text-center">
-                    <Users className="h-12 w-12 mx-auto text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-semibold">No Contacts Found</h3>
-                    <p className="text-muted-foreground mt-2">
-                      Try adjusting your filters or import contacts
+                  <Card className="p-8 sm:p-12 text-center">
+                    <Users className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-muted-foreground" />
+                    <h3 className="mt-3 sm:mt-4 text-base sm:text-lg font-semibold">No Contacts Found</h3>
+                    <p className="text-muted-foreground mt-2 text-sm">
+                      Try adjusting your filters
                     </p>
                   </Card>
                 ) : (
-                  <Card className="overflow-hidden">
-                    <div className="overflow-x-auto">
+                  <>
+                    {/* Mobile Card View */}
+                    <div className="sm:hidden space-y-3">
+                      {contacts.map((contact) => (
+                        <Card 
+                          key={contact.id} 
+                          className={`p-3 ${
+                            selectedContacts.includes(contact.id) ? "border-purple-500 bg-purple-500/5" : ""
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <Checkbox 
+                              checked={selectedContacts.includes(contact.id)}
+                              onCheckedChange={() => toggleContactSelection(contact.id)}
+                              className="mt-1"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <p className="font-medium text-sm truncate">{contact.fullName}</p>
+                                  <p className="text-xs text-muted-foreground truncate">{contact.jobTitle}</p>
+                                  <p className="text-xs text-purple-400 truncate">{contact.email || contact.personalEmail}</p>
+                                </div>
+                                <Badge className={`${statusColors[contact.status || "new"]} text-[10px] flex-shrink-0`}>
+                                  {contact.status?.replace('_', ' ')}
+                                </Badge>
+                              </div>
+                              <div className="mt-2 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-[10px] px-1.5">
+                                    {contact.companyName || 'Unknown'}
+                                  </Badge>
+                                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                    <Mail className="h-2.5 w-2.5" />{contact.emailsSent || 0}
+                                    <Eye className="h-2.5 w-2.5 ml-1" />{contact.opensCount || 0}
+                                  </span>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs px-2"
+                                  onClick={() => {
+                                    setSelectedContacts([contact.id]);
+                                    setIsSendDialogOpen(true);
+                                  }}
+                                  disabled={!quota || quota.remaining === 0 || !contact.email && !contact.personalEmail}
+                                >
+                                  <Send className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                    
+                    {/* Desktop Table View */}
+                    <Card className="overflow-hidden hidden sm:block">
+                      <div className="overflow-x-auto">
                       <table className="w-full">
                         <thead className="bg-muted/50">
                           <tr>
@@ -1082,14 +1157,16 @@ export default function ContactsPage() {
                     
                     {/* Pagination */}
                     {pagination && pagination.totalPages > 1 && (
-                      <div className="flex items-center justify-between p-4 border-t">
-                        <p className="text-sm text-muted-foreground">
-                          Page {pagination.page} of {pagination.totalPages} • {pagination.total} total contacts
+                      <div className="flex items-center justify-between p-3 sm:p-4 border-t">
+                        <p className="text-xs sm:text-sm text-muted-foreground">
+                          <span className="hidden sm:inline">Page {pagination.page} of {pagination.totalPages} • </span>
+                          {pagination.total} contacts
                         </p>
                         <div className="flex gap-2">
                           <Button
                             variant="outline"
                             size="sm"
+                            className="h-8 w-8 p-0"
                             disabled={currentPage === 1}
                             onClick={() => setCurrentPage(p => p - 1)}
                           >
@@ -1098,6 +1175,7 @@ export default function ContactsPage() {
                           <Button
                             variant="outline"
                             size="sm"
+                            className="h-8 w-8 p-0"
                             disabled={currentPage >= pagination.totalPages}
                             onClick={() => setCurrentPage(p => p + 1)}
                           >
@@ -1107,71 +1185,73 @@ export default function ContactsPage() {
                       </div>
                     )}
                   </Card>
+                  </>
                 )}
               </TabsContent>
 
               {/* Templates Tab */}
               <TabsContent value="templates" className="space-y-4">
-                <div className="grid md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {/* Artist Introduction Template */}
-                  <Card className="p-6 hover:border-purple-500/50 transition-colors cursor-pointer" onClick={() => applyTemplate('artist_intro')}>
-                    <div className="h-12 w-12 rounded-lg bg-purple-500/20 flex items-center justify-center mb-4">
-                      <Target className="h-6 w-6 text-purple-400" />
+                  <Card className="p-4 sm:p-6 hover:border-purple-500/50 transition-colors cursor-pointer" onClick={() => applyTemplate('artist_intro')}>
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-purple-500/20 flex items-center justify-center mb-3 sm:mb-4">
+                      <Target className="h-5 w-5 sm:h-6 sm:w-6 text-purple-400" />
                     </div>
-                    <h3 className="font-semibold mb-2">Artist Introduction</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Professional introduction email for presenting your artist to labels and publishers.
+                    <h3 className="font-semibold mb-1 sm:mb-2 text-sm sm:text-base">Artist Introduction</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      Professional intro for labels and publishers.
                     </p>
-                    <Button variant="outline" className="mt-4 w-full">Use Template</Button>
+                    <Button variant="outline" size="sm" className="mt-3 sm:mt-4 w-full text-xs sm:text-sm">Use Template</Button>
                   </Card>
                   
                   {/* Sync Opportunity Template */}
-                  <Card className="p-6 hover:border-pink-500/50 transition-colors cursor-pointer" onClick={() => applyTemplate('sync_opportunity')}>
-                    <div className="h-12 w-12 rounded-lg bg-pink-500/20 flex items-center justify-center mb-4">
-                      <Zap className="h-6 w-6 text-pink-400" />
+                  <Card className="p-4 sm:p-6 hover:border-pink-500/50 transition-colors cursor-pointer" onClick={() => applyTemplate('sync_opportunity')}>
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-pink-500/20 flex items-center justify-center mb-3 sm:mb-4">
+                      <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-pink-400" />
                     </div>
-                    <h3 className="font-semibold mb-2">Sync Opportunity</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Perfect for reaching out to music supervisors and sync licensing opportunities.
+                    <h3 className="font-semibold mb-1 sm:mb-2 text-sm sm:text-base">Sync Opportunity</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      For music supervisors and sync licensing.
                     </p>
-                    <Button variant="outline" className="mt-4 w-full">Use Template</Button>
+                    <Button variant="outline" size="sm" className="mt-3 sm:mt-4 w-full text-xs sm:text-sm">Use Template</Button>
                   </Card>
                   
                   {/* Follow Up Template */}
-                  <Card className="p-6 hover:border-orange-500/50 transition-colors cursor-pointer" onClick={() => applyTemplate('follow_up')}>
-                    <div className="h-12 w-12 rounded-lg bg-orange-500/20 flex items-center justify-center mb-4">
-                      <MessageSquare className="h-6 w-6 text-orange-400" />
+                  <Card className="p-4 sm:p-6 hover:border-orange-500/50 transition-colors cursor-pointer" onClick={() => applyTemplate('follow_up')}>
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-orange-500/20 flex items-center justify-center mb-3 sm:mb-4">
+                      <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-orange-400" />
                     </div>
-                    <h3 className="font-semibold mb-2">Follow Up</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Simple follow-up email for contacts who haven't responded to your initial outreach.
+                    <h3 className="font-semibold mb-1 sm:mb-2 text-sm sm:text-base">Follow Up</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      For contacts who haven't responded.
                     </p>
-                    <Button variant="outline" className="mt-4 w-full">Use Template</Button>
+                    <Button variant="outline" size="sm" className="mt-3 sm:mt-4 w-full text-xs sm:text-sm">Use Template</Button>
                   </Card>
                 </div>
                 
                 {/* Custom Template Editor */}
-                <Card className="p-6">
-                  <h3 className="font-semibold mb-4">Custom Email</h3>
-                  <div className="space-y-4">
+                <Card className="p-4 sm:p-6">
+                  <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Custom Email</h3>
+                  <div className="space-y-3 sm:space-y-4">
                     <div>
-                      <Label>Subject Line</Label>
+                      <Label className="text-xs sm:text-sm">Subject Line</Label>
                       <Input
                         value={emailSubject}
                         onChange={(e) => setEmailSubject(e.target.value)}
-                        placeholder="🎵 Introducing {{artist_name}} - A Rising Star"
+                        placeholder="🎵 Introducing {{artist_name}}"
+                        className="mt-1 text-sm"
                       />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Available variables: {"{{artist_name}}, {{contact_name}}, {{company_name}}, {{genre}}"}
+                      <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
+                        Variables: artist_name, contact_name, company_name
                       </p>
                     </div>
                     <div>
-                      <Label>Email Body (HTML)</Label>
+                      <Label className="text-xs sm:text-sm">Email Body</Label>
                       <Textarea
                         value={emailBody}
                         onChange={(e) => setEmailBody(e.target.value)}
-                        placeholder="Hi {{contact_name}},&#10;&#10;I wanted to introduce you to..."
-                        className="min-h-[200px] font-mono text-sm"
+                        placeholder="Hi {{contact_name}},&#10;&#10;I wanted to introduce..."
+                        className="min-h-[120px] sm:min-h-[200px] font-mono text-xs sm:text-sm mt-1"
                       />
                     </div>
                   </div>
@@ -1180,14 +1260,14 @@ export default function ContactsPage() {
 
               {/* My Contacts Tab (Original) */}
               <TabsContent value="my-contacts">
-                <Card className="p-8 text-center">
-                  <Users className="h-12 w-12 mx-auto text-muted-foreground" />
-                  <h3 className="mt-4 text-lg font-semibold">Personal Contacts</h3>
-                  <p className="text-muted-foreground mt-2">
-                    Your manually added contacts and imports are stored here.
+                <Card className="p-6 sm:p-8 text-center">
+                  <Users className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-muted-foreground" />
+                  <h3 className="mt-3 sm:mt-4 text-base sm:text-lg font-semibold">Personal Contacts</h3>
+                  <p className="text-muted-foreground mt-2 text-xs sm:text-sm">
+                    Your manually added contacts and imports.
                   </p>
-                  <Button className="mt-4 bg-orange-500 hover:bg-orange-600">
-                    <UserPlus className="mr-2 h-4 w-4" />
+                  <Button className="mt-3 sm:mt-4 bg-orange-500 hover:bg-orange-600" size="sm">
+                    <UserPlus className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     Add Contact
                   </Button>
                 </Card>
@@ -1199,20 +1279,20 @@ export default function ContactsPage() {
 
       {/* Send Email Dialog */}
       <Dialog open={isSendDialogOpen} onOpenChange={setIsSendDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-[95vw] sm:max-w-lg mx-auto">
           <DialogHeader>
-            <DialogTitle>Send Outreach Email</DialogTitle>
-            <DialogDescription>
-              Send promotional emails to {selectedContacts.length} selected contact(s)
+            <DialogTitle className="text-base sm:text-lg">Send Outreach Email</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
+              Send to {selectedContacts.length} selected contact(s)
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-3 sm:space-y-4 py-3 sm:py-4">
             {/* Select Artist */}
             <div>
-              <Label>Select Artist to Promote</Label>
+              <Label className="text-xs sm:text-sm">Select Artist</Label>
               <Select value={selectedArtist?.toString() || ""} onValueChange={(v) => setSelectedArtist(parseInt(v))}>
-                <SelectTrigger>
+                <SelectTrigger className="mt-1 text-sm">
                   <SelectValue placeholder="Choose an artist..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -1227,15 +1307,15 @@ export default function ContactsPage() {
             
             {/* Template Selection */}
             <div>
-              <Label>Email Template</Label>
+              <Label className="text-xs sm:text-sm">Template</Label>
               <div className="grid grid-cols-3 gap-2 mt-2">
-                <Button variant="outline" size="sm" onClick={() => applyTemplate('artist_intro')}>
-                  Artist Intro
+                <Button variant="outline" size="sm" onClick={() => applyTemplate('artist_intro')} className="text-xs h-8">
+                  Intro
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => applyTemplate('sync_opportunity')}>
-                  Sync Pitch
+                <Button variant="outline" size="sm" onClick={() => applyTemplate('sync_opportunity')} className="text-xs h-8">
+                  Sync
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => applyTemplate('follow_up')}>
+                <Button variant="outline" size="sm" onClick={() => applyTemplate('follow_up')} className="text-xs h-8">
                   Follow Up
                 </Button>
               </div>
@@ -1243,26 +1323,27 @@ export default function ContactsPage() {
             
             {/* Preview */}
             {emailSubject && (
-              <div className="p-3 bg-muted/50 rounded-lg">
-                <p className="text-sm font-medium">Subject: {emailSubject.substring(0, 60)}...</p>
+              <div className="p-2.5 sm:p-3 bg-muted/50 rounded-lg">
+                <p className="text-xs sm:text-sm font-medium truncate">Subject: {emailSubject.substring(0, 50)}...</p>
               </div>
             )}
             
             {/* Quota Warning */}
             {quota && quota.remaining < selectedContacts.length && (
-              <div className="p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
-                <p className="text-sm text-yellow-400">
-                  ⚠️ Only {quota.remaining} emails remaining today. {selectedContacts.length - quota.remaining} will be queued for tomorrow.
+              <div className="p-2.5 sm:p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+                <p className="text-xs sm:text-sm text-yellow-400">
+                  ⚠️ Only {quota.remaining} emails left. {selectedContacts.length - quota.remaining} queued for tomorrow.
                 </p>
               </div>
             )}
           </div>
           
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsSendDialogOpen(false)}>
+          <div className="flex justify-end gap-2 sm:gap-3">
+            <Button variant="outline" size="sm" onClick={() => setIsSendDialogOpen(false)}>
               Cancel
             </Button>
             <Button
+              size="sm"
               onClick={() => sendBatchMutation.mutate({ 
                 contactIds: selectedContacts, 
                 artistId: selectedArtist || undefined 
@@ -1271,11 +1352,11 @@ export default function ContactsPage() {
               className="bg-gradient-to-r from-purple-600 to-pink-600"
             >
               {sendBatchMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
               ) : (
-                <Send className="h-4 w-4 mr-2" />
+                <Send className="h-3.5 w-3.5 mr-1.5" />
               )}
-              Send {Math.min(selectedContacts.length, quota?.remaining || 0)} Emails
+              Send {Math.min(selectedContacts.length, quota?.remaining || 0)}
             </Button>
           </div>
         </DialogContent>
