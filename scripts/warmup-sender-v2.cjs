@@ -2,23 +2,33 @@
  * 🚀 WARMUP SENDER - Multi-Campaign Version
  * 
  * Uso: 
- *   node warmup-sender-v2.cjs INDUSTRY
- *   node warmup-sender-v2.cjs ARTISTS_1
- *   node warmup-sender-v2.cjs ARTISTS_2
- *   node warmup-sender-v2.cjs ARTISTS_3
- *   node warmup-sender-v2.cjs ARTISTS_4
+ *   node warmup-sender-v2.cjs INDUSTRY     -> Usa BREVO (info@boostifymusic.com)
+ *   node warmup-sender-v2.cjs ARTISTS_1    -> Usa RESEND (boostifymusic.site)
+ *   node warmup-sender-v2.cjs ARTISTS_2    -> Usa RESEND (boostifymusic.space)
+ *   node warmup-sender-v2.cjs ARTISTS_3    -> Usa RESEND (boostifymusic.sbs)
+ *   node warmup-sender-v2.cjs ARTISTS_4    -> Usa RESEND (boostifymusic.online)
  * 
  * Listar campañas: node -e "require('./scripts/campaigns/campaign-loader.cjs').list()"
  */
 
+// Cargar variables de entorno desde .env (para ejecución local)
+try {
+  require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+} catch (e) {
+  // dotenv no disponible - usar variables de entorno directas
+}
+
 const { Pool } = require('pg');
 const OpenAI = require('openai');
-const SibApiV3Sdk = require('@getbrevo/brevo');
+const { Resend } = require('resend');
 const loadCampaign = require('./campaigns/campaign-loader.cjs');
 
 // Obtener campaña desde argumentos
 const campaignArg = process.argv[2] || 'ARTISTS_1';
 const config = loadCampaign(campaignArg);
+
+// Determinar proveedor de email según la campaña
+const USE_BREVO = config.id === 'INDUSTRY';
 
 // Conexiones con APIs de la campaña
 const pool = new Pool({
@@ -30,18 +40,40 @@ const openai = new OpenAI({
   apiKey: config.apis.openai
 });
 
-// Configurar Brevo API
-const brevoApiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-const brevoApiKey = brevoApiInstance.authentications['apiKey'];
-brevoApiKey.apiKey = config.apis.brevo;
+// Configurar APIs de Email según campaña
+let brevoApiInstance = null;
+let resendClient = null;
+
+if (USE_BREVO) {
+  // BREVO para INDUSTRY (info@boostifymusic.com)
+  const SibApiV3Sdk = require('@getbrevo/brevo');
+  brevoApiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+  const brevoApiKey = brevoApiInstance.authentications['apiKey'];
+  brevoApiKey.apiKey = config.apis.brevo || process.env.BREVO_API_KEY;
+  
+  if (!brevoApiKey.apiKey) {
+    console.error('❌ ERROR: BREVO_API_KEY no configurada');
+    process.exit(1);
+  }
+} else {
+  // RESEND para ARTISTS campaigns
+  const resendApiKey = config.apis.resend;
+  if (!resendApiKey) {
+    console.error(`❌ ERROR: RESEND API KEY no configurada para ${config.id}`);
+    console.error(`   Variable esperada: RESEND_API_${config.id}`);
+    process.exit(1);
+  }
+  resendClient = new Resend(resendApiKey);
+}
 
 // Configuración - PREVIEW_MODE controlado por variable de entorno o argumento
 // Por defecto FALSE para producción real
 const PREVIEW_MODE = process.env.PREVIEW_MODE === 'true' || process.argv.includes('--preview');
 const PREVIEW_EMAIL = process.env.PREVIEW_EMAIL || 'convoycubano@gmail.com';
 
+const emailProvider = USE_BREVO ? 'BREVO' : 'RESEND';
 console.log(`\n🔧 MODO: ${PREVIEW_MODE ? '⚠️ PREVIEW (emails a ' + PREVIEW_EMAIL + ')' : '✅ PRODUCCIÓN (emails reales)'}`);
-console.log(`📧 Usando: BREVO para ${config.domain}`);
+console.log(`📧 Usando: ${emailProvider} para ${config.domain}`);
 
 // 🎲 SUBJECT TEMPLATES aleatorios
 const subjectTemplates = [
@@ -214,16 +246,44 @@ async function sendWarmupEmails() {
       const toEmail = PREVIEW_MODE ? PREVIEW_EMAIL : lead.email;
       
       try {
-        // Preparar email para Brevo
-        const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-        sendSmtpEmail.sender = { name: config.fromName, email: config.fromEmail };
-        sendSmtpEmail.to = [{ email: toEmail, name: `${lead.first_name} ${lead.last_name}` }];
-        sendSmtpEmail.replyTo = { email: 'convoycubano@gmail.com', name: 'Boostify Support' };
-        sendSmtpEmail.subject = subject;
-        sendSmtpEmail.textContent = body;
+        let messageId;
         
-        const emailResult = await brevoApiInstance.sendTransacEmail(sendSmtpEmail);
-        const messageId = emailResult?.messageId || emailResult?.body?.messageId || `brevo_${Date.now()}`;
+        if (USE_BREVO) {
+          // ═══════════════════════════════════════════════════════
+          // BREVO para INDUSTRY (info@boostifymusic.com)
+          // ═══════════════════════════════════════════════════════
+          const SibApiV3Sdk = require('@getbrevo/brevo');
+          const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+          sendSmtpEmail.sender = { name: config.fromName, email: config.fromEmail };
+          sendSmtpEmail.to = [{ email: toEmail, name: `${lead.first_name} ${lead.last_name}` }];
+          sendSmtpEmail.replyTo = { email: 'convoycubano@gmail.com', name: 'Boostify Support' };
+          sendSmtpEmail.subject = subject;
+          sendSmtpEmail.textContent = body;
+          
+          console.log(`   📤 Enviando via BREVO desde ${config.fromEmail}...`);
+          const emailResult = await brevoApiInstance.sendTransacEmail(sendSmtpEmail);
+          messageId = emailResult?.messageId || emailResult?.body?.messageId || `brevo_${Date.now()}`;
+          console.log(`   📧 Brevo MessageId: ${messageId}`);
+          
+        } else {
+          // ═══════════════════════════════════════════════════════
+          // RESEND para ARTISTS (boostifymusic.site/space/sbs/online)
+          // ═══════════════════════════════════════════════════════
+          console.log(`   📤 Enviando via RESEND desde ${config.fromEmail}...`);
+          const emailResult = await resendClient.emails.send({
+            from: `${config.fromName} <${config.fromEmail}>`,
+            to: [toEmail],
+            reply_to: 'convoycubano@gmail.com',
+            subject: subject,
+            text: body,
+          });
+          
+          if (emailResult.error) {
+            throw new Error(emailResult.error.message || 'Resend error');
+          }
+          messageId = emailResult.data?.id || `resend_${Date.now()}`;
+          console.log(`   📧 Resend MessageId: ${messageId}`);
+        }
 
         // Guardar en email_sends
         await client.query(`
@@ -270,6 +330,7 @@ async function sendWarmupEmails() {
     console.log('\n' + '='.repeat(60));
     console.log(`📊 RESUMEN - ${config.name}`);
     console.log('='.repeat(60));
+    console.log(`📧 Proveedor: ${USE_BREVO ? 'BREVO' : 'RESEND'}`);
     console.log(`✅ Emails enviados: ${sent}`);
     console.log(`📧 Restantes hoy: ${remaining - sent}`);
 
