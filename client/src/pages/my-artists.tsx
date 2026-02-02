@@ -18,6 +18,7 @@ import {
   Bot,
   UserPlus,
   Wrench,
+  RefreshCw,
   Trash2
 } from "lucide-react";
 import { fixGeneratedByForUserArtists } from "../lib/api/artist-profile-service";
@@ -67,6 +68,7 @@ export default function MyArtistsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [deletingArtistId, setDeletingArtistId] = useState<number | null>(null);
+  const [regeneratingArtistId, setRegeneratingArtistId] = useState<number | null>(null);
   
   // Form state for manual artist creation
   const [manualArtistForm, setManualArtistForm] = useState({
@@ -158,6 +160,34 @@ export default function MyArtistsPage() {
         variant: "destructive",
       });
       setDeletingArtistId(null);
+    },
+  });
+
+  // Mutation to regenerate artist images
+  const regenerateImagesMutation = useMutation({
+    mutationFn: async (artistId: number) => {
+      setRegeneratingArtistId(artistId);
+      const response = await apiRequest({
+        url: `/api/artist-generator/regenerate-images/${artistId}`,
+        method: "POST"
+      });
+      return response;
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Images regenerated!",
+        description: "The artist images have been updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/artist-generator/my-artists"] });
+      setRegeneratingArtistId(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Could not regenerate images",
+        variant: "destructive",
+      });
+      setRegeneratingArtistId(null);
     },
   });
 
@@ -634,6 +664,21 @@ export default function MyArtistsPage() {
                           View Profile
                         </Button>
                       </Link>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
+                        onClick={() => regenerateImagesMutation.mutate(artist.id)}
+                        disabled={regeneratingArtistId === artist.id}
+                        title="Regenerate images with AI"
+                        data-testid={`button-regenerate-artist-${artist.id}`}
+                      >
+                        {regeneratingArtistId === artist.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-4 w-4" />
+                        )}
+                      </Button>
                       <Button
                         variant="outline"
                         size="icon"

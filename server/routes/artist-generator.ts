@@ -259,6 +259,216 @@ router.get("/can-create-artist", isAuthenticated, async (req: Request, res: Resp
 });
 
 /**
+ * Endpoint de diagnóstico para verificar URLs de imágenes de artistas
+ * Identifica URLs temporales (FAL, data:, etc.) y las regenera si es necesario
+ */
+router.get("/diagnose-images", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const clerkUserId = req.user?.id;
+    
+    if (!clerkUserId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
+
+    // Obtener ID de PostgreSQL del usuario
+    const userRecord = await pgDb
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.clerkId, clerkUserId))
+      .limit(1);
+
+    if (userRecord.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    const pgUserId = userRecord[0].id;
+    const { or } = await import('drizzle-orm');
+    
+    // Obtener artistas del usuario
+    const artistsFromPg = await pgDb
+      .select({
+        id: users.id,
+        artistName: users.artistName,
+        profileImage: users.profileImage,
+        coverImage: users.coverImage
+      })
+      .from(users)
+      .where(
+        or(
+          eq(users.id, pgUserId),
+          eq(users.generatedBy, pgUserId)
+        )
+      );
+
+    // Analizar URLs de imágenes
+    const analysisResults = artistsFromPg.map(artist => {
+      const profileImageStatus = analyzeImageUrl(artist.profileImage);
+      const coverImageStatus = analyzeImageUrl(artist.coverImage);
+      
+      return {
+        id: artist.id,
+        name: artist.artistName,
+        profileImage: {
+          url: artist.profileImage?.substring(0, 80) + (artist.profileImage && artist.profileImage.length > 80 ? '...' : ''),
+          status: profileImageStatus.status,
+          type: profileImageStatus.type
+        },
+        coverImage: {
+          url: artist.coverImage?.substring(0, 80) + (artist.coverImage && artist.coverImage.length > 80 ? '...' : ''),
+          status: coverImageStatus.status,
+          type: coverImageStatus.type
+        }
+      };
+    });
+
+    // Contar problemas
+    const issuesCount = analysisResults.filter(a => 
+      a.profileImage.status === 'problematic' || a.coverImage.status === 'problematic'
+    ).length;
+
+    res.json({
+      success: true,
+      totalArtists: analysisResults.length,
+      issuesFound: issuesCount,
+      artists: analysisResults
+    });
+  } catch (error) {
+    console.error('Error en diagnóstico de imágenes:', error);
+    res.status(500).json({ error: 'Error al diagnosticar imágenes' });
+  }
+});
+
+/**
+ * Analiza una URL de imagen y determina si es permanente o temporal
+ */
+function analyzeImageUrl(url: string | null): { status: 'ok' | 'problematic' | 'missing'; type: string } {
+  if (!url) {
+    return { status: 'missing', type: 'none' };
+  }
+  
+  // URLs permanentes de Firebase Storage
+  if (url.includes('storage.googleapis.com') || url.includes('firebasestorage.googleapis.com')) {
+    return { status: 'ok', type: 'firebase-storage' };
+  }
+  
+  // UI Avatars - fallback pero funcional
+  if (url.includes('ui-avatars.com')) {
+    return { status: 'ok', type: 'ui-avatars' };
+  }
+  
+  // Picsum - placeholder pero funcional
+  if (url.includes('picsum.photos')) {
+    return { status: 'ok', type: 'picsum-placeholder' };
+  }
+  
+  // URLs temporales de FAL (expiran)
+  if (url.includes('fal.media') || url.includes('fal-cdn') || url.includes('v3.fal.media') || url.includes('fal.ai')) {
+    return { status: 'problematic', type: 'fal-temporary' };
+  }
+  
+  // Data URLs - no son URLs válidas para el navegador
+  if (url.startsWith('data:')) {
+    return { status: 'problematic', type: 'data-url' };
+  }
+  
+  // Otras URLs externas
+  return { status: 'ok', type: 'external-url' };
+}
+
+/**
+ * Endpoint para regenerar imágenes problemáticas de un artista
+ */
+router.post("/regenerate-images/:artistId", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { artistId } = req.params;
+    const clerkUserId = req.user?.id;
+    
+    if (!clerkUserId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
+
+    // Obtener el artista
+    const artist = await pgDb
+      .select()
+      .from(users)
+      .where(eq(users.id, parseInt(artistId)))
+      .limit(1);
+
+    if (artist.length === 0) {
+      return res.status(404).json({ error: 'Artista no encontrado' });
+    }
+
+    const artistData = artist[0];
+    
+    // Verificar permisos
+    const userRecord = await pgDb
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.clerkId, clerkUserId))
+      .limit(1);
+    
+    if (userRecord.length === 0) {
+      return res.status(403).json({ error: 'No autorizado' });
+    }
+
+    const { or } = await import('drizzle-orm');
+    if (artistData.id !== userRecord[0].id && artistData.generatedBy !== userRecord[0].id) {
+      return res.status(403).json({ error: 'No tienes permiso para este artista' });
+    }
+
+    // Regenerar imágenes con FAL
+    console.log(`🔄 Regenerando imágenes para artista: ${artistData.artistName}`);
+    
+    const { generateArtistImagesWithFAL } = await import('../services/fal-service');
+    const genre = artistData.genres?.[0] || 'pop';
+    const artistDescription = artistData.biography || `${artistData.artistName}, professional music artist`;
+    
+    const imageResult = await generateArtistImagesWithFAL(
+      artistDescription,
+      artistData.artistName || 'Artist',
+      genre
+    );
+
+    // Actualizar en PostgreSQL
+    await pgDb.update(users)
+      .set({
+        profileImage: imageResult.profileUrl,
+        coverImage: imageResult.coverUrl,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, parseInt(artistId)));
+
+    // Actualizar en Firestore si existe
+    if (artistData.firestoreId) {
+      try {
+        await db.collection('generated_artists').doc(artistData.firestoreId).update({
+          'look.profile_url': imageResult.profileUrl,
+          'look.cover_url': imageResult.coverUrl,
+          updatedAt: Timestamp.now()
+        });
+      } catch (e) {
+        console.warn('No se pudo actualizar Firestore:', e);
+      }
+    }
+
+    console.log(`✅ Imágenes regeneradas para ${artistData.artistName}`);
+    
+    res.json({
+      success: true,
+      artistId: parseInt(artistId),
+      profileImage: imageResult.profileUrl,
+      coverImage: imageResult.coverUrl
+    });
+  } catch (error) {
+    console.error('Error regenerando imágenes:', error);
+    res.status(500).json({ 
+      error: 'Error al regenerar imágenes',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+/**
  * Endpoint para obtener todos los artistas de un usuario
  * Incluye: su propio perfil + artistas generados con IA
  */
