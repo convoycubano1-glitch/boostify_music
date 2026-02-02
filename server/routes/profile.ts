@@ -14,6 +14,7 @@ import {
   saveVideoToProfile,
   updateProfileImages 
 } from '../services/artist-profile-auto';
+import { storage } from '../firebase';
 
 const router = Router();
 
@@ -229,7 +230,7 @@ router.put('/', authenticate, async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/profile/upload - Upload profile images (authenticated)
+// POST /api/profile/upload - Upload profile images to Firebase Storage (authenticated)
 router.post('/upload', authenticate, async (req: any, res: Response) => {
   try {
     const firebaseUid = req.user!.uid || req.user!.id;
@@ -247,26 +248,66 @@ router.post('/upload', authenticate, async (req: any, res: Response) => {
     
     const uploadedFiles: any = {};
     
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(process.cwd(), 'uploads', 'profiles', userId.toString());
-    await fs.mkdir(uploadsDir, { recursive: true });
+    // Helper function to upload file to Firebase Storage
+    const uploadToFirebase = async (file: fileUpload.UploadedFile, folder: string): Promise<string> => {
+      if (!storage) {
+        throw new Error('Firebase Storage not available');
+      }
+      
+      const bucket = storage.bucket();
+      const timestamp = Date.now();
+      const ext = path.extname(file.name) || '.jpg';
+      const fileName = `profiles/${userId}/${folder}-${timestamp}${ext}`;
+      const firebaseFile = bucket.file(fileName);
+      
+      await firebaseFile.save(file.data, {
+        metadata: {
+          contentType: file.mimetype,
+        },
+        public: true,
+        validation: false,
+      });
+      
+      await firebaseFile.makePublic();
+      return `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+    };
     
     // Handle profileImage
     if (req.files.profileImage) {
       const file = Array.isArray(req.files.profileImage) ? req.files.profileImage[0] : req.files.profileImage;
-      const filename = `profile-${Date.now()}${path.extname(file.name)}`;
-      const filepath = path.join(uploadsDir, filename);
-      await file.mv(filepath);
-      uploadedFiles.profileImage = `/uploads/profiles/${userId}/${filename}`;
+      try {
+        uploadedFiles.profileImage = await uploadToFirebase(file, 'profile');
+        console.log(`✅ Profile image uploaded to Firebase: ${uploadedFiles.profileImage}`);
+      } catch (err) {
+        console.error('Error uploading profile image to Firebase:', err);
+        // Fallback to local storage if Firebase fails
+        const uploadsDir = path.join(process.cwd(), 'uploads', 'profiles', userId.toString());
+        await fs.mkdir(uploadsDir, { recursive: true });
+        const filename = `profile-${Date.now()}${path.extname(file.name)}`;
+        const filepath = path.join(uploadsDir, filename);
+        await file.mv(filepath);
+        uploadedFiles.profileImage = `/uploads/profiles/${userId}/${filename}`;
+        console.warn(`⚠️ Used local fallback for profile image: ${uploadedFiles.profileImage}`);
+      }
     }
     
     // Handle coverImage
     if (req.files.coverImage) {
       const file = Array.isArray(req.files.coverImage) ? req.files.coverImage[0] : req.files.coverImage;
-      const filename = `cover-${Date.now()}${path.extname(file.name)}`;
-      const filepath = path.join(uploadsDir, filename);
-      await file.mv(filepath);
-      uploadedFiles.coverImage = `/uploads/profiles/${userId}/${filename}`;
+      try {
+        uploadedFiles.coverImage = await uploadToFirebase(file, 'cover');
+        console.log(`✅ Cover image uploaded to Firebase: ${uploadedFiles.coverImage}`);
+      } catch (err) {
+        console.error('Error uploading cover image to Firebase:', err);
+        // Fallback to local storage if Firebase fails
+        const uploadsDir = path.join(process.cwd(), 'uploads', 'profiles', userId.toString());
+        await fs.mkdir(uploadsDir, { recursive: true });
+        const filename = `cover-${Date.now()}${path.extname(file.name)}`;
+        const filepath = path.join(uploadsDir, filename);
+        await file.mv(filepath);
+        uploadedFiles.coverImage = `/uploads/profiles/${userId}/${filename}`;
+        console.warn(`⚠️ Used local fallback for cover image: ${uploadedFiles.coverImage}`);
+      }
     }
     
     // Update user profile with new images

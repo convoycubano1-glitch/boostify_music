@@ -371,6 +371,11 @@ function analyzeImageUrl(url: string | null): { status: 'ok' | 'problematic' | '
     return { status: 'problematic', type: 'data-url' };
   }
   
+  // URLs locales (/uploads/...) - no funcionan en producción (efímero)
+  if (url.startsWith('/uploads/') || url.includes('/uploads/')) {
+    return { status: 'problematic', type: 'local-upload-ephemeral' };
+  }
+  
   // Otras URLs externas
   return { status: 'ok', type: 'external-url' };
 }
