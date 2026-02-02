@@ -1,11 +1,21 @@
 import express, { Request, Response } from 'express';
 import { authenticate } from '../middleware/auth';
 import { db } from '../db';
-import { prCampaigns, prMediaDatabase, prWebhookEvents, insertPRCampaignSchema } from '../../db/schema';
+import { prCampaigns, prMediaDatabase, prWebhookEvents, insertPRCampaignSchema, users } from '../../db/schema';
 import { eq, desc, and, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 
 const router = express.Router();
+
+// Helper para obtener el PostgreSQL user ID desde Clerk ID
+async function getPostgresUserId(clerkId: string): Promise<number | null> {
+  const userRecord = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.clerkId, clerkId))
+    .limit(1);
+  return userRecord.length > 0 ? userRecord[0].id : null;
+}
 
 const MAKE_WEBHOOK_URL = 'https://hook.us2.make.com/wwvf4anizf0gc9yr3wyoax6ip1n7rj7w';
 
@@ -15,12 +25,18 @@ const MAKE_WEBHOOK_URL = 'https://hook.us2.make.com/wwvf4anizf0gc9yr3wyoax6ip1n7
  */
 router.get('/campaigns', authenticate, async (req: Request, res: Response) => {
   try {
-    if (!req.user?.id) {
+    const clerkUserId = req.user?.id;
+    if (!clerkUserId) {
       return res.status(401).json({ success: false, message: 'Autenticación requerida' });
     }
 
+    const pgUserId = await getPostgresUserId(clerkUserId);
+    if (!pgUserId) {
+      return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+    }
+
     const campaigns = await db.select().from(prCampaigns)
-      .where(eq(prCampaigns.userId, req.user.id))
+      .where(eq(prCampaigns.userId, pgUserId))
       .orderBy(desc(prCampaigns.createdAt));
 
     res.json({ success: true, campaigns });
@@ -36,8 +52,14 @@ router.get('/campaigns', authenticate, async (req: Request, res: Response) => {
  */
 router.get('/campaigns/:id', authenticate, async (req: Request, res: Response) => {
   try {
-    if (!req.user?.id) {
+    const clerkUserId = req.user?.id;
+    if (!clerkUserId) {
       return res.status(401).json({ success: false, message: 'Autenticación requerida' });
+    }
+
+    const pgUserId = await getPostgresUserId(clerkUserId);
+    if (!pgUserId) {
+      return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
     }
 
     const campaignId = parseInt(req.params.id);
@@ -45,7 +67,7 @@ router.get('/campaigns/:id', authenticate, async (req: Request, res: Response) =
     const [campaign] = await db.select().from(prCampaigns)
       .where(and(
         eq(prCampaigns.id, campaignId),
-        eq(prCampaigns.userId, req.user.id)
+        eq(prCampaigns.userId, pgUserId)
       ))
       .limit(1);
 
@@ -76,12 +98,18 @@ router.get('/campaigns/:id', authenticate, async (req: Request, res: Response) =
  */
 router.post('/campaigns', authenticate, async (req: Request, res: Response) => {
   try {
-    if (!req.user?.id) {
+    const clerkUserId = req.user?.id;
+    if (!clerkUserId) {
       return res.status(401).json({ success: false, message: 'Autenticación requerida' });
     }
 
+    const pgUserId = await getPostgresUserId(clerkUserId);
+    if (!pgUserId) {
+      return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+    }
+
     const validatedData = insertPRCampaignSchema.parse({
-      userId: req.user.id,
+      userId: pgUserId,
       title: req.body.title,
       artistName: req.body.artistName,
       artistProfileUrl: req.body.artistProfileUrl,
@@ -116,8 +144,14 @@ router.post('/campaigns', authenticate, async (req: Request, res: Response) => {
  */
 router.put('/campaigns/:id', authenticate, async (req: Request, res: Response) => {
   try {
-    if (!req.user?.id) {
+    const clerkUserId = req.user?.id;
+    if (!clerkUserId) {
       return res.status(401).json({ success: false, message: 'Autenticación requerida' });
+    }
+
+    const pgUserId = await getPostgresUserId(clerkUserId);
+    if (!pgUserId) {
+      return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
     }
 
     const campaignId = parseInt(req.params.id);
@@ -125,7 +159,7 @@ router.put('/campaigns/:id', authenticate, async (req: Request, res: Response) =
     const [campaign] = await db.select().from(prCampaigns)
       .where(and(
         eq(prCampaigns.id, campaignId),
-        eq(prCampaigns.userId, req.user.id)
+        eq(prCampaigns.userId, pgUserId)
       ))
       .limit(1);
 
@@ -162,8 +196,14 @@ router.put('/campaigns/:id', authenticate, async (req: Request, res: Response) =
  */
 router.post('/campaigns/:id/activate', authenticate, async (req: Request, res: Response) => {
   try {
-    if (!req.user?.id) {
+    const clerkUserId = req.user?.id;
+    if (!clerkUserId) {
       return res.status(401).json({ success: false, message: 'Autenticación requerida' });
+    }
+
+    const pgUserId = await getPostgresUserId(clerkUserId);
+    if (!pgUserId) {
+      return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
     }
 
     const campaignId = parseInt(req.params.id);
@@ -171,7 +211,7 @@ router.post('/campaigns/:id/activate', authenticate, async (req: Request, res: R
     const [campaign] = await db.select().from(prCampaigns)
       .where(and(
         eq(prCampaigns.id, campaignId),
-        eq(prCampaigns.userId, req.user.id)
+        eq(prCampaigns.userId, pgUserId)
       ))
       .limit(1);
 
@@ -264,8 +304,14 @@ router.post('/campaigns/:id/activate', authenticate, async (req: Request, res: R
  */
 router.post('/campaigns/:id/pause', authenticate, async (req: Request, res: Response) => {
   try {
-    if (!req.user?.id) {
+    const clerkUserId = req.user?.id;
+    if (!clerkUserId) {
       return res.status(401).json({ success: false, message: 'Autenticación requerida' });
+    }
+
+    const pgUserId = await getPostgresUserId(clerkUserId);
+    if (!pgUserId) {
+      return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
     }
 
     const campaignId = parseInt(req.params.id);
@@ -273,7 +319,7 @@ router.post('/campaigns/:id/pause', authenticate, async (req: Request, res: Resp
     const [campaign] = await db.select().from(prCampaigns)
       .where(and(
         eq(prCampaigns.id, campaignId),
-        eq(prCampaigns.userId, req.user.id)
+        eq(prCampaigns.userId, pgUserId)
       ))
       .limit(1);
 
