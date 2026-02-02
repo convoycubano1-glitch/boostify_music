@@ -609,13 +609,13 @@ export default function ProducerToolsPage() {
       <Header />
 
       {/* Hero Section with Video Background */}
-      <div className="relative w-full h-[50vh] sm:h-[60vh] md:h-[80vh] overflow-hidden">
+      <div className="relative w-full h-[40vh] sm:h-[50vh] md:h-[70vh] lg:h-[80vh] overflow-hidden">
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover object-center"
           poster="/assets/video-fallback.jpg"
           onError={(e) => {
             const target = e.target as HTMLVideoElement;
@@ -624,33 +624,33 @@ export default function ProducerToolsPage() {
         >
           <source src="/assets/Standard_Mode_Generated_Video (3).mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-black/60 md:bg-black/50" />
+        <div className="absolute inset-0 bg-black/70 sm:bg-black/60 md:bg-black/50" />
         <div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background/40 to-background" />
 
-        <div className="relative z-10 container mx-auto px-3 sm:px-4 h-full flex flex-col justify-end pb-6 sm:pb-8 md:pb-12 pt-24 sm:pt-32 md:pt-48">
+        <div className="relative z-10 container mx-auto px-4 sm:px-6 h-full flex flex-col justify-end pb-4 sm:pb-6 md:pb-12 pt-16 sm:pt-24 md:pt-32">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-center md:text-left mb-12"
+            className="text-center md:text-left mb-4 sm:mb-8 md:mb-12"
           >
             <div className="inline-block bg-orange-500/20 backdrop-blur-sm border border-orange-500/30 rounded-full px-3 py-1.5 sm:px-4 sm:py-2 mb-3 sm:mb-6">
               <span className="text-orange-500 text-xs sm:text-sm font-medium flex items-center">
                 <Music2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" /> Next-Gen Production Suite
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 md:mb-6 leading-tight">
+            <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-2 sm:mb-3 md:mb-6 leading-tight">
               Your Creative <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500">Music Hub</span>
             </h1>
-            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/90 max-w-2xl mb-4 sm:mb-6 md:mb-8">
+            <p className="text-xs sm:text-sm md:text-base lg:text-lg text-white/90 max-w-2xl mb-3 sm:mb-4 md:mb-6 px-2 sm:px-0">
               Connect with musicians worldwide or use our AI tools to enhance your production workflow
             </p>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center">
-              <Button size="default" className="bg-orange-600 hover:bg-orange-700 text-white w-full sm:w-auto text-sm sm:text-base">
-                Start Creating <Wand2 className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+            <div className="flex flex-row gap-2 sm:gap-3 items-center justify-center md:justify-start">
+              <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm px-3 sm:px-4 h-8 sm:h-9 md:h-10">
+                Start <Wand2 className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
-              <Button variant="outline" size="default" className="border-white/30 bg-black/30 backdrop-blur-sm text-white hover:bg-black/40 w-full sm:w-auto text-sm sm:text-base">
-                Watch Demo <PlayCircle className="ml-2 h-4 w-4" />
+              <Button variant="outline" size="sm" className="border-white/30 bg-black/30 backdrop-blur-sm text-white hover:bg-black/40 text-xs sm:text-sm px-3 sm:px-4 h-8 sm:h-9 md:h-10">
+                Demo <PlayCircle className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>
           </motion.div>
@@ -658,7 +658,7 @@ export default function ProducerToolsPage() {
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-6 sm:mb-8">
             <div>
               <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">Musician Services</h2>
@@ -689,24 +689,24 @@ export default function ProducerToolsPage() {
           </div>
 
           {/* Service Categories - Horizontal scroll on mobile */}
-          <div className="mb-6 sm:mb-8 -mx-3 sm:mx-0 px-3 sm:px-0">
-            <div className="flex sm:grid sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3 overflow-x-auto pb-2 sm:pb-0 snap-x snap-mandatory sm:snap-none scrollbar-hide">
+          <div className="mb-4 sm:mb-6 md:mb-8 -mx-4 sm:mx-0 px-4 sm:px-0">
+            <div className="flex sm:grid sm:grid-cols-4 lg:grid-cols-7 gap-1.5 sm:gap-2 md:gap-3 overflow-x-auto pb-2 sm:pb-0 snap-x snap-mandatory sm:snap-none scrollbar-hide">
               {["all", "Guitar", "Drums", "Piano", "Vocals", "Production", "Other"].map((category) => (
                 <Card
                   key={category}
-                  className={`flex-shrink-0 w-20 sm:w-auto p-2 sm:p-3 md:p-4 text-center cursor-pointer transition-colors backdrop-blur-sm snap-center ${
+                  className={`flex-shrink-0 w-[72px] sm:w-auto p-1.5 sm:p-2 md:p-3 text-center cursor-pointer transition-colors backdrop-blur-sm snap-center ${
                     selectedCategory.toLowerCase() === category.toLowerCase() ? 'bg-orange-500/10 border-orange-500' : 'hover:bg-orange-500/5'
                   }`}
                   onClick={() => setSelectedCategory(category)}
                 >
-                  {category === "Guitar" && <Guitar className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 mx-auto mb-1 sm:mb-2 text-orange-500" />}
-                  {category === "Drums" && <Drum className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 mx-auto mb-1 sm:mb-2 text-orange-500" />}
-                  {category === "Piano" && <Piano className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 mx-auto mb-1 sm:mb-2 text-orange-500" />}
-                  {category === "Vocals" && <Mic2 className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 mx-auto mb-1 sm:mb-2 text-orange-500" />}
-                  {category === "Production" && <Music4 className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 mx-auto mb-1 sm:mb-2 text-orange-500" />}
-                  {category === "Other" && <Music2 className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 mx-auto mb-1 sm:mb-2 text-orange-500" />}
-                  {category === "all" && <Music2 className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 mx-auto mb-1 sm:mb-2 text-orange-500" />}
-                  <p className="font-medium text-xs sm:text-sm md:text-base truncate">{category !== "all" ? category : "All"}</p>
+                  {category === "Guitar" && <Guitar className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 mx-auto mb-0.5 sm:mb-1 text-orange-500" />}
+                  {category === "Drums" && <Drum className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 mx-auto mb-0.5 sm:mb-1 text-orange-500" />}
+                  {category === "Piano" && <Piano className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 mx-auto mb-0.5 sm:mb-1 text-orange-500" />}
+                  {category === "Vocals" && <Mic2 className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 mx-auto mb-0.5 sm:mb-1 text-orange-500" />}
+                  {category === "Production" && <Music4 className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 mx-auto mb-0.5 sm:mb-1 text-orange-500" />}
+                  {category === "Other" && <Music2 className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 mx-auto mb-0.5 sm:mb-1 text-orange-500" />}
+                  {category === "all" && <Music2 className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 mx-auto mb-0.5 sm:mb-1 text-orange-500" />}
+                  <p className="font-medium text-[10px] sm:text-xs md:text-sm truncate">{category !== "all" ? category : "All"}</p>
                 </Card>
               ))}
             </div>
@@ -717,9 +717,9 @@ export default function ProducerToolsPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="mb-12"
+            className="mb-8 sm:mb-12"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-5">
               {isLoadingImages ? (
                 // Loading skeleton
                 Array.from({ length: 6 }).map((_, i) => (
@@ -745,11 +745,11 @@ export default function ProducerToolsPage() {
                     transition={{ duration: 0.3, delay: index * 0.05 }}
                   >
                     <Card className="overflow-hidden backdrop-blur-sm bg-background/80 border border-orange-500/10 shadow-lg hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 group">
-                      <div className="aspect-[16/10] sm:aspect-[4/3] bg-orange-500/10 relative overflow-hidden">
+                      <div className="aspect-[3/2] sm:aspect-[4/3] bg-orange-500/10 relative overflow-hidden">
                         <img
                           src={musician.photo || "/assets/musician-placeholder.jpg"}
                           alt={musician.title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
                           loading="lazy"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
