@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Player } from '@remotion/player';
 import { SpotifyBoostAnimation } from './SpotifyBoostAnimation';
 
@@ -36,16 +36,32 @@ export const SpotifyAnimationPlayer: React.FC<SpotifyAnimationPlayerProps> = ({
 }) => {
   const durationInFrames = 540;
   const fps = 30;
+  
+  // Use state for responsive sizing
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  const responsiveHeight = isMobile ? 220 : (typeof height === 'number' ? height : 400);
 
   return (
     <div 
       className={`spotify-animation-container ${className}`}
       style={{
-        borderRadius: 24,
+        borderRadius: isMobile ? 16 : 24,
         overflow: 'hidden',
         background: 'linear-gradient(135deg, rgba(29, 185, 84, 0.2), rgba(25, 20, 20, 0.4))',
         boxShadow: '0 25px 50px -12px rgba(29, 185, 84, 0.3)',
         border: '1px solid rgba(29, 185, 84, 0.3)',
+        maxWidth: '100%',
         ...style,
       }}
     >
@@ -56,8 +72,9 @@ export const SpotifyAnimationPlayer: React.FC<SpotifyAnimationPlayerProps> = ({
         compositionWidth={800}
         compositionHeight={500}
         style={{
-          width: typeof width === 'number' ? width : width,
-          height: typeof height === 'number' ? height : height,
+          width: '100%',
+          height: responsiveHeight,
+          aspectRatio: '16/10',
         }}
         autoPlay={autoPlay}
         loop={loop}

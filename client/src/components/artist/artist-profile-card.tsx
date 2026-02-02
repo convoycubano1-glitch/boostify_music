@@ -5195,6 +5195,42 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                       </div>
                     </div>
                   </Link>
+
+                  {/* Industry Contacts & Outreach */}
+                  <Link href="/contacts">
+                    <div 
+                      className="group relative overflow-hidden rounded-xl p-4 border transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer"
+                      style={{ 
+                        borderColor: colors.hexBorder,
+                        background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)'
+                      }}
+                    >
+                      <div className="absolute top-0 right-0 w-32 h-32 opacity-10 group-hover:opacity-20 transition-opacity duration-300"
+                        style={{ 
+                          background: `radial-gradient(circle, ${colors.hexPrimary} 0%, transparent 70%)`
+                        }}
+                      />
+                      <div className="flex items-start gap-3 relative z-10">
+                        <div 
+                          className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300"
+                          style={{ 
+                            background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                            boxShadow: `0 4px 12px ${colors.hexPrimary}40`
+                          }}
+                        >
+                          <Globe className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-white font-semibold text-sm mb-1 group-hover:text-opacity-90 transition-colors">
+                            Industry Outreach
+                          </h3>
+                          <p className="text-gray-400 text-xs leading-relaxed">
+                            Connect with labels, publishers & sync opportunities
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
                 </div>
 
                 {/* Premium Footer */}

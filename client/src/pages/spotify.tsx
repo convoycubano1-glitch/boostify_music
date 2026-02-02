@@ -426,19 +426,19 @@ export default function SpotifyPage() {
               <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-[#1ed760]/20 rounded-full blur-3xl animate-pulse delay-1000" />
             </div>
             
-            <div className="relative z-10 grid lg:grid-cols-2 gap-8 items-center">
+            <div className="relative z-10 flex flex-col-reverse lg:grid lg:grid-cols-2 gap-6 lg:gap-8 items-center">
               {/* Left Side - Text Content */}
-              <div className="space-y-6">
+              <div className="space-y-4 lg:space-y-6 text-center lg:text-left">
                 <motion.div 
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1DB954]/20 border border-[#1DB954]/30"
+                  className="inline-flex items-center gap-1.5 lg:gap-2 px-3 lg:px-4 py-1.5 lg:py-2 rounded-full bg-[#1DB954]/20 border border-[#1DB954]/30 flex-wrap justify-center lg:justify-start"
                 >
-                  <Zap className="w-4 h-4 text-[#1DB954]" />
-                  <span className="text-sm font-medium text-foreground">AI-Powered Growth Platform</span>
+                  <Zap className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-[#1DB954]" />
+                  <span className="text-xs lg:text-sm font-medium text-foreground">AI-Powered Growth Platform</span>
                   {usageStats?.isAdmin && (
-                    <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0 px-2 py-0.5 text-xs font-bold ml-2">
+                    <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0 px-2 py-0.5 text-xs font-bold ml-1 lg:ml-2">
                       👑 ADMIN
                     </Badge>
                   )}
@@ -449,9 +449,10 @@ export default function SpotifyPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.3 }}
                 >
-                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight">
+                  <h1 className="text-2xl sm:text-4xl lg:text-6xl font-black leading-tight">
                     <span className="text-foreground">Spotify</span>
-                    <br />
+                    <br className="hidden sm:block" />
+                    <span className="sm:hidden"> </span>
                     <span className="bg-gradient-to-r from-[#1DB954] to-[#1ed760] bg-clip-text text-transparent">
                       Growth Tools AI
                     </span>
@@ -462,7 +463,7 @@ export default function SpotifyPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.4 }}
-                  className="text-lg text-muted-foreground max-w-lg"
+                  className="text-sm sm:text-base lg:text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0"
                 >
                   Predict your growth, find perfect playlists, connect with curators, 
                   and optimize your music for Spotify's algorithm with AI.
@@ -472,11 +473,11 @@ export default function SpotifyPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.5 }}
-                  className="flex flex-wrap gap-4"
+                  className="flex flex-wrap gap-3 lg:gap-4 justify-center lg:justify-start"
                 >
                   <Button 
                     size="lg" 
-                    className="bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold px-8 py-6 rounded-2xl shadow-lg shadow-[#1DB954]/25 transition-all hover:scale-105"
+                    className="bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold px-6 lg:px-8 py-5 lg:py-6 rounded-2xl shadow-lg shadow-[#1DB954]/25 transition-all hover:scale-105 text-sm lg:text-base"
                     onClick={() => setActiveTab("listeners")}
                   >
                     <Rocket className="mr-2 h-5 w-5" />
@@ -499,42 +500,43 @@ export default function SpotifyPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.6 }}
-                  className="flex flex-wrap gap-6 pt-4"
+                  className="flex flex-wrap gap-3 lg:gap-6 pt-2 lg:pt-4 justify-center lg:justify-start"
                 >
                   {[
                     { value: "50K+", label: "Artists" },
                     { value: "10M+", label: "Streams Generated" },
                     { value: "5K+", label: "Playlist Placements" },
                   ].map((stat) => (
-                    <div key={stat.label} className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-[#1DB954]" />
-                      <span className="font-black text-foreground">{stat.value}</span>
-                      <span className="text-sm text-muted-foreground">{stat.label}</span>
+                    <div key={stat.label} className="flex items-center gap-1.5 lg:gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-[#1DB954]" />
+                      <span className="font-black text-foreground text-sm lg:text-base">{stat.value}</span>
+                      <span className="text-xs lg:text-sm text-muted-foreground">{stat.label}</span>
                     </div>
                   ))}
                 </motion.div>
               </div>
               
-              {/* Right Side - Animation */}
+              {/* Right Side - Animation (visible on all screens) */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
-                className="hidden lg:block relative"
+                className="relative w-full lg:w-auto order-first lg:order-last mb-6 lg:mb-0"
               >
                 <Suspense fallback={
-                  <div className="w-full h-[400px] rounded-2xl bg-gradient-to-br from-[#1DB954]/20 to-[#1ed760]/20 animate-pulse flex items-center justify-center">
+                  <div className="w-full h-[250px] sm:h-[300px] lg:h-[400px] rounded-2xl bg-gradient-to-br from-[#1DB954]/20 to-[#1ed760]/20 animate-pulse flex items-center justify-center">
                     <div className="flex flex-col items-center gap-4">
-                      <SiSpotify className="w-16 h-16 text-[#1DB954] animate-bounce" />
-                      <span className="text-muted-foreground">Loading animation...</span>
+                      <SiSpotify className="w-12 h-12 sm:w-16 sm:h-16 text-[#1DB954] animate-bounce" />
+                      <span className="text-sm sm:text-base text-muted-foreground">Loading animation...</span>
                     </div>
                   </div>
                 }>
                   <SpotifyAnimationPlayer 
                     width="100%" 
-                    height={400}
+                    height={280}
                     autoPlay={true}
                     loop={true}
+                    className="w-full"
                   />
                 </Suspense>
               </motion.div>
@@ -555,7 +557,7 @@ export default function SpotifyPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.1 * index }}
                 whileHover={{ scale: 1.02, y: -4 }}
-                className="group relative p-5 rounded-2xl bg-card border border-border hover:border-[#1DB954]/40 transition-all cursor-pointer overflow-hidden"
+                className="group relative p-3 lg:p-5 rounded-xl lg:rounded-2xl bg-card border border-border hover:border-[#1DB954]/40 transition-all cursor-pointer overflow-hidden"
                 onClick={() => setActiveTab(feature.tab)}
               >
                 {/* Hover Glow */}
@@ -566,16 +568,16 @@ export default function SpotifyPage() {
                 
                 <div className="relative z-10">
                   <div 
-                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110"
+                    className="w-10 h-10 lg:w-12 lg:h-12 rounded-lg lg:rounded-xl flex items-center justify-center mb-2 lg:mb-3 transition-transform group-hover:scale-110"
                     style={{ backgroundColor: `${feature.color}20` }}
                   >
-                    <feature.icon className="w-6 h-6" style={{ color: feature.color }} />
+                    <feature.icon className="w-5 h-5 lg:w-6 lg:h-6" style={{ color: feature.color }} />
                   </div>
-                  <h3 className="font-bold text-foreground mb-1">{feature.label}</h3>
-                  <p className="text-sm text-muted-foreground">{feature.description}</p>
+                  <h3 className="font-bold text-foreground mb-0.5 lg:mb-1 text-sm lg:text-base">{feature.label}</h3>
+                  <p className="text-xs lg:text-sm text-muted-foreground line-clamp-2">{feature.description}</p>
                 </div>
                 
-                <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                <ChevronRight className="absolute right-2 lg:right-4 top-1/2 -translate-y-1/2 w-4 h-4 lg:w-5 lg:h-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
               </motion.div>
             ))}
           </div>

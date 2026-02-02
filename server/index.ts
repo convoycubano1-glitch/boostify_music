@@ -197,10 +197,27 @@ app.use((req, res, next) => {
     log(`📁 Serving uploaded files from: ${uploadsPath}`);
 
     // Serve attached assets (generated images, AI content, etc)
-    const assetsPath = path.resolve(__dirname, '..', 'attached_assets');
+    // Use process.cwd() to ensure correct path regardless of where server is running from
+    const assetsPath = path.join(process.cwd(), 'attached_assets');
     if (fs.existsSync(assetsPath)) {
-      app.use('/attached_assets', express.static(assetsPath));
+      app.use('/attached_assets', express.static(assetsPath, {
+        maxAge: '1d', // Cache for 1 day
+        setHeaders: (res, filePath) => {
+          // Set proper CORS headers for images
+          res.setHeader('Access-Control-Allow-Origin', '*');
+          // Set proper content type for images
+          if (filePath.endsWith('.png')) {
+            res.setHeader('Content-Type', 'image/png');
+          } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+            res.setHeader('Content-Type', 'image/jpeg');
+          } else if (filePath.endsWith('.webp')) {
+            res.setHeader('Content-Type', 'image/webp');
+          }
+        }
+      }));
       log(`🖼️ Serving attached assets from: ${assetsPath}`);
+    } else {
+      log(`⚠️ Warning: attached_assets folder not found at: ${assetsPath}`);
     }
 
     // IMPORTANT: Register API routes BEFORE static file serving

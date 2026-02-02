@@ -2508,3 +2508,236 @@ export const insertRenderQueueSchema = createInsertSchema(renderQueue).omit({ id
 export const selectRenderQueueSchema = createSelectSchema(renderQueue);
 export type InsertRenderQueue = z.infer<typeof insertRenderQueueSchema>;
 export type SelectRenderQueue = typeof renderQueue.$inferSelect;
+
+// ============================================================================
+// MUSIC INDUSTRY CONTACTS & OUTREACH SYSTEM
+// ============================================================================
+
+/**
+ * Music Industry Contacts - Database of industry professionals
+ * Imported from lead generation sources (Apollo, LinkedIn, etc.)
+ */
+export const musicIndustryContacts = pgTable("music_industry_contacts", {
+  id: serial("id").primaryKey(),
+  
+  // Contact Information
+  fullName: text("full_name").notNull(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  email: text("email"),
+  personalEmail: text("personal_email"),
+  phone: text("phone"),
+  mobileNumber: text("mobile_number"),
+  
+  // Professional Info
+  jobTitle: text("job_title"),
+  headline: text("headline"),
+  seniorityLevel: text("seniority_level"), // owner, c_suite, director, manager, etc.
+  functionalLevel: text("functional_level"),
+  industry: text("industry"),
+  
+  // Company Information
+  companyName: text("company_name"),
+  companyDomain: text("company_domain"),
+  companyWebsite: text("company_website"),
+  companyLinkedin: text("company_linkedin"),
+  companyPhone: text("company_phone"),
+  companySize: text("company_size"),
+  companyAnnualRevenue: text("company_annual_revenue"),
+  companyFoundedYear: integer("company_founded_year"),
+  companyDescription: text("company_description"),
+  companyTechnologies: text("company_technologies"),
+  
+  // Location
+  city: text("city"),
+  state: text("state"),
+  country: text("country"),
+  companyFullAddress: text("company_full_address"),
+  
+  // Social Links
+  linkedin: text("linkedin"),
+  
+  // Categorization
+  category: text("category", { 
+    enum: ["record_label", "publishing", "radio", "tv", "sync", "studio", "streaming", "live_events", "pr_marketing", "distribution", "other"] 
+  }).default("other"),
+  keywords: text("keywords"), // Comma-separated keywords for filtering
+  
+  // Outreach Status
+  status: text("status", { 
+    enum: ["new", "queued", "contacted", "opened", "clicked", "responded", "not_interested", "deal_in_progress", "unsubscribed", "bounced"] 
+  }).default("new"),
+  
+  // Tracking
+  lastContactedAt: timestamp("last_contacted_at"),
+  emailsSent: integer("emails_sent").default(0),
+  opensCount: integer("opens_count").default(0),
+  clicksCount: integer("clicks_count").default(0),
+  
+  // Import metadata
+  importSource: text("import_source"), // csv, apify, manual
+  importBatchId: text("import_batch_id"),
+  
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_industry_contacts_email").on(table.email),
+  index("idx_industry_contacts_category").on(table.category),
+  index("idx_industry_contacts_status").on(table.status),
+  index("idx_industry_contacts_industry").on(table.industry),
+]);
+
+export const insertMusicIndustryContactSchema = createInsertSchema(musicIndustryContacts).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectMusicIndustryContactSchema = createSelectSchema(musicIndustryContacts);
+export type InsertMusicIndustryContact = z.infer<typeof insertMusicIndustryContactSchema>;
+export type SelectMusicIndustryContact = typeof musicIndustryContacts.$inferSelect;
+
+/**
+ * Outreach Email Templates - Reusable email templates for campaigns
+ */
+export const outreachTemplates = pgTable("outreach_templates", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+  
+  // Template Info
+  name: text("name").notNull(),
+  subject: text("subject").notNull(),
+  bodyHtml: text("body_html").notNull(),
+  bodyText: text("body_text"), // Plain text fallback
+  
+  // Template Type
+  type: text("type", { 
+    enum: ["artist_intro", "sync_opportunity", "collaboration", "follow_up", "thank_you", "custom"] 
+  }).default("artist_intro"),
+  
+  // Variables available: {{artist_name}}, {{landing_url}}, {{contact_name}}, {{company_name}}, etc.
+  variables: json("variables").$type<string[]>().default([]),
+  
+  // Usage stats
+  timesUsed: integer("times_used").default(0),
+  
+  // Flags
+  isDefault: boolean("is_default").default(false),
+  isActive: boolean("is_active").default(true),
+  
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertOutreachTemplateSchema = createInsertSchema(outreachTemplates).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectOutreachTemplateSchema = createSelectSchema(outreachTemplates);
+export type InsertOutreachTemplate = z.infer<typeof insertOutreachTemplateSchema>;
+export type SelectOutreachTemplate = typeof outreachTemplates.$inferSelect;
+
+/**
+ * Outreach Campaigns - Email campaigns for artist promotion
+ */
+export const outreachCampaigns = pgTable("outreach_campaigns", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  artistId: integer("artist_id").references(() => users.id, { onDelete: "cascade" }), // Which artist to promote
+  templateId: integer("template_id").references(() => outreachTemplates.id, { onDelete: "set null" }),
+  
+  // Campaign Info
+  name: text("name").notNull(),
+  description: text("description"),
+  
+  // Target filters (JSON for flexibility)
+  targetFilters: json("target_filters").$type<{
+    industries?: string[];
+    seniorityLevels?: string[];
+    countries?: string[];
+    categories?: string[];
+    keywords?: string[];
+  }>(),
+  
+  // Campaign Settings
+  dailyLimit: integer("daily_limit").default(20), // Emails per day
+  status: text("status", { 
+    enum: ["draft", "scheduled", "active", "paused", "completed", "cancelled"] 
+  }).default("draft"),
+  
+  // Schedule
+  scheduledAt: timestamp("scheduled_at"),
+  startedAt: timestamp("started_at"),
+  pausedAt: timestamp("paused_at"),
+  completedAt: timestamp("completed_at"),
+  
+  // Stats
+  totalContacts: integer("total_contacts").default(0),
+  emailsSent: integer("emails_sent").default(0),
+  emailsOpened: integer("emails_opened").default(0),
+  emailsClicked: integer("emails_clicked").default(0),
+  emailsReplied: integer("emails_replied").default(0),
+  emailsBounced: integer("emails_bounced").default(0),
+  
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertOutreachCampaignSchema = createInsertSchema(outreachCampaigns).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectOutreachCampaignSchema = createSelectSchema(outreachCampaigns);
+export type InsertOutreachCampaign = z.infer<typeof insertOutreachCampaignSchema>;
+export type SelectOutreachCampaign = typeof outreachCampaigns.$inferSelect;
+
+/**
+ * Outreach Email Log - Track individual email sends
+ */
+export const outreachEmailLog = pgTable("outreach_email_log", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id").references(() => outreachCampaigns.id, { onDelete: "cascade" }),
+  contactId: integer("contact_id").references(() => musicIndustryContacts.id, { onDelete: "cascade" }).notNull(),
+  templateId: integer("template_id").references(() => outreachTemplates.id, { onDelete: "set null" }),
+  
+  // Email Details
+  toEmail: text("to_email").notNull(),
+  toName: text("to_name"),
+  subject: text("subject").notNull(),
+  
+  // Status
+  status: text("status", { 
+    enum: ["queued", "sending", "sent", "delivered", "opened", "clicked", "replied", "bounced", "failed", "unsubscribed"] 
+  }).default("queued"),
+  
+  // Tracking
+  brevoMessageId: text("brevo_message_id"),
+  openedAt: timestamp("opened_at"),
+  clickedAt: timestamp("clicked_at"),
+  repliedAt: timestamp("replied_at"),
+  bouncedAt: timestamp("bounced_at"),
+  
+  // Error tracking
+  errorMessage: text("error_message"),
+  
+  // Timestamps
+  scheduledAt: timestamp("scheduled_at"),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_email_log_campaign").on(table.campaignId),
+  index("idx_email_log_contact").on(table.contactId),
+  index("idx_email_log_status").on(table.status),
+  index("idx_email_log_sent_at").on(table.sentAt),
+]);
+
+export const insertOutreachEmailLogSchema = createInsertSchema(outreachEmailLog).omit({ id: true, createdAt: true });
+export const selectOutreachEmailLogSchema = createSelectSchema(outreachEmailLog);
+export type InsertOutreachEmailLog = z.infer<typeof insertOutreachEmailLogSchema>;
+export type SelectOutreachEmailLog = typeof outreachEmailLog.$inferSelect;
+
+/**
+ * Daily Email Quota Tracking - Track daily sends to respect limits
+ */
+export const outreachDailyQuota = pgTable("outreach_daily_quota", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  date: text("date").notNull(), // YYYY-MM-DD format
+  emailsSent: integer("emails_sent").default(0),
+  dailyLimit: integer("daily_limit").default(20),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_daily_quota_user_date").on(table.userId, table.date),
+]);
