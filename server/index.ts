@@ -155,12 +155,29 @@ app.use((req, res, next) => {
     try {
       const { clerkMiddleware } = await import('@clerk/express');
       const { clerkAuthMiddleware } = await import('./middleware/clerk-auth');
-      // Apply Clerk's built-in middleware first (handles cookie/header parsing)
-      app.use(clerkMiddleware());
-      // Then apply our custom middleware to populate req.user (skip /api/metadata which is public)
+      
+      // Define public routes that should NOT require authentication
+      const publicApiRoutes = [
+        '/api/artist/by-slug',
+        '/api/platform-stats',
+        '/api/subscription-plans',
+        '/api/health',
+        '/api/metadata',
+        '/api/crowdfunding/campaign',
+        '/api/profile/',
+      ];
+      
+      // Apply Clerk's built-in middleware with options to not redirect on public routes
+      app.use(clerkMiddleware({
+        // Don't require auth for any route by default
+        // Individual routes will use isAuthenticated middleware when needed
+      }));
+      
+      // Then apply our custom middleware to populate req.user (skip public routes)
       app.use('/api', (req, res, next) => {
-        // Skip auth for NFT metadata endpoints (already handled above)
-        if (req.path.startsWith('/metadata')) {
+        // Skip auth middleware for public API routes
+        const isPublicRoute = publicApiRoutes.some(route => req.path.startsWith(route.replace('/api', '')));
+        if (isPublicRoute) {
           return next();
         }
         return clerkAuthMiddleware(req, res, next);
