@@ -348,8 +348,105 @@ export default function PRPage() {
     }
   });
 
+  // State for matching contacts
+  const [matchingContacts, setMatchingContacts] = useState<any[]>([]);
+  const [selectedContacts, setSelectedContacts] = useState<number[]>([]);
+  const [isExtractingContacts, setIsExtractingContacts] = useState(false);
+
+  // Find matching contacts from database
+  const findContactsMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('/api/pr-ai/find-matching-contacts', {
+        method: 'POST',
+        body: JSON.stringify({
+          genres: formData.targetGenres,
+          countries: formData.targetCountries,
+          mediaTypes: formData.targetMediaTypes,
+          limit: 50
+        })
+      });
+    },
+    onSuccess: (data: any) => {
+      if (data.contacts) {
+        setMatchingContacts(data.contacts);
+        toast({
+          title: `${data.count} contactos encontrados`,
+          description: "Contactos que coinciden con tu perfil de artista."
+        });
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudieron buscar contactos.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Extract new contacts using Apify
+  const extractContactsMutation = useMutation({
+    mutationFn: async (params: { searchQuery: string; country: string; mediaType: string }) => {
+      return apiRequest('/api/pr-ai/extract-media-contacts', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...params,
+          batchSize: 20
+        })
+      });
+    },
+    onSuccess: (data: any) => {
+      if (data.success) {
+        toast({
+          title: `${data.saved} contactos nuevos`,
+          description: data.message
+        });
+        // Refresh contacts after extraction
+        findContactsMutation.mutate();
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudieron extraer contactos.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Extract contacts for current campaign targets
+  const handleExtractContacts = async () => {
+    setIsExtractingContacts(true);
+    try {
+      // Extract for each media type and country combination (limited batches)
+      for (const mediaType of formData.targetMediaTypes.slice(0, 2)) {
+        for (const country of formData.targetCountries.slice(0, 2)) {
+          const genre = formData.targetGenres[0] || 'latin music';
+          await extractContactsMutation.mutateAsync({
+            searchQuery: `${mediaType} ${genre} industria musical`,
+            country,
+            mediaType
+          });
+        }
+      }
+    } finally {
+      setIsExtractingContacts(false);
+    }
+  };
+
+  // Toggle contact selection
+  const toggleContactSelection = (contactId: number) => {
+    setSelectedContacts(prev => 
+      prev.includes(contactId) 
+        ? prev.filter(id => id !== contactId)
+        : [...prev, contactId]
+    );
+  };
+
   const resetForm = () => {
     setSelectedArtistId(null);
+    setMatchingContacts([]);
+    setSelectedContacts([]);
     setFormData({
       title: "",
       artistName: "",
@@ -1027,6 +1124,103 @@ export default function PRPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Matching Contacts Section */}
+                  <div className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-semibold flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        Contactos que coinciden con tu perfil
+                      </h4>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => findContactsMutation.mutate()}
+                          disabled={findContactsMutation.isPending}
+                          className="gap-2"
+                        >
+                          {findContactsMutation.isPending ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Target className="w-3 h-3" />
+                          )}
+                          Buscar Contactos
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleExtractContacts}
+                          disabled={isExtractingContacts || extractContactsMutation.isPending}
+                          className="gap-2"
+                        >
+                          {isExtractingContacts ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Globe className="w-3 h-3" />
+                          )}
+                          Extraer de Web
+                        </Button>
+                      </div>
+                    </div>
+
+                    {matchingContacts.length > 0 ? (
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+                          <span>{matchingContacts.length} contactos encontrados</span>
+                          <span>{selectedContacts.length} seleccionados</span>
+                        </div>
+                        {matchingContacts.map((contact) => (
+                          <div 
+                            key={contact.id}
+                            onClick={() => toggleContactSelection(contact.id)}
+                            className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                              selectedContacts.includes(contact.id)
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/50"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-4 h-4 rounded border flex items-center justify-center ${
+                                  selectedContacts.includes(contact.id) ? "bg-primary border-primary" : "border-muted-foreground"
+                                }`}>
+                                  {selectedContacts.includes(contact.id) && (
+                                    <CheckCircle className="w-3 h-3 text-primary-foreground" />
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="font-medium text-sm">{contact.fullName}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {contact.jobTitle} {contact.companyName ? `@ ${contact.companyName}` : ''}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {contact.category}
+                                </Badge>
+                                {contact.country && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {contact.country}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">Haz clic en "Buscar Contactos" para encontrar medios que coincidan con tu target.</p>
+                        <p className="text-xs mt-1">O usa "Extraer de Web" para encontrar nuevos contactos con Apify.</p>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
                     <h4 className="font-semibold mb-2 flex items-center gap-2">
                       <Target className="w-4 h-4" />
@@ -1035,11 +1229,11 @@ export default function PRPage() {
                     <ul className="text-sm space-y-2 text-muted-foreground">
                       <li className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 mt-0.5 text-primary" />
-                        <span>Filtraremos medios que coincidan con tu target</span>
+                        <span>Se enviarán emails a {selectedContacts.length > 0 ? selectedContacts.length : 'los'} contactos seleccionados</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 mt-0.5 text-primary" />
-                        <span>Enviaremos emails personalizados automáticamente</span>
+                        <span>Cada email será personalizado con el pitch que creaste</span>
                               </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 mt-0.5 text-primary" />

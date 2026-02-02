@@ -1,6 +1,10 @@
 import express, { Request, Response } from 'express';
 import { authenticate } from '../middleware/auth';
 import OpenAI from 'openai';
+import { ApifyClient } from 'apify-client';
+import { db } from '../db';
+import { musicIndustryContacts, outreachTemplates, users } from '../../db/schema';
+import { eq, or, ilike, and, sql, desc, inArray } from 'drizzle-orm';
 
 const router = express.Router();
 
@@ -9,10 +13,16 @@ const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
+// Initialize Apify Client
+const getApifyClient = () => {
+  return new ApifyClient({
+    token: process.env.APIFY_API_TOKEN,
+  });
+};
+
 /**
  * POST /api/pr-ai/generate-pitch
- * Genera un mensaje pitch profesional usando OpenAI
- * Migrado de Gemini a OpenAI para mayor eficiencia
+ * Genera un mensaje pitch profesional usando OpenAI + plantillas + biografía completa
  */
 router.post('/generate-pitch', authenticate, async (req: Request, res: Response) => {
   try {
@@ -23,7 +33,7 @@ router.post('/generate-pitch', authenticate, async (req: Request, res: Response)
       });
     }
 
-    const { artistName, contentType, contentTitle, genre, biography } = req.body;
+    const { artistName, contentType, contentTitle, genre, biography, artistProfileUrl, templateId, mediaType } = req.body;
 
     if (!artistName || !contentType || !contentTitle) {
       return res.status(400).json({ 
@@ -32,32 +42,59 @@ router.post('/generate-pitch', authenticate, async (req: Request, res: Response)
       });
     }
 
-    const prompt = `Eres un experto en relaciones públicas para la industria musical.
+    // Fetch template if provided
+    let templateContent = '';
+    if (templateId) {
+      const [template] = await db
+        .select()
+        .from(outreachTemplates)
+        .where(eq(outreachTemplates.id, templateId));
+      
+      if (template) {
+        templateContent = template.bodyHtml || template.bodyText || '';
+      }
+    }
 
-Genera un mensaje pitch profesional y atractivo de 2-3 frases para contactar medios de comunicación (radios, podcasts, TV, blogs).
+    // Build enhanced prompt with full biography and template reference
+    const prompt = `Eres un experto en relaciones públicas para la industria musical latina. 
+Tu objetivo es crear un pitch personalizado que logre respuestas de medios de comunicación.
 
-Información del artista:
-- Nombre: ${artistName}
+INFORMACIÓN DEL ARTISTA:
+- Nombre artístico: ${artistName}
+- Género musical: ${genre || 'música urbana/latin'}
+- Landing page: ${artistProfileUrl || 'No disponible'}
+${biography ? `
+BIOGRAFÍA COMPLETA DEL ARTISTA:
+${biography}
+` : ''}
+
+LANZAMIENTO A PROMOCIONAR:
 - Tipo de contenido: ${contentType}
 - Título: ${contentTitle}
-- Género: ${genre || 'música urbana'}
-${biography ? `- Biografía: ${biography.substring(0, 200)}` : ''}
+- Tipo de medio objetivo: ${mediaType || 'general (radio, podcast, blog, TV)'}
 
-El pitch debe:
-1. Ser conciso y directo (2-3 frases máximo)
-2. Destacar lo único o interesante del lanzamiento
-3. Generar interés inmediato
-4. Ser profesional pero cercano
-5. Incluir que está disponible ahora en plataformas
+${templateContent ? `
+PLANTILLA DE REFERENCIA (usa este estilo y tono):
+${templateContent}
+` : ''}
 
-NO uses lenguaje demasiado florido o exagerado.
-NO incluyas saludos ni despedidas.
-Solo el pitch en sí.`;
+INSTRUCCIONES PARA EL PITCH:
+1. Personaliza el mensaje basándote en la biografía del artista
+2. Destaca logros específicos mencionados en la biografía
+3. Adapta el tono al tipo de medio objetivo
+4. Incluye un call-to-action claro (entrevista, reseña, airplay)
+5. Mantén el mensaje entre 3-5 frases concisas
+6. Menciona la landing page del artista para más información
+7. Sé auténtico y evita frases genéricas
+
+NO incluyas saludos ni despedidas, solo el cuerpo del pitch.
+El pitch debe poder insertarse directamente en un email profesional.`;
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 300
+      max_tokens: 500,
+      temperature: 0.8
     });
 
     const generatedText = response.choices[0]?.message?.content || '';
@@ -72,6 +109,313 @@ Solo el pitch en sí.`;
     res.status(500).json({ 
       success: false, 
       message: error.message || 'Error al generar pitch' 
+    });
+  }
+});
+
+/**
+ * POST /api/pr-ai/find-matching-contacts
+ * Encuentra contactos de la base de datos que coincidan con el perfil del artista
+ */
+router.post('/find-matching-contacts', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { genres, countries, mediaTypes, limit = 50 } = req.body;
+
+    // Build dynamic conditions based on artist profile
+    const conditions = [];
+    
+    // Map mediaTypes to categories
+    const mediaToCategory: Record<string, string> = {
+      'radio': 'radio',
+      'tv': 'tv',
+      'podcast': 'radio', // Podcasts often under radio category
+      'blog': 'pr_marketing',
+      'magazine': 'pr_marketing'
+    };
+
+    // Filter by media type categories
+    if (mediaTypes && mediaTypes.length > 0) {
+      const categories = [...new Set(mediaTypes.map((m: string) => mediaToCategory[m] || 'other'))];
+      if (categories.length > 0) {
+        conditions.push(
+          sql`${musicIndustryContacts.category} IN (${sql.join(categories.map(c => sql`${c}`), sql`, `)})`
+        );
+      }
+    }
+
+    // Filter by countries (check if any of the target countries match)
+    if (countries && countries.length > 0) {
+      const countryConditions = countries.map((country: string) => 
+        ilike(musicIndustryContacts.country, `%${country}%`)
+      );
+      conditions.push(or(...countryConditions));
+    }
+
+    // Filter by genres in keywords
+    if (genres && genres.length > 0) {
+      const genreConditions = genres.map((genre: string) => 
+        ilike(musicIndustryContacts.keywords, `%${genre}%`)
+      );
+      conditions.push(or(...genreConditions));
+    }
+
+    // Only get contacts with email
+    conditions.push(sql`${musicIndustryContacts.email} IS NOT NULL`);
+    
+    // Only get new or not recently contacted
+    conditions.push(
+      or(
+        eq(musicIndustryContacts.status, 'new'),
+        sql`${musicIndustryContacts.lastContactedAt} < NOW() - INTERVAL '30 days'`
+      )
+    );
+
+    // Execute query
+    const contacts = await db
+      .select({
+        id: musicIndustryContacts.id,
+        fullName: musicIndustryContacts.fullName,
+        email: musicIndustryContacts.email,
+        jobTitle: musicIndustryContacts.jobTitle,
+        companyName: musicIndustryContacts.companyName,
+        category: musicIndustryContacts.category,
+        country: musicIndustryContacts.country,
+        keywords: musicIndustryContacts.keywords,
+        status: musicIndustryContacts.status,
+        emailsSent: musicIndustryContacts.emailsSent
+      })
+      .from(musicIndustryContacts)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .limit(limit)
+      .orderBy(desc(musicIndustryContacts.createdAt));
+
+    res.json({
+      success: true,
+      contacts,
+      count: contacts.length,
+      filters: { genres, countries, mediaTypes }
+    });
+
+  } catch (error: any) {
+    console.error('[PR AI FIND CONTACTS ERROR]', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Error al buscar contactos' 
+    });
+  }
+});
+
+/**
+ * POST /api/pr-ai/extract-media-contacts
+ * Extrae contactos de medios usando Apify (20 a la vez para no saturar)
+ */
+router.post('/extract-media-contacts', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { searchQuery, country, mediaType, batchSize = 20 } = req.body;
+
+    if (!searchQuery) {
+      return res.status(400).json({
+        success: false,
+        message: 'searchQuery es requerido'
+      });
+    }
+
+    const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
+    if (!APIFY_TOKEN) {
+      return res.status(503).json({
+        success: false,
+        message: 'Apify no está configurado'
+      });
+    }
+
+    const apifyClient = getApifyClient();
+
+    // Build search query for media contacts
+    const fullQuery = `${searchQuery} ${country || ''} ${mediaType || ''} contacto email`.trim();
+
+    console.log(`🔍 [APIFY PR] Extracting media contacts: "${fullQuery}" (batch: ${batchSize})`);
+
+    // Use Google Search Scraper to find media contacts
+    const run = await apifyClient.actor('apify/google-search-scraper').call({
+      queries: fullQuery,
+      maxPagesPerQuery: 1,
+      resultsPerPage: Math.min(batchSize, 20), // Limit to 20 max per batch
+      mobileResults: false,
+      languageCode: 'es',
+      countryCode: country === 'USA' ? 'us' : 
+                   country === 'Mexico' ? 'mx' : 
+                   country === 'España' ? 'es' :
+                   country === 'Colombia' ? 'co' :
+                   country === 'Argentina' ? 'ar' : 'mx'
+    });
+
+    const { items } = await apifyClient.dataset(run.defaultDatasetId).listItems();
+
+    // Process and extract contact info from search results
+    const extractedContacts: any[] = [];
+    const batchId = `apify_${Date.now()}`;
+
+    for (const item of items) {
+      // Extract organic results
+      const organicResults = item.organicResults || [];
+      
+      for (const result of organicResults.slice(0, batchSize)) {
+        // Try to extract email from snippets or descriptions
+        const emailMatch = result.description?.match(/[\w.-]+@[\w.-]+\.\w+/);
+        const phoneMatch = result.description?.match(/\+?[\d\s-]{10,}/);
+
+        const contact = {
+          fullName: result.title?.substring(0, 100) || 'Media Contact',
+          email: emailMatch ? emailMatch[0] : null,
+          phone: phoneMatch ? phoneMatch[0]?.trim() : null,
+          companyName: result.displayedLink || result.link?.split('/')[2] || null,
+          companyWebsite: result.link,
+          jobTitle: mediaType ? `${mediaType} Contact` : 'Media Contact',
+          country: country || null,
+          category: mediaType === 'radio' ? 'radio' : 
+                   mediaType === 'tv' ? 'tv' : 
+                   mediaType === 'podcast' ? 'radio' : 
+                   'pr_marketing',
+          keywords: searchQuery,
+          importSource: 'apify',
+          importBatchId: batchId,
+          status: 'new'
+        };
+
+        // Only add if we have at least company info or email
+        if (contact.email || contact.companyWebsite) {
+          extractedContacts.push(contact);
+        }
+      }
+    }
+
+    // Save to database (skip duplicates by email)
+    let savedCount = 0;
+    let skippedCount = 0;
+
+    for (const contact of extractedContacts) {
+      try {
+        // Check if email already exists
+        if (contact.email) {
+          const existing = await db
+            .select({ id: musicIndustryContacts.id })
+            .from(musicIndustryContacts)
+            .where(eq(musicIndustryContacts.email, contact.email))
+            .limit(1);
+
+          if (existing.length > 0) {
+            skippedCount++;
+            continue;
+          }
+        }
+
+        // Insert new contact
+        await db.insert(musicIndustryContacts).values(contact as any);
+        savedCount++;
+      } catch (err) {
+        console.error('Error saving contact:', err);
+        skippedCount++;
+      }
+    }
+
+    console.log(`✅ [APIFY PR] Saved ${savedCount} new contacts, skipped ${skippedCount} duplicates`);
+
+    res.json({
+      success: true,
+      extracted: extractedContacts.length,
+      saved: savedCount,
+      skipped: skippedCount,
+      batchId,
+      message: `Extraídos ${extractedContacts.length} contactos, guardados ${savedCount} nuevos`
+    });
+
+  } catch (error: any) {
+    console.error('[APIFY PR EXTRACT ERROR]', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Error al extraer contactos' 
+    });
+  }
+});
+
+/**
+ * POST /api/pr-ai/enrich-contacts
+ * Enriquece contactos existentes con más información usando Apify
+ */
+router.post('/enrich-contacts', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { contactIds, batchSize = 10 } = req.body;
+
+    if (!contactIds || contactIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'contactIds es requerido'
+      });
+    }
+
+    const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
+    if (!APIFY_TOKEN) {
+      return res.status(503).json({
+        success: false,
+        message: 'Apify no está configurado'
+      });
+    }
+
+    // Get contacts to enrich
+    const contacts = await db
+      .select()
+      .from(musicIndustryContacts)
+      .where(inArray(musicIndustryContacts.id, contactIds.slice(0, batchSize)));
+
+    const apifyClient = getApifyClient();
+    let enrichedCount = 0;
+
+    for (const contact of contacts) {
+      if (!contact.companyWebsite && !contact.linkedin) continue;
+
+      try {
+        // If we have a LinkedIn URL, use LinkedIn scraper
+        if (contact.linkedin) {
+          const run = await apifyClient.actor('apify/linkedin-profile-scraper').call({
+            profileUrls: [contact.linkedin],
+            maxProfilesPerRun: 1
+          });
+
+          const { items } = await apifyClient.dataset(run.defaultDatasetId).listItems();
+          
+          if (items.length > 0) {
+            const profile = items[0] as any;
+            await db
+              .update(musicIndustryContacts)
+              .set({
+                firstName: profile.firstName || contact.firstName,
+                lastName: profile.lastName || contact.lastName,
+                headline: profile.headline || contact.headline,
+                jobTitle: profile.position || contact.jobTitle,
+                companyName: profile.company || contact.companyName,
+                updatedAt: new Date()
+              })
+              .where(eq(musicIndustryContacts.id, contact.id));
+            
+            enrichedCount++;
+          }
+        }
+      } catch (err) {
+        console.error(`Error enriching contact ${contact.id}:`, err);
+      }
+    }
+
+    res.json({
+      success: true,
+      enriched: enrichedCount,
+      total: contacts.length
+    });
+
+  } catch (error: any) {
+    console.error('[APIFY PR ENRICH ERROR]', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Error al enriquecer contactos' 
     });
   }
 });
