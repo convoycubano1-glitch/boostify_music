@@ -23,8 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
-import { TimelineEditor } from './TimelineEditor';
-import { TimelineClip } from './TimelineEditor';
+import { TimelineEditor, TimelineClip } from './timeline/TimelineEditor';
 import { ensureCompatibleClip } from '../timeline/TimelineClipUnified';
 import { 
   Music, 
