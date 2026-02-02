@@ -47,14 +47,14 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com https://*.googleapis.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com https://*.googleapis.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://js.stripe.com https://translate.google.com https://*.coinbase.com; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "img-src 'self' data: https: blob: *; " +
-    "font-src 'self' https://fonts.gstatic.com data:; " +
-    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.freepik.com https://api.piapi.ai https://api.fal.ai https://*.unsplash.com wss://*.firebaseio.com https://*.clerk.accounts.dev https://*.clerk.com *; " +
+    "font-src 'self' https://fonts.gstatic.com https://r2cdn.perplexity.ai data:; " +
+    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.freepik.com https://api.piapi.ai https://api.fal.ai https://*.unsplash.com wss://*.firebaseio.com https://*.clerk.accounts.dev https://*.clerk.com https://*.stripe.com https://*.coinbase.com *; " +
     "media-src 'self' https: blob: *; " +
     "worker-src 'self' blob:; " +
-    "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com;"
+    "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://open.spotify.com https://*.spotify.com https://js.stripe.com https://*.stripe.com https://*.coinbase.com;"
   );
 
   res.setHeader('Access-Control-Allow-Credentials', 'true');

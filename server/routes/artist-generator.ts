@@ -474,6 +474,244 @@ router.post("/regenerate-images/:artistId", isAuthenticated, async (req: Request
 });
 
 /**
+ * Endpoint para recuperar imágenes originales desde Firestore
+ * Sincroniza las URLs de look.profile_url y look.cover_url de Firestore a PostgreSQL
+ */
+router.post("/sync-images-from-firestore/:artistId", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { artistId } = req.params;
+    const clerkUserId = req.user?.id;
+    
+    if (!clerkUserId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
+
+    // Obtener el artista de PostgreSQL
+    const artist = await pgDb
+      .select()
+      .from(users)
+      .where(eq(users.id, parseInt(artistId)))
+      .limit(1);
+
+    if (artist.length === 0) {
+      return res.status(404).json({ error: 'Artista no encontrado en PostgreSQL' });
+    }
+
+    const artistData = artist[0];
+    
+    // Verificar permisos
+    const userRecord = await pgDb
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.clerkId, clerkUserId))
+      .limit(1);
+    
+    if (userRecord.length === 0) {
+      return res.status(403).json({ error: 'No autorizado' });
+    }
+
+    const { or } = await import('drizzle-orm');
+    if (artistData.id !== userRecord[0].id && artistData.generatedBy !== userRecord[0].id) {
+      return res.status(403).json({ error: 'No tienes permiso para este artista' });
+    }
+
+    // Buscar en Firestore por firestoreId
+    if (!artistData.firestoreId) {
+      return res.status(404).json({ 
+        error: 'Este artista no tiene firestoreId asociado',
+        suggestion: 'Intenta regenerar las imágenes con el botón de refresh'
+      });
+    }
+
+    console.log(`🔍 Buscando imágenes en Firestore para artista: ${artistData.artistName} (firestoreId: ${artistData.firestoreId})`);
+    
+    const firestoreDoc = await db.collection('generated_artists').doc(artistData.firestoreId).get();
+    
+    if (!firestoreDoc.exists) {
+      return res.status(404).json({ 
+        error: 'Documento no encontrado en Firestore',
+        firestoreId: artistData.firestoreId 
+      });
+    }
+
+    const firestoreData = firestoreDoc.data();
+    const profileUrl = firestoreData?.look?.profile_url || firestoreData?.profileImage;
+    const coverUrl = firestoreData?.look?.cover_url || firestoreData?.coverImage;
+
+    console.log(`📸 Imágenes encontradas en Firestore:`);
+    console.log(`   Profile: ${profileUrl?.substring(0, 80)}...`);
+    console.log(`   Cover: ${coverUrl?.substring(0, 80)}...`);
+
+    if (!profileUrl && !coverUrl) {
+      return res.status(404).json({ 
+        error: 'No se encontraron imágenes en Firestore para este artista',
+        firestoreData: {
+          hasLook: !!firestoreData?.look,
+          fields: Object.keys(firestoreData || {})
+        }
+      });
+    }
+
+    // Actualizar PostgreSQL con las URLs de Firestore
+    const updateData: any = { updatedAt: new Date() };
+    if (profileUrl) updateData.profileImage = profileUrl;
+    if (coverUrl) updateData.coverImage = coverUrl;
+
+    await pgDb.update(users)
+      .set(updateData)
+      .where(eq(users.id, parseInt(artistId)));
+
+    console.log(`✅ Imágenes sincronizadas desde Firestore para ${artistData.artistName}`);
+
+    res.json({
+      success: true,
+      artistId: parseInt(artistId),
+      artistName: artistData.artistName,
+      profileImage: profileUrl,
+      coverImage: coverUrl,
+      source: 'firestore'
+    });
+  } catch (error) {
+    console.error('Error sincronizando imágenes desde Firestore:', error);
+    res.status(500).json({ 
+      error: 'Error al sincronizar imágenes',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+/**
+ * Endpoint para sincronizar TODOS los artistas desde Firestore (admin/batch)
+ */
+router.post("/sync-all-images-from-firestore", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const clerkUserId = req.user?.id;
+    
+    if (!clerkUserId) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
+
+    // Obtener ID de PostgreSQL del usuario
+    const userRecord = await pgDb
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.clerkId, clerkUserId))
+      .limit(1);
+
+    if (userRecord.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    const pgUserId = userRecord[0].id;
+    const { or } = await import('drizzle-orm');
+    
+    // Obtener artistas del usuario
+    const artistsFromPg = await pgDb
+      .select()
+      .from(users)
+      .where(
+        or(
+          eq(users.id, pgUserId),
+          eq(users.generatedBy, pgUserId)
+        )
+      );
+
+    console.log(`🔄 Sincronizando imágenes de ${artistsFromPg.length} artistas desde Firestore...`);
+
+    const results: any[] = [];
+    let synced = 0;
+    let failed = 0;
+    let skipped = 0;
+
+    for (const artist of artistsFromPg) {
+      if (!artist.firestoreId) {
+        results.push({ 
+          id: artist.id, 
+          name: artist.artistName, 
+          status: 'skipped', 
+          reason: 'no-firestore-id' 
+        });
+        skipped++;
+        continue;
+      }
+
+      try {
+        const firestoreDoc = await db.collection('generated_artists').doc(artist.firestoreId).get();
+        
+        if (!firestoreDoc.exists) {
+          results.push({ 
+            id: artist.id, 
+            name: artist.artistName, 
+            status: 'skipped', 
+            reason: 'firestore-doc-not-found' 
+          });
+          skipped++;
+          continue;
+        }
+
+        const firestoreData = firestoreDoc.data();
+        const profileUrl = firestoreData?.look?.profile_url || firestoreData?.profileImage;
+        const coverUrl = firestoreData?.look?.cover_url || firestoreData?.coverImage;
+
+        if (!profileUrl && !coverUrl) {
+          results.push({ 
+            id: artist.id, 
+            name: artist.artistName, 
+            status: 'skipped', 
+            reason: 'no-images-in-firestore' 
+          });
+          skipped++;
+          continue;
+        }
+
+        // Actualizar PostgreSQL
+        const updateData: any = { updatedAt: new Date() };
+        if (profileUrl) updateData.profileImage = profileUrl;
+        if (coverUrl) updateData.coverImage = coverUrl;
+
+        await pgDb.update(users)
+          .set(updateData)
+          .where(eq(users.id, artist.id));
+
+        results.push({ 
+          id: artist.id, 
+          name: artist.artistName, 
+          status: 'synced',
+          profileImage: profileUrl?.substring(0, 50) + '...',
+          coverImage: coverUrl?.substring(0, 50) + '...'
+        });
+        synced++;
+      } catch (err) {
+        results.push({ 
+          id: artist.id, 
+          name: artist.artistName, 
+          status: 'error', 
+          error: err instanceof Error ? err.message : 'Unknown error' 
+        });
+        failed++;
+      }
+    }
+
+    console.log(`✅ Sincronización completada: ${synced} sincronizados, ${skipped} saltados, ${failed} errores`);
+
+    res.json({
+      success: true,
+      total: artistsFromPg.length,
+      synced,
+      skipped,
+      failed,
+      results
+    });
+  } catch (error) {
+    console.error('Error en sincronización masiva:', error);
+    res.status(500).json({ 
+      error: 'Error en sincronización masiva',
+      details: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+});
+
+/**
  * Endpoint para obtener todos los artistas de un usuario
  * Incluye: su propio perfil + artistas generados con IA
  */
