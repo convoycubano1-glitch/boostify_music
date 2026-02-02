@@ -141,7 +141,30 @@ export default function PRPage() {
     pitchMessage: "",
     contactEmail: user?.email || "",
     contactPhone: "",
-    artistBio: ""
+    artistBio: "",
+    templateType: "artist_intro" as string
+  });
+
+  // Fetch PR AI configuration (to know if Apify is available)
+  const { data: prConfig } = useQuery<{ success: boolean; openai: boolean; apify: boolean; templates: boolean }>({
+    queryKey: ['/api/pr-ai/config'],
+    queryFn: async () => {
+      const res = await fetch('/api/pr-ai/config');
+      if (!res.ok) return { success: false, openai: false, apify: false, templates: false };
+      return res.json();
+    },
+    enabled: !!user
+  });
+
+  // Fetch available PR templates
+  const { data: prTemplates } = useQuery<{ success: boolean; templates: Array<{ id: string; name: string; subject: string; type: string }> }>({
+    queryKey: ['/api/pr-ai/templates'],
+    queryFn: async () => {
+      const res = await fetch('/api/pr-ai/templates');
+      if (!res.ok) return { success: false, templates: [] };
+      return res.json();
+    },
+    enabled: !!user
   });
 
   // Fetch user's artists from my-artists endpoint
@@ -269,7 +292,9 @@ export default function PRPage() {
           contentTitle: formData.contentTitle,
           genre: formData.targetGenres[0] || 'urban',
           biography: artistBio,
-          artistProfileUrl: formData.artistProfileUrl
+          artistProfileUrl: formData.artistProfileUrl,
+          templateType: formData.templateType,
+          mediaType: formData.targetMediaTypes[0] || 'general'
         })
       });
     },
@@ -460,7 +485,8 @@ export default function PRPage() {
       pitchMessage: "",
       contactEmail: user?.email || "",
       contactPhone: "",
-      artistBio: ""
+      artistBio: "",
+      templateType: "artist_intro"
     });
     setWizardStep(1);
   };
@@ -983,6 +1009,44 @@ export default function PRPage() {
 
               {wizardStep === 4 && (
                 <div className="space-y-4">
+                  {/* Template Selector */}
+                  <div>
+                    <Label data-testid="label-template-type">Plantilla Base</Label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Selecciona una plantilla profesional para generar tu pitch
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {[
+                        { id: 'artist_intro', name: 'Introducción de Artista', icon: User },
+                        { id: 'sync_opportunity', name: 'Oportunidad Sync', icon: Music },
+                        { id: 'follow_up', name: 'Seguimiento', icon: Mail }
+                      ].map((template) => {
+                        const Icon = template.icon;
+                        const isSelected = formData.templateType === template.id;
+                        return (
+                          <button
+                            key={template.id}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, templateType: template.id })}
+                            className={`p-3 border rounded-lg flex items-center gap-2 transition-all text-left ${
+                              isSelected
+                                ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                                : "border-border hover:border-primary/50"
+                            }`}
+                          >
+                            <Icon className="w-5 h-5 flex-shrink-0" />
+                            <div className="flex-1">
+                              <span className="text-sm font-medium">{template.name}</span>
+                              {isSelected && (
+                                <CheckCircle className="w-4 h-4 text-primary inline ml-2" />
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <Label htmlFor="pitchMessage" data-testid="label-pitch-message">
@@ -1148,21 +1212,23 @@ export default function PRPage() {
                           )}
                           Buscar Contactos
                         </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleExtractContacts}
-                          disabled={isExtractingContacts || extractContactsMutation.isPending}
-                          className="gap-2"
-                        >
-                          {isExtractingContacts ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <Globe className="w-3 h-3" />
-                          )}
-                          Extraer de Web
-                        </Button>
+                        {prConfig?.apify && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleExtractContacts}
+                            disabled={isExtractingContacts || extractContactsMutation.isPending}
+                            className="gap-2"
+                          >
+                            {isExtractingContacts ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Globe className="w-3 h-3" />
+                            )}
+                            Extraer de Web
+                          </Button>
+                        )}
                       </div>
                     </div>
 
@@ -1216,7 +1282,9 @@ export default function PRPage() {
                       <div className="text-center py-6 text-muted-foreground">
                         <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
                         <p className="text-sm">Haz clic en "Buscar Contactos" para encontrar medios que coincidan con tu target.</p>
-                        <p className="text-xs mt-1">O usa "Extraer de Web" para encontrar nuevos contactos con Apify.</p>
+                        {prConfig?.apify && (
+                          <p className="text-xs mt-1">O usa "Extraer de Web" para encontrar nuevos contactos automáticamente.</p>
+                        )}
                       </div>
                     )}
                   </div>

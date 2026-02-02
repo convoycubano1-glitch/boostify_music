@@ -4,7 +4,13 @@ import OpenAI from 'openai';
 import { ApifyClient } from 'apify-client';
 import { db } from '../db';
 import { musicIndustryContacts, outreachTemplates, users } from '../../db/schema';
-import { eq, or, ilike, and, sql, desc, inArray } from 'drizzle-orm';
+import { eq, or, ilike, and, sql, desc, inArray, isNotNull } from 'drizzle-orm';
+import { 
+  getDefaultArtistIntroTemplate, 
+  getSyncOpportunityTemplate, 
+  getFollowUpTemplate,
+  replaceTemplateVariables 
+} from '../services/outreach-email-service';
 
 const router = express.Router();
 
@@ -13,12 +19,56 @@ const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
+// Check if Apify is available
+const isApifyAvailable = () => !!process.env.APIFY_API_TOKEN;
+
 // Initialize Apify Client
 const getApifyClient = () => {
+  if (!process.env.APIFY_API_TOKEN) {
+    throw new Error('APIFY_API_TOKEN not configured');
+  }
   return new ApifyClient({
     token: process.env.APIFY_API_TOKEN,
   });
 };
+
+/**
+ * GET /api/pr-ai/config - Get PR AI configuration status
+ */
+router.get('/config', authenticate, async (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    openai: !!openai,
+    apify: isApifyAvailable(),
+    templates: true
+  });
+});
+
+/**
+ * GET /api/pr-ai/templates - Get available PR templates
+ */
+router.get('/templates', authenticate, async (_req: Request, res: Response) => {
+  try {
+    const templates = {
+      artist_intro: getDefaultArtistIntroTemplate(),
+      sync_opportunity: getSyncOpportunityTemplate(),
+      follow_up: getFollowUpTemplate()
+    };
+    
+    res.json({
+      success: true,
+      templates: Object.entries(templates).map(([key, value]) => ({
+        id: key,
+        name: value.name,
+        subject: value.subject,
+        type: value.type,
+        variables: value.variables
+      }))
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 /**
  * POST /api/pr-ai/generate-pitch
@@ -33,7 +83,7 @@ router.post('/generate-pitch', authenticate, async (req: Request, res: Response)
       });
     }
 
-    const { artistName, contentType, contentTitle, genre, biography, artistProfileUrl, templateId, mediaType } = req.body;
+    const { artistName, contentType, contentTitle, genre, biography, artistProfileUrl, templateType, mediaType } = req.body;
 
     if (!artistName || !contentType || !contentTitle) {
       return res.status(400).json({ 
@@ -42,16 +92,31 @@ router.post('/generate-pitch', authenticate, async (req: Request, res: Response)
       });
     }
 
-    // Fetch template if provided
+    // Get template based on type
     let templateContent = '';
-    if (templateId) {
-      const [template] = await db
-        .select()
-        .from(outreachTemplates)
-        .where(eq(outreachTemplates.id, templateId));
+    let templateSubject = '';
+    if (templateType) {
+      const templates: Record<string, any> = {
+        artist_intro: getDefaultArtistIntroTemplate(),
+        sync_opportunity: getSyncOpportunityTemplate(),
+        follow_up: getFollowUpTemplate()
+      };
       
+      const template = templates[templateType];
       if (template) {
-        templateContent = template.bodyHtml || template.bodyText || '';
+        // Replace variables with actual data
+        templateContent = replaceTemplateVariables(template.bodyHtml, {
+          artist_name: artistName,
+          genre: genre || 'música urbana',
+          artist_bio: biography || '',
+          landing_url: artistProfileUrl || '',
+          contact_name: '{{contact_name}}', // Keep placeholder for personalization
+          company_name: '{{company_name}}'
+        });
+        templateSubject = replaceTemplateVariables(template.subject, {
+          artist_name: artistName,
+          genre: genre || 'música urbana'
+        });
       }
     }
 
@@ -74,8 +139,8 @@ LANZAMIENTO A PROMOCIONAR:
 - Tipo de medio objetivo: ${mediaType || 'general (radio, podcast, blog, TV)'}
 
 ${templateContent ? `
-PLANTILLA DE REFERENCIA (usa este estilo y tono):
-${templateContent}
+USA ESTA PLANTILLA PROFESIONAL COMO BASE (adapta el contenido pero mantén el estilo):
+Asunto sugerido: ${templateSubject}
 ` : ''}
 
 INSTRUCCIONES PARA EL PITCH:
