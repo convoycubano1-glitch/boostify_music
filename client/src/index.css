@@ -2,6 +2,23 @@
 @import './styles/mobile-optimization.css';
 
 @tailwind base;
+
+/* Ocultar widget de calificación de Google Translate */
+.goog-te-banner-frame,
+.skiptranslate iframe,
+#goog-gt-tt,
+.goog-te-balloon-frame,
+div#goog-gt-,
+.goog-tooltip,
+.goog-tooltip:hover,
+.goog-text-highlight,
+.goog-te-menu-value span:first-child::after {
+  display: none !important;
+}
+
+body {
+  top: 0 !important;
+}
 @tailwind components;
 @tailwind utilities;
 
