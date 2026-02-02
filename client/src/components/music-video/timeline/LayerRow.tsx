@@ -85,6 +85,7 @@ export const LayerRow: React.FC<LayerRowProps> = ({
 }) => {
   // Filtrar clips que pertenecen a esta capa
   const layerClips = clips.filter(clip => clip.layerId === layer.id);
+  const isAudioLayer = layer.type === LayerType.AUDIO;
   
   // Layer state
   const [layerHeight, setLayerHeight] = useState(layer.height || DEFAULT_LAYER_HEIGHT);
@@ -152,7 +153,6 @@ export const LayerRow: React.FC<LayerRowProps> = ({
   const handleDragMove = React.useCallback((e: MouseEvent) => {
     const state = dragStateRef.current;
     if (!state.clipId) {
-      console.log('⚠️ [LayerRow] handleDragMove - no clipId in state');
       return;
     }
     
@@ -167,7 +167,6 @@ export const LayerRow: React.FC<LayerRowProps> = ({
     state.rafId = requestAnimationFrame(() => {
       const clipElement = state.clipElement;
       if (!clipElement) {
-        console.log('⚠️ [LayerRow] handleDragMove RAF - no clipElement');
         return;
       }
       
@@ -223,10 +222,7 @@ export const LayerRow: React.FC<LayerRowProps> = ({
   }, [clips, zoom, duration, layer.id, onMoveClip, handleDragMove, onDragEndCallback]);
   
   const handleDragStart = React.useCallback((clipId: number, e: React.MouseEvent) => {
-    console.log(`🎯 [LayerRow] handleDragStart called - clipId: ${clipId}, isLocked: ${isLocked}`);
-    
-    if (isLocked) {
-      console.log('🔒 [LayerRow] Layer is locked, aborting drag');
+    if (isLocked && !isAudioLayer) {
       return;
     }
     e.preventDefault();
@@ -234,11 +230,8 @@ export const LayerRow: React.FC<LayerRowProps> = ({
     
     const clip = clips.find(c => c.id === clipId);
     if (!clip) {
-      console.log('❌ [LayerRow] Clip not found:', clipId);
       return;
     }
-    
-    console.log(`✅ [LayerRow] Starting drag for clip ${clipId}:`, { start: clip.start, duration: clip.duration, layerId: clip.layerId });
     
     // Notificar al editor que empieza un drag para guardar estado inicial
     onDragStartCallback?.();
@@ -246,10 +239,8 @@ export const LayerRow: React.FC<LayerRowProps> = ({
     // Buscar el elemento DOM del clip usando el selector de data-clip-id
     // Usar querySelector en lugar de closest para mayor confiabilidad
     const clipElement = document.querySelector(`[data-clip-id="${clipId}"]`) as HTMLElement;
-    console.log('📦 [LayerRow] clipElement found via querySelector:', clipElement ? 'yes' : 'no');
     
     if (!clipElement) {
-      console.log('❌ [LayerRow] Could not find clip element, aborting');
       return;
     }
     
@@ -268,7 +259,7 @@ export const LayerRow: React.FC<LayerRowProps> = ({
     document.addEventListener('mousemove', handleDragMove);
     document.addEventListener('mouseup', handleDragEnd);
     document.body.style.cursor = 'grabbing';
-  }, [clips, isLocked, handleDragMove, handleDragEnd, onDragStartCallback]);
+  }, [clips, isLocked, isAudioLayer, handleDragMove, handleDragEnd, onDragStartCallback]);
   
   // ====== REDIMENSIONAR CLIPS (OPTIMIZADO CON RAF) ======
   const handleResizeMove = React.useCallback((e: MouseEvent) => {
@@ -385,7 +376,7 @@ export const LayerRow: React.FC<LayerRowProps> = ({
   }, [zoom, duration, onResizeClip, handleResizeMove, onResizeEndCallback]);
   
   const handleResizeStart = React.useCallback((clipId: number, direction: 'start' | 'end', e: React.MouseEvent) => {
-    if (isLocked) return;
+    if (isLocked && !isAudioLayer) return;
     e.preventDefault();
     e.stopPropagation();
     
@@ -413,7 +404,7 @@ export const LayerRow: React.FC<LayerRowProps> = ({
     document.addEventListener('mousemove', handleResizeMove);
     document.addEventListener('mouseup', handleResizeEnd);
     document.body.style.cursor = 'ew-resize';
-  }, [clips, isLocked, handleResizeMove, handleResizeEnd, onResizeStartCallback]);
+  }, [clips, isLocked, isAudioLayer, handleResizeMove, handleResizeEnd, onResizeStartCallback]);
   
   // Cleanup en unmount
   React.useEffect(() => {
@@ -477,6 +468,7 @@ export const LayerRow: React.FC<LayerRowProps> = ({
 
   // Toggle lock state
   const handleToggleLock = () => {
+    if (isAudioLayer) return;
     setIsLocked(!isLocked);
   };
 
@@ -491,7 +483,6 @@ export const LayerRow: React.FC<LayerRowProps> = ({
   };
 
   // Determine layer icon and color based on type
-  const isAudioLayer = layer.type === LayerType.AUDIO;
   const isVideoLayer = layer.type === LayerType.IMAGEN;
 
   // Professional gray color palette
@@ -603,12 +594,15 @@ export const LayerRow: React.FC<LayerRowProps> = ({
                 {/* Lock toggle */}
                 <button
                   onClick={handleToggleLock}
+                  disabled={isAudioLayer}
                   className={`p-1 rounded transition-all ${
-                    isLocked 
-                      ? 'bg-yellow-500/20 text-yellow-400' 
-                      : 'hover:bg-white/10 text-white/40'
+                    isAudioLayer
+                      ? 'opacity-40 cursor-not-allowed'
+                      : isLocked 
+                        ? 'bg-yellow-500/20 text-yellow-400' 
+                        : 'hover:bg-white/10 text-white/40'
                   }`}
-                  title={isLocked ? 'Unlock Layer' : 'Lock Layer'}
+                  title={isAudioLayer ? 'Audio layer always editable' : (isLocked ? 'Unlock Layer' : 'Lock Layer')}
                 >
                   {isLocked ? <Lock size={10} /> : <Unlock size={10} />}
                 </button>
@@ -644,7 +638,7 @@ export const LayerRow: React.FC<LayerRowProps> = ({
       
         {/* Layer Content (clips) */}
         <div 
-          className={`layer-content relative flex-1 overflow-hidden transition-all ${isLocked ? 'pointer-events-none' : ''}`}
+          className={`layer-content relative flex-1 overflow-hidden transition-all ${isLocked && !isAudioLayer ? 'pointer-events-none' : ''}`}
           style={{
             height: '100%',
             backgroundColor: contentBgColor,
@@ -657,7 +651,7 @@ export const LayerRow: React.FC<LayerRowProps> = ({
           }}
         >
           {/* Locked overlay */}
-          {isLocked && (
+          {isLocked && !isAudioLayer && (
             <div className="absolute inset-0 bg-yellow-900/20 z-20 flex items-center justify-center">
               <div className="flex items-center gap-1 text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded border border-yellow-500/20">
                 <Lock size={12} />
@@ -697,9 +691,15 @@ export const LayerRow: React.FC<LayerRowProps> = ({
               timeScale={zoom}
               isSelected={selectedClipId === clip.id}
               tool={tool}
-              onSelect={(id) => !isLocked && onSelectClip(id)}
-              onMoveStart={(id, e) => !isLocked && handleDragStart(id, e)}
-              onResizeStart={(id, direction, e) => !isLocked && handleResizeStart(id, direction, e)}
+              onSelect={(id) => {
+                if (!isLocked || isAudioLayer) onSelectClip(id);
+              }}
+              onMoveStart={(id, e) => {
+                if (!isLocked || isAudioLayer) handleDragStart(id, e);
+              }}
+              onResizeStart={(id, direction, e) => {
+                if (!isLocked || isAudioLayer) handleResizeStart(id, direction, e);
+              }}
               onRazorClick={onRazorClick}
               isDragging={draggedClipId === clip.id}
               isResizing={resizingClipId === clip.id}

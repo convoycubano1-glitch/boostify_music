@@ -142,8 +142,66 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-black">
-      {/* Left Panel - Animation (hidden on mobile) */}
+    <div className="min-h-screen flex flex-col lg:flex-row bg-black">
+      {/* Mobile Animation Header - Visible only on mobile/tablet */}
+      <div className="lg:hidden relative overflow-hidden bg-gradient-to-b from-orange-600/10 via-black to-transparent">
+        {/* Animated grid pattern */}
+        <div 
+          className="absolute inset-0 opacity-10"
+          style={{
+            backgroundImage: `linear-gradient(rgba(249, 115, 22, 0.1) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(249, 115, 22, 0.1) 1px, transparent 1px)`,
+            backgroundSize: '30px 30px',
+          }}
+        />
+        
+        {/* Glowing orbs - smaller for mobile */}
+        <div className="absolute top-0 left-0 w-40 h-40 bg-orange-500/20 rounded-full blur-[60px] animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-48 h-48 bg-red-600/15 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: '1s' }} />
+        
+        {/* Mobile Animation Content */}
+        <div className="relative z-10 flex flex-col items-center justify-center w-full px-4 py-6">
+          {/* Remotion Animation - Mobile optimized */}
+          <Suspense fallback={
+            <div className="w-full max-w-[280px] aspect-[4/3] bg-gray-900/50 rounded-xl flex items-center justify-center border border-gray-800">
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+                <p className="text-gray-400 text-xs">Loading...</p>
+              </div>
+            </div>
+          }>
+            <AuthAnimationPlayer 
+              width={280}
+              height={210}
+              autoPlay={true}
+              loop={true}
+              className="mb-4"
+            />
+          </Suspense>
+          
+          {/* Mobile Feature Pills - Horizontal scroll */}
+          <div className="flex gap-2 overflow-x-auto w-full max-w-full pb-2 px-2 scrollbar-hide">
+            <div className="flex-shrink-0 flex items-center gap-2 bg-gray-900/60 backdrop-blur-sm border border-gray-800/50 rounded-full px-3 py-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-orange-400" />
+              <span className="text-white text-xs font-medium whitespace-nowrap">AI-Powered</span>
+            </div>
+            <div className="flex-shrink-0 flex items-center gap-2 bg-gray-900/60 backdrop-blur-sm border border-gray-800/50 rounded-full px-3 py-1.5">
+              <Zap className="w-3.5 h-3.5 text-green-400" />
+              <span className="text-white text-xs font-medium whitespace-nowrap">60s Setup</span>
+            </div>
+            <div className="flex-shrink-0 flex items-center gap-2 bg-gray-900/60 backdrop-blur-sm border border-gray-800/50 rounded-full px-3 py-1.5">
+              <Users className="w-3.5 h-3.5 text-purple-400" />
+              <span className="text-white text-xs font-medium whitespace-nowrap">10K+ Artists</span>
+            </div>
+            <div className="flex-shrink-0 flex items-center gap-2 bg-gray-900/60 backdrop-blur-sm border border-gray-800/50 rounded-full px-3 py-1.5">
+              <BarChart3 className="w-3.5 h-3.5 text-blue-400" />
+              <span className="text-white text-xs font-medium whitespace-nowrap">Analytics</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Left Panel - Animation (desktop only) */}
       <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden">
         {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-orange-600/20 via-black to-red-900/20" />
@@ -290,6 +348,17 @@ export default function AuthPage() {
         </p>
         </div>
       </div>
+      
+      {/* Custom CSS for hiding scrollbar */}
+      <style>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </div>
   );
 }

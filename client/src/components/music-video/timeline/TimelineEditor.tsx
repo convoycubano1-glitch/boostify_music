@@ -141,15 +141,6 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   onAddImageToTimeline,
   projectContext,
 }) => {
-  // ?? DEBUG: Log audioPreviewUrl on mount and changes
-  useEffect(() => {
-    console.log('-'.repeat(60));
-    console.log('?? [TIMELINE] AUDIO PROP RECIBIDO');
-    console.log('?? audioPreviewUrl:', audioPreviewUrl ? audioPreviewUrl.substring(0, 80) + '...' : '? NULL/UNDEFINED');
-    console.log('?? duration:', duration, 'segundos');
-    console.log('-'.repeat(60));
-  }, [audioPreviewUrl, duration]);
-  
   const [clips, setClips] = useState<TimelineClip[]>(() => normalizeClips(initialClips));
   const [zoom, setZoom] = useState(initialZoom);
   const [currentTime, setCurrentTime] = useState(0);
@@ -238,9 +229,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
       
       setIsLoadingProjects(true);
       try {
-        console.log('?? [FIREBASE] Cargando proyectos del usuario:', user.id);
         const projects = await getUserProjects(user.id);
-        console.log('?? [FIREBASE] Proyectos cargados:', projects.length);
         setFirebaseProjects(projects);
         
         // Convertir a formato SavedProject para compatibilidad
@@ -370,10 +359,6 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   // ?? AUTO-ADD: Crear clip de audio autom�ticamente cuando hay audioPreviewUrl
   // Tambi�n crear segmentos de audio para clips que necesitan lipsync
   useEffect(() => {
-    console.log('?? [AUTO-ADD EFFECT] Verificando condiciones para crear audio clip:');
-    console.log('  - audioPreviewUrl:', audioPreviewUrl ? '? ' + audioPreviewUrl.substring(0, 50) + '...' : '? NULL');
-    console.log('  - duration:', duration > 0 ? '? ' + duration + 's' : '? ' + duration);
-    
     if (audioPreviewUrl && duration > 0) {
       setClips(prevClips => {
         // Verificar si ya hay un clip de audio principal
@@ -385,11 +370,6 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         const newClips = [...prevClips];
         
         if (!hasMainAudioClip) {
-          console.log('-'.repeat(60));
-          console.log('?? [AUTO-ADD] CREANDO CLIP DE AUDIO PRINCIPAL');
-          console.log(`?? URL: ${audioPreviewUrl.substring(0, 80)}...`);
-          console.log(`?? Duraci�n: ${duration} segundos`);
-          console.log('-'.repeat(60));
           const audioClip: TimelineClip = {
             id: 99999, // ID especial para audio
             layerId: 2,
@@ -406,7 +386,6 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
               totalDuration: duration
             }
           };
-          console.log(`?? [AUTO-ADD] Audio clip creado:`, audioClip);
           newClips.push(audioClip);
         }
         
@@ -442,7 +421,6 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
               }
             };
             newClips.push(lipsyncSegment);
-            console.log(`?? [AUTO-ADD] Lipsync segment creado para clip ${clip.id}:`, lipsyncSegment);
           });
         }
         
@@ -454,11 +432,8 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   // ?? AUTO-ANALYZE: Analizar audio para obtener beats cuando se carga
   useEffect(() => {
     if (audioPreviewUrl && !audioAnalysis && !isAnalyzingAudio) {
-      console.log('?? [AUTO-ANALYZE] Iniciando an�lisis de audio para beats...');
-      analyzeAudio(audioPreviewUrl).then(() => {
-        console.log('?? [AUTO-ANALYZE] An�lisis de audio completado:', audioAnalysis);
-      }).catch((err) => {
-        console.warn('?? [AUTO-ANALYZE] Error analizando audio:', err);
+      analyzeAudio(audioPreviewUrl).catch(() => {
+        // Silently ignore audio analysis errors
       });
     }
   }, [audioPreviewUrl, audioAnalysis, isAnalyzingAudio, analyzeAudio]);
@@ -793,7 +768,6 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         audioRef.current.playbackRate = 1;
         audioRef.current.play()
           .then(() => {
-            console.log('🔊 [Audio] Reproduciendo correctamente');
             setAudioReady(true);
             setAudioError(null);
           })
@@ -895,8 +869,6 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         imageData: img.url // URL temporal de FAL que se convertir� a permanente
       }));
       
-      console.log('?? [FIREBASE] Guardando proyecto:', name, 'con', imagesToUpload.length, 'im�genes');
-      
       // Crear proyecto con im�genes en Firebase
       const { projectId, project } = await createProjectWithImages(
         name,
@@ -913,8 +885,6 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
           setSaveStatus(status);
         }
       );
-      
-      console.log('? [FIREBASE] Proyecto guardado con ID:', projectId);
       
       // Actualizar lista de proyectos
       const newProject: SavedProject = {
@@ -963,10 +933,6 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     logger.info(`?? Cargando proyecto: ${project.name}`);
     logger.info(`?? Clips: ${project.clips?.length || 0}, Im�genes: ${project.generatedImages?.length || 0}`);
     
-    // Log para debug - ver estructura de clips guardados
-    console.log('?? [DEBUG] Clips del proyecto (raw):', JSON.stringify(project.clips, null, 2));
-    console.log('?? [DEBUG] Im�genes del proyecto:', project.generatedImages);
-    
     // Usar normalizeClips para manejar la conversi�n de formato
     const normalizedClips = normalizeClips(project.clips || []);
     
@@ -983,8 +949,6 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
       // Si el clip no tiene imagen pero hay una matching, asignarla
       const finalImageUrl = clip.url || clip.imageUrl || matchingImage?.url || '';
       
-      console.log(`?? [LOAD] Clip ${clip.id}: start=${clip.start?.toFixed(2)}s, dur=${clip.duration?.toFixed(2)}s, layerId=${clip.layerId}, img=${!!finalImageUrl}`);
-      
       return {
         ...clip,
         url: finalImageUrl,
@@ -995,7 +959,6 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     
     logger.info(`? ${loadedClips.filter(c => c.url || c.imageUrl).length} clips con im�genes cargados`);
     logger.info(`?? Clips por capa: Capa 1: ${loadedClips.filter(c => c.layerId === 1).length}, Capa 2: ${loadedClips.filter(c => c.layerId === 2).length}`);
-    console.log('?? [DEBUG] Clips finales a setear:', loadedClips.map(c => ({id: c.id, start: c.start, duration: c.duration, layerId: c.layerId, hasImg: !!(c.url || c.imageUrl)})));
     
     setClips(loadedClips);
     pushHistory(loadedClips);
@@ -1011,11 +974,8 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     // Eliminar de Firebase si el usuario est� autenticado
     if (user?.id) {
       try {
-        console.log('??? [FIREBASE] Eliminando proyecto:', projectId);
         await deleteVideoProject(projectId, user.id);
-        console.log('? [FIREBASE] Proyecto eliminado');
       } catch (error) {
-        console.error('? [FIREBASE] Error eliminando proyecto:', error);
         // Continuar con eliminaci�n local de todas formas
       }
     }
@@ -2533,7 +2493,6 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                       .then(() => {
                         setAudioError(null);
                         setAudioReady(true);
-                        console.log('🔊 [Audio] Desbloqueado por interacción');
                       })
                       .catch(err => {
                         setAudioError(err.message);
@@ -3162,19 +3121,16 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
               onCanPlayThrough={() => {
                 setAudioReady(true);
                 setAudioError(null);
-                console.log('🔊 [Audio] Listo para reproducir');
               }}
               onError={(e) => {
                 const error = e.currentTarget.error;
                 const errorMsg = error ? `Error ${error.code}: ${error.message}` : 'Error desconocido';
                 setAudioError(errorMsg);
                 setAudioReady(false);
-                console.error('🔊 [Audio] Error cargando audio:', errorMsg);
               }}
-              onPlay={() => console.log('🔊 [Audio] Reproduciendo...')}
-              onPause={() => console.log('🔊 [Audio] Pausado')}
+              onPlay={() => {}}
+              onPause={() => {}}
               onEnded={() => {
-                console.log('🔊 [Audio] Terminado');
                 setIsPlaying(false);
                 setCurrentTime(0);
               }}
@@ -3619,12 +3575,10 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
 // ?? CRITICAL: M�xima duraci�n de clip (Grok Imagine Video = 6 segundos)
 const MAX_CLIP_DURATION_SECONDS = 6;
 
-// Funci�n que acepta clips en cualquier formato (TimelineClip o TimelineItem) y los normaliza
-// Tambi�n segmenta clips mayores de 6 segundos para compatibilidad con generaci�n de video
+// Función que acepta clips en cualquier formato (TimelineClip o TimelineItem) y los normaliza
+// También segmenta clips mayores de 6 segundos para compatibilidad con generación de video
 function normalizeClips(clips: any[]): TimelineClip[] {
   if (!clips || !Array.isArray(clips)) return [];
-  
-  console.log('?? [normalizeClips] Input clips:', clips?.length, clips);
   
   const normalizedClips: TimelineClip[] = [];
   let globalId = 1;
@@ -3635,7 +3589,7 @@ function normalizeClips(clips: any[]): TimelineClip[] {
                      c.publicUrl || c.firebaseUrl || c.thumbnailUrl || '';
     
     // CRITICAL: Asignar layerId por defecto basado en el tipo de clip
-    // Capa 1 = Video/Im�genes, Capa 2 = Audio Principal, Capa 3 = Lipsync Segments
+    // Capa 1 = Video/Imágenes, Capa 2 = Audio Principal, Capa 3 = Lipsync Segments
     // NOTA: Aceptar tanto 'layerId' como 'layer' para compatibilidad con TimelineClipUnified
     const typeStr = typeof c.type === 'string' ? c.type.toUpperCase() : 'IMAGE';
     const normalizedType = (typeStr === 'AUDIO' ? ClipType.AUDIO : 
@@ -3653,8 +3607,6 @@ function normalizeClips(clips: any[]): TimelineClip[] {
         layerId = 1;
       }
     }
-    
-    console.log(`?? [normalizeClips] Clip ${index}: type='${typeStr}', layer=${c.layer}, layerId=${c.layerId} -> finalLayerId=${layerId}, isLipsync=${c.metadata?.isLipsyncSegment || false}`);
     
     // CRITICAL: Convertir start_time/end_time (ms) a start/duration (segundos)
     // TimelineItem usa start_time en ms, TimelineClip usa start en segundos
@@ -3682,7 +3634,6 @@ function normalizeClips(clips: any[]): TimelineClip[] {
     // Las generaciones de video solo soportan hasta 5 segundos
     if (durationSeconds > MAX_CLIP_DURATION_SECONDS && normalizedType !== ClipType.AUDIO) {
       const segmentCount = Math.ceil(durationSeconds / MAX_CLIP_DURATION_SECONDS);
-      console.log(`? [normalizeClips] Segmentando clip ${c.id} de ${durationSeconds.toFixed(2)}s en ${segmentCount} partes`);
       
       for (let i = 0; i < segmentCount; i++) {
         const segmentStart = startSeconds + (i * MAX_CLIP_DURATION_SECONDS);
@@ -3703,18 +3654,14 @@ function normalizeClips(clips: any[]): TimelineClip[] {
           imageUrl: imageUrl,
           thumbnailUrl: c.thumbnailUrl || imageUrl,
           title: c.title ? `${c.title} (${i + 1}/${segmentCount})` : `Escena ${globalId - 1}`,
-          // Marcar como segmento para posible regeneraci�n
+          // Marcar como segmento para posible regeneración
           isSegment: true,
           originalDuration: durationSeconds,
           segmentIndex: i,
         } as TimelineClip);
-        
-        console.log(`   ?? Segmento ${i + 1}: start=${segmentStart.toFixed(2)}s, duration=${segmentDuration.toFixed(2)}s`);
       }
     } else {
-      // Clip dentro de l�mites - agregar normalmente
-      console.log(`?? [normalizeClips] Clip ${index}: id=${c.id}, start=${startSeconds.toFixed(2)}s, duration=${durationSeconds.toFixed(2)}s, layerId=${layerId}, hasImage=${!!imageUrl}`);
-      
+      // Clip dentro de límites - agregar normalmente
       normalizedClips.push({
         ...c,
         id: typeof c.id === 'number' ? c.id : globalId++,
@@ -3732,7 +3679,6 @@ function normalizeClips(clips: any[]): TimelineClip[] {
     }
   });
   
-  console.log(`?? [normalizeClips] Output: ${normalizedClips.length} clips (segmentados de ${clips.length} originales)`);
   return normalizedClips;
 }
 

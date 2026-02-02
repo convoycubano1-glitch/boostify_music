@@ -27,6 +27,7 @@ import { useState, useEffect, useRef } from "react";
 import { PricingPlans } from "../components/subscription/pricing-plans";
 import { SiYoutube, SiInstagram, SiTiktok, SiSpotify, SiX, SiFacebook, SiSoundcloud, SiApplemusic, SiLinkedin, SiDiscord, SiTwitch } from "react-icons/si";
 import { EarlyAccessModal } from "../components/early-access/early-access-modal";
+import { AsaasSection } from "../components/home/AsaasSection";
 // Comentando los siguientes imports temporalmente ya que no son esenciales para la página inicial
 // import { SuperAgent } from "../components/agents/super-agent";
 
@@ -632,6 +633,9 @@ export default function HomePage() {
           </motion.div>
         )}
       </section>
+
+      {/* ASAAS Section - Artist As A System */}
+      <AsaasSection onGetStarted={handleGoogleLogin} />
 
       {/* Complete Ecosystem for Artists - Orbital Visualization */}
       <section className="py-24 relative overflow-hidden bg-gradient-to-b from-zinc-950 to-black">

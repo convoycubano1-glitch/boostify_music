@@ -97,17 +97,6 @@ const ClipItem: React.FC<ClipItemProps> = ({
   // Calcular ancho mínimo para mostrar botones
   const clipWidth = clip.duration * timeScale;
   
-  // DEBUG: Log para ver qué está recibiendo el ClipItem (reducido para audio)
-  if (!isAudioClip) {
-    console.log(`🎬 [ClipItem] Clip ${clip.id}:`, {
-      layerId: clip.layerId,
-      type: clip.type,
-      hasImage,
-      start: clip.start,
-      duration: clip.duration
-    });
-  }
-  
   // Cerrar menú al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (e: globalThis.MouseEvent) => {
@@ -201,11 +190,8 @@ const ClipItem: React.FC<ClipItemProps> = ({
   const handleClipClick = (e: MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     
-    console.log(`[ClipItem] Click detected - Tool: ${tool}, isDragging: ${isDragging}, isResizing: ${isResizing}`);
-    
     // Si estamos arrastrando o redimensionando, ignorar
     if (isDragging || isResizing) {
-      console.log('[ClipItem] Ignoring click - drag/resize in progress');
       return;
     }
     
@@ -214,7 +200,6 @@ const ClipItem: React.FC<ClipItemProps> = ({
       // Usar el ref del clip para obtener el rect correctamente
       const clipElement = clipRef.current;
       if (!clipElement) {
-        console.error('[ClipItem] Razor click failed - no clipRef');
         return;
       }
       
@@ -222,82 +207,25 @@ const ClipItem: React.FC<ClipItemProps> = ({
       const clickX = e.clientX - rect.left; // Posición X relativa al clip
       const clickTime = clip.start + (clickX / timeScale); // Tiempo global donde se hizo click
       
-      console.log('[ClipItem] ✂️ Razor click:', { 
-        clickX: clickX.toFixed(2), 
-        clickTime: clickTime.toFixed(2), 
-        clipStart: clip.start.toFixed(2), 
-        clipEnd: (clip.start + clip.duration).toFixed(2),
-        clipId: clip.id 
-      });
-      
       // Verificar que el click está dentro del clip
       if (clickTime > clip.start && clickTime < clip.start + clip.duration) {
-        console.log('[ClipItem] ✅ Calling onRazorClick');
         onRazorClick(clip.id, clickTime);
-      } else {
-        console.log('[ClipItem] ⚠️ Click outside clip bounds');
       }
       return;
     }
     
     // Para otras herramientas, solo seleccionar
-    console.log(`[ClipItem] Selecting clip ${clip.id}`);
     onSelect(clip.id);
   };
 
-  const handleSelect = (e: MouseEvent) => {
-    e.stopPropagation();
-    // Solo seleccionar si no estamos arrastrando
-    if (!isDragging && !isResizing) {
-      onSelect(clip.id);
-    }
-  };
-
-  const handleMoveStart = (e: MouseEvent) => {
-    // Solo bloquear propagación si vamos a iniciar un drag
-    // No bloquear para herramientas que no hacen drag
-    
-    console.log(`🎬 [ClipItem] MoveStart - Tool: ${tool}, clipId: ${clip.id}, isAudio: ${isAudioClip}`);
-    
-    // Si es herramienta trim, no permitir mover (solo resize)
-    if (tool === 'trim') {
-      console.log('[ClipItem] 📏 Trim mode - blocking drag');
-      return;
-    }
-    
-    // Si es herramienta razor, NO iniciar movimiento
-    if (tool === 'razor') {
-      console.log('[ClipItem] ✂️ Razor mode - blocking drag for cut');
-      return;
-    }
-    
-    // Solo con select o hand: iniciar arrastre
-    console.log(`[ClipItem] 🖐️ Starting drag for clip ${clip.id} - calling onMoveStart`);
-    
-    // IMPORTANTE: Bloquear propagación y prevenir default AQUÍ
-    e.stopPropagation();
-    e.preventDefault();
-    
-    // Primero seleccionar el clip
-    onSelect(clip.id);
-    // Luego iniciar el arrastre
-    onMoveStart(clip.id, e);
-  };
-
+  // Maneja el inicio del redimensionamiento
   const handleResizeStart = (direction: 'start' | 'end', e: MouseEvent) => {
-    console.log(`[ClipItem] ResizeStart - Tool: ${tool}, direction: ${direction}, clipId: ${clip.id}`);
-    
     // Si es herramienta razor, no permitir resize
     if (tool === 'razor') {
-      console.log('[ClipItem] ✂️ Razor mode - blocking resize');
-      e.stopPropagation();
       return;
     }
     
-    console.log(`[ClipItem] 📐 Starting resize ${direction} for clip ${clip.id}`);
-    e.stopPropagation();
-    e.preventDefault();
-    // Primero seleccionar el clip
+    // Seleccionar el clip primero
     onSelect(clip.id);
     // Luego iniciar el resize
     onResizeStart(clip.id, direction, e);
@@ -321,16 +249,41 @@ const ClipItem: React.FC<ClipItemProps> = ({
       data-clip-id={clip.id}
       className={`clip-item ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''} ${isAudioClip ? 'audio-clip' : ''} tool-${tool}`}
       style={clipStyle}
-      onClick={handleClipClick}
-      onMouseDown={tool !== 'razor' && tool !== 'trim' ? handleMoveStart : undefined}
       onContextMenu={handleContextMenu}
+      onMouseDown={(e) => {
+        // Ignorar si el click fue en un resize handle (ya tienen su propio handler)
+        const target = e.target as HTMLElement;
+        if (target.closest('.resize-handle')) {
+          return;
+        }
+        
+        e.stopPropagation();
+        e.preventDefault();
+        
+        // Seleccionar el clip siempre
+        onSelect(clip.id);
+        
+        // Si es herramienta razor, no iniciar drag (esperar click)
+        if (tool === 'razor') {
+          return;
+        }
+        
+        // Si es herramienta trim, no iniciar drag desde el body del clip
+        if (tool === 'trim') {
+          return;
+        }
+        
+        // Para select y hand: iniciar drag inmediatamente
+        onMoveStart(clip.id, e);
+      }}
+      onClick={handleClipClick}
     >
       {/* Overlay oscuro para legibilidad del texto sobre imagen */}
       {hasImage && (
         <div className="clip-image-overlay" />
       )}
       
-      {/* Waveform visual para clips de audio */}
+      {/* Waveform visual para clips de audio - z-index bajo para no interferir con drag-zone */}
       {isAudioClip && (
         <div className="audio-waveform" style={{
           position: 'absolute',
@@ -341,7 +294,8 @@ const ClipItem: React.FC<ClipItemProps> = ({
           gap: '1px',
           padding: '0 4px',
           overflow: 'hidden',
-          pointerEvents: 'none', // Permitir que los clicks pasen al clip-drag-zone
+          pointerEvents: 'none',
+          zIndex: 1, // Bajo para que la drag-zone (z-index: 15) esté encima
         }}>
           {/* Barras de waveform simuladas */}
           {Array.from({ length: Math.min(100, Math.floor(clipWidth / 3)) }).map((_, i) => (
@@ -359,21 +313,34 @@ const ClipItem: React.FC<ClipItemProps> = ({
         </div>
       )}
       
-      {/* Manejador de redimensionamiento (inicio) - MEJORADO */}
+      {/* Manejador de redimensionamiento (inicio) */}
       <div
         className="resize-handle left"
-        onMouseDown={(e) => handleResizeStart('start', e)}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          handleResizeStart('start', e);
+        }}
         title="Arrastrar para cambiar inicio"
       >
         <div className="resize-handle-indicator" />
       </div>
-
-      {/* Zona central para arrastrar - más visible */}
-      <div 
-        className={`clip-drag-zone ${tool === 'razor' ? 'razor-mode' : ''}`}
-        title={tool === 'razor' ? 'Click para cortar' : tool === 'trim' ? 'Usa los bordes para recortar' : 'Arrastrar para mover'}
-        style={{ cursor: getCursor(), pointerEvents: 'none' }}
+      
+      {/* Manejador de redimensionamiento (fin) */}
+      <div
+        className="resize-handle right"
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          handleResizeStart('end', e);
+        }}
+        title="Arrastrar para cambiar duración"
       >
+        <div className="resize-handle-indicator" />
+      </div>
+
+      {/* Indicador visual de arrastre - solo visual, sin eventos */}
+      <div className="clip-drag-indicator" style={{ pointerEvents: 'none' }}>
         <div className="drag-indicator">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="9" cy="5" r="1" fill="currentColor"/>
@@ -639,15 +606,6 @@ const ClipItem: React.FC<ClipItemProps> = ({
         document.body
       )}
 
-      {/* Manejador de redimensionamiento (fin) - MEJORADO */}
-      <div
-        className="resize-handle right"
-        onMouseDown={(e) => handleResizeStart('end', e)}
-        title="Arrastrar para cambiar duración"
-      >
-        <div className="resize-handle-indicator" />
-      </div>
-
       {/* Estilos del componente */}
       <style dangerouslySetInnerHTML={{ __html: `
         .clip-item {
@@ -714,26 +672,26 @@ const ClipItem: React.FC<ClipItemProps> = ({
           transition: none !important;
         }
         
-        /* Zona de arrastre central */
-        .clip-drag-zone {
+        /* Herramienta Trim activa - mostrar handles más prominentes */
+        .clip-item.tool-trim .resize-handle {
+          background: rgba(59, 130, 246, 0.3);
+        }
+        
+        .clip-item.tool-trim .resize-handle:hover {
+          background: rgba(59, 130, 246, 0.6);
+        }
+        
+        /* Indicador visual de arrastre */
+        .clip-drag-indicator {
           position: absolute;
-          top: 0;
-          left: 18px;
-          right: 18px;
-          height: 100%;
-          cursor: grab;
-          z-index: 15;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: 5;
           display: flex;
           align-items: center;
           justify-content: center;
-        }
-        
-        .clip-drag-zone.razor-mode {
-          cursor: crosshair;
-        }
-        
-        .clip-item.dragging .clip-drag-zone {
-          cursor: grabbing;
+          pointer-events: none;
         }
         
         .drag-indicator {
@@ -821,10 +779,10 @@ const ClipItem: React.FC<ClipItemProps> = ({
         .resize-handle {
           position: absolute;
           top: 0;
-          width: 16px;
+          width: 14px;
           height: 100%;
           cursor: ew-resize;
-          z-index: 25;
+          z-index: 30;
           background: transparent;
           transition: all 0.15s ease;
           display: flex;
@@ -832,9 +790,34 @@ const ClipItem: React.FC<ClipItemProps> = ({
           justify-content: center;
         }
         
+        .resize-handle.left {
+          left: 0;
+          border-radius: 6px 0 0 6px;
+        }
+        
+        .resize-handle.right {
+          right: 0;
+          border-radius: 0 6px 6px 0;
+        }
+        
         .resize-handle:hover,
         .resize-handle:active {
-          background: rgba(249, 115, 22, 0.6);
+          background: rgba(59, 130, 246, 0.6);
+        }
+        
+        /* Modo Trim: resize handles más visibles siempre */
+        .clip-item.tool-trim .resize-handle {
+          background: rgba(59, 130, 246, 0.25);
+          width: 18px;
+        }
+        
+        .clip-item.tool-trim .resize-handle:hover {
+          background: rgba(59, 130, 246, 0.7);
+        }
+        
+        .clip-item.tool-trim .resize-handle .resize-handle-indicator {
+          background: rgba(255, 255, 255, 0.7);
+        }
         }
         
         .resize-handle-indicator {
