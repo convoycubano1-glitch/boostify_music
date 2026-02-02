@@ -976,7 +976,8 @@ export function setupOutreachRoutes(app: Express) {
           coverImage: users.coverImage,
           genres: users.genres,
           country: users.country,
-          isAIGenerated: users.isAIGenerated
+          isAIGenerated: users.isAIGenerated,
+          bio: users.biography
         })
         .from(users)
         .where(

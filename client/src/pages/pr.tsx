@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -15,6 +15,7 @@ import { useAuth } from "../hooks/use-auth";
 import { Header } from "../components/layout/header";
 import { apiRequest, queryClient } from "../lib/queryClient";
 import { PlanTierGuard } from "../components/youtube-views/plan-tier-guard";
+import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import {
   Rocket,
   Radio,
@@ -41,9 +42,23 @@ import {
   Star,
   Sparkles,
   Wand2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  User
 } from "lucide-react";
 import prHeroImage from "../../../attached_assets/generated_images/PR_Agent_Hero_Image_d3c922a5.png";
+
+// Interface for artist data from my-artists
+interface MyArtist {
+  id: number;
+  name: string;
+  slug: string;
+  profileImage: string | null;
+  coverImage: string | null;
+  genres: string | null;
+  country: string | null;
+  isAIGenerated: boolean;
+  bio?: string;
+}
 
 interface PRCampaign {
   id: number;
@@ -111,11 +126,12 @@ export default function PRPage() {
   const [activeView, setActiveView] = useState<"list" | "wizard" | "campaign">("list");
   const [wizardStep, setWizardStep] = useState(1);
   const [selectedCampaign, setSelectedCampaign] = useState<number | null>(null);
+  const [selectedArtistId, setSelectedArtistId] = useState<number | null>(null);
   
   const [formData, setFormData] = useState({
     title: "",
-    artistName: user?.artistName || "",
-    artistProfileUrl: user?.slug ? `${window.location.origin}/artist/${user.slug}` : "",
+    artistName: "",
+    artistProfileUrl: "",
     contentType: "single" as const,
     contentTitle: "",
     contentUrl: "",
@@ -124,8 +140,42 @@ export default function PRPage() {
     targetGenres: [] as string[],
     pitchMessage: "",
     contactEmail: user?.email || "",
-    contactPhone: ""
+    contactPhone: "",
+    artistBio: ""
   });
+
+  // Fetch user's artists from my-artists endpoint
+  const { data: myArtists, isLoading: isLoadingArtists } = useQuery<MyArtist[]>({
+    queryKey: ['/api/outreach/my-artists', user?.id],
+    queryFn: async () => {
+      const res = await fetch(`/api/outreach/my-artists?userId=${user?.id}`);
+      if (!res.ok) throw new Error('Failed to fetch artists');
+      return res.json();
+    },
+    enabled: !!user?.id
+  });
+
+  // Auto-populate form when artist is selected
+  useEffect(() => {
+    if (selectedArtistId && myArtists) {
+      const artist = myArtists.find(a => a.id === selectedArtistId);
+      if (artist) {
+        const artistGenres = artist.genres ? 
+          (typeof artist.genres === 'string' ? JSON.parse(artist.genres) : artist.genres) : 
+          [];
+        
+        setFormData(prev => ({
+          ...prev,
+          artistName: artist.name || "",
+          artistProfileUrl: artist.slug ? `${window.location.origin}/artist/${artist.slug}` : "",
+          targetGenres: Array.isArray(artistGenres) ? 
+            artistGenres.filter((g: string) => GENRES.includes(g)) : 
+            [],
+          artistBio: artist.bio || ""
+        }));
+      }
+    }
+  }, [selectedArtistId, myArtists]);
 
   const { data: campaignsData, isLoading } = useQuery<{ success: boolean; campaigns: PRCampaign[] }>({
     queryKey: ['/api/pr/campaigns'],
@@ -207,6 +257,10 @@ export default function PRPage() {
 
   const generatePitchMutation = useMutation({
     mutationFn: async () => {
+      // Use artist bio from selected artist if available
+      const selectedArtist = myArtists?.find(a => a.id === selectedArtistId);
+      const artistBio = selectedArtist?.bio || formData.artistBio || user?.biography || '';
+      
       return apiRequest('/api/pr-ai/generate-pitch', {
         method: 'POST',
         body: JSON.stringify({
@@ -214,7 +268,8 @@ export default function PRPage() {
           contentType: formData.contentType,
           contentTitle: formData.contentTitle,
           genre: formData.targetGenres[0] || 'urban',
-          biography: user?.biography || ''
+          biography: artistBio,
+          artistProfileUrl: formData.artistProfileUrl
         })
       });
     },
@@ -294,10 +349,11 @@ export default function PRPage() {
   });
 
   const resetForm = () => {
+    setSelectedArtistId(null);
     setFormData({
       title: "",
-      artistName: user?.artistName || "",
-      artistProfileUrl: user?.slug ? `${window.location.origin}/artist/${user.slug}` : "",
+      artistName: "",
+      artistProfileUrl: "",
       contentType: "single",
       contentTitle: "",
       contentUrl: "",
@@ -306,7 +362,8 @@ export default function PRPage() {
       targetGenres: [],
       pitchMessage: "",
       contactEmail: user?.email || "",
-      contactPhone: ""
+      contactPhone: "",
+      artistBio: ""
     });
     setWizardStep(1);
   };
@@ -543,6 +600,81 @@ export default function PRPage() {
             <CardContent className="space-y-6">
               {wizardStep === 1 && (
                 <div className="space-y-4">
+                  {/* Artist Selection from My Artists */}
+                  <div>
+                    <Label data-testid="label-select-artist">Selecciona un Artista</Label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Elige uno de tus artistas creados en My Artists
+                    </p>
+                    {isLoadingArtists ? (
+                      <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/50">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm text-muted-foreground">Cargando artistas...</span>
+                      </div>
+                    ) : myArtists && myArtists.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {myArtists.map((artist) => {
+                          const isSelected = selectedArtistId === artist.id;
+                          return (
+                            <button
+                              key={artist.id}
+                              type="button"
+                              onClick={() => setSelectedArtistId(artist.id)}
+                              className={`p-3 border rounded-lg flex items-center gap-3 transition-all text-left ${
+                                isSelected
+                                  ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                                  : "border-border hover:border-primary/50"
+                              }`}
+                              data-testid={`button-select-artist-${artist.id}`}
+                            >
+                              <Avatar className="h-12 w-12">
+                                <AvatarImage src={artist.profileImage || undefined} alt={artist.name} />
+                                <AvatarFallback>
+                                  <User className="w-5 h-5" />
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium truncate">{artist.name}</span>
+                                  {artist.isAIGenerated && (
+                                    <Badge variant="outline" className="text-xs">IA</Badge>
+                                  )}
+                                  {isSelected && (
+                                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                                  )}
+                                </div>
+                                {artist.genres && (
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {typeof artist.genres === 'string' ? 
+                                      JSON.parse(artist.genres).slice(0, 2).join(', ') : 
+                                      artist.genres.slice(0, 2).join(', ')
+                                    }
+                                  </p>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="p-4 border rounded-lg bg-muted/50 text-center">
+                        <User className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          No tienes artistas creados aún.
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2"
+                          onClick={() => window.location.href = '/my-artists'}
+                        >
+                          Crear Artista
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Campaign Title */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <Label htmlFor="title" data-testid="label-campaign-title">Nombre de la Campaña</Label>
@@ -573,32 +705,39 @@ export default function PRPage() {
                       data-testid="input-campaign-title"
                     />
                   </div>
+
+                  {/* Artist Name (auto-filled, editable) */}
                   <div>
-                    <Label htmlFor="artistName" data-testid="label-artist-name">Nombre del Artista</Label>
+                    <Label htmlFor="artistName" data-testid="label-artist-name">
+                      Nombre del Artista {selectedArtistId && <span className="text-green-600">✓ Auto-cargado</span>}
+                    </Label>
                     <Input
                       id="artistName"
                       placeholder="Nombre artístico"
                       value={formData.artistName}
                       onChange={(e) => setFormData({ ...formData, artistName: e.target.value })}
                       data-testid="input-artist-name"
+                      className={selectedArtistId ? "border-green-500 bg-green-50 dark:bg-green-950/20" : ""}
                     />
                   </div>
+
+                  {/* Artist Profile URL (auto-filled, editable) */}
                   <div>
                     <Label htmlFor="artistProfileUrl" data-testid="label-profile-url">
-                      Link del Perfil {user?.slug && <span className="text-green-600">✓ Auto-cargado</span>}
+                      Link del Perfil {selectedArtistId && <span className="text-green-600">✓ Auto-cargado</span>}
                     </Label>
                     <Input
                       id="artistProfileUrl"
-                      placeholder="https://boostify.app/artist/tu-nombre"
+                      placeholder="https://boostifymusic.com/artist/tu-nombre"
                       value={formData.artistProfileUrl}
                       onChange={(e) => setFormData({ ...formData, artistProfileUrl: e.target.value })}
                       data-testid="input-profile-url"
-                      className={user?.slug ? "border-green-500 bg-green-50 dark:bg-green-950/20" : ""}
+                      className={selectedArtistId ? "border-green-500 bg-green-50 dark:bg-green-950/20" : ""}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      {user?.slug 
-                        ? "✓ Tu perfil de artista se ha cargado automáticamente. Puedes editarlo si lo deseas."
-                        : "Si no lo tienes, generaremos uno automáticamente"
+                      {selectedArtistId 
+                        ? "✓ La landing page del artista se ha cargado automáticamente desde My Artists."
+                        : "Selecciona un artista arriba para cargar automáticamente su perfil."
                       }
                     </p>
                   </div>
