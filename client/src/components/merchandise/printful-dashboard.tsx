@@ -3,13 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Package, ShoppingCart, Store, AlertCircle, CheckCircle, Printer } from "lucide-react";
+import { Package, ShoppingCart, Store, AlertCircle, CheckCircle, Printer, Shield } from "lucide-react";
 import { PrintfulCatalog } from "./printful-catalog";
 import { PrintfulOrders } from "./printful-orders";
 import { PrintfulSyncProducts } from "./printful-sync-products";
 import { Skeleton } from "../ui/skeleton";
 
-interface PrintfulStoreInfo {
+interface BoostifyPrintsStoreInfo {
   id: number;
   type: string;
   name: string;
@@ -25,12 +25,27 @@ export function PrintfulDashboard() {
     queryKey: ['/api/printful/store'],
   });
 
-  const storeInfo: PrintfulStoreInfo | null = storeData?.data || null;
+  const storeInfo: BoostifyPrintsStoreInfo | null = storeData?.data || null;
   const isConnected = !error && storeInfo !== null;
 
   return (
     <div className="space-y-6">
-      {/* Header con estado de conexión */}
+      {/* Admin Notice */}
+      <Card className="p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/20">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-500/20 rounded-lg">
+            <Shield className="h-5 w-5 text-blue-500" />
+          </div>
+          <div>
+            <p className="font-medium text-blue-400">Admin Only</p>
+            <p className="text-sm text-muted-foreground">
+              API connections and production settings can only be configured by platform administrators.
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Header with connection status */}
       <Card className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
@@ -38,7 +53,7 @@ export function PrintfulDashboard() {
               <Printer className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold mb-2">Printful Integration</h2>
+              <h2 className="text-2xl font-bold mb-2">Boostify-Prints Integration</h2>
               {loadingStore ? (
                 <div className="space-y-2">
                   <Skeleton className="h-4 w-64" />
@@ -47,12 +62,12 @@ export function PrintfulDashboard() {
               ) : isConnected && storeInfo ? (
                 <>
                   <p className="text-muted-foreground mb-2">
-                    Conectado a: <span className="font-medium">{storeInfo.name}</span>
+                    Connected to: <span className="font-medium">{storeInfo.name}</span>
                   </p>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>Tipo: {storeInfo.type}</span>
+                    <span>Type: {storeInfo.type}</span>
                     <span>•</span>
-                    <span>Moneda: {storeInfo.currency}</span>
+                    <span>Currency: {storeInfo.currency}</span>
                     {storeInfo.website && (
                       <>
                         <span>•</span>
@@ -64,7 +79,7 @@ export function PrintfulDashboard() {
               ) : (
                 <div className="flex items-center gap-2 text-destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <span>Error al conectar con Printful</span>
+                  <span>Could not connect to Boostify-Prints</span>
                 </div>
               )}
             </div>
@@ -77,12 +92,12 @@ export function PrintfulDashboard() {
               {isConnected ? (
                 <>
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Conectado
+                  Connected
                 </>
               ) : (
                 <>
                   <AlertCircle className="h-4 w-4 mr-2" />
-                  Desconectado
+                  Disconnected
                 </>
               )}
             </Badge>
@@ -90,21 +105,21 @@ export function PrintfulDashboard() {
         </div>
       </Card>
 
-      {/* Tabs para diferentes secciones */}
+      {/* Tabs for different sections */}
       {isConnected && (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="catalog" data-testid="tab-catalog">
               <Store className="h-4 w-4 mr-2" />
-              Catálogo
+              Catalog
             </TabsTrigger>
             <TabsTrigger value="sync" data-testid="tab-sync">
               <Package className="h-4 w-4 mr-2" />
-              Mis Productos
+              My Products
             </TabsTrigger>
             <TabsTrigger value="orders" data-testid="tab-orders">
               <ShoppingCart className="h-4 w-4 mr-2" />
-              Órdenes
+              Orders
             </TabsTrigger>
           </TabsList>
 
@@ -122,16 +137,16 @@ export function PrintfulDashboard() {
         </Tabs>
       )}
 
-      {/* Mensaje de error si no está conectado */}
+      {/* Error message if not connected */}
       {!loadingStore && !isConnected && (
         <Card className="p-12 text-center">
           <AlertCircle className="h-16 w-16 mx-auto mb-4 text-destructive" />
-          <h3 className="text-xl font-semibold mb-2">No se pudo conectar con Printful</h3>
+          <h3 className="text-xl font-semibold mb-2">Could not connect to Boostify-Prints</h3>
           <p className="text-muted-foreground mb-4">
-            Verifica que tu token de API esté configurado correctamente.
+            Contact an administrator to configure the API connection.
           </p>
           <p className="text-sm text-muted-foreground">
-            Error: {error?.message || 'Conexión fallida'}
+            Error: {error?.message || 'Connection failed'}
           </p>
         </Card>
       )}

@@ -65,6 +65,7 @@ import profileRouter from './routes/profile'; // Import the profile router
 import performanceSegmentsRouter from './routes/performance-segments'; // Import the performance segments router
 import songsRouter from './routes/songs'; // Import the songs router
 import merchRouter from './routes/merch'; // Import the merchandise router
+import marketingRouter from './routes/marketing'; // Import the marketing router
 import aiAssistantRouter from './routes/ai-assistant'; // Import the AI assistant router
 import albumGeneratorRouter from './routes/album-generator'; // Import the album generator router
 import geminiAgentsRouter from './routes/gemini-agents'; // Import the Gemini agents router
@@ -413,6 +414,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   app.use('/api/profile', profileRouter);
   app.use('/api/songs', songsRouter);
   app.use('/api/merch', merchRouter);
+  app.use('/api/marketing', marketingRouter); // Marketing tools and campaigns
   app.use('/api/artist-wallet', artistWalletRouter);
   app.use('/api/ai', aiAssistantRouter);
   app.use('/api', albumGeneratorRouter);

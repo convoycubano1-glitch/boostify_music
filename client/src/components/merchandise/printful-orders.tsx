@@ -15,7 +15,6 @@ import {
   DialogTrigger,
 } from "../ui/dialog";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import {
   Select,
   SelectContent,
@@ -69,14 +68,14 @@ const statusColors: Record<string, string> = {
 };
 
 const statusLabels: Record<string, string> = {
-  draft: 'Borrador',
-  pending: 'Pendiente',
-  failed: 'Fallida',
-  canceled: 'Cancelada',
-  onhold: 'En Espera',
-  inprocess: 'En Proceso',
-  partial: 'Parcial',
-  fulfilled: 'Completada',
+  draft: 'Draft',
+  pending: 'Pending',
+  failed: 'Failed',
+  canceled: 'Canceled',
+  onhold: 'On Hold',
+  inprocess: 'In Process',
+  partial: 'Partial',
+  fulfilled: 'Completed',
 };
 
 export function PrintfulOrders() {
@@ -95,20 +94,20 @@ export function PrintfulOrders() {
         <div className="flex items-center gap-4">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-48" data-testid="select-order-status">
-              <SelectValue placeholder="Filtrar por estado" />
+              <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todas las órdenes</SelectItem>
-              <SelectItem value="draft">Borrador</SelectItem>
-              <SelectItem value="pending">Pendiente</SelectItem>
-              <SelectItem value="inprocess">En Proceso</SelectItem>
-              <SelectItem value="fulfilled">Completadas</SelectItem>
-              <SelectItem value="canceled">Canceladas</SelectItem>
+              <SelectItem value="all">All Orders</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="inprocess">In Process</SelectItem>
+              <SelectItem value="fulfilled">Completed</SelectItem>
+              <SelectItem value="canceled">Canceled</SelectItem>
             </SelectContent>
           </Select>
           <Badge variant="outline" className="px-4 py-2">
             <Package className="h-4 w-4 mr-2" />
-            {orders.length} órdenes
+            {orders.length} orders
           </Badge>
         </div>
         <div className="flex gap-2">
@@ -119,7 +118,7 @@ export function PrintfulOrders() {
             data-testid="button-refresh-orders"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
-            Actualizar
+            Refresh
           </Button>
         </div>
       </div>
@@ -142,11 +141,11 @@ export function PrintfulOrders() {
       ) : orders.length === 0 ? (
         <Card className="p-12 text-center">
           <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-xl font-semibold mb-2">No hay órdenes</h3>
+          <h3 className="text-xl font-semibold mb-2">No orders</h3>
           <p className="text-muted-foreground">
             {statusFilter !== 'all'
-              ? `No hay órdenes con el estado "${statusLabels[statusFilter] || statusFilter}"`
-              : 'Aún no tienes órdenes en Printful'}
+              ? `No orders with status "${statusLabels[statusFilter] || statusFilter}"`
+              : 'You have no orders in Boostify-Prints yet'}
           </p>
         </Card>
       ) : (
@@ -157,7 +156,7 @@ export function PrintfulOrders() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <h3 className="font-semibold" data-testid={`text-order-${order.id}`}>
-                      Orden #{order.id}
+                      Order #{order.id}
                     </h3>
                     {order.external_id && (
                       <Badge variant="outline" className="text-xs">
@@ -166,13 +165,13 @@ export function PrintfulOrders() {
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground mb-1">
-                    Cliente: {order.recipient.name} ({order.recipient.email})
+                    Customer: {order.recipient.name} ({order.recipient.email})
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {order.recipient.city}, {order.recipient.country_name}
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Creada: {format(new Date(order.created * 1000), 'PPp', { locale: es })}
+                    Created: {format(new Date(order.created * 1000), 'PPp')}
                   </p>
                 </div>
                 <div className="text-right">
@@ -190,13 +189,13 @@ export function PrintfulOrders() {
               <div className="flex items-center gap-2 mb-4">
                 <Package className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">
-                  {order.items.length} {order.items.length === 1 ? 'producto' : 'productos'}
+                  {order.items.length} {order.items.length === 1 ? 'product' : 'products'}
                 </span>
                 {order.shipments && order.shipments.length > 0 && (
                   <>
                     <Truck className="h-4 w-4 text-muted-foreground ml-4" />
                     <span className="text-sm text-muted-foreground">
-                      {order.shipments.length} {order.shipments.length === 1 ? 'envío' : 'envíos'}
+                      {order.shipments.length} {order.shipments.length === 1 ? 'shipment' : 'shipments'}
                     </span>
                   </>
                 )}
@@ -211,36 +210,36 @@ export function PrintfulOrders() {
                     data-testid={`button-view-order-${order.id}`}
                   >
                     <Eye className="h-4 w-4 mr-2" />
-                    Ver Detalles
+                    View Details
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Detalles de Orden #{order.id}</DialogTitle>
+                    <DialogTitle>Order Details #{order.id}</DialogTitle>
                     <DialogDescription>
-                      Creada el {format(new Date(order.created * 1000), 'PPP', { locale: es })}
+                      Created on {format(new Date(order.created * 1000), 'PPP')}
                     </DialogDescription>
                   </DialogHeader>
 
                   <div className="space-y-6 mt-4">
                     <div>
-                      <h4 className="font-semibold mb-3">Estado</h4>
+                      <h4 className="font-semibold mb-3">Status</h4>
                       <Badge variant={statusColors[order.status] as any} className="text-lg px-4 py-2">
                         {statusLabels[order.status] || order.status}
                       </Badge>
                     </div>
 
                     <div>
-                      <h4 className="font-semibold mb-3">Información del Cliente</h4>
+                      <h4 className="font-semibold mb-3">Customer Information</h4>
                       <div className="bg-muted p-4 rounded-lg space-y-2">
-                        <p><strong>Nombre:</strong> {order.recipient.name}</p>
+                        <p><strong>Name:</strong> {order.recipient.name}</p>
                         <p><strong>Email:</strong> {order.recipient.email}</p>
-                        <p><strong>Ubicación:</strong> {order.recipient.city}, {order.recipient.country_name}</p>
+                        <p><strong>Location:</strong> {order.recipient.city}, {order.recipient.country_name}</p>
                       </div>
                     </div>
 
                     <div>
-                      <h4 className="font-semibold mb-3">Productos ({order.items.length})</h4>
+                      <h4 className="font-semibold mb-3">Products ({order.items.length})</h4>
                       <div className="space-y-3">
                         {order.items.map((item) => (
                           <div key={item.id} className="flex items-center gap-4 p-3 border rounded-lg">
@@ -251,7 +250,7 @@ export function PrintfulOrders() {
                             />
                             <div className="flex-1">
                               <p className="font-medium">{item.name}</p>
-                              <p className="text-sm text-muted-foreground">Cantidad: {item.quantity}</p>
+                              <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
                             </div>
                             <p className="font-semibold">${item.price}</p>
                           </div>
@@ -261,7 +260,7 @@ export function PrintfulOrders() {
 
                     {order.costs && (
                       <div>
-                        <h4 className="font-semibold mb-3">Costos</h4>
+                        <h4 className="font-semibold mb-3">Costs</h4>
                         <div className="bg-muted p-4 rounded-lg">
                           <div className="flex items-center justify-between text-xl font-bold">
                             <span>Total</span>
@@ -275,7 +274,7 @@ export function PrintfulOrders() {
 
                     {order.shipments && order.shipments.length > 0 && (
                       <div>
-                        <h4 className="font-semibold mb-3">Envíos ({order.shipments.length})</h4>
+                        <h4 className="font-semibold mb-3">Shipments ({order.shipments.length})</h4>
                         <div className="space-y-3">
                           {order.shipments.map((shipment, idx) => (
                             <div key={idx} className="p-4 border rounded-lg">
@@ -292,7 +291,7 @@ export function PrintfulOrders() {
                                   size="sm"
                                   onClick={() => window.open(shipment.tracking_url, '_blank')}
                                 >
-                                  Rastrear Envío
+                                  Track Shipment
                                 </Button>
                               )}
                             </div>

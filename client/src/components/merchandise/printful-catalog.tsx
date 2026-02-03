@@ -94,7 +94,7 @@ export function PrintfulCatalog() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar productos en el catálogo de Printful..."
+              placeholder="Search products in Boostify-Prints catalog..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -103,7 +103,7 @@ export function PrintfulCatalog() {
           </div>
           <Badge variant="outline" className="px-4 py-2">
             <Package className="h-4 w-4 mr-2" />
-            {filteredProducts.length} productos
+            {filteredProducts.length} products
           </Badge>
         </div>
         
@@ -117,18 +117,18 @@ export function PrintfulCatalog() {
             data-testid="button-show-popular"
           >
             <Printer className="h-3 w-3 mr-1" />
-            Más Populares
+            Most Popular
           </Button>
           
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Categoría:</span>
+            <span className="text-sm text-muted-foreground">Category:</span>
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="px-3 py-1.5 text-sm border rounded-md bg-background"
               data-testid="select-category"
             >
-              <option value="all">Todas</option>
+              <option value="all">All</option>
               {categories.map((category) => (
                 <option key={category} value={category}>
                   {category}
@@ -147,7 +147,7 @@ export function PrintfulCatalog() {
               }}
               data-testid="button-clear-filters"
             >
-              Limpiar filtros
+              Clear filters
             </Button>
           )}
         </div>
@@ -170,12 +170,12 @@ export function PrintfulCatalog() {
         <Card className="p-12 text-center">
           <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-xl font-semibold mb-2">
-            {searchTerm ? 'No se encontraron productos' : 'Catálogo vacío'}
+            {searchTerm ? 'No products found' : 'Empty catalog'}
           </h3>
           <p className="text-muted-foreground">
             {searchTerm
-              ? 'Intenta con otros términos de búsqueda'
-              : 'No hay productos disponibles en el catálogo'}
+              ? 'Try different search terms'
+              : 'No products available in the catalog'}
           </p>
         </Card>
       ) : (
@@ -193,7 +193,7 @@ export function PrintfulCatalog() {
                 />
                 <div className="absolute top-2 right-2">
                   <Badge className="bg-orange-500 text-white">
-                    {product.variant_count} variantes
+                    {product.variant_count} variants
                   </Badge>
                 </div>
               </div>
@@ -216,7 +216,7 @@ export function PrintfulCatalog() {
                     data-testid={`button-sync-product-${product.id}`}
                   >
                     <Plus className="h-3 w-3 mr-1" />
-                    Sincronizar
+                    Sync
                   </Button>
                 </div>
                 <Dialog>
@@ -228,7 +228,7 @@ export function PrintfulCatalog() {
                       data-testid={`button-view-product-${product.id}`}
                     >
                       <Eye className="h-4 w-4 mr-2" />
-                      Ver Detalles
+                      View Details
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -250,29 +250,29 @@ export function PrintfulCatalog() {
                       
                       <div className="space-y-4">
                         <div>
-                          <h4 className="font-semibold mb-2">Descripción</h4>
+                          <h4 className="font-semibold mb-2">Description</h4>
                           <p className="text-sm text-muted-foreground">
-                            {product.description || 'Sin descripción disponible'}
+                            {product.description || 'No description available'}
                           </p>
                         </div>
                         
                         <div>
-                          <h4 className="font-semibold mb-2">Información</h4>
+                          <h4 className="font-semibold mb-2">Information</h4>
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
-                              <span className="text-muted-foreground">Marca:</span>
+                              <span className="text-muted-foreground">Brand:</span>
                               <span className="font-medium">{product.brand}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-muted-foreground">Tipo:</span>
+                              <span className="text-muted-foreground">Type:</span>
                               <span className="font-medium">{product.type_name}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-muted-foreground">Variantes:</span>
+                              <span className="text-muted-foreground">Variants:</span>
                               <span className="font-medium">{product.variant_count}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-muted-foreground">Moneda:</span>
+                              <span className="text-muted-foreground">Currency:</span>
                               <span className="font-medium">{product.currency}</span>
                             </div>
                           </div>
@@ -282,7 +282,7 @@ export function PrintfulCatalog() {
 
                     {loadingVariants ? (
                       <div className="mt-6">
-                        <h4 className="font-semibold mb-4">Variantes Disponibles</h4>
+                        <h4 className="font-semibold mb-4">Available Variants</h4>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           {[1, 2, 3].map((i) => (
                             <Skeleton key={i} className="h-32 w-full" />
@@ -291,7 +291,7 @@ export function PrintfulCatalog() {
                       </div>
                     ) : variants.length > 0 ? (
                       <div className="mt-6">
-                        <h4 className="font-semibold mb-4">Variantes Disponibles ({variants.length})</h4>
+                        <h4 className="font-semibold mb-4">Available Variants ({variants.length})</h4>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
                           {variants.map((variant) => (
                             <Card key={variant.id} className="p-3">
@@ -319,7 +319,7 @@ export function PrintfulCatalog() {
                                   ${variant.price}
                                 </span>
                                 <Badge variant={variant.in_stock ? "default" : "secondary"} className="text-xs">
-                                  {variant.in_stock ? 'Disponible' : 'Agotado'}
+                                  {variant.in_stock ? 'In Stock' : 'Out of Stock'}
                                 </Badge>
                               </div>
                             </Card>
@@ -335,7 +335,7 @@ export function PrintfulCatalog() {
         </div>
       )}
 
-      {/* Dialog para sincronizar producto */}
+      {/* Dialog to sync product */}
       {productToSync && (
         <CreateSyncProductDialog
           productId={productToSync.id}

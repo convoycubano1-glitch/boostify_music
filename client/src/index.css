@@ -3,6 +3,15 @@
 
 @tailwind base;
 
+/* Hide scrollbar for horizontal scrolling elements */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Ocultar widget de calificación de Google Translate */
 .goog-te-banner-frame,
 .skiptranslate iframe,

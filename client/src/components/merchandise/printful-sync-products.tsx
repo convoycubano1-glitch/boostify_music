@@ -26,10 +26,10 @@ export function PrintfulSyncProducts() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h3 className="text-lg font-semibold">Productos Sincronizados</h3>
+          <h3 className="text-lg font-semibold">Synced Products</h3>
           <Badge variant="outline" className="px-4 py-2">
             <Package className="h-4 w-4 mr-2" />
-            {products.length} productos
+            {products.length} products
           </Badge>
         </div>
         <Button
@@ -38,7 +38,7 @@ export function PrintfulSyncProducts() {
           data-testid="button-refresh-sync-products"
         >
           <RefreshCw className="h-4 w-4 mr-2" />
-          Actualizar
+          Refresh
         </Button>
       </div>
 
@@ -58,13 +58,13 @@ export function PrintfulSyncProducts() {
       ) : products.length === 0 ? (
         <Card className="p-12 text-center">
           <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-xl font-semibold mb-2">No hay productos sincronizados</h3>
+          <h3 className="text-xl font-semibold mb-2">No synced products</h3>
           <p className="text-muted-foreground mb-6">
-            Aún no has sincronizado productos con Printful. Navega al catálogo para agregar productos.
+            You haven't synced any products with Boostify-Prints yet. Browse the catalog to add products.
           </p>
           <Button className="bg-orange-500 hover:bg-orange-600">
             <Package className="h-4 w-4 mr-2" />
-            Ver Catálogo
+            View Catalog
           </Button>
         </Card>
       ) : (
@@ -88,7 +88,7 @@ export function PrintfulSyncProducts() {
                 )}
                 {product.is_ignored && (
                   <div className="absolute top-2 right-2">
-                    <Badge variant="secondary">Ignorado</Badge>
+                    <Badge variant="secondary">Ignored</Badge>
                   </div>
                 )}
               </div>
@@ -98,15 +98,15 @@ export function PrintfulSyncProducts() {
                 </h3>
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">ID Externo:</span>
+                    <span className="text-muted-foreground">External ID:</span>
                     <span className="font-mono text-xs">{product.external_id}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Variantes:</span>
+                    <span className="text-muted-foreground">Variants:</span>
                     <Badge variant="outline">{product.variants}</Badge>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Sincronizadas:</span>
+                    <span className="text-muted-foreground">Synced:</span>
                     <Badge variant={product.synced > 0 ? "default" : "secondary"}>
                       {product.synced}
                     </Badge>
@@ -121,7 +121,7 @@ export function PrintfulSyncProducts() {
                   data-testid={`button-view-sync-product-${product.id}`}
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
-                  Ver en Printful
+                  View Details
                 </Button>
               </div>
             </Card>

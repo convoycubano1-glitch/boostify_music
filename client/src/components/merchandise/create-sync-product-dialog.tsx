@@ -76,8 +76,8 @@ export function CreateSyncProductDialog({
     },
     onSuccess: () => {
       toast({
-        title: "Producto sincronizado",
-        description: "El producto se agregó exitosamente a tu tienda Printful",
+        title: "Product Synced",
+        description: "Product successfully added to your Boostify-Prints store",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/printful/sync/products'] });
       onOpenChange(false);
@@ -85,8 +85,8 @@ export function CreateSyncProductDialog({
     },
     onError: (error: any) => {
       toast({
-        title: "Error al sincronizar producto",
-        description: error.message || "No se pudo crear el producto sincronizado",
+        title: "Error syncing product",
+        description: error.message || "Could not create synced product",
         variant: "destructive",
       });
     },
@@ -126,8 +126,8 @@ export function CreateSyncProductDialog({
   const handleSubmit = () => {
     if (selectedVariants.size === 0) {
       toast({
-        title: "Selecciona variantes",
-        description: "Debes seleccionar al menos una variante para sincronizar",
+        title: "Select variants",
+        description: "You must select at least one variant to sync",
         variant: "destructive",
       });
       return;
@@ -135,8 +135,8 @@ export function CreateSyncProductDialog({
 
     if (!designUrl) {
       toast({
-        title: "URL de diseño requerida",
-        description: "Debes proporcionar una URL de imagen para el diseño",
+        title: "Design URL required",
+        description: "You must provide an image URL for the design",
         variant: "destructive",
       });
       return;
@@ -167,34 +167,34 @@ export function CreateSyncProductDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Sincronizar Producto a tu Tienda</DialogTitle>
+          <DialogTitle>Sync Product to Your Store</DialogTitle>
           <DialogDescription>
-            Selecciona las variantes que deseas ofrecer y configura los precios de venta
+            Select the variants you want to offer and set your retail prices
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Nombre del producto */}
+          {/* Product name */}
           <div className="space-y-2">
-            <Label htmlFor="product-name">Nombre del Producto</Label>
+            <Label htmlFor="product-name">Product Name</Label>
             <Input
               id="product-name"
               value={syncProductName}
               onChange={(e) => setSyncProductName(e.target.value)}
-              placeholder="Nombre personalizado para tu tienda"
+              placeholder="Custom name for your store"
               data-testid="input-sync-product-name"
             />
           </div>
 
-          {/* URL del diseño */}
+          {/* Design URL */}
           <div className="space-y-2">
-            <Label htmlFor="design-url">URL del Diseño/Imagen</Label>
+            <Label htmlFor="design-url">Design/Image URL</Label>
             <div className="flex gap-2">
               <Input
                 id="design-url"
                 value={designUrl}
                 onChange={(e) => setDesignUrl(e.target.value)}
-                placeholder="https://ejemplo.com/mi-diseño.png"
+                placeholder="https://example.com/my-design.png"
                 data-testid="input-design-url"
               />
               <Button variant="outline" size="icon">
@@ -202,16 +202,16 @@ export function CreateSyncProductDialog({
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              La imagen debe ser accesible públicamente. Se imprimirá en el producto.
+              The image must be publicly accessible. It will be printed on the product.
             </p>
           </div>
 
-          {/* Selección de variantes */}
+          {/* Variant selection */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label>Variantes Disponibles</Label>
+              <Label>Available Variants</Label>
               <Badge variant="outline">
-                {selectedVariants.size} seleccionadas
+                {selectedVariants.size} selected
               </Badge>
             </div>
 
@@ -256,16 +256,16 @@ export function CreateSyncProductDialog({
                           )}
                           <span className="text-xs text-muted-foreground">{variant.size}</span>
                           <Badge variant={variant.in_stock ? "default" : "secondary"} className="text-xs">
-                            {variant.in_stock ? 'Disponible' : 'Agotado'}
+                            {variant.in_stock ? 'In Stock' : 'Out of Stock'}
                           </Badge>
                         </div>
                       </div>
 
                       <div className="text-right space-y-1">
-                        <p className="text-xs text-muted-foreground">Costo: ${basePrice}</p>
+                        <p className="text-xs text-muted-foreground">Cost: ${basePrice}</p>
                         {isSelected && (
                           <div className="flex items-center gap-1">
-                            <span className="text-xs">Precio:</span>
+                            <span className="text-xs">Price:</span>
                             <Input
                               type="number"
                               step="0.01"
@@ -292,7 +292,7 @@ export function CreateSyncProductDialog({
             onClick={() => onOpenChange(false)}
             disabled={createProductMutation.isPending}
           >
-            Cancelar
+            Cancel
           </Button>
           <Button
             onClick={handleSubmit}
@@ -303,12 +303,12 @@ export function CreateSyncProductDialog({
             {createProductMutation.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Sincronizando...
+                Syncing...
               </>
             ) : (
               <>
                 <Plus className="h-4 w-4 mr-2" />
-                Sincronizar Producto
+                Sync Product
               </>
             )}
           </Button>

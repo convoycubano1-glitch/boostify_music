@@ -112,8 +112,8 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
     },
     onError: (error: any) => {
       toast({
-        title: "Error al estimar costos",
-        description: error.message || "No se pudo calcular el costo de la orden",
+        title: "Error estimating costs",
+        description: error.message || "Could not calculate order cost",
         variant: "destructive",
       });
     },
@@ -131,8 +131,8 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
     },
     onSuccess: (data) => {
       toast({
-        title: "Orden creada",
-        description: `Orden #${data.data.id} creada exitosamente`,
+        title: "Order Created",
+        description: `Order #${data.data.id} created successfully`,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/printful/orders'] });
       setOpen(false);
@@ -140,8 +140,8 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
     },
     onError: (error: any) => {
       toast({
-        title: "Error al crear orden",
-        description: error.message || "No se pudo crear la orden",
+        title: "Error creating order",
+        description: error.message || "Could not create order",
         variant: "destructive",
       });
     },
@@ -205,8 +205,8 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
   const handleEstimate = () => {
     if (orderItems.length === 0) {
       toast({
-        title: "Agrega productos",
-        description: "Debes agregar al menos un producto a la orden",
+        title: "Add products",
+        description: "You must add at least one product to the order",
         variant: "destructive",
       });
       return;
@@ -214,8 +214,8 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
 
     if (!customerName || !customerEmail || !address1 || !city || !stateCode || !zip) {
       toast({
-        title: "Información incompleta",
-        description: "Completa toda la información de envío",
+        title: "Incomplete information",
+        description: "Please complete all shipping information",
         variant: "destructive",
       });
       return;
@@ -270,18 +270,18 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
         {trigger || (
           <Button className="bg-orange-500 hover:bg-orange-600" data-testid="button-open-create-order">
             <ShoppingCart className="h-4 w-4 mr-2" />
-            Nueva Orden
+            New Order
           </Button>
         )}
       </DialogTrigger>
       
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Crear Nueva Orden en Printful</DialogTitle>
+          <DialogTitle>Create New Order in Boostify-Prints</DialogTitle>
           <DialogDescription>
-            {step === 'products' && 'Selecciona los productos para la orden'}
-            {step === 'shipping' && 'Ingresa la información de envío del cliente'}
-            {step === 'review' && 'Revisa y confirma la orden'}
+            {step === 'products' && 'Select products for the order'}
+            {step === 'shipping' && 'Enter customer shipping information'}
+            {step === 'review' && 'Review and confirm the order'}
           </DialogDescription>
         </DialogHeader>
 
@@ -290,11 +290,11 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
           {step === 'products' && (
             <>
               <div className="space-y-4">
-                <Label>Agregar Productos</Label>
+                <Label>Add Products</Label>
                 <div className="flex gap-2">
                   <Select value={selectedProductId} onValueChange={setSelectedProductId}>
                     <SelectTrigger className="flex-1" data-testid="select-product">
-                      <SelectValue placeholder="Selecciona un producto" />
+                      <SelectValue placeholder="Select a product" />
                     </SelectTrigger>
                     <SelectContent>
                       {syncProducts.map((product) => (
@@ -311,7 +311,7 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
                     disabled={!selectedProductId}
                   >
                     <SelectTrigger className="flex-1" data-testid="select-variant">
-                      <SelectValue placeholder="Selecciona una variante" />
+                      <SelectValue placeholder="Select a variant" />
                     </SelectTrigger>
                     <SelectContent>
                       {syncVariants.map((variant) => (
@@ -335,7 +335,7 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
               {/* Order items */}
               {orderItems.length > 0 && (
                 <div className="space-y-3">
-                  <Label>Productos en la Orden ({orderItems.length})</Label>
+                  <Label>Products in Order ({orderItems.length})</Label>
                   {orderItems.map((item) => (
                     <Card key={item.sync_variant_id} className="p-3">
                       <div className="flex items-center gap-3">
@@ -349,7 +349,7 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
                         <div className="flex-1">
                           <p className="font-medium">{item.variant.name}</p>
                           <p className="text-sm text-muted-foreground">
-                            ${item.variant.retail_price} c/u
+                            ${item.variant.retail_price} each
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -375,7 +375,7 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
                             size="sm"
                             onClick={() => removeItem(item.sync_variant_id)}
                           >
-                            Eliminar
+                            Remove
                           </Button>
                         </div>
                       </div>
@@ -390,12 +390,12 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
           {step === 'shipping' && (
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <Label htmlFor="customer-name">Nombre Completo *</Label>
+                <Label htmlFor="customer-name">Full Name *</Label>
                 <Input
                   id="customer-name"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="Juan Pérez"
+                  placeholder="John Doe"
                   data-testid="input-customer-name"
                 />
               </div>
@@ -407,24 +407,24 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
                   type="email"
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
-                  placeholder="juan@ejemplo.com"
+                  placeholder="john@example.com"
                   data-testid="input-customer-email"
                 />
               </div>
               
               <div className="col-span-2">
-                <Label htmlFor="address">Dirección *</Label>
+                <Label htmlFor="address">Address *</Label>
                 <Input
                   id="address"
                   value={address1}
                   onChange={(e) => setAddress1(e.target.value)}
-                  placeholder="Calle Principal 123"
+                  placeholder="123 Main Street"
                   data-testid="input-address"
                 />
               </div>
               
               <div>
-                <Label htmlFor="city">Ciudad *</Label>
+                <Label htmlFor="city">City *</Label>
                 <Input
                   id="city"
                   value={city}
@@ -435,7 +435,7 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
               </div>
               
               <div>
-                <Label htmlFor="state">Estado *</Label>
+                <Label htmlFor="state">State *</Label>
                 <Input
                   id="state"
                   value={stateCode}
@@ -447,23 +447,23 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
               </div>
               
               <div>
-                <Label htmlFor="country">País *</Label>
+                <Label htmlFor="country">Country *</Label>
                 <Select value={countryCode} onValueChange={setCountryCode}>
                   <SelectTrigger data-testid="select-country">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="US">Estados Unidos</SelectItem>
-                    <SelectItem value="CA">Canadá</SelectItem>
-                    <SelectItem value="MX">México</SelectItem>
-                    <SelectItem value="ES">España</SelectItem>
-                    <SelectItem value="GB">Reino Unido</SelectItem>
+                    <SelectItem value="US">United States</SelectItem>
+                    <SelectItem value="CA">Canada</SelectItem>
+                    <SelectItem value="MX">Mexico</SelectItem>
+                    <SelectItem value="ES">Spain</SelectItem>
+                    <SelectItem value="GB">United Kingdom</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
               <div>
-                <Label htmlFor="zip">Código Postal *</Label>
+                <Label htmlFor="zip">Zip Code *</Label>
                 <Input
                   id="zip"
                   value={zip}
@@ -474,7 +474,7 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
               </div>
               
               <div className="col-span-2">
-                <Label htmlFor="phone">Teléfono (opcional)</Label>
+                <Label htmlFor="phone">Phone (optional)</Label>
                 <Input
                   id="phone"
                   value={phone}
@@ -485,15 +485,15 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
               </div>
               
               <div className="col-span-2">
-                <Label htmlFor="shipping">Método de Envío</Label>
+                <Label htmlFor="shipping">Shipping Method</Label>
                 <Select value={shippingMethod} onValueChange={setShippingMethod}>
                   <SelectTrigger data-testid="select-shipping">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="STANDARD">Estándar (5-7 días)</SelectItem>
-                    <SelectItem value="EXPEDITED">Express (2-3 días)</SelectItem>
-                    <SelectItem value="PRIORITY">Prioritario (1-2 días)</SelectItem>
+                    <SelectItem value="STANDARD">Standard (5-7 days)</SelectItem>
+                    <SelectItem value="EXPEDITED">Express (2-3 days)</SelectItem>
+                    <SelectItem value="PRIORITY">Priority (1-2 days)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -504,7 +504,7 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
           {step === 'review' && estimatedCost && (
             <div className="space-y-6">
               <div>
-                <h4 className="font-semibold mb-3">Resumen de la Orden</h4>
+                <h4 className="font-semibold mb-3">Order Summary</h4>
                 <div className="space-y-2">
                   {orderItems.map((item) => (
                     <div key={item.sync_variant_id} className="flex justify-between text-sm">
@@ -516,7 +516,7 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
               </div>
 
               <div>
-                <h4 className="font-semibold mb-3">Información de Envío</h4>
+                <h4 className="font-semibold mb-3">Shipping Information</h4>
                 <div className="text-sm space-y-1 text-muted-foreground">
                   <p>{customerName}</p>
                   <p>{customerEmail}</p>
@@ -528,19 +528,19 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
 
               {estimatedCost.costs && (
                 <div className="border-t pt-4">
-                  <h4 className="font-semibold mb-3">Costos Estimados</h4>
+                  <h4 className="font-semibold mb-3">Estimated Costs</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span>Subtotal:</span>
                       <span>${estimatedCost.costs.subtotal}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Envío:</span>
+                      <span>Shipping:</span>
                       <span>${estimatedCost.costs.shipping}</span>
                     </div>
                     {estimatedCost.costs.tax !== '0.00' && (
                       <div className="flex justify-between">
-                        <span>Impuestos:</span>
+                        <span>Tax:</span>
                         <span>${estimatedCost.costs.tax}</span>
                       </div>
                     )}
@@ -565,7 +565,7 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
                 onClick={() => setStep(step === 'review' ? 'shipping' : 'products')}
                 disabled={estimateMutation.isPending || createOrderMutation.isPending}
               >
-                Atrás
+                Back
               </Button>
             )}
           </div>
@@ -579,7 +579,7 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
               }}
               disabled={estimateMutation.isPending || createOrderMutation.isPending}
             >
-              Cancelar
+              Cancel
             </Button>
             
             {step === 'products' && (
@@ -588,7 +588,7 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
                 disabled={orderItems.length === 0}
                 className="bg-orange-500 hover:bg-orange-600"
               >
-                Continuar
+                Continue
               </Button>
             )}
             
@@ -602,12 +602,12 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
                 {estimateMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Estimando...
+                    Estimating...
                   </>
                 ) : (
                   <>
                     <DollarSign className="h-4 w-4 mr-2" />
-                    Estimar Costos
+                    Estimate Costs
                   </>
                 )}
               </Button>
@@ -620,7 +620,7 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
                   onClick={() => handleCreateOrder(false)}
                   disabled={createOrderMutation.isPending}
                 >
-                  Guardar Borrador
+                  Save Draft
                 </Button>
                 <Button
                   onClick={() => handleCreateOrder(true)}
@@ -631,12 +631,12 @@ export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
                   {createOrderMutation.isPending ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Creando...
+                      Creating...
                     </>
                   ) : (
                     <>
                       <ShoppingCart className="h-4 w-4 mr-2" />
-                      Confirmar Orden
+                      Confirm Order
                     </>
                   )}
                 </Button>
