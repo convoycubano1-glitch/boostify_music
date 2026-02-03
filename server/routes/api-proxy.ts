@@ -3331,4 +3331,52 @@ router.get('/proxy/kling/results', authenticate, async (req: Request, res: Respo
   }
 });
 
+/**
+ * Proxy endpoint for downloading files from Firebase Storage
+ * This bypasses CORS restrictions for client-side fetches
+ */
+router.get('/proxy/firebase-file', async (req: Request, res: Response) => {
+  try {
+    const { url } = req.query;
+    
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'URL parameter is required'
+      });
+    }
+    
+    // Validate that the URL is from Firebase Storage
+    if (!url.includes('storage.googleapis.com') && !url.includes('firebasestorage.googleapis.com')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Only Firebase Storage URLs are allowed'
+      });
+    }
+    
+    console.log('[PROXY] Downloading file from Firebase:', url);
+    
+    const response = await axios.get(url, {
+      responseType: 'arraybuffer',
+      timeout: 60000, // 60 second timeout for large files
+    });
+    
+    // Set appropriate headers
+    const contentType = response.headers['content-type'] || 'application/octet-stream';
+    res.set('Content-Type', contentType);
+    res.set('Content-Length', response.headers['content-length']);
+    res.set('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+    
+    console.log('[PROXY] File downloaded successfully, size:', response.headers['content-length']);
+    
+    return res.send(Buffer.from(response.data));
+  } catch (error: any) {
+    console.error('[PROXY] Error downloading file:', error.message);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to download file'
+    });
+  }
+});
+
 export default router;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Header } from "../components/layout/header";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -8,17 +8,44 @@ import { DirectorsList } from "../components/music-video/directors-list";
 import { MusicVideoAI } from "../components/music-video/music-video-ai";
 import { MotionDNASection } from "../components/music-video/motion-dna-section";
 import { motion } from "framer-motion";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import type { DirectorProfile } from "../data/directors";
 import { useAuth } from "../hooks/use-auth";
 import { PlanTierGuard } from "../components/youtube-views/plan-tier-guard";
 import { isAdminEmail } from "../../../shared/constants";
+
+// Interface for pre-filled data from artist profile
+interface PreFilledData {
+  artistName?: string;
+  songName?: string;
+  songId?: string;
+  audioUrl?: string;
+  coverArt?: string;
+  images?: string[];
+}
 
 export default function MusicVideoCreator() {
   const [activeTab, setActiveTab] = useState<'directors' | 'ai' | 'editor'>('ai');
   const [selectedDirector, setSelectedDirector] = useState<DirectorProfile | null>(null);
   const { user } = useAuth();
   const isAdmin = user?.email ? isAdminEmail(user.email) : false;
+  const searchString = useSearch();
+  
+  // Parse URL parameters for pre-filled data from artist profile
+  const preFilledData = useMemo<PreFilledData>(() => {
+    console.log('🔍 [URL] Raw search string:', searchString);
+    const params = new URLSearchParams(searchString);
+    const data = {
+      artistName: params.get('artist') || undefined,
+      songName: params.get('song') || undefined,
+      songId: params.get('songId') || undefined,
+      audioUrl: params.get('audioUrl') || undefined,
+      coverArt: params.get('coverArt') || undefined,
+      images: params.get('images') ? params.get('images')!.split(',') : undefined
+    };
+    console.log('🎵 [URL] Parsed preFilledData:', data);
+    return data;
+  }, [searchString]);
 
   const handleDirectorSelected = (director: DirectorProfile) => {
     setSelectedDirector(director);
@@ -41,6 +68,7 @@ export default function MusicVideoCreator() {
             setActiveTab={setActiveTab}
             selectedDirector={selectedDirector}
             onDirectorSelected={handleDirectorSelected}
+            preFilledData={preFilledData}
           />
           <MotionDNASection />
         </main>
@@ -151,9 +179,10 @@ interface ContentSectionProps {
   setActiveTab: (tab: 'directors' | 'ai' | 'editor') => void;
   selectedDirector: DirectorProfile | null;
   onDirectorSelected: (director: DirectorProfile) => void;
+  preFilledData?: PreFilledData;
 }
 
-const ContentSection = ({ activeTab, setActiveTab, selectedDirector, onDirectorSelected }: ContentSectionProps) => (
+const ContentSection = ({ activeTab, setActiveTab, selectedDirector, onDirectorSelected, preFilledData }: ContentSectionProps) => (
   <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-12 flex-1">
     <div className="flex flex-col items-center mb-4 sm:mb-8 text-center">
       <h2 className="text-lg sm:text-2xl md:text-3xl font-bold mb-2 sm:mb-4">Choose Your Creation Path</h2>
@@ -202,7 +231,14 @@ const ContentSection = ({ activeTab, setActiveTab, selectedDirector, onDirectorS
         {activeTab === 'directors' ? (
           <DirectorsList onDirectorSelected={onDirectorSelected} />
         ) : (
-          <MusicVideoAI preSelectedDirector={selectedDirector} />
+          <MusicVideoAI 
+            preSelectedDirector={selectedDirector}
+            preFilledArtistName={preFilledData?.artistName}
+            preFilledSongName={preFilledData?.songName}
+            preFilledAudioUrl={preFilledData?.audioUrl}
+            preFilledCoverArt={preFilledData?.coverArt}
+            preFilledImages={preFilledData?.images}
+          />
         )}
       </div>
     </div>

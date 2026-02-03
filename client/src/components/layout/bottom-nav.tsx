@@ -47,6 +47,13 @@ export function BottomNav() {
       plan: "free"
     },
     {
+      title: "My Artists",
+      icon: Mic,
+      href: "/my-artists",
+      plan: "free",
+      highlight: true
+    },
+    {
       title: "Investors",
       icon: Layers,
       href: "/investors-dashboard",
@@ -104,7 +111,6 @@ export function BottomNav() {
 
   // Elementos de navegación para el botón "More" - Resto de páginas organizadas
   const moreNavItems = [
-    { title: "My Artists", icon: Mic, href: "/my-artists", plan: "free" },
     { title: "Social Network", icon: MessageSquare, href: "/social-network", plan: "basic" },
     { title: "Virtual Record Label", icon: Radio, href: "/virtual-record-label", plan: "premium" },
     { title: "AI Advisors", icon: PhoneCall, href: "/ai-advisors", plan: "premium" },
@@ -245,7 +251,8 @@ export function BottomNav() {
                       <Link key={item.title} href={item.href} className="horizontal-scroll-item">
                         <div className={cn(
                           "nav-btn flex-shrink-0 flex flex-col items-center p-3 min-w-[5rem] rounded-lg",
-                          location === item.href ? "nav-btn-active" : ""
+                          location === item.href ? "nav-btn-active" : "",
+                          (item as any).highlight && "border border-orange-500/50 bg-gradient-to-b from-orange-500/10 to-transparent shadow-[0_0_10px_rgba(249,115,22,0.3)]"
                         )}>
                           <div className="relative flex items-center justify-center">
                             <item.icon
@@ -253,11 +260,16 @@ export function BottomNav() {
                                 "w-7 h-7 transition-all duration-300",
                                 location === item.href
                                   ? "text-orange-500"
-                                  : "text-muted-foreground"
+                                  : (item as any).highlight
+                                    ? "text-orange-400"
+                                    : "text-muted-foreground"
                               )}
                             />
                             {location === item.href && (
                               <div className="absolute -inset-2 bg-orange-500/20 rounded-full blur animate-pulse" />
+                            )}
+                            {(item as any).highlight && location !== item.href && (
+                              <div className="absolute -inset-1 bg-orange-500/10 rounded-full animate-pulse" />
                             )}
                             
                             {/* Indicador de nivel de suscripción requerido */}
@@ -279,7 +291,9 @@ export function BottomNav() {
                               "text-sm font-medium transition-colors duration-300 whitespace-nowrap mt-2",
                               location === item.href
                                 ? "text-orange-500"
-                                : "text-muted-foreground"
+                                : (item as any).highlight
+                                  ? "text-orange-400"
+                                  : "text-muted-foreground"
                             )}
                           >
                             {item.title}

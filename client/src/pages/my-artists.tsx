@@ -337,28 +337,6 @@ export default function MyArtistsPage() {
             </div>
             <div className="flex gap-3 flex-wrap">
               {/* Button to fix existing AI artists */}
-              {artists.some(a => a.isAIGenerated) && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fixArtistsMutation.mutate()}
-                  disabled={fixArtistsMutation.isPending}
-                  className="border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
-                  data-testid="button-fix-ai-artists"
-                >
-                  {fixArtistsMutation.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Updating...
-                    </>
-                  ) : (
-                    <>
-                      <Wrench className="h-4 w-4 mr-2" />
-                      Fix AI Artists
-                    </>
-                  )}
-                </Button>
-              )}
               
               <Dialog open={isDialogOpen} onOpenChange={(open) => {
                 // Only allow opening if user has permission

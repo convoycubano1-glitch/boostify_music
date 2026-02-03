@@ -3694,20 +3694,26 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                         </button>
                         {isOwnProfile && (
                           <>
-                            <Link href={`/music-video-creator?song=${encodeURIComponent(song.name)}&songId=${song.id}`}>
-                              <button
-                                className="py-1.5 md:py-2 px-3 md:px-4 rounded-full text-xs md:text-sm font-medium transition duration-300 bg-gradient-to-r hover:opacity-80"
-                                style={{ 
-                                  backgroundImage: `linear-gradient(to right, ${colors.hexPrimary}, ${colors.hexAccent})`,
-                                  color: 'white'
-                                }}
-                                data-testid={`button-create-video-${song.id}`}
-                              >
-                                <VideoIcon className="h-3 w-3 md:h-4 md:w-4 inline mr-1" />
-                                <span className="hidden sm:inline">Crear Video</span>
-                                <span className="sm:hidden">Video</span>
-                              </button>
-                            </Link>
+                            <button
+                              className="py-1.5 md:py-2 px-3 md:px-4 rounded-full text-xs md:text-sm font-medium transition duration-300 bg-gradient-to-r hover:opacity-80"
+                              style={{ 
+                                backgroundImage: `linear-gradient(to right, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                                color: 'white'
+                              }}
+                              onClick={() => {
+                                const url = `/music-video-creator?artist=${encodeURIComponent(artist.name)}&song=${encodeURIComponent(song.name)}&songId=${song.id}${song.audioUrl ? `&audioUrl=${encodeURIComponent(song.audioUrl)}` : ''}${song.coverArt ? `&coverArt=${encodeURIComponent(song.coverArt)}` : ''}${artist.profileImage ? `&images=${encodeURIComponent(artist.profileImage)}` : ''}`;
+                                console.log('🎬 [CREATE VIDEO] Navigating with URL:', url);
+                                console.log('🎬 [CREATE VIDEO] Artist:', artist.name);
+                                console.log('🎬 [CREATE VIDEO] Song:', song.name);
+                                console.log('🎬 [CREATE VIDEO] Audio URL:', song.audioUrl);
+                                window.location.href = url;
+                              }}
+                              data-testid={`button-create-video-${song.id}`}
+                            >
+                              <VideoIcon className="h-3 w-3 md:h-4 md:w-4 inline mr-1" />
+                              <span className="hidden sm:inline">Create Video</span>
+                              <span className="sm:hidden">Video</span>
+                            </button>
                             <button
                               className="py-1.5 md:py-2 px-3 md:px-4 rounded-full text-xs md:text-sm font-medium transition duration-300 hover:bg-red-600"
                               style={{ 
@@ -3720,7 +3726,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                               data-testid={`button-delete-song-${song.id}`}
                             >
                               <Trash2 className="h-3 w-3 md:h-4 md:w-4 inline mr-1" />
-                              <span className="hidden sm:inline">Borrar</span>
+                              <span className="hidden sm:inline">Delete</span>
                             </button>
                           </>
                         )}

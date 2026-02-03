@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { logger } from "../../lib/logger";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -39,19 +39,136 @@ interface CreativeOnboardingModalProps {
     conceptBrief?: string
   ) => void;
   onClose?: () => void;
+  // Pre-filled data from artist profile
+  preFilledArtistName?: string;
+  preFilledSongName?: string;
+  preFilledAudioFile?: File | null;
+  preFilledImages?: string[];
 }
 
-export function CreativeOnboardingModal({ open, onComplete, onClose }: CreativeOnboardingModalProps) {
+export function CreativeOnboardingModal({ 
+  open, 
+  onComplete, 
+  onClose,
+  preFilledArtistName,
+  preFilledSongName,
+  preFilledAudioFile,
+  preFilledImages
+}: CreativeOnboardingModalProps) {
   const { toast } = useToast();
+  
+  // Read URL parameters directly for pre-filling
+  const urlParams = useMemo(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const params = {
+      artist: searchParams.get('artist') || '',
+      song: searchParams.get('song') || '',
+      audioUrl: searchParams.get('audioUrl') || '',
+      coverArt: searchParams.get('coverArt') || '',
+      images: searchParams.get('images') || ''
+    };
+    console.log('🔵 [URL PARAMS] Read from window.location:', params);
+    return params;
+  }, []);
+  
   const [step, setStep] = useState<1 | 2>(1);
-  const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [selectedAudioFile, setSelectedAudioFile] = useState<File | null>(null);
-  const [artistName, setArtistName] = useState<string>("");
-  const [songName, setSongName] = useState<string>("");
+  const [selectedImages, setSelectedImages] = useState<string[]>(() => {
+    // Initialize from URL params or props
+    if (urlParams.images) {
+      return urlParams.images.split(',').filter(Boolean);
+    }
+    return preFilledImages || [];
+  });
+  const [selectedAudioFile, setSelectedAudioFile] = useState<File | null>(preFilledAudioFile || null);
+  const [artistName, setArtistName] = useState<string>(() => {
+    // Initialize from URL params or props  
+    return urlParams.artist || preFilledArtistName || "";
+  });
+  const [songName, setSongName] = useState<string>(() => {
+    // Initialize from URL params or props
+    return urlParams.song || preFilledSongName || "";
+  });
   const [aspectRatio, setAspectRatio] = useState<string>("16:9");
   const [videoStyle, setVideoStyle] = useState<string>("realistic");
   const [conceptBrief, setConceptBrief] = useState<string>("");
   const [isDragging, setIsDragging] = useState(false);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  
+  // Download audio from URL if provided (using proxy to avoid CORS)
+  useEffect(() => {
+    if (urlParams.audioUrl && !selectedAudioFile) {
+      console.log('🎵 [MODAL] Downloading audio from URL:', urlParams.audioUrl);
+      setIsLoadingAudio(true);
+      
+      // Use proxy endpoint to avoid CORS issues with Firebase Storage
+      const proxyUrl = `/api/proxy/firebase-file?url=${encodeURIComponent(urlParams.audioUrl)}`;
+      
+      fetch(proxyUrl)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.blob();
+        })
+        .then(blob => {
+          const fileName = urlParams.song ? `${urlParams.song}.mp3` : 'song.mp3';
+          const audioFile = new File([blob], fileName, { type: blob.type || 'audio/mpeg' });
+          setSelectedAudioFile(audioFile);
+          setIsLoadingAudio(false);
+          console.log('✅ [MODAL] Audio file loaded:', fileName);
+          toast({
+            title: "Audio loaded",
+            description: `"${urlParams.song || 'Song'}" ready for video creation`,
+          });
+        })
+        .catch(error => {
+          console.error('❌ [MODAL] Failed to download audio:', error);
+          setIsLoadingAudio(false);
+          toast({
+            title: "Error loading audio",
+            description: "Please upload your audio file manually",
+            variant: "destructive",
+          });
+        });
+    }
+  }, [urlParams.audioUrl, urlParams.song, selectedAudioFile, toast]);
+  
+  // Update states when pre-filled props change (always update if props are available)
+  useEffect(() => {
+    // Debug alert to see what props are arriving
+    if (open) {
+      console.log('🔴 [MODAL OPENED] Prefill props:', {
+        preFilledArtistName,
+        preFilledSongName,
+        preFilledAudioFile: preFilledAudioFile?.name,
+        preFilledImages: preFilledImages?.length
+      });
+    }
+    
+    logger.info('🔄 [ONBOARDING] Prefill props received:', {
+      preFilledArtistName,
+      preFilledSongName,
+      preFilledAudioFile: preFilledAudioFile?.name,
+      preFilledImages: preFilledImages?.length
+    });
+    
+    if (preFilledArtistName) {
+      logger.info('🎨 [ONBOARDING] Pre-filling artist name:', preFilledArtistName);
+      setArtistName(preFilledArtistName);
+    }
+    if (preFilledSongName) {
+      logger.info('🎵 [ONBOARDING] Pre-filling song name:', preFilledSongName);
+      setSongName(preFilledSongName);
+    }
+    if (preFilledAudioFile) {
+      logger.info('🎧 [ONBOARDING] Pre-filling audio file:', preFilledAudioFile.name);
+      setSelectedAudioFile(preFilledAudioFile);
+    }
+    if (preFilledImages && preFilledImages.length > 0) {
+      logger.info('🖼️ [ONBOARDING] Pre-filling images:', preFilledImages.length);
+      setSelectedImages(preFilledImages);
+    }
+  }, [preFilledArtistName, preFilledSongName, preFilledAudioFile, preFilledImages, open]);
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -177,10 +294,10 @@ export function CreativeOnboardingModal({ open, onComplete, onClose }: CreativeO
         });
         return;
       }
-      if (selectedImages.length < 3) {
+      if (selectedImages.length < 1) {
         toast({
-          title: "Insufficient Photos",
-          description: "You need to upload at least 3 artist photos",
+          title: "Photo Required",
+          description: "You need to upload at least 1 artist photo",
           variant: "destructive",
         });
         return;
@@ -257,11 +374,11 @@ export function CreativeOnboardingModal({ open, onComplete, onClose }: CreativeO
                         <div>
                           <h3 className="font-bold text-lg mb-2">Artist Photos</h3>
                           <p className="text-sm text-muted-foreground mb-3">
-                            Upload 3-5 clear face photos to train the AI
+                            Upload 1-5 clear face photos to train the AI
                           </p>
                           <div className="flex gap-2">
                             <Badge className="bg-orange-500/20 text-orange-500 border-orange-500/30">
-                              Min 3 photos
+                              Min 1 photo
                             </Badge>
                             <Badge className="bg-green-500/20 text-green-500 border-green-500/30">
                               Max 5 photos
@@ -526,13 +643,13 @@ export function CreativeOnboardingModal({ open, onComplete, onClose }: CreativeO
 
                 <div className="flex justify-between items-center pt-4">
                   <p className="text-sm text-muted-foreground">
-                    {selectedImages.length < 3 
-                      ? `You need ${3 - selectedImages.length} more photo${3 - selectedImages.length > 1 ? 's' : ''}`
-                      : `Perfect! You have ${selectedImages.length} photos`}
+                    {selectedImages.length < 1 
+                      ? `You need at least 1 photo`
+                      : `Great! You have ${selectedImages.length} photo${selectedImages.length > 1 ? 's' : ''} (max 5)`}
                   </p>
                   <Button
                     onClick={handleContinue}
-                    disabled={selectedImages.length < 3 || !artistName.trim() || !songName.trim()}
+                    disabled={selectedImages.length < 1 || !artistName.trim() || !songName.trim()}
                     className="bg-orange-500 hover:bg-orange-600"
                     data-testid="button-continue-step1"
                   >
@@ -666,8 +783,30 @@ export function CreativeOnboardingModal({ open, onComplete, onClose }: CreativeO
                   </p>
                 </div>
 
+                {/* Loading Audio Indicator */}
+                {isLoadingAudio && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-orange-500/10 border-2 border-orange-500/30 rounded-lg p-4"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="bg-orange-500/20 p-3 rounded-full animate-pulse">
+                        <Music className="h-6 w-6 text-orange-500" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold">Loading your song...</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Downloading from artist profile
+                        </p>
+                      </div>
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500"></div>
+                    </div>
+                  </motion.div>
+                )}
+
                 {/* Audio Preview */}
-                {selectedAudioFile && (
+                {selectedAudioFile && !isLoadingAudio && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -698,12 +837,12 @@ export function CreativeOnboardingModal({ open, onComplete, onClose }: CreativeO
                   </Button>
                   <Button
                     onClick={handleContinue}
-                    disabled={!selectedAudioFile}
+                    disabled={!selectedAudioFile || isLoadingAudio}
                     className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600"
                     data-testid="button-start-creation"
                   >
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Create Music Video
+                    {isLoadingAudio ? 'Loading...' : 'Create Music Video'}
                   </Button>
                 </div>
               </motion.div>

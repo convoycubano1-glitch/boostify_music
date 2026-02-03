@@ -353,9 +353,21 @@ const FULL_VIDEO_PRICE = 199; // Price in USD for full video generation
 
 interface MusicVideoAIProps {
   preSelectedDirector?: DirectorProfile | null;
+  preFilledArtistName?: string;
+  preFilledSongName?: string;
+  preFilledAudioUrl?: string;
+  preFilledCoverArt?: string;
+  preFilledImages?: string[];
 }
 
-export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
+export function MusicVideoAI({ 
+  preSelectedDirector,
+  preFilledArtistName,
+  preFilledSongName,
+  preFilledAudioUrl,
+  preFilledCoverArt,
+  preFilledImages
+}: MusicVideoAIProps = {}) {
   const { toast } = useToast();
   const { user } = useAuth();
   const { getToken } = useClerkAuth(); // Para obtener token de autenticación
@@ -430,6 +442,75 @@ export function MusicVideoAI({ preSelectedDirector }: MusicVideoAIProps = {}) {
       });
     }
   }, [preSelectedDirector, toast]);
+
+  // Pre-fill data from artist profile (song, images, etc.)
+  useEffect(() => {
+    if (preFilledArtistName || preFilledSongName) {
+      logger.info('🎨 [PREFILL] Pre-filling from artist profile:', {
+        artistName: preFilledArtistName,
+        songName: preFilledSongName,
+        audioUrl: preFilledAudioUrl ? 'provided' : 'none',
+        coverArt: preFilledCoverArt ? 'provided' : 'none',
+        images: preFilledImages?.length || 0
+      });
+      
+      // Set artist and song names
+      if (preFilledArtistName) {
+        setArtistName(preFilledArtistName);
+      }
+      if (preFilledSongName) {
+        setSongName(preFilledSongName);
+      }
+      if (preFilledArtistName && preFilledSongName) {
+        setProjectName(`${preFilledArtistName} - ${preFilledSongName}`);
+      }
+      
+      // Pre-fill reference images from artist profile
+      if (preFilledImages && preFilledImages.length > 0) {
+        setArtistReferenceImages(preFilledImages.slice(0, 3)); // Max 3 images
+        logger.info('🖼️ [PREFILL] Set', preFilledImages.length, 'reference images');
+      } else if (preFilledCoverArt) {
+        // Use cover art as fallback for reference image
+        setArtistReferenceImages([preFilledCoverArt]);
+        logger.info('🖼️ [PREFILL] Set cover art as reference image');
+      }
+      
+      // Download audio from URL and convert to File object for transcription
+      // Using proxy endpoint to avoid CORS issues with Firebase Storage
+      if (preFilledAudioUrl && !selectedFile) {
+        logger.info('🎵 [PREFILL] Downloading audio from URL:', preFilledAudioUrl);
+        const proxyUrl = `/api/proxy/firebase-file?url=${encodeURIComponent(preFilledAudioUrl)}`;
+        fetch(proxyUrl)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.blob();
+          })
+          .then(blob => {
+            const fileName = preFilledSongName ? `${preFilledSongName}.mp3` : 'song.mp3';
+            const audioFile = new File([blob], fileName, { type: blob.type || 'audio/mpeg' });
+            setSelectedFile(audioFile);
+            logger.info('✅ [PREFILL] Audio file loaded:', fileName);
+            toast({
+              title: "Audio loaded",
+              description: `"${preFilledSongName || 'Song'}" ready for video creation`,
+            });
+          })
+          .catch(error => {
+            logger.error('❌ [PREFILL] Failed to download audio:', error);
+          });
+      }
+      
+      // Show toast that data is pre-filled (onboarding modal will show with pre-filled data)
+      if (preFilledArtistName && preFilledSongName) {
+        toast({
+          title: "Data pre-filled!",
+          description: `Creating video for "${preFilledSongName}" by ${preFilledArtistName}. Just upload your photos and click Create!`,
+        });
+      }
+    }
+  }, [preFilledArtistName, preFilledSongName, preFilledAudioUrl, preFilledCoverArt, preFilledImages, toast, selectedFile]);
 
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
@@ -6457,6 +6538,10 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
         open={showOnboarding}
         onComplete={handleOnboardingComplete}
         onClose={() => setShowOnboarding(false)}
+        preFilledArtistName={preFilledArtistName}
+        preFilledSongName={preFilledSongName}
+        preFilledAudioFile={selectedFile}
+        preFilledImages={artistReferenceImages}
       />
 
       {/* Modal de Selección de Director y Estilo */}
