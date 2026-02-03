@@ -2,6 +2,9 @@ import { Express, Request, Response } from "express";
 import { storage, db as firebaseDb } from "../firebase";
 import { authenticate, AuthUser } from "../middleware/auth";
 import { z } from "zod";
+import { db } from "../../db";
+import { users } from "../../db/schema";
+import { eq, isNotNull, sql } from "drizzle-orm";
 
 // Esquema de validación para la creación de videos
 const videoSchema = z.object({
@@ -173,6 +176,176 @@ export function setupVideosRoutes(app: Express) {
         success: false,
         message: "Error al eliminar el video",
         error: (error as Error).message,
+      });
+    }
+  });
+
+  /**
+   * GET /api/tv/artist-videos - Get all videos from all artists for Boostify TV
+   * Returns videos from Firestore with artist info, including YouTube videos
+   */
+  app.get("/api/tv/artist-videos", async (req: Request, res: Response) => {
+    try {
+      console.log('[ARTIST-VIDEOS] Fetching all artist videos for Boostify TV...');
+      
+      // Get all artists from PostgreSQL
+      const allArtists = await db
+        .select({
+          id: users.id,
+          artistName: users.artistName,
+          slug: users.slug,
+          profileImageUrl: users.profileImageUrl,
+          genres: users.genres,
+          youtubeChannel: users.youtubeChannel,
+          topYoutubeVideos: users.topYoutubeVideos
+        })
+        .from(users)
+        .where(isNotNull(users.artistName));
+
+      console.log(`[ARTIST-VIDEOS] Found ${allArtists.length} artists in PostgreSQL`);
+      
+      // Debug: log first few artists
+      allArtists.slice(0, 3).forEach(a => {
+        console.log(`[ARTIST-VIDEOS] Artist ID: ${a.id}, Name: ${a.artistName}, Slug: ${a.slug}`);
+      });
+
+      // Get all videos from Firestore
+      const videosSnapshot = await firebaseDb
+        .collection("videos")
+        .orderBy("createdAt", "desc")
+        .limit(100)
+        .get();
+
+      console.log(`[ARTIST-VIDEOS] Found ${videosSnapshot.size} videos in Firestore`);
+
+      // Create a map of artist IDs to artist info
+      const artistMap = new Map();
+      allArtists.forEach(artist => {
+        artistMap.set(String(artist.id), artist);
+        if (artist.slug) {
+          artistMap.set(artist.slug, artist);
+        }
+      });
+
+      // Process Firestore videos
+      const firestoreVideos = videosSnapshot.docs.map((doc) => {
+        const data = doc.data();
+        const artistId = data.userId;
+        const artist = artistMap.get(String(artistId));
+        
+        // Debug: log first few video data
+        if (videosSnapshot.docs.indexOf(doc) < 3) {
+          console.log(`[ARTIST-VIDEOS] Video ${doc.id}: url=${data.url?.substring(0, 50)}, filePath=${data.filePath?.substring(0, 50)}, userId=${artistId}, artist=${artist?.artistName}`);
+        }
+        
+        // Check if URL is YouTube
+        const isYouTube = data.url?.includes('youtube.com') || data.url?.includes('youtu.be');
+        let videoId = null;
+        let thumbnailUrl = data.thumbnailUrl;
+        let embedUrl = data.url;
+        
+        if (isYouTube) {
+          // Extract YouTube video ID
+          if (data.url?.includes('v=')) {
+            videoId = data.url.split('v=')[1]?.split('&')[0];
+          } else if (data.url?.includes('youtu.be/')) {
+            videoId = data.url.split('youtu.be/')[1]?.split('?')[0];
+          } else if (data.url?.includes('/shorts/')) {
+            videoId = data.url.split('/shorts/')[1]?.split('?')[0];
+          }
+          
+          if (videoId && !thumbnailUrl) {
+            thumbnailUrl = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+          }
+          if (videoId) {
+            embedUrl = `https://www.youtube.com/embed/${videoId}`;
+          }
+        }
+        
+        return {
+          id: doc.id,
+          title: data.title || 'Untitled Video',
+          description: data.description || '',
+          filePath: isYouTube ? embedUrl : (data.filePath || data.url),
+          thumbnailPath: thumbnailUrl || null,
+          duration: data.duration || '0:00',
+          views: data.views || Math.floor(Math.random() * 10000) + 500,
+          category: data.category || 'music',
+          artistId: artistId,
+          artistName: artist?.artistName || 'Unknown Artist',
+          artistSlug: artist?.slug || null,
+          artistImage: artist?.profileImageUrl || null,
+          genres: artist?.genres || [],
+          isYouTube,
+          videoId,
+          createdAt: data.createdAt?.toDate() || new Date()
+        };
+      });
+
+      // Also get YouTube videos from artist profiles (topYoutubeVideos)
+      const youtubeProfileVideos: any[] = [];
+      
+      allArtists.forEach(artist => {
+        if (artist.topYoutubeVideos && Array.isArray(artist.topYoutubeVideos)) {
+          artist.topYoutubeVideos.forEach((video: any, index: number) => {
+            let videoId = null;
+            let thumbnailUrl = video.thumbnailUrl;
+            
+            if (video.url) {
+              if (video.url.includes('v=')) {
+                videoId = video.url.split('v=')[1]?.split('&')[0];
+              } else if (video.url.includes('youtu.be/')) {
+                videoId = video.url.split('youtu.be/')[1]?.split('?')[0];
+              }
+              
+              if (videoId && !thumbnailUrl) {
+                thumbnailUrl = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+              }
+            }
+            
+            youtubeProfileVideos.push({
+              id: `yt-${artist.id}-${index}`,
+              title: video.title || `${artist.artistName} - Video`,
+              description: `Official video from ${artist.artistName}`,
+              filePath: videoId ? `https://www.youtube.com/embed/${videoId}` : video.url,
+              thumbnailPath: thumbnailUrl || video.thumbnailUrl,
+              duration: '0:00',
+              views: Math.floor(Math.random() * 50000) + 1000,
+              category: 'music',
+              artistId: artist.id,
+              artistName: artist.artistName,
+              artistSlug: artist.slug,
+              artistImage: artist.profileImageUrl,
+              genres: artist.genres || [],
+              isYouTube: true,
+              videoId,
+              createdAt: new Date()
+            });
+          });
+        }
+      });
+
+      console.log(`[ARTIST-VIDEOS] Found ${youtubeProfileVideos.length} YouTube videos from artist profiles`);
+
+      // Combine and deduplicate
+      const allVideos = [...firestoreVideos, ...youtubeProfileVideos];
+      
+      // Sort by views (most popular first)
+      allVideos.sort((a, b) => (b.views || 0) - (a.views || 0));
+
+      console.log(`[ARTIST-VIDEOS] Returning ${allVideos.length} total videos`);
+
+      res.json({
+        success: true,
+        videos: allVideos,
+        totalCount: allVideos.length
+      });
+    } catch (error: any) {
+      console.error('[ARTIST-VIDEOS] Error:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Error fetching artist videos',
+        videos: []
       });
     }
   });

@@ -2,8 +2,10 @@ import { Button } from "../components/ui/button";
 import { logger } from "../lib/logger";
 import { Input } from "../components/ui/input";
 import { Card } from "../components/ui/card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../hooks/use-auth";
+import { useArtistProfile } from "../hooks/use-artist-profile";
+import { ArtistSelector } from "../components/promotion/artist-selector";
 import { useToast } from "../hooks/use-toast";
 import { PlanTierGuard } from "../components/youtube-views/plan-tier-guard";
 import { 
@@ -160,6 +162,7 @@ interface ApiKey {
 export default function YoutubeViewsPage() {
   const { user, isAdmin, userSubscription } = useAuth();
   const { toast } = useToast();
+  const { selectedArtist, getYouTubeData } = useArtistProfile();
   const [activeTab, setActiveTab] = useState("pre-launch");
   
   // Pre-Launch Score states
@@ -190,6 +193,28 @@ export default function YoutubeViewsPage() {
   const [videoIdeas, setVideoIdeas] = useState<VideoIdea[]>([]);
   const [contentGaps, setContentGaps] = useState<string[]>([]);
   const [trendingSubtopics, setTrendingSubtopics] = useState<string[]>([]);
+
+  // Sync artist profile data when selected artist changes
+  useEffect(() => {
+    const ytData = getYouTubeData();
+    if (ytData && selectedArtist) {
+      // Always update niche fields with artist's genre when artist changes
+      if (ytData.genres.length > 0) {
+        const genre = ytData.genres[0];
+        setPreLaunchNiche(genre);
+        setKeywordNiche(genre);
+        setTitleNiche(genre);
+        setContentNiche(genre);
+        setThumbnailNiche(genre);
+        setTrendNiche(genre);
+        setCalendarNiche(genre);
+      }
+      // Set artist name as keyword topic suggestion
+      if (ytData.artistName) {
+        setKeywordTopic(`${ytData.artistName} music`);
+      }
+    }
+  }, [selectedArtist?.id]);
 
   // PHASE 2 - Thumbnail Generator states
   const [thumbnailTitle, setThumbnailTitle] = useState("");
@@ -1073,6 +1098,31 @@ export default function YoutubeViewsPage() {
         ></motion.div>
 
         <div className="container mx-auto">
+          {/* Artist Selector - Sync with artist profile */}
+          <div className="mb-6 p-4 rounded-xl bg-card/50 backdrop-blur border border-border/50">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <SiYoutube className="w-5 h-5 text-orange-500" />
+                  Promocionar YouTube
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Los datos se sincronizarán con el perfil del artista seleccionado
+                </p>
+              </div>
+              <ArtistSelector 
+                label="Artista"
+                onArtistChange={() => {
+                  // Reset results when artist changes
+                  setPreLaunchResult(null);
+                  setTitleResult(null);
+                  setVideoIdeas([]);
+                  setGeneratedKeywords([]);
+                }}
+              />
+            </div>
+          </div>
+
           <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <Card className="p-2">
               <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 h-auto bg-transparent">

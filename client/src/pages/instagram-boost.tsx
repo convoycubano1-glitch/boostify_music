@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 import { useState, useEffect, Suspense, lazy } from "react";
 import { useAuth } from "../hooks/use-auth";
+import { useArtistProfile } from "../hooks/use-artist-profile";
+import { ArtistSelector } from "../components/promotion/artist-selector";
 import { PlanTierGuard } from "../components/youtube-views/plan-tier-guard";
 import { useToast } from "../hooks/use-toast";
 import { motion } from "framer-motion";
@@ -70,6 +72,7 @@ const InstagramAnimationPlayer = lazy(() =>
 export default function InstagramBoostPage() {
   const { user, userSubscription, isAdmin } = useAuth();
   const { toast } = useToast();
+  const { selectedArtist, getInstagramData } = useArtistProfile();
   const [activeTab, setActiveTab] = useState("ai-tools");
   const [aiToolTab, setAiToolTab] = useState("captions");
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -98,6 +101,31 @@ export default function InstagramBoostPage() {
   const [timeNiche, setTimeNiche] = useState("");
   const [timeAudience, setTimeAudience] = useState("");
   const [timezone, setTimezone] = useState("UTC");
+
+  // Sync artist profile data when selected artist changes
+  useEffect(() => {
+    const instaData = getInstagramData();
+    if (instaData && selectedArtist) {
+      // Always update fields when artist changes
+      if (instaData.genres && instaData.genres.length > 0) {
+        const genre = instaData.genres[0];
+        setHashtagNiche(genre);
+        setIdeasNiche(genre);
+        setTimeNiche(genre);
+        setBioNiche(genre);
+      }
+      if (instaData.artistName) {
+        setTargetAudience(`Fans of ${instaData.artistName}`);
+        setPostTopic(`${instaData.artistName} - new music announcement`);
+      }
+      if (instaData.location) {
+        setTimeAudience(instaData.location);
+      }
+      if (instaData.biography) {
+        setCurrentBio(instaData.biography);
+      }
+    }
+  }, [selectedArtist?.id]);
   const [timeAnalysis, setTimeAnalysis] = useState<any>(null);
 
   // Bio Optimizer States
@@ -568,6 +596,36 @@ export default function InstagramBoostPage() {
               </motion.div>
             ))}
           </div>
+
+          {/* Artist Selector - Sync with artist profile */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.25 }}
+          >
+            <Card className="p-4 border-primary/20 bg-gradient-to-br from-[#833ab4]/5 via-transparent to-[#fcb045]/5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <SiInstagram className="w-5 h-5 text-[#fd1d1d]" />
+                    Promocionar Instagram
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Los datos se sincronizarán con el perfil del artista seleccionado
+                  </p>
+                </div>
+                <ArtistSelector 
+                  label="Artista"
+                  onArtistChange={() => {
+                    // Reset results when artist changes
+                    setCaptionResults(null);
+                    setHashtagResults(null);
+                    setContentIdeas(null);
+                  }}
+                />
+              </div>
+            </Card>
+          </motion.div>
 
           {/* Main Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

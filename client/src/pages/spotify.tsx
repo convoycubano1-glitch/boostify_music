@@ -7,6 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { Badge } from "../components/ui/badge";
 import { Music2, Target, ListMusic, Mail, Search, TrendingUp, Sparkles, Copy, Check, Home, Zap, Rocket, BarChart2, Users, Play, ChevronRight, CheckCircle } from "lucide-react";
 import { useAuth } from "../hooks/use-auth";
+import { useArtistProfile } from "../hooks/use-artist-profile";
+import { ArtistSelector } from "../components/promotion/artist-selector";
 import { useToast } from "../hooks/use-toast";
 import { motion } from "framer-motion";
 import { SiSpotify } from "react-icons/si";
@@ -23,6 +25,7 @@ const SpotifyAnimationPlayer = lazy(() =>
 export default function SpotifyPage() {
   const { user, isAdmin, userSubscription } = useAuth();
   const { toast } = useToast();
+  const { selectedArtist, getSpotifyData } = useArtistProfile();
   const [activeTab, setActiveTab] = useState("listeners");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -31,6 +34,31 @@ export default function SpotifyPage() {
   const [currentListeners, setCurrentListeners] = useState("");
   const [targetListeners, setTargetListeners] = useState("");
   const [predictionResult, setPredictionResult] = useState<any>(null);
+
+  // Sync artist profile data when selected artist changes
+  useEffect(() => {
+    const spotifyData = getSpotifyData();
+    if (spotifyData && selectedArtist) {
+      // Always update fields when artist changes
+      if (spotifyData.spotifyUrl) {
+        setArtistUrl(spotifyData.spotifyUrl);
+        setPitchSpotifyUrl(spotifyData.spotifyUrl);
+      }
+      if (spotifyData.artistName) {
+        setArtistName(spotifyData.artistName);
+        setPitchArtistName(spotifyData.artistName);
+        setCuratorArtist(spotifyData.artistName);
+      }
+      if (spotifyData.genres && spotifyData.genres.length > 0) {
+        const firstGenre = spotifyData.genres[0];
+        setGenre(firstGenre);
+        setCuratorGenre(firstGenre);
+      }
+      if (spotifyData.biography) {
+        setPitchArtistBio(spotifyData.biography);
+      }
+    }
+  }, [selectedArtist?.id]);
 
   // Tab 2: Playlist Match
   const [trackName, setTrackName] = useState("");
@@ -634,6 +662,37 @@ export default function SpotifyPage() {
               </Card>
             </motion.div>
           )}
+
+          {/* Artist Selector - Sync with artist profile */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.25 }}
+          >
+            <Card className="p-4 border-[#1DB954]/20 bg-gradient-to-br from-[#1DB954]/5 via-transparent to-[#1ed760]/5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <SiSpotify className="w-5 h-5 text-[#1DB954]" />
+                    Promocionar Spotify
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Los datos se sincronizarán con el perfil del artista seleccionado
+                  </p>
+                </div>
+                <ArtistSelector 
+                  label="Artista"
+                  onArtistChange={() => {
+                    // Reset results when artist changes
+                    setPredictionResult(null);
+                    setPlaylistMatches(null);
+                    setCuratorData(null);
+                    setSeoOptimization(null);
+                  }}
+                />
+              </div>
+            </Card>
+          </motion.div>
 
           {/* Tabs */}
           <motion.div

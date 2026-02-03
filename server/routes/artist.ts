@@ -87,6 +87,80 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/artist/my-artists - Get current artist + AI generated artists for promotions
+// IMPORTANT: This route MUST be defined BEFORE /:id to avoid being caught by the wildcard
+router.get('/my-artists', async (req, res) => {
+  try {
+    const authUser = req.user as any;
+    if (!authUser || !authUser.id) {
+      return res.status(401).json({ success: false, error: 'Not authenticated', artists: [], currentArtist: null });
+    }
+
+    const userId = authUser.id;
+    
+    // Determine PostgreSQL user ID
+    let currentUser;
+    if (typeof userId === 'string' && userId.startsWith('user_')) {
+      [currentUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.clerkId, userId))
+        .limit(1);
+    } else {
+      const numericId = typeof userId === 'number' ? userId : parseInt(userId);
+      [currentUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, numericId))
+        .limit(1);
+    }
+
+    if (!currentUser) {
+      return res.status(404).json({ success: false, error: 'User not found', artists: [], currentArtist: null });
+    }
+
+    // Map user to ArtistProfile format
+    const mapToArtistProfile = (user: any) => ({
+      id: user.id,
+      artistName: user.artistName || user.username || 'Unknown Artist',
+      youtubeChannel: user.youtubeChannel,
+      topYoutubeVideos: user.topYoutubeVideos || [],
+      spotifyUrl: user.spotifyUrl,
+      genres: user.genres || (user.genre ? [user.genre] : []),
+      genre: user.genre,
+      instagramHandle: user.instagramHandle,
+      twitterHandle: user.twitterHandle,
+      tiktokUrl: user.tiktokUrl,
+      facebookUrl: user.facebookUrl,
+      biography: user.biography,
+      profileImage: user.profileImage || user.profileImageUrl,
+      coverImage: user.coverImage,
+      location: user.location,
+      country: user.country,
+      isAIGenerated: user.isAIGenerated || false,
+    });
+
+    const currentArtist = mapToArtistProfile(currentUser);
+
+    // Get AI-generated artists created by this user
+    const aiArtists = await db
+      .select()
+      .from(users)
+      .where(eq(users.generatedBy, currentUser.id));
+
+    const myArtists = aiArtists.map(mapToArtistProfile);
+
+    res.json({
+      success: true,
+      currentArtist,
+      artists: myArtists,
+    });
+  } catch (error) {
+    console.error('Error fetching my artists:', error);
+    res.status(500).json({ success: false, error: 'Internal server error', artists: [], currentArtist: null });
+  }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;

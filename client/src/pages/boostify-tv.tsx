@@ -29,6 +29,8 @@ import { Skeleton } from "../components/ui/skeleton";
 import { Badge } from "../components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/ui/tooltip";
 import { Dialog, DialogContent, DialogTitle } from "../components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
+import { Link } from "wouter";
 
 interface VideoContent {
   id: string;
@@ -39,6 +41,14 @@ interface VideoContent {
   duration: string;
   views: number;
   category: "featured" | "live" | "videos" | "music";
+  // Artist info for synced videos
+  artistId?: number | string;
+  artistName?: string;
+  artistSlug?: string;
+  artistImage?: string;
+  genres?: string[];
+  isYouTube?: boolean;
+  videoId?: string;
 }
 
 interface VideoResponse {
@@ -46,6 +56,7 @@ interface VideoResponse {
   videos: VideoContent[];
   message?: string;
   error?: string;
+  totalCount?: number;
 }
 
 interface VideoPlayerProps {
@@ -63,6 +74,24 @@ function VideoPlayer({ video, isOpen, onClose, onNext, onPrevious }: VideoPlayer
   const [duration, setDuration] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const videoRef = React.useRef<HTMLVideoElement>(null);
+
+  // Check if it's a YouTube video
+  const isYouTubeVideo = video.isYouTube || 
+    video.filePath.includes('youtube.com') || 
+    video.filePath.includes('youtu.be');
+  
+  // Get YouTube embed URL
+  const getYouTubeEmbedUrl = (url: string) => {
+    if (url.includes('/embed/')) return url;
+    
+    let videoId = video.videoId;
+    if (!videoId) {
+      // Extract from URL
+      const match = url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+      videoId = match ? match[1] : null;
+    }
+    return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0` : url;
+  };
   
   const togglePlay = () => {
     if (videoRef.current) {
@@ -123,18 +152,31 @@ function VideoPlayer({ video, isOpen, onClose, onNext, onPrevious }: VideoPlayer
             <X className="w-6 h-6" />
           </Button>
           
-          <video
-            ref={videoRef}
-            className="w-full h-full object-contain"
-            src={video.filePath}
-            onTimeUpdate={handleTimeUpdate}
-            onLoadedMetadata={handleTimeUpdate}
-            onClick={togglePlay}
-            data-testid="video-player"
-          />
+          {isYouTubeVideo ? (
+            // YouTube embed player
+            <iframe
+              className="w-full h-full"
+              src={getYouTubeEmbedUrl(video.filePath)}
+              title={video.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              data-testid="youtube-player"
+            />
+          ) : (
+            // Regular video player
+            <video
+              ref={videoRef}
+              className="w-full h-full object-contain"
+              src={video.filePath}
+              onTimeUpdate={handleTimeUpdate}
+              onLoadedMetadata={handleTimeUpdate}
+              onClick={togglePlay}
+              data-testid="video-player"
+            />
+          )}
           
           <AnimatePresence>
-            {showControls && (
+            {showControls && !isYouTubeVideo && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -215,7 +257,7 @@ function VideoPlayer({ video, isOpen, onClose, onNext, onPrevious }: VideoPlayer
             )}
           </AnimatePresence>
           
-          {!isPlaying && (
+          {!isPlaying && !isYouTubeVideo && (
             <div className="absolute inset-0 flex items-center justify-center">
               <Button
                 size="lg"
@@ -312,16 +354,48 @@ export default function BoostifyTvPage() {
     }
   });
 
+  // Query for artist videos (including YouTube videos from artist profiles)
+  const { data: artistVideosData } = useQuery<VideoResponse>({
+    queryKey: ['/api/tv/artist-videos'],
+    queryFn: async () => {
+      const response = await axios.get('/api/tv/artist-videos');
+      return response.data;
+    }
+  });
+
   const processedVideos = useMemo(() => {
     const apiVideos = data?.videos?.filter(v => v.filePath && v.filePath.trim() !== '') || [];
+    const artistVideos = artistVideosData?.videos?.filter(v => v.filePath && v.filePath.trim() !== '') || [];
+    
+    console.log('[BOOSTIFY-TV] artistVideosData:', artistVideosData);
+    console.log('[BOOSTIFY-TV] artistVideos after filter:', artistVideos.length);
+    console.log('[BOOSTIFY-TV] First few artist videos:', artistVideos.slice(0, 3).map(v => ({ title: v.title, artistName: v.artistName, filePath: v.filePath?.substring(0, 50) })));
     
     const videosWithCategory = apiVideos.map((video: VideoContent, index: number) => ({
       ...video,
       category: video.category || (index % 2 === 0 ? "featured" : "videos") as "featured" | "live" | "videos" | "music"
     }));
+
+    // Mark artist videos with their category
+    const artistVideosWithCategory = artistVideos.map((video: VideoContent) => ({
+      ...video,
+      category: video.category || "music" as "featured" | "live" | "videos" | "music"
+    }));
     
-    return [...DEMO_VIDEOS, ...videosWithCategory];
-  }, [data?.videos]);
+    // Combine all videos and remove duplicates by filePath
+    const allVideos = [...DEMO_VIDEOS, ...videosWithCategory, ...artistVideosWithCategory];
+    const uniqueVideos = allVideos.reduce((acc: VideoContent[], video) => {
+      if (!acc.find(v => v.filePath === video.filePath)) {
+        acc.push(video);
+      }
+      return acc;
+    }, []);
+
+    console.log('[BOOSTIFY-TV] Total unique videos:', uniqueVideos.length);
+    console.log('[BOOSTIFY-TV] Videos with artistName:', uniqueVideos.filter(v => v.artistName).length);
+
+    return uniqueVideos;
+  }, [data?.videos, artistVideosData?.videos]);
   
   const filteredVideos = useMemo(() => {
     if (!processedVideos.length) return [];
@@ -805,18 +879,28 @@ export default function BoostifyTvPage() {
                     Music
                   </TabsTrigger>
                 )}
+                {processedVideos.some((v: VideoContent) => v.artistName && v.artistName !== 'Unknown Artist') && (
+                  <TabsTrigger value="artists" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white" data-testid="tab-artists">
+                    <Users className="w-4 h-4 mr-2" />
+                    My Artists
+                  </TabsTrigger>
+                )}
               </TabsList>
 
-              {["featured", "videos", "live", "music"].map((category) => (
+              {["featured", "videos", "live", "music", "artists"].map((category) => (
                 <TabsContent key={category} value={category}>
-                  {(searchTerm ? filteredVideos : processedVideos).filter((video: VideoContent) => video.category === category).length === 0 && (
+                  {(searchTerm ? filteredVideos : processedVideos).filter((video: VideoContent) => 
+                    category === "artists" ? (video.artistName && video.artistName !== 'Unknown Artist') : video.category === category
+                  ).length === 0 && (
                     <div className="text-center py-16 border border-dashed rounded-lg">
                       <Film className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                       <h3 className="text-lg font-medium mb-2">No videos in this category</h3>
                       <p className="text-sm text-muted-foreground mb-4">
                         {searchTerm 
                           ? `No results found for "${searchTerm}" in this category.` 
-                          : "No videos available in this category yet."}
+                          : category === "artists" 
+                            ? "No videos from your artists yet. Videos uploaded by your artists will appear here."
+                            : "No videos available in this category yet."}
                       </p>
                       {user && (
                         <Button onClick={() => setIsUploadDialogOpen(true)} data-testid="button-upload-first">
@@ -829,7 +913,7 @@ export default function BoostifyTvPage() {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {(searchTerm ? filteredVideos : processedVideos)
-                      .filter((video: VideoContent) => video.category === category)
+                      .filter((video: VideoContent) => category === "artists" ? (video.artistName && video.artistName !== 'Unknown Artist') : video.category === category)
                       .map((video: VideoContent) => (
                         <motion.div
                           key={video.id}
@@ -862,6 +946,7 @@ export default function BoostifyTvPage() {
                                 {category === "videos" && "Video"}
                                 {category === "live" && "Live"}
                                 {category === "music" && "Music"}
+                                {category === "artists" && "Artist"}
                               </Badge>
                               
                               <Badge 
@@ -871,29 +956,56 @@ export default function BoostifyTvPage() {
                                 {video.duration || "0:00"}
                               </Badge>
 
-                              <video
-                                className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-300"
-                                src={`${video.filePath}#t=0.5`}
-                                preload="metadata"
-                                onError={(e) => {
-                                  const target = e.target as HTMLVideoElement;
-                                  target.style.display = 'none';
-                                  const parent = target.parentElement;
-                                  if (parent && !parent.querySelector('.error-placeholder')) {
-                                    const placeholder = document.createElement('div');
-                                    placeholder.className = 'error-placeholder absolute inset-0 flex items-center justify-center bg-gradient-to-br from-orange-900 to-purple-900';
-                                    placeholder.innerHTML = `
-                                      <div class="text-center text-white">
-                                        <svg class="w-16 h-16 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                        </svg>
-                                        <p class="text-sm">Video Preview</p>
-                                      </div>
-                                    `;
-                                    parent.appendChild(placeholder);
-                                  }
-                                }}
-                              />
+                              {/* Show thumbnail for YouTube videos, video element for others */}
+                              {video.isYouTube || video.filePath.includes('youtube.com') || video.filePath.includes('youtu.be') ? (
+                                <img
+                                  className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-300"
+                                  src={video.thumbnailPath || `https://img.youtube.com/vi/${video.videoId}/mqdefault.jpg`}
+                                  alt={video.title}
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    const parent = target.parentElement;
+                                    if (parent && !parent.querySelector('.error-placeholder')) {
+                                      const placeholder = document.createElement('div');
+                                      placeholder.className = 'error-placeholder absolute inset-0 flex items-center justify-center bg-gradient-to-br from-red-900 to-red-700';
+                                      placeholder.innerHTML = `
+                                        <div class="text-center text-white">
+                                          <svg class="w-16 h-16 mx-auto mb-2 opacity-50" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+                                          </svg>
+                                          <p class="text-sm">YouTube Video</p>
+                                        </div>
+                                      `;
+                                      parent.appendChild(placeholder);
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                <video
+                                  className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-300"
+                                  src={`${video.filePath}#t=0.5`}
+                                  preload="metadata"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLVideoElement;
+                                    target.style.display = 'none';
+                                    const parent = target.parentElement;
+                                    if (parent && !parent.querySelector('.error-placeholder')) {
+                                      const placeholder = document.createElement('div');
+                                      placeholder.className = 'error-placeholder absolute inset-0 flex items-center justify-center bg-gradient-to-br from-orange-900 to-purple-900';
+                                      placeholder.innerHTML = `
+                                        <div class="text-center text-white">
+                                          <svg class="w-16 h-16 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                          </svg>
+                                          <p class="text-sm">Video Preview</p>
+                                        </div>
+                                      `;
+                                      parent.appendChild(placeholder);
+                                    }
+                                  }}
+                                />
+                              )}
                             </div>
                             
                             <div className="p-4 bg-gradient-to-b from-card to-card/50">
@@ -943,6 +1055,29 @@ export default function BoostifyTvPage() {
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               </div>
+                              
+                              {/* Artist info section */}
+                              {video.artistName && (
+                                <Link href={video.artistSlug ? `/artist/${video.artistSlug}` : '#'}>
+                                  <div className="flex items-center gap-2 mb-3 hover:bg-muted/50 rounded-md p-1 -ml-1 transition-colors cursor-pointer">
+                                    <Avatar className="h-6 w-6">
+                                      <AvatarImage src={video.artistImage || ''} alt={video.artistName} />
+                                      <AvatarFallback className="text-xs bg-orange-500 text-white">
+                                        {video.artistName.charAt(0).toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-sm font-medium text-orange-500 hover:underline">
+                                      {video.artistName}
+                                    </span>
+                                    {video.isYouTube && (
+                                      <Badge variant="outline" className="text-xs px-1.5 py-0 h-5 border-red-500 text-red-500">
+                                        <Play className="w-3 h-3 mr-1 fill-current" />
+                                        YouTube
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </Link>
+                              )}
                               
                               <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                                 {video.description}
