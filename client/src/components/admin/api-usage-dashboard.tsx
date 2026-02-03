@@ -263,10 +263,10 @@ export function ApiUsageDashboard() {
                     <td className="p-3 text-right text-white font-semibold">${parseFloat(String(stat.totalCost || '0')).toFixed(2)}</td>
                     <td className="p-3 text-right">
                       <Badge
-                        variant={(stat.successRate || 0) >= 95 ? 'default' : 'secondary'}
-                        className={(stat.successRate || 0) >= 95 ? 'bg-green-500/20 text-green-300' : 'bg-orange-500/20 text-orange-300'}
+                        variant={Number(stat.successRate || 0) >= 95 ? 'default' : 'secondary'}
+                        className={Number(stat.successRate || 0) >= 95 ? 'bg-green-500/20 text-green-300' : 'bg-orange-500/20 text-orange-300'}
                       >
-                        {(stat.successRate || 0).toFixed(1)}%
+                        {Number(stat.successRate || 0).toFixed(1)}%
                       </Badge>
                     </td>
                   </tr>

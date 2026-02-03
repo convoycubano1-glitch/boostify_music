@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthUser } from './auth';
 import { isAdminEmail } from '../../shared/constants';
+import { db } from '../db';
+import { userRoles } from '../db/schema';
+import { eq } from 'drizzle-orm';
 
 // Soporta AMBAS nomenclaturas para compatibilidad:
 // - Nueva: free, creator, professional, enterprise  
@@ -19,14 +22,33 @@ const PLAN_MAPPING: Record<string, string> = {
 };
 
 /**
+ * Helper to check if user has tester role (full platform access)
+ */
+async function isUserTester(userId: number): Promise<boolean> {
+  try {
+    const roleCheck = await db
+      .select({ role: userRoles.role })
+      .from(userRoles)
+      .where(eq(userRoles.userId, userId))
+      .limit(1);
+    
+    return roleCheck.length > 0 && roleCheck[0].role === 'tester';
+  } catch (error) {
+    console.error('[isUserTester] Error checking tester role:', error);
+    return false;
+  }
+}
+
+/**
  * Middleware to check if a user has a specific subscription plan or higher
  * Soporta ambas nomenclaturas (legacy y nueva)
+ * Also grants full access to users with 'tester' role
  * 
  * @param requiredPlan The minimum subscription plan required
  * @returns Middleware function that checks the user's subscription
  */
 export function requireSubscription(requiredPlan: SubscriptionPlan = 'free') {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     try {
       // If no authentication, deny access
       if (!req.user) {
@@ -41,8 +63,17 @@ export function requireSubscription(requiredPlan: SubscriptionPlan = 'free') {
         return next();
       }
 
-      // Get user subscription information
+      // Check if user has tester role (full platform access)
       const user = req.user as AuthUser;
+      if (user.id) {
+        const isTester = await isUserTester(user.id);
+        if (isTester) {
+          console.log(`🧪 [Subscription] Tester access granted for user ${user.id}`);
+          return next();
+        }
+      }
+
+      // Get user subscription information
       const subscription = user.subscription;
 
       // If no subscription info, assign free plan

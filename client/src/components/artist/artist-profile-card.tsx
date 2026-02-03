@@ -57,7 +57,11 @@ import {
   Download,
   RefreshCw,
   Newspaper,
-  Coins
+  Coins,
+  FileText,
+  Copy,
+  Clock,
+  Info
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -103,6 +107,437 @@ interface Song {
   createdAt?: any;
   storageRef?: string;
   coverArt?: string;
+  genre?: string;
+  description?: string;
+  isrc?: string;
+  upc?: string;
+  composers?: string[];
+  lyrics?: string;
+}
+
+// Song Metadata Modal Component for Distribution
+function SongMetadataModal({ 
+  song, 
+  artistName,
+  artistImages,
+  colors, 
+  isOpen, 
+  onClose,
+  onSongUpdate
+}: { 
+  song: Song; 
+  artistName: string;
+  artistImages?: string[];
+  colors: any; 
+  isOpen: boolean; 
+  onClose: () => void;
+  onSongUpdate?: (updatedSong: Song) => void;
+}) {
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+  
+  // Editable metadata state
+  const [editableData, setEditableData] = useState({
+    isrc: song.isrc || '',
+    upc: song.upc || '',
+    composers: song.composers?.join(', ') || artistName,
+    genre: song.genre || '',
+    lyrics: song.lyrics || '',
+  });
+  
+  // Cover art generation state
+  const [isGeneratingCover, setIsGeneratingCover] = useState(false);
+  const [generatedCoverArt, setGeneratedCoverArt] = useState<string | null>(song.coverArt || null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  const formatDate = (date: any) => {
+    if (!date) return 'N/A';
+    if (date.toDate) return date.toDate().toLocaleDateString();
+    if (date instanceof Date) return date.toLocaleDateString();
+    return new Date(date).toLocaleDateString();
+  };
+
+  // Generate cover art using FAL AI
+  const handleGenerateCoverArt = async () => {
+    setIsGeneratingCover(true);
+    try {
+      const songTitle = song.title || song.name;
+      const genre = editableData.genre || song.genre || 'music';
+      
+      // Create a prompt based on song data
+      const prompt = `Album cover art for a ${genre} song titled "${songTitle}" by ${artistName}. Professional music album artwork, high quality, artistic, vibrant colors, modern design.`;
+      
+      const response = await fetch('/api/songs/generate-cover-art', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          songId: song.id,
+          artistName,
+          referenceImage: artistImages?.[0] || null,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate cover art');
+      }
+
+      const result = await response.json();
+      if (result.success && result.coverArtUrl) {
+        setGeneratedCoverArt(result.coverArtUrl);
+        setHasChanges(true);
+        toast({
+          title: '🎨 Cover Art Generated!',
+          description: 'Your album cover has been created with AI.',
+        });
+      }
+    } catch (error) {
+      console.error('Error generating cover art:', error);
+      toast({
+        title: 'Generation Failed',
+        description: 'Could not generate cover art. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeneratingCover(false);
+    }
+  };
+
+  // Save metadata to database
+  const handleSaveMetadata = async () => {
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/songs/${song.id}/metadata`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          isrc: editableData.isrc || null,
+          upc: editableData.upc || null,
+          composers: editableData.composers.split(',').map(c => c.trim()).filter(Boolean),
+          genre: editableData.genre || null,
+          lyrics: editableData.lyrics || null,
+          coverArt: generatedCoverArt || song.coverArt,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save metadata');
+      }
+
+      const result = await response.json();
+      
+      toast({
+        title: '✅ Metadata Saved!',
+        description: 'Song information has been updated.',
+      });
+      
+      setHasChanges(false);
+      
+      // Notify parent of update
+      if (onSongUpdate && result.song) {
+        onSongUpdate(result.song);
+      }
+    } catch (error) {
+      console.error('Error saving metadata:', error);
+      toast({
+        title: 'Save Failed',
+        description: 'Could not save metadata. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleFieldChange = (field: string, value: string) => {
+    setEditableData(prev => ({ ...prev, [field]: value }));
+    setHasChanges(true);
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: 'Copied!',
+      description: `${label} copied to clipboard`,
+    });
+  };
+
+  const copyAllMetadata = () => {
+    const allData = [
+      `Track Title: ${song.title || song.name}`,
+      `Artist Name: ${artistName}`,
+      `Duration: ${song.duration || '3:45'}`,
+      `Genre: ${editableData.genre || 'Not specified'}`,
+      `ISRC Code: ${editableData.isrc || 'Not assigned'}`,
+      `UPC Code: ${editableData.upc || 'Not assigned'}`,
+      `Composers: ${editableData.composers}`,
+      `Release Date: ${formatDate(song.createdAt)}`,
+    ].join('\n');
+    
+    navigator.clipboard.writeText(allData);
+    toast({
+      title: 'All Metadata Copied!',
+      description: 'Song metadata copied to clipboard',
+    });
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-lg bg-gray-950 border max-h-[90vh] overflow-y-auto" style={{ borderColor: colors.hexBorder }}>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2" style={{ color: colors.hexAccent }}>
+            <FileText className="h-5 w-5" />
+            Song Metadata for Distribution
+          </DialogTitle>
+          <DialogDescription>
+            Edit metadata and generate cover art for distribution
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Cover Art Section */}
+          <div className="p-4 rounded-xl bg-black/50 border" style={{ borderColor: colors.hexBorder }}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-white flex items-center gap-2">
+                <Image className="h-4 w-4" style={{ color: colors.hexAccent }} />
+                Cover Art
+              </span>
+              <Button
+                size="sm"
+                onClick={handleGenerateCoverArt}
+                disabled={isGeneratingCover}
+                style={{ 
+                  background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})`,
+                  color: 'white'
+                }}
+              >
+                {isGeneratingCover ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate with AI
+                  </>
+                )}
+              </Button>
+            </div>
+            
+            <div className="flex justify-center">
+              {generatedCoverArt ? (
+                <div className="relative group">
+                  <img 
+                    src={generatedCoverArt} 
+                    alt={song.title || song.name}
+                    className="w-32 h-32 rounded-lg object-cover shadow-lg"
+                    style={{ boxShadow: `0 4px 12px ${colors.hexPrimary}40` }}
+                  />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleGenerateCoverArt}
+                      disabled={isGeneratingCover}
+                      className="text-white"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Regenerate
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div 
+                  className="w-32 h-32 rounded-lg flex flex-col items-center justify-center gap-2 border-2 border-dashed cursor-pointer hover:bg-gray-800/50 transition-colors"
+                  style={{ borderColor: colors.hexBorder }}
+                  onClick={handleGenerateCoverArt}
+                >
+                  <Image className="h-8 w-8" style={{ color: colors.hexAccent }} />
+                  <span className="text-xs text-gray-400 text-center">Click to generate<br/>cover art</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Read-only Fields */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between p-2 rounded-lg bg-black/50 border" style={{ borderColor: colors.hexBorder }}>
+              <div className="flex-1">
+                <span className="text-xs text-gray-400">Track Title</span>
+                <p className="text-sm text-white font-medium">{song.title || song.name}</p>
+              </div>
+              <button onClick={() => copyToClipboard(song.title || song.name, 'Track Title')} className="p-1.5 rounded-lg hover:bg-gray-800">
+                <Copy className="h-4 w-4" style={{ color: colors.hexAccent }} />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between p-2 rounded-lg bg-black/50 border" style={{ borderColor: colors.hexBorder }}>
+              <div className="flex-1">
+                <span className="text-xs text-gray-400">Artist Name</span>
+                <p className="text-sm text-white font-medium">{artistName}</p>
+              </div>
+              <button onClick={() => copyToClipboard(artistName, 'Artist Name')} className="p-1.5 rounded-lg hover:bg-gray-800">
+                <Copy className="h-4 w-4" style={{ color: colors.hexAccent }} />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between p-2 rounded-lg bg-black/50 border" style={{ borderColor: colors.hexBorder }}>
+              <div className="flex-1">
+                <span className="text-xs text-gray-400">Duration</span>
+                <p className="text-sm text-white font-medium">{song.duration || '3:45'}</p>
+              </div>
+              <button onClick={() => copyToClipboard(song.duration || '3:45', 'Duration')} className="p-1.5 rounded-lg hover:bg-gray-800">
+                <Copy className="h-4 w-4" style={{ color: colors.hexAccent }} />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between p-2 rounded-lg bg-black/50 border" style={{ borderColor: colors.hexBorder }}>
+              <div className="flex-1">
+                <span className="text-xs text-gray-400">Release Date</span>
+                <p className="text-sm text-white font-medium">{formatDate(song.createdAt)}</p>
+              </div>
+              <button onClick={() => copyToClipboard(formatDate(song.createdAt), 'Release Date')} className="p-1.5 rounded-lg hover:bg-gray-800">
+                <Copy className="h-4 w-4" style={{ color: colors.hexAccent }} />
+              </button>
+            </div>
+          </div>
+
+          {/* Editable Fields */}
+          <div className="space-y-3 pt-2 border-t" style={{ borderColor: colors.hexBorder }}>
+            <p className="text-xs text-gray-400 flex items-center gap-1">
+              <Settings className="h-3 w-3" />
+              Editable Fields (will be saved to database)
+            </p>
+
+            <div className="space-y-2">
+              <Label className="text-xs text-gray-400">Genre</Label>
+              <Input
+                value={editableData.genre}
+                onChange={(e) => handleFieldChange('genre', e.target.value)}
+                placeholder="e.g., Pop, Rock, Hip-Hop"
+                className="bg-black/50 border text-white"
+                style={{ borderColor: colors.hexBorder }}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs text-gray-400">ISRC Code</Label>
+              <Input
+                value={editableData.isrc}
+                onChange={(e) => handleFieldChange('isrc', e.target.value)}
+                placeholder="e.g., USRC17607839"
+                className="bg-black/50 border text-white"
+                style={{ borderColor: colors.hexBorder }}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs text-gray-400">UPC Code</Label>
+              <Input
+                value={editableData.upc}
+                onChange={(e) => handleFieldChange('upc', e.target.value)}
+                placeholder="e.g., 012345678905"
+                className="bg-black/50 border text-white"
+                style={{ borderColor: colors.hexBorder }}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs text-gray-400">Composers (comma separated)</Label>
+              <Input
+                value={editableData.composers}
+                onChange={(e) => handleFieldChange('composers', e.target.value)}
+                placeholder="e.g., John Doe, Jane Smith"
+                className="bg-black/50 border text-white"
+                style={{ borderColor: colors.hexBorder }}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs text-gray-400">Lyrics (optional)</Label>
+              <textarea
+                value={editableData.lyrics}
+                onChange={(e) => handleFieldChange('lyrics', e.target.value)}
+                placeholder="Enter song lyrics..."
+                rows={3}
+                className="w-full bg-black/50 border text-white rounded-md p-2 text-sm resize-none"
+                style={{ borderColor: colors.hexBorder }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2 pt-4 border-t" style={{ borderColor: colors.hexBorder }}>
+          {/* Save Changes */}
+          {hasChanges && (
+            <Button
+              onClick={handleSaveMetadata}
+              disabled={isSaving}
+              className="w-full text-white"
+              style={{ background: '#22C55E' }}
+            >
+              {isSaving ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          )}
+
+          {/* Copy All Button */}
+          <Button
+            variant="outline"
+            onClick={copyAllMetadata}
+            className="w-full"
+            style={{ borderColor: colors.hexBorder, color: colors.hexAccent }}
+          >
+            <Copy className="h-4 w-4 mr-2" />
+            Copy All Metadata
+          </Button>
+
+          {/* Go to Distribution */}
+          <Button
+            onClick={() => {
+              onClose();
+              setLocation('/artist-dashboard');
+            }}
+            className="w-full text-white"
+            style={{ background: `linear-gradient(135deg, ${colors.hexPrimary}, ${colors.hexAccent})` }}
+          >
+            <Globe className="h-4 w-4 mr-2" />
+            Go to Distribution
+          </Button>
+
+          {/* Register Directly - Coming Soon */}
+          <Button
+            variant="outline"
+            disabled
+            className="w-full relative overflow-hidden"
+            style={{ borderColor: colors.hexBorder, color: 'gray' }}
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Register Directly
+            <span 
+              className="absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+              style={{ backgroundColor: colors.hexPrimary, color: 'white' }}
+            >
+              Coming Soon
+            </span>
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 interface Video {
@@ -671,6 +1106,9 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  // State for song metadata modal
+  const [selectedSongForMetadata, setSelectedSongForMetadata] = useState<Song | null>(null);
   
   const [isUploadingSong, setIsUploadingSong] = useState(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
@@ -3216,6 +3654,21 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2">
+                        {/* Metadata Info Button */}
+                        <button
+                          className="p-1.5 md:p-2 rounded-full text-xs md:text-sm font-medium transition duration-300 hover:scale-110"
+                          style={{ 
+                            backgroundColor: 'transparent',
+                            borderColor: colors.hexBorder,
+                            borderWidth: '1px',
+                            color: colors.hexAccent
+                          }}
+                          onClick={() => setSelectedSongForMetadata(song)}
+                          data-testid={`button-metadata-${song.id}`}
+                          title="View Metadata for Distribution"
+                        >
+                          <FileText className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                        </button>
                         <button
                           className="py-1.5 md:py-2 px-3 md:px-4 rounded-full text-xs md:text-sm font-medium transition duration-300"
                           style={{ 
@@ -5471,6 +5924,22 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
         onDelete={handleDeleteNews}
         onRegenerate={handleRegenerateNews}
       />
+
+      {/* Song Metadata Modal for Distribution */}
+      {selectedSongForMetadata && (
+        <SongMetadataModal
+          song={selectedSongForMetadata}
+          artistName={artist?.name || artist?.artistName || userProfile?.displayName || 'Artist'}
+          artistImages={[
+            artist?.profileImage || userProfile?.profileImage || userProfile?.photoURL,
+            artist?.bannerImage || userProfile?.bannerImage,
+          ].filter(Boolean) as string[]}
+          colors={colors}
+          isOpen={!!selectedSongForMetadata}
+          onClose={() => setSelectedSongForMetadata(null)}
+          onSongUpdate={() => refetchSongs()}
+        />
+      )}
     </div>
   );
 }

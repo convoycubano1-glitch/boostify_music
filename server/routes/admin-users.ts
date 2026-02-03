@@ -213,7 +213,7 @@ router.post('/users/:id/role', async (req: Request, res: Response) => {
     console.log('[Admin Users] Saving role:', { userId, role, permissions });
     
     // Validar rol
-    const validRoles = ['user', 'moderator', 'support', 'admin'];
+    const validRoles = ['user', 'moderator', 'support', 'admin', 'tester'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({ 
         success: false, 
@@ -403,7 +403,8 @@ router.get('/roles', async (req: Request, res: Response) => {
         { value: 'user', label: 'User', description: 'Standard user access' },
         { value: 'moderator', label: 'Moderator', description: 'Can moderate content and users' },
         { value: 'support', label: 'Support', description: 'Customer support access' },
-        { value: 'admin', label: 'Admin', description: 'Full administrative access' }
+        { value: 'admin', label: 'Admin', description: 'Full administrative access' },
+        { value: 'tester', label: 'Tester', description: 'Full platform access for testing all features (Premium + all tools)' }
       ],
       availablePermissions: [
         'manage_users',
@@ -496,7 +497,7 @@ router.post('/users', async (req: Request, res: Response) => {
     
     // Si se especificó un rol diferente a 'user', asignarlo
     if (role && role !== 'user') {
-      const validRoles = ['user', 'moderator', 'support', 'admin'];
+      const validRoles = ['user', 'moderator', 'support', 'admin', 'tester'];
       if (validRoles.includes(role)) {
         await db
           .insert(userRoles)

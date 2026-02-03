@@ -55,6 +55,7 @@ const ROLE_COLORS: Record<string, string> = {
   moderator: 'bg-blue-500/20 text-blue-300',
   support: 'bg-green-500/20 text-green-300',
   admin: 'bg-red-500/20 text-red-300',
+  tester: 'bg-purple-500/20 text-purple-300 border border-purple-500/50',
 };
 
 const PLAN_NAMES: Record<string, string> = {
@@ -809,6 +810,11 @@ export function UserManagement() {
                   <SelectItem value="user">User</SelectItem>
                   <SelectItem value="moderator">Moderator</SelectItem>
                   <SelectItem value="support">Support</SelectItem>
+                  <SelectItem value="tester">
+                    <span className="flex items-center gap-1">
+                      🧪 Tester <span className="text-xs text-purple-400">(Full Access)</span>
+                    </span>
+                  </SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>

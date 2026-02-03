@@ -7,7 +7,7 @@ import { generateRandomArtist } from '../../scripts/generate-random-artist';
 import { db } from '../firebase';
 import { Timestamp, DocumentData } from 'firebase-admin/firestore';
 import { db as pgDb } from '../../db';
-import { users, artistNews, songs, tokenizedSongs, userRoles, subscriptions } from '../../db/schema';
+import { users, artistNews, songs, tokenizedSongs, userRoles, subscriptions, notifications } from '../../db/schema';
 import { eq, desc, and, or, count } from 'drizzle-orm';
 import { isAdminEmail } from '../../shared/constants';
 // FAL AI Nano Banana for images and MiniMax Music for audio
@@ -57,6 +57,7 @@ async function canUserCreateArtist(clerkUserId: string, userEmail?: string | nul
   artistCount: number;
   hasPremium: boolean;
   pgUserId?: number;
+  isTester?: boolean;
 }> {
   console.log(`[canUserCreateArtist] Checking permissions for clerkId: ${clerkUserId}, email: ${userEmail}`);
   
@@ -91,6 +92,23 @@ async function canUserCreateArtist(clerkUserId: string, userEmail?: string | nul
 
   const pgUserId = userRecord[0].id;
   
+  // Check if user has tester role (full platform access)
+  let isTester = false;
+  try {
+    const testerCheck = await pgDb
+      .select({ role: userRoles.role })
+      .from(userRoles)
+      .where(eq(userRoles.userId, pgUserId))
+      .limit(1);
+    
+    if (testerCheck.length > 0 && testerCheck[0].role === 'tester') {
+      isTester = true;
+      console.log(`🧪 Tester detected (${userEmail}) - full platform access granted`);
+    }
+  } catch (roleError) {
+    console.error('[canUserCreateArtist] Role check failed:', roleError);
+  }
+
   // Buscar suscripción activa en la tabla subscriptions
   let userSubscription = 'free';
   try {
@@ -116,7 +134,8 @@ async function canUserCreateArtist(clerkUserId: string, userEmail?: string | nul
 
   // Verificar suscripción - solo premium/enterprise puede crear artistas
   // Legacy names: premium = enterprise, pro = professional
-  const hasPremium = ['premium', 'enterprise', 'professional', 'pro'].includes(userSubscription.toLowerCase());
+  // Testers also get premium access
+  const hasPremium = isTester || ['premium', 'enterprise', 'professional', 'pro'].includes(userSubscription.toLowerCase());
 
   // Admin siempre tiene acceso premium
   if (adminStatus) {
@@ -126,7 +145,21 @@ async function canUserCreateArtist(clerkUserId: string, userEmail?: string | nul
       isAdmin: true,
       artistCount: 0, // No importa para admin
       hasPremium: true,
-      pgUserId
+      pgUserId,
+      isTester: false
+    };
+  }
+
+  // Tester has full access like premium users
+  if (isTester) {
+    console.log(`🧪 Tester user detected - full platform access granted`);
+    return {
+      canCreate: true,
+      isAdmin: false,
+      artistCount: 0,
+      hasPremium: true,
+      pgUserId,
+      isTester: true
     };
   }
 
@@ -2379,14 +2412,24 @@ router.delete("/delete-artist/:pgId", isAuthenticated, async (req: Request, res:
       console.log(`⚠️ No se encontraron canciones tokenizadas para eliminar: ${tokenError}`);
     }
 
-    // Eliminar noticias del artista
+    // Eliminar noticias del artista (usando userId, no artistId)
     try {
       await pgDb
         .delete(artistNews)
-        .where(eq(artistNews.artistId, pgId));
+        .where(eq(artistNews.userId, pgId));
       console.log(`✅ Noticias eliminadas para artista: ${pgId}`);
     } catch (newsError) {
       console.log(`⚠️ No se encontraron noticias para eliminar: ${newsError}`);
+    }
+
+    // Eliminar notificaciones del artista
+    try {
+      await pgDb
+        .delete(notifications)
+        .where(eq(notifications.userId, pgId));
+      console.log(`✅ Notificaciones eliminadas para artista: ${pgId}`);
+    } catch (notifError) {
+      console.log(`⚠️ No se encontraron notificaciones para eliminar: ${notifError}`);
     }
 
     // 5. Eliminar de PostgreSQL

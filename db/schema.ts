@@ -123,6 +123,10 @@ export const songs = pgTable("songs", {
   artistGender: text("artist_gender", { enum: ["male", "female"] }), // Género del artista para voz
   generatedWithAI: boolean("generated_with_ai").default(false), // Si fue generada con IA
   aiProvider: text("ai_provider"), // fal-minimax-music-v2, etc.
+  // Distribution metadata fields
+  isrc: text("isrc"), // International Standard Recording Code
+  upc: text("upc"), // Universal Product Code
+  composers: text("composers").array(), // Array of composer names
   isPublished: boolean("is_published").default(true).notNull(),
   plays: integer("plays").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -191,7 +195,7 @@ export const subscriptions = pgTable("subscriptions", {
 export const userRoles = pgTable("user_roles", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull().unique(),
-  role: text("role", { enum: ["user", "moderator", "support", "admin"] }).default("user").notNull(),
+  role: text("role", { enum: ["user", "moderator", "support", "admin", "tester"] }).default("user").notNull(),
   permissions: json("permissions").$type<string[]>(),
   grantedBy: integer("granted_by").references(() => users.id),
   grantedAt: timestamp("granted_at").defaultNow().notNull(),

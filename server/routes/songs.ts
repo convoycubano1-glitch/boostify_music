@@ -6,8 +6,81 @@ import { authenticate } from '../middleware/auth';
 import path from 'path';
 import fs from 'fs/promises';
 import { insertSongSchema } from '../../db/schema';
+import { generateImageWithNanoBanana, editImageWithNanoBanana } from '../services/fal-service';
 
 const router = Router();
+
+// POST /api/songs/generate-cover-art - Generate cover art for a song using FAL AI (authenticated)
+router.post('/generate-cover-art', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { prompt, songId, artistName, referenceImage } = req.body;
+    
+    if (!prompt) {
+      return res.status(400).json({ message: 'Prompt is required' });
+    }
+
+    console.log(`🎨 [COVER-ART] Generating cover art for song ${songId} by ${artistName}...`);
+
+    let result;
+    
+    // If there's a reference image, use edit mode for consistency
+    if (referenceImage) {
+      result = await editImageWithNanoBanana(
+        [referenceImage], 
+        `${prompt} Style inspired by the artist's existing visuals.`,
+        { aspectRatio: '1:1' }
+      );
+    } else {
+      // Generate from scratch
+      result = await generateImageWithNanoBanana(prompt, '1:1');
+    }
+
+    if (!result.success || !result.imageUrl) {
+      console.error('❌ [COVER-ART] FAL generation failed:', result.error);
+      return res.status(500).json({ 
+        success: false,
+        message: result.error || 'Failed to generate cover art' 
+      });
+    }
+
+    // Save the generated image locally
+    const uploadsDir = path.join(process.cwd(), 'uploads', 'covers', userId.toString());
+    await fs.mkdir(uploadsDir, { recursive: true });
+
+    const filename = `song-cover-${songId || Date.now()}.png`;
+    const filepath = path.join(uploadsDir, filename);
+    
+    // Download the image from FAL and save locally
+    const imageResponse = await fetch(result.imageUrl);
+    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+    await fs.writeFile(filepath, imageBuffer);
+
+    const coverArtUrl = `/uploads/covers/${userId}/${filename}`;
+
+    // If songId provided, update the song record
+    if (songId) {
+      await db
+        .update(songs)
+        .set({ coverArt: coverArtUrl })
+        .where(eq(songs.id, parseInt(songId)));
+      
+      console.log(`✅ [COVER-ART] Saved cover art for song ${songId}: ${coverArtUrl}`);
+    }
+
+    res.json({ 
+      success: true,
+      coverArtUrl,
+      message: 'Cover art generated successfully'
+    });
+  } catch (error) {
+    console.error('❌ [COVER-ART] Error generating cover art:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error generating cover art' 
+    });
+  }
+});
 
 // GET /api/songs - Get own songs (authenticated)
 router.get('/', authenticate, async (req: Request, res: Response) => {
@@ -229,6 +302,72 @@ router.delete('/:id', authenticate, async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error deleting song:', error);
     res.status(500).json({ message: 'Error deleting song' });
+  }
+});
+
+// PUT /api/songs/:id/metadata - Update song metadata for distribution (authenticated)
+router.put('/:id/metadata', authenticate, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const songId = parseInt(req.params.id);
+    const { 
+      isrc, 
+      upc, 
+      composers, 
+      genre, 
+      lyrics, 
+      coverArt,
+      description 
+    } = req.body;
+    
+    // First verify ownership
+    const [existing] = await db
+      .select()
+      .from(songs)
+      .where(eq(songs.id, songId))
+      .limit(1);
+      
+    if (!existing) {
+      return res.status(404).json({ message: 'Song not found' });
+    }
+    
+    if (existing.userId !== userId) {
+      return res.status(403).json({ message: 'Not authorized to update this song' });
+    }
+    
+    // Build update object with only provided fields
+    const updateData: Record<string, any> = {};
+    
+    if (isrc !== undefined) updateData.isrc = isrc;
+    if (upc !== undefined) updateData.upc = upc;
+    if (composers !== undefined) {
+      updateData.composers = Array.isArray(composers) ? composers : [composers];
+    }
+    if (genre !== undefined) updateData.genre = genre;
+    if (lyrics !== undefined) updateData.lyrics = lyrics;
+    if (coverArt !== undefined) updateData.coverArt = coverArt;
+    if (description !== undefined) updateData.description = description;
+    
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ message: 'No fields to update' });
+    }
+    
+    const [updated] = await db
+      .update(songs)
+      .set(updateData)
+      .where(eq(songs.id, songId))
+      .returning();
+    
+    console.log(`✅ [SONGS] Updated metadata for song ${songId}:`, updateData);
+    
+    res.json({ 
+      success: true,
+      message: 'Song metadata updated', 
+      song: updated 
+    });
+  } catch (error) {
+    console.error('Error updating song metadata:', error);
+    res.status(500).json({ message: 'Error updating song metadata' });
   }
 });
 
