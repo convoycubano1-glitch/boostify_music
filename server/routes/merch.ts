@@ -1,25 +1,117 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { merchandise } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { merchandise, users } from '../db/schema';
+import { eq, inArray, or, desc } from 'drizzle-orm';
 import { authenticate } from '../middleware/auth';
 import path from 'path';
 import fs from 'fs/promises';
 
 const router = Router();
 
+// Helper para obtener el PostgreSQL user ID desde Clerk ID
+async function getPostgresUserId(clerkId: string): Promise<number | null> {
+  const userRecord = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.clerkId, clerkId))
+    .limit(1);
+  return userRecord.length > 0 ? userRecord[0].id : null;
+}
+
 // GET /api/merch - Get own merchandise (authenticated)
 router.get('/', authenticate, async (req: Request, res: Response) => {
   try {
-    const userId = req.user!.id;
+    const clerkUserId = req.user?.id;
+    if (!clerkUserId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    
+    const pgUserId = await getPostgresUserId(clerkUserId);
+    if (!pgUserId) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
     const userMerch = await db
       .select()
       .from(merchandise)
-      .where(eq(merchandise.userId, userId));
+      .where(eq(merchandise.userId, pgUserId));
       
     res.json(userMerch);
   } catch (error) {
     console.error('Error getting merchandise:', error);
+    res.status(500).json({ message: 'Error getting merchandise' });
+  }
+});
+
+// GET /api/merch/my-artists - Get merchandise from all my artists
+router.get('/my-artists', authenticate, async (req: Request, res: Response) => {
+  try {
+    const clerkUserId = req.user?.id;
+    if (!clerkUserId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    
+    const pgUserId = await getPostgresUserId(clerkUserId);
+    if (!pgUserId) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Get all artists belonging to this user (own profile + AI-generated)
+    const myArtists = await db
+      .select({
+        id: users.id,
+        name: users.artistName,
+        slug: users.slug,
+        profileImage: users.profileImage,
+        genres: users.genres,
+        isAIGenerated: users.isAIGenerated
+      })
+      .from(users)
+      .where(
+        or(
+          eq(users.id, pgUserId),
+          eq(users.generatedBy, pgUserId)
+        )
+      )
+      .orderBy(desc(users.createdAt));
+    
+    if (myArtists.length === 0) {
+      return res.json({ artists: [], merchandise: [] });
+    }
+    
+    const artistIds = myArtists.map(a => a.id);
+    
+    // Get merchandise for all these artists
+    const allMerch = await db
+      .select({
+        id: merchandise.id,
+        userId: merchandise.userId,
+        name: merchandise.name,
+        description: merchandise.description,
+        price: merchandise.price,
+        images: merchandise.images,
+        category: merchandise.category,
+        stock: merchandise.stock,
+        isAvailable: merchandise.isAvailable,
+        createdAt: merchandise.createdAt
+      })
+      .from(merchandise)
+      .where(inArray(merchandise.userId, artistIds))
+      .orderBy(desc(merchandise.createdAt));
+    
+    // Group merchandise by artist
+    const merchandiseByArtist = myArtists.map(artist => ({
+      artist,
+      products: allMerch.filter(m => m.userId === artist.id)
+    }));
+    
+    res.json({
+      artists: myArtists,
+      merchandiseByArtist,
+      totalProducts: allMerch.length
+    });
+  } catch (error) {
+    console.error('Error getting my artists merchandise:', error);
     res.status(500).json({ message: 'Error getting merchandise' });
   }
 });

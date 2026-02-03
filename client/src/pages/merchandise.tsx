@@ -12,6 +12,8 @@ import { db } from "../firebase";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { Skeleton } from "../components/ui/skeleton";
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import {
   ShoppingBag,
   Users,
@@ -35,7 +37,9 @@ import {
   Settings,
   ImageIcon,
   Music,
-  BarChart2
+  BarChart2,
+  Sparkles,
+  User
 } from "lucide-react";
 import { SiShopify } from "react-icons/si";
 import {
@@ -290,12 +294,67 @@ interface UserProduct {
   createdAt?: any;
 }
 
+// Artist interface for my-artists merchandise
+interface MyArtist {
+  id: number;
+  name: string | null;
+  slug: string | null;
+  profileImage: string | null;
+  genres: string[] | null;
+  isAIGenerated: boolean;
+}
+
+// Merchandise from PostgreSQL
+interface ArtistMerchandise {
+  id: number;
+  userId: number;
+  name: string;
+  description: string | null;
+  price: string;
+  images: string[];
+  category: string;
+  stock: number;
+  isAvailable: boolean;
+  createdAt: string;
+}
+
+interface MerchandiseByArtist {
+  artist: MyArtist;
+  products: ArtistMerchandise[];
+}
+
+interface MyArtistsMerchandiseResponse {
+  artists: MyArtist[];
+  merchandiseByArtist: MerchandiseByArtist[];
+  totalProducts: number;
+}
+
 export default function MerchandisePage() {
   const [selectedTab, setSelectedTab] = useState("products");
-  const { user } = useAuth();
+  const { user, getToken } = useAuth();
   const [userProducts, setUserProducts] = useState<UserProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [userSlug, setUserSlug] = useState<string>("");
+  const [selectedArtistId, setSelectedArtistId] = useState<number | null>(null);
+
+  // Fetch merchandise from my artists (PostgreSQL)
+  const { data: myArtistsMerch, isLoading: loadingArtistsMerch } = useQuery<MyArtistsMerchandiseResponse>({
+    queryKey: ['my-artists-merchandise'],
+    queryFn: async () => {
+      const token = await getToken();
+      const res = await fetch('/api/merch/my-artists', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch merchandise');
+      return res.json();
+    },
+    enabled: !!user
+  });
+
+  // Filter merchandise by selected artist
+  const filteredMerchandise = selectedArtistId
+    ? myArtistsMerch?.merchandiseByArtist.filter(m => m.artist.id === selectedArtistId) || []
+    : myArtistsMerch?.merchandiseByArtist || [];
 
   // Cargar perfil del usuario y productos desde Firestore
   useEffect(() => {
@@ -406,13 +465,51 @@ export default function MerchandisePage() {
           {/* Products Tab - Productos del Usuario */}
           <TabsContent value="products">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-2">Mis Productos</h2>
+              <h2 className="text-2xl font-bold mb-2">Productos de Mis Artistas</h2>
               <p className="text-muted-foreground">
-                Estos son los productos que has creado en tu perfil de artista. Gestiónalos, edítalos o crea nuevos desde tu perfil.
+                Merchandise de todos tus artistas organizados. Selecciona un artista para filtrar sus productos.
               </p>
             </div>
 
-            {loadingProducts ? (
+            {/* Artist Filter */}
+            {myArtistsMerch && myArtistsMerch.artists.length > 0 && (
+              <div className="mb-8">
+                <p className="text-sm text-muted-foreground mb-3">Filtrar por artista:</p>
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant={selectedArtistId === null ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedArtistId(null)}
+                    className={selectedArtistId === null ? "bg-orange-500 hover:bg-orange-600" : ""}
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Todos ({myArtistsMerch.totalProducts})
+                  </Button>
+                  {myArtistsMerch.artists.map((artist) => (
+                    <Button
+                      key={artist.id}
+                      variant={selectedArtistId === artist.id ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedArtistId(artist.id)}
+                      className={selectedArtistId === artist.id ? "bg-orange-500 hover:bg-orange-600" : ""}
+                    >
+                      <Avatar className="w-5 h-5 mr-2">
+                        <AvatarImage src={artist.profileImage || undefined} />
+                        <AvatarFallback className="text-xs">
+                          {artist.name?.charAt(0) || 'A'}
+                        </AvatarFallback>
+                      </Avatar>
+                      {artist.name || 'Sin nombre'}
+                      {artist.isAIGenerated && (
+                        <Sparkles className="w-3 h-3 ml-1 text-purple-400" />
+                      )}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {loadingArtistsMerch ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
                   <Card key={i} className="overflow-hidden">
@@ -425,76 +522,140 @@ export default function MerchandisePage() {
                   </Card>
                 ))}
               </div>
-            ) : userProducts.length === 0 ? (
+            ) : !myArtistsMerch || myArtistsMerch.artists.length === 0 ? (
               <Card className="p-12 text-center">
-                <ShoppingBag className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-2xl font-semibold mb-2">No tienes productos aún</h3>
+                <User className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-2xl font-semibold mb-2">No tienes artistas aún</h3>
                 <p className="text-muted-foreground mb-6">
-                  Crea productos desde tu perfil de artista para verlos aquí
+                  Crea tu perfil de artista o genera artistas con IA para comenzar a vender merchandise
                 </p>
-                <Link href={`/artist/${userSlug}`}>
+                <Link href="/virtual-record-label">
                   <Button className="bg-orange-500 hover:bg-orange-600">
-                    Ir a Mi Perfil
+                    Crear Artista
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
               </Card>
+            ) : myArtistsMerch.totalProducts === 0 ? (
+              <Card className="p-12 text-center">
+                <ShoppingBag className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-2xl font-semibold mb-2">No tienes productos aún</h3>
+                <p className="text-muted-foreground mb-6">
+                  Crea productos desde el perfil de cualquiera de tus artistas
+                </p>
+                <div className="flex flex-wrap justify-center gap-3">
+                  {myArtistsMerch.artists.slice(0, 3).map((artist) => (
+                    <Link key={artist.id} href={`/artist/${artist.slug || artist.id}`}>
+                      <Button variant="outline">
+                        <Avatar className="w-5 h-5 mr-2">
+                          <AvatarImage src={artist.profileImage || undefined} />
+                          <AvatarFallback className="text-xs">
+                            {artist.name?.charAt(0) || 'A'}
+                          </AvatarFallback>
+                        </Avatar>
+                        {artist.name || 'Artista'}
+                      </Button>
+                    </Link>
+                  ))}
+                </div>
+              </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {userProducts.map((product) => (
-                  <Card 
-                    key={product.id} 
-                    className="overflow-hidden group hover:shadow-xl transition-all duration-300 border-orange-500/10"
-                  >
-                    <div className="aspect-video relative overflow-hidden bg-gradient-to-br from-orange-500/5 to-orange-500/10">
-                      {product.imageUrl ? (
-                        <img
-                          src={product.imageUrl}
-                          alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                          onError={(e) => {
-                            e.currentTarget.src = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400';
-                          }}
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <ShoppingBag className="h-12 w-12 text-orange-500" />
+              <div className="space-y-10">
+                {filteredMerchandise.map((artistMerch) => (
+                  artistMerch.products.length > 0 && (
+                    <div key={artistMerch.artist.id}>
+                      {/* Artist Header */}
+                      <div className="flex items-center gap-4 mb-6">
+                        <Avatar className="w-12 h-12 border-2 border-orange-500">
+                          <AvatarImage src={artistMerch.artist.profileImage || undefined} />
+                          <AvatarFallback className="bg-orange-500/20 text-orange-500">
+                            {artistMerch.artist.name?.charAt(0) || 'A'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-xl font-bold">{artistMerch.artist.name || 'Sin nombre'}</h3>
+                            {artistMerch.artist.isAIGenerated && (
+                              <Badge variant="outline" className="text-purple-400 border-purple-400">
+                                <Sparkles className="w-3 h-3 mr-1" />
+                                AI
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {artistMerch.products.length} producto{artistMerch.products.length !== 1 ? 's' : ''}
+                            {artistMerch.artist.genres && artistMerch.artist.genres.length > 0 && (
+                              <span> • {artistMerch.artist.genres.slice(0, 2).join(', ')}</span>
+                            )}
+                          </p>
                         </div>
-                      )}
-                      <div className="absolute top-2 right-2">
-                        <Badge className="bg-orange-500 text-white">
-                          ${product.price.toFixed(2)}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="p-6">
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="text-xl font-semibold group-hover:text-orange-500 transition-colors line-clamp-1">
-                          {product.name}
-                        </h3>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                        {product.description}
-                      </p>
-                      <div className="flex items-center gap-2 mb-4">
-                        <Badge variant="outline">{product.category}</Badge>
-                      </div>
-                      <div className="flex gap-2">
-                        <Link href={`/artist/${userSlug}#merchandise`} className="flex-1">
-                          <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                            Ver en Perfil
+                        <Link href={`/artist/${artistMerch.artist.slug || artistMerch.artist.id}`} className="ml-auto">
+                          <Button variant="ghost" size="sm">
+                            Ver Perfil
+                            <ArrowRight className="ml-2 h-4 w-4" />
                           </Button>
                         </Link>
                       </div>
+
+                      {/* Products Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {artistMerch.products.map((product) => (
+                          <Card 
+                            key={product.id} 
+                            className="overflow-hidden group hover:shadow-xl transition-all duration-300 border-orange-500/10"
+                          >
+                            <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-orange-500/5 to-orange-500/10">
+                              {product.images && product.images.length > 0 ? (
+                                <img
+                                  src={product.images[0]}
+                                  alt={product.name}
+                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                  onError={(e) => {
+                                    e.currentTarget.src = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400';
+                                  }}
+                                />
+                              ) : (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <ShoppingBag className="h-12 w-12 text-orange-500" />
+                                </div>
+                              )}
+                              <div className="absolute top-2 right-2">
+                                <Badge className="bg-orange-500 text-white">
+                                  ${parseFloat(product.price).toFixed(2)}
+                                </Badge>
+                              </div>
+                              {!product.isAvailable && (
+                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                  <Badge variant="destructive">Agotado</Badge>
+                                </div>
+                              )}
+                            </div>
+                            <div className="p-4">
+                              <h4 className="font-semibold group-hover:text-orange-500 transition-colors line-clamp-1 mb-1">
+                                {product.name}
+                              </h4>
+                              <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                                {product.description || 'Sin descripción'}
+                              </p>
+                              <div className="flex items-center justify-between">
+                                <Badge variant="outline" className="capitalize">{product.category}</Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  Stock: {product.stock}
+                                </span>
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
                     </div>
-                  </Card>
+                  )
                 ))}
               </div>
             )}
 
             {/* Mensaje informativo */}
-            {userProducts.length > 0 && (
-              <Card className="mt-6 p-6 bg-gradient-to-r from-orange-500/5 to-orange-500/10 border-orange-500/20">
+            {myArtistsMerch && myArtistsMerch.totalProducts > 0 && (
+              <Card className="mt-8 p-6 bg-gradient-to-r from-orange-500/5 to-orange-500/10 border-orange-500/20">
                 <div className="flex items-start gap-4">
                   <div className="p-2 bg-orange-500/20 rounded-lg">
                     <Package className="h-6 w-6 text-orange-500" />
@@ -502,8 +663,8 @@ export default function MerchandisePage() {
                   <div>
                     <h4 className="font-semibold mb-1">Gestión de Productos</h4>
                     <p className="text-sm text-muted-foreground">
-                      Todos los productos mostrados aquí están sincronizados con tu perfil de artista. 
-                      Para agregar, editar o eliminar productos, visita la sección de merchandise en tu perfil.
+                      Todos los productos están vinculados a tus artistas. 
+                      Para agregar, editar o eliminar productos, visita la sección de merchandise en el perfil de cada artista.
                     </p>
                   </div>
                 </div>
