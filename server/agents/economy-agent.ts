@@ -542,17 +542,3 @@ export async function processEconomyTick(): Promise<void> {
 
   console.log(`💰 [EconomyAgent] Tick complete: ${investmentsMade} investments made`);
 }
-
-// ============================================
-// EXPORTS
-// ============================================
-
-export {
-  getOrCreateTreasury,
-  updateTreasuryValue,
-  analyzeInvestmentOpportunities,
-  executeEconomicDecision,
-  simulateStreamingRevenue,
-  distributeCollabRevenue,
-  processEconomyTick,
-};
