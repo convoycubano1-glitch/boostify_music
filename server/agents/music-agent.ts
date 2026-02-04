@@ -564,17 +564,3 @@ export async function processMusicTick(): Promise<void> {
 
   console.log(`🎵 [MusicAgent] Tick complete: ${songsCreated} created, ${songsPublished} published, ${songsTokenized} tokenized`);
 }
-
-// ============================================
-// EXPORTS
-// ============================================
-
-export {
-  generateMusicConcept,
-  generateCoverArt,
-  requestMusicGeneration,
-  publishSong,
-  tokenizeSong,
-  shouldCreateMusic,
-  processMusicTick,
-};
