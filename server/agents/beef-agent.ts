@@ -719,17 +719,3 @@ export async function processBeefTick(): Promise<void> {
 
   console.log(`🔥 [BeefAgent] Tick complete: ${beefsStarted} beefs started, ${responsesGenerated} responses`);
 }
-
-// ============================================
-// EXPORTS
-// ============================================
-
-export {
-  analyzeBeefPotential,
-  shouldInitiateBeef,
-  initiateBeef,
-  respondToBeef,
-  createDissTrack,
-  resolveBeef,
-  processBeefTick,
-};
