@@ -26,6 +26,7 @@ import { AffiliateSessions } from '../components/admin/affiliate-sessions';
 import { InvestorSessions } from '../components/admin/investor-sessions';
 import { StripeEventsLog } from '../components/admin/stripe-events-log';
 import { UserManagement } from '../components/admin/user-management';
+import { BoostiSwapArtistsManager } from '../components/admin/boostiswap-artists-manager';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -151,6 +152,7 @@ export default function AdminDashboard() {
                     { value: 'affiliates', label: 'Affiliates', icon: TrendingUp },
                     { value: 'investors', label: 'Investors', icon: Target },
                     { value: 'apis', label: 'APIs', icon: LinkIcon },
+                    { value: 'boostiswap-artists', label: 'BoostiSwap', icon: Zap },
                     { value: 'stripe-events', label: 'Stripe Events', icon: CreditCard },
                   ].map(tab => {
                     const Icon = tab.icon;
@@ -271,6 +273,10 @@ export default function AdminDashboard() {
 
               <TabsContent value="stripe-events" className="w-full">
                 <StripeEventsLog />
+              </TabsContent>
+
+              <TabsContent value="boostiswap-artists" className="w-full">
+                <BoostiSwapArtistsManager />
               </TabsContent>
             </Tabs>
           </div>

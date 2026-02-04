@@ -779,22 +779,43 @@ router.get("/my-artists", isAuthenticated, async (req: Request, res: Response) =
     const pgUserId = userRecord[0].id;
     console.log(`📍 Usuario PostgreSQL ID: ${pgUserId} para Clerk ID: ${clerkUserId}`);
 
+    // Verificar si es admin para mostrar también los artistas de BoostiSwap
+    const userEmail = req.user?.emailAddresses?.[0]?.emailAddress || req.user?.email;
+    const isAdmin = isAdminEmail(userEmail);
+
     // Obtener artistas de PostgreSQL
     // 1. Su propio perfil (id = pgUserId AND role = 'artist')
     // 2. Artistas generados por IA (generatedBy = pgUserId)
-    const { or } = await import('drizzle-orm');
+    // 3. Si es admin: también los artistas estáticos de BoostiSwap (generatedBy = NULL y isAIGenerated = false)
+    const { or, isNull } = await import('drizzle-orm');
     
-    const artistsFromPg = await pgDb
-      .select()
-      .from(users)
-      .where(
-        or(
-          eq(users.id, pgUserId),          // Su propio perfil
-          eq(users.generatedBy, pgUserId)   // Artistas generados por IA
-        )
-      );
+    let artistsFromPg;
+    if (isAdmin) {
+      // Admin ve: sus artistas + BoostiSwap artists (generatedBy NULL)
+      artistsFromPg = await pgDb
+        .select()
+        .from(users)
+        .where(
+          or(
+            eq(users.id, pgUserId),          // Su propio perfil
+            eq(users.generatedBy, pgUserId), // Artistas generados por IA
+            isNull(users.generatedBy)        // Artistas estáticos de BoostiSwap (admin only)
+          )
+        );
+      console.log(`👑 Admin mode: incluyendo artistas de BoostiSwap`);
+    } else {
+      artistsFromPg = await pgDb
+        .select()
+        .from(users)
+        .where(
+          or(
+            eq(users.id, pgUserId),          // Su propio perfil
+            eq(users.generatedBy, pgUserId)   // Artistas generados por IA
+          )
+        );
+    }
 
-    console.log(`✅ Encontrados ${artistsFromPg.length} artistas en PostgreSQL (propio + IA generados)`);
+    console.log(`✅ Encontrados ${artistsFromPg.length} artistas en PostgreSQL (propio + IA generados${isAdmin ? ' + BoostiSwap' : ''})`);
 
     // Formatear respuesta
     const formattedArtists = artistsFromPg.map(artist => ({

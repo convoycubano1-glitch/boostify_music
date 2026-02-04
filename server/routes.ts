@@ -114,6 +114,7 @@ import stripeEventsAdminRouter from './routes/stripe-events-admin'; // Import St
 import adminUsersRouter from './routes/admin-users'; // Import Admin Users management router
 import boostiswapContractsRouter from './routes/boostiswap-contracts'; // Import BoostiSwap Smart Contracts router
 import boostiswapRouter from './routes/boostiswap'; // Import BoostiSwap Marketplace router
+import adminBoostiswapArtistsRouter from './routes/admin-boostiswap-artists'; // Import BoostiSwap Artists admin management router
 import socialMediaRouter from './routes/social-media'; // Import Social Media Content Generator router
 import { seedTokenizedSongs } from './seed-tokenized-songs'; // Import seed function
 import educationGeminiRouter from './routes/education-gemini'; // Import Education Gemini AI router for course generation
@@ -442,6 +443,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   app.use('/api/admin/accounting', accountingRouter);
   app.use('/api/admin/agent', adminAgentRouter);
   app.use('/api/admin/stripe-events', stripeEventsAdminRouter);
+  app.use('/api/admin/boostiswap-artists', adminBoostiswapArtistsRouter); // Admin: BoostiSwap artists management
   app.use('/api/admin', adminUsersRouter); // Admin: User management, roles, permissions
   app.use('/api/virtual-label', virtualRecordLabelRouter); // Virtual Record Label integration routes
   app.use('/api/og-image', ogImageRouter); // Open Graph dynamic image generation
