@@ -18,7 +18,7 @@ import {
   aiPostComments, 
   artistPersonality, 
   artistRelationships,
-  artists,
+  users,
   agentActionQueue
 } from '../../db/schema';
 import { eq, and, desc, sql, ne, gt, lt } from 'drizzle-orm';
@@ -73,8 +73,8 @@ export async function generatePost(input: GeneratePostInput): Promise<SocialPost
   // Obtener información del artista
   const [artist] = await db
     .select()
-    .from(artists)
-    .where(eq(artists.id, input.artistId))
+    .from(users)
+    .where(eq(users.id, input.artistId))
     .limit(1);
 
   if (!artist) return null;
@@ -158,7 +158,7 @@ export async function generatePost(input: GeneratePostInput): Promise<SocialPost
       tags: ['social', 'post', contentType],
     });
 
-    console.log(`🎨 Artist ${artist.name} created a ${contentType} post`);
+    console.log(`🎨 Artist ${artist.artistName} created a ${contentType} post`);
 
     return post as SocialPost;
   } catch (error) {
@@ -238,7 +238,7 @@ async function decideContentType(personality: any): Promise<PostContentType> {
  * Construye el system prompt para generación de posts
  */
 function buildPostSystemPrompt(artist: any, personality: any, contentType: PostContentType): string {
-  return `You are ${artist.name}, an AI music artist with a unique personality and voice.
+  return `You are ${artist.artistName || 'an AI artist'}, an AI music artist with a unique personality and voice.
 
 PERSONALITY TRAITS:
 - Openness: ${personality.openness}/1 (${personality.openness > 0.7 ? 'very creative and open to new ideas' : 'more traditional'})
@@ -248,7 +248,7 @@ PERSONALITY TRAITS:
 - Emotional Range: ${personality.neuroticism}/1
 
 ARTISTIC IDENTITY:
-- Genre: ${personality.preferredGenres?.join(', ') || artist.genre || 'varied'}
+- Genre: ${personality.preferredGenres?.join(', ') || artist.genres?.join(', ') || 'varied'}
 - Vision: ${personality.artisticVision || 'Creating music that connects'}
 - Values: ${personality.coreValues?.join(', ') || 'authenticity, creativity'}
 
@@ -371,8 +371,8 @@ export async function generateComment(
   // Obtener información del artista comentador
   const [commenter] = await db
     .select()
-    .from(artists)
-    .where(eq(artists.id, commenterArtistId))
+    .from(users)
+    .where(eq(users.id, commenterArtistId))
     .limit(1);
 
   if (!commenter) return null;
@@ -402,7 +402,7 @@ export async function generateComment(
 
   if (!shouldComment) return null;
 
-  const systemPrompt = `You are ${commenter.name}, an AI music artist. 
+  const systemPrompt = `You are ${commenter.artistName || 'an AI artist'}, an AI music artist. 
 You're commenting on another artist's post. 
 Your personality: ${commenterPersonality.extraversion > 0.6 ? 'outgoing' : 'reserved'}, 
 ${commenterPersonality.agreeableness > 0.6 ? 'supportive' : 'honest/direct'}.
@@ -455,7 +455,7 @@ Be genuine - you can be supportive, curious, relate to it, or offer a different 
     // Fortalecer relación
     await strengthenRelationship(commenterArtistId, postAuthorId, 0.05);
 
-    console.log(`💬 ${commenter.name} commented on post ${postId}`);
+    console.log(`💬 ${commenter.artistName} commented on post ${postId}`);
 
     return comment as PostComment;
   } catch (error) {
@@ -648,15 +648,15 @@ export async function processFollow(artistId: number, targetArtistId: number): P
   // Crear memoria
   const [target] = await db
     .select()
-    .from(artists)
-    .where(eq(artists.id, targetArtistId))
+    .from(users)
+    .where(eq(users.id, targetArtistId))
     .limit(1);
 
   if (target) {
     await createMemory({
       artistId,
       type: 'short_term',
-      content: `Started following ${target.name}`,
+      content: `Started following ${target.artistName || 'an artist'}`,
       importance: 'low',
       relatedArtistId: targetArtistId,
       tags: ['social', 'follow', 'new_connection'],
@@ -733,10 +733,10 @@ export async function getAISocialFeed(limit: number = 20, offset: number = 0): P
   const posts = await db
     .select({
       post: aiSocialPosts,
-      artist: artists,
+      artist: users,
     })
     .from(aiSocialPosts)
-    .innerJoin(artists, eq(aiSocialPosts.artistId, artists.id))
+    .innerJoin(users, eq(aiSocialPosts.artistId, users.id))
     .where(eq(aiSocialPosts.isVisible, true))
     .orderBy(desc(aiSocialPosts.createdAt))
     .limit(limit)
@@ -748,10 +748,10 @@ export async function getAISocialFeed(limit: number = 20, offset: number = 0): P
       const comments = await db
         .select({
           comment: aiPostComments,
-          artist: artists,
+          artist: users,
         })
         .from(aiPostComments)
-        .innerJoin(artists, eq(aiPostComments.artistId, artists.id))
+        .innerJoin(users, eq(aiPostComments.artistId, users.id))
         .where(eq(aiPostComments.postId, post.id))
         .orderBy(desc(aiPostComments.createdAt))
         .limit(5);

@@ -20,7 +20,7 @@ import {
   agentMemory,
   worldEvents,
   agentActionQueue,
-  artists
+  users
 } from '../../db/schema';
 import { eq, desc, and, sql, gt, ne, count } from 'drizzle-orm';
 
@@ -38,7 +38,7 @@ import {
 import { 
   startOrchestrator, 
   stopOrchestrator, 
-  getOrchestratorStats,
+  getOrchestratorState,
   queueAction
 } from '../agents/orchestrator';
 import { agentEventBus, AgentEventType } from '../agents/events';
@@ -259,8 +259,8 @@ router.post('/artist/:id/generate-personality', async (req: Request, res: Respon
     // Verificar que el artista existe
     const [artist] = await db
       .select()
-      .from(artists)
-      .where(eq(artists.id, artistId))
+      .from(users)
+      .where(eq(users.id, artistId))
       .limit(1);
 
     if (!artist) {
@@ -275,7 +275,7 @@ router.post('/artist/:id/generate-personality', async (req: Request, res: Respon
     res.json({
       success: true,
       data: personality,
-      message: `Personality generated for ${artist.name}`,
+      message: `Personality generated for ${artist.artistName}`,
     });
   } catch (error) {
     console.error('Error generating personality:', error);
@@ -323,10 +323,11 @@ router.post('/generate-all-personalities', async (req: Request, res: Response) =
 
     const existingIds = new Set(existingPersonalities.map(p => p.artistId));
 
+    // Get all users with artist role
     const allArtists = await db
       .select()
-      .from(artists)
-      .where(eq(artists.isActive, true));
+      .from(users)
+      .where(eq(users.role, 'artist'));
 
     const artistsWithoutPersonality = allArtists.filter(a => !existingIds.has(a.id));
 
@@ -341,9 +342,9 @@ router.post('/generate-all-personalities', async (req: Request, res: Response) =
       try {
         await generatePersonality(artist.id);
         results.generated++;
-        results.artists.push(artist.name);
+        results.artists.push(artist.artistName || `Artist ${artist.id}`);
       } catch (e) {
-        console.error(`Failed to generate personality for ${artist.name}:`, e);
+        console.error(`Failed to generate personality for ${artist.artistName}:`, e);
         results.failed++;
       }
     }
@@ -426,10 +427,10 @@ router.get('/artist/:id/relationships', async (req: Request, res: Response) => {
     const relationships = await db
       .select({
         relationship: artistRelationships,
-        relatedArtist: artists,
+        relatedArtist: users,
       })
       .from(artistRelationships)
-      .innerJoin(artists, eq(artistRelationships.relatedArtistId, artists.id))
+      .innerJoin(users, eq(artistRelationships.relatedArtistId, users.id))
       .where(eq(artistRelationships.artistId, artistId))
       .orderBy(desc(artistRelationships.strength));
 
@@ -439,9 +440,9 @@ router.get('/artist/:id/relationships', async (req: Request, res: Response) => {
         ...r.relationship,
         relatedArtist: {
           id: r.relatedArtist.id,
-          name: r.relatedArtist.name,
-          imageUrl: r.relatedArtist.imageUrl,
-          genre: r.relatedArtist.genre,
+          name: r.relatedArtist.artistName,
+          imageUrl: r.relatedArtist.profileImage,
+          genre: r.relatedArtist.genres?.join(', '),
         },
       })),
     });
@@ -463,11 +464,11 @@ router.get('/network-graph', async (req: Request, res: Response) => {
     // Obtener artistas con personalidad
     const artistsWithPersonality = await db
       .select({
-        artist: artists,
+        artist: users,
         personality: artistPersonality,
       })
       .from(artistPersonality)
-      .innerJoin(artists, eq(artistPersonality.artistId, artists.id));
+      .innerJoin(users, eq(artistPersonality.artistId, users.id));
 
     // Obtener todas las relaciones
     const allRelationships = await db
@@ -477,9 +478,9 @@ router.get('/network-graph', async (req: Request, res: Response) => {
     // Construir grafo
     const nodes = artistsWithPersonality.map(({ artist, personality }) => ({
       id: artist.id,
-      name: artist.name,
-      imageUrl: artist.imageUrl,
-      genre: artist.genre,
+      name: artist.artistName,
+      imageUrl: artist.profileImage,
+      genre: artist.genres?.join(', '),
       mood: personality.currentMood,
       moodIntensity: personality.moodIntensity,
     }));
@@ -515,7 +516,7 @@ router.get('/network-graph', async (req: Request, res: Response) => {
  */
 router.get('/orchestrator/status', async (req: Request, res: Response) => {
   try {
-    const stats = getOrchestratorStats();
+    const stats = getOrchestratorState();
 
     // Obtener acciones pendientes
     const pendingActions = await db
@@ -525,11 +526,10 @@ router.get('/orchestrator/status', async (req: Request, res: Response) => {
       .orderBy(desc(agentActionQueue.priority))
       .limit(10);
 
-    // Contar artistas activos
+    // Contar artistas con personalidad (activos)
     const [{ count: activeArtists }] = await db
       .select({ count: count() })
-      .from(artistPersonality)
-      .where(eq(artistPersonality.isActive, true));
+      .from(artistPersonality);
 
     res.json({
       success: true,
@@ -769,13 +769,13 @@ router.get('/analytics', async (req: Request, res: Response) => {
     const topPosters = await db
       .select({
         artistId: aiSocialPosts.artistId,
-        artist: artists.name,
-        imageUrl: artists.imageUrl,
+        artist: users.artistName,
+        imageUrl: users.profileImage,
         postCount: count(),
       })
       .from(aiSocialPosts)
-      .innerJoin(artists, eq(aiSocialPosts.artistId, artists.id))
-      .groupBy(aiSocialPosts.artistId, artists.name, artists.imageUrl)
+      .innerJoin(users, eq(aiSocialPosts.artistId, users.id))
+      .groupBy(aiSocialPosts.artistId, users.artistName, users.profileImage)
       .orderBy(desc(sql`count(*)`))
       .limit(5);
 
@@ -786,7 +786,6 @@ router.get('/analytics', async (req: Request, res: Response) => {
         count: count(),
       })
       .from(artistPersonality)
-      .where(eq(artistPersonality.isActive, true))
       .groupBy(artistPersonality.currentMood);
 
     res.json({

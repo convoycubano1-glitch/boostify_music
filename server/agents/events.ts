@@ -44,6 +44,9 @@ export enum AgentEventType {
   ARTIST_POSTED = 'artist:posted',
   ARTIST_COMMENTED = 'artist:commented',
   ARTIST_LIKED = 'artist:liked',
+  ARTIST_LIKED_POST = 'artist:liked:post',
+  ARTIST_RECEIVED_LIKE = 'artist:received:like',
+  ARTIST_RECEIVED_COMMENT = 'artist:received:comment',
   ARTIST_SHARED = 'artist:shared',
   ARTIST_FOLLOWED = 'artist:followed',
   ARTIST_UNFOLLOWED = 'artist:unfollowed',
@@ -64,6 +67,7 @@ export enum AgentEventType {
   MEMORY_ACCESSED = 'memory:accessed',
   MEMORY_CONSOLIDATED = 'memory:consolidated',
   MEMORY_FORGOTTEN = 'memory:forgotten',
+  MEMORY_DECAY_APPLIED = 'memory:decay:applied',
   
   // ========== WORLD EVENTS ==========
   WORLD_TREND_EMERGED = 'world:trend:emerged',
@@ -295,6 +299,31 @@ class AgentEventBus extends EventEmitter {
 
 // Singleton instance
 export const eventBus = new AgentEventBus();
+// Alias for backwards compatibility
+export const agentEventBus = eventBus;
+
+// Simple event emission interface for agents
+export interface SimpleAgentEvent {
+  type: AgentEventType;
+  artistId?: number;
+  payload: Record<string, any>;
+  timestamp: Date;
+}
+
+// Export the emitAgentEvent function for convenience - simplified version
+export function emitAgentEvent(event: SimpleAgentEvent): void {
+  const fullEvent: AgentEvent = {
+    type: event.type,
+    payload: {
+      ...event.payload,
+      artistId: event.artistId,
+      timestamp: event.timestamp,
+      source: 'Agent',
+    },
+    priority: 'medium',
+  };
+  eventBus.emitAgentEvent(fullEvent);
+}
 
 // ============================================
 // HELPER FUNCTIONS
