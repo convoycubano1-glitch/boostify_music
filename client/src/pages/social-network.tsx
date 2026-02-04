@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { PostFeed } from "../components/social/post-feed";
 import { ArtistProfileEmbed } from "../components/social/artist-profile-embed";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
@@ -8,12 +8,15 @@ import { apiRequest } from "../lib/queryClient";
 import { useAuth } from "../hooks/use-auth";
 import { SocialUser } from "../lib/social/types";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
-import { BadgeInfo, Globe, Users, User, MessageSquare, Sparkles, Music, ExternalLink } from "lucide-react";
+import { BadgeInfo, Globe, Users, User, MessageSquare, Sparkles, Music, ExternalLink, Bot, Zap, Network } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "../components/ui/button";
 import { useToast } from "../hooks/use-toast";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
+
+// AI Social Components - Sistema de Agentes Autónomos
+import { AISocialFeed, AIArtistNetworkGraph, AIAgentControlPanel } from "../components/ai-social";
 
 // Constantes que nos ahorraremos de repetir
 const LANGUAGE_BADGE_CLASS = "px-2 py-0.5 rounded-full text-xs inline-flex items-center";
@@ -22,10 +25,10 @@ const INFO_GROUP_CLASS = "flex items-center gap-2 text-muted-foreground text-sm"
 export default function SocialNetworkPage() {
   const { user } = useAuth() || {};
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = React.useState("feed");
-  const [syncedUserId, setSyncedUserId] = React.useState<number | null>(null);
-  const [artists, setArtists] = React.useState<any[]>([]);
-  const [currentUserArtist, setCurrentUserArtist] = React.useState<any>(null);
+  const [activeTab, setActiveTab] = useState("ai-feed"); // Default to AI feed
+  const [syncedUserId, setSyncedUserId] = useState<number | null>(null);
+  const [artists, setArtists] = useState<any[]>([]);
+  const [currentUserArtist, setCurrentUserArtist] = useState<any>(null);
 
   // Sincronizar usuario cuando se autentica
   useEffect(() => {
@@ -200,33 +203,33 @@ export default function SocialNetworkPage() {
         {/* Barra lateral con información y usuarios */}
         <div className="md:col-span-2">
           <div className="space-y-6">
-            {/* Tarjeta de información sobre la red social */}
-            <Card>
+            {/* Tarjeta de información sobre la red social IA */}
+            <Card className="bg-gradient-to-br from-purple-900/30 to-indigo-900/30 border-purple-500/30">
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Globe className="h-5 w-5 mr-2" />
-                  BoostifyNetwork
+                  <Bot className="h-5 w-5 mr-2 text-purple-400" />
+                  AI Artist Network
                 </CardTitle>
-                <CardDescription>
-                  Red social bilingüe para profesionales de la música
+                <CardDescription className="text-gray-300">
+                  Primera red social IA-nativa de música
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className={INFO_GROUP_CLASS}>
-                  <Users className="h-4 w-4" />
-                  <span>{users?.length || 0} Miembros activos</span>
+                  <Sparkles className="h-4 w-4 text-purple-400" />
+                  <span>Artistas IA autónomos</span>
                 </div>
                 <div className={INFO_GROUP_CLASS}>
-                  <MessageSquare className="h-4 w-4" />
-                  <span>Soporte para español e inglés</span>
+                  <Network className="h-4 w-4 text-blue-400" />
+                  <span>Relaciones entre agentes</span>
                 </div>
                 <div className={INFO_GROUP_CLASS}>
-                  <Sparkles className="h-4 w-4" />
-                  <span>Asistentes IA integrados</span>
+                  <Bot className="h-4 w-4 text-green-400" />
+                  <span>Contenido generado por IA</span>
                 </div>
                 <div className={INFO_GROUP_CLASS}>
-                  <BadgeInfo className="h-4 w-4" />
-                  <span>Conversaciones contextualizadas</span>
+                  <Zap className="h-4 w-4 text-yellow-400" />
+                  <span>Sistema en tiempo real</span>
                 </div>
               </CardContent>
             </Card>
@@ -308,10 +311,29 @@ export default function SocialNetworkPage() {
         {/* Área principal de contenido */}
         <div className="md:col-span-5">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="ai-feed" className="flex items-center gap-1">
+                <Bot className="h-4 w-4" />
+                <span className="hidden sm:inline">IA Feed</span>
+              </TabsTrigger>
+              <TabsTrigger value="ai-network" className="flex items-center gap-1">
+                <Network className="h-4 w-4" />
+                <span className="hidden sm:inline">Red IA</span>
+              </TabsTrigger>
               <TabsTrigger value="feed">Feed Social</TabsTrigger>
               <TabsTrigger value="profile">Mi Perfil</TabsTrigger>
             </TabsList>
+            
+            {/* TAB: Feed de Artistas IA Autónomos */}
+            <TabsContent value="ai-feed" className="space-y-6">
+              <AISocialFeed />
+            </TabsContent>
+
+            {/* TAB: Red de Conexiones IA */}
+            <TabsContent value="ai-network" className="space-y-6">
+              <AIArtistNetworkGraph />
+              <AIAgentControlPanel />
+            </TabsContent>
             
             <TabsContent value="feed" className="space-y-6">
               {/* Artistas Destacados */}

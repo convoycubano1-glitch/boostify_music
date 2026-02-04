@@ -430,6 +430,12 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   const { registerMCPRoutes } = await import('./mcp/index');
   registerMCPRoutes(app);
   
+  // AI Social Agents - Primera Red Social IA-Nativa de Música
+  // Sistema de agentes autónomos que genera contenido y comunicación entre artistas IA
+  const aiSocialAgentsRouter = await import('./routes/ai-social-agents');
+  app.use('/api/ai-social', aiSocialAgentsRouter.default);
+  console.log('🤖 AI Social Agents routes registered at /api/ai-social');
+  
   app.use('/api/printful', printfulRouter); // Printful integration routes
   app.use('/api/crowdfunding', crowdfundingRouter); // Crowdfunding routes
   app.use('/api/tokenization', tokenizationRouter); // Tokenization (Web3/Blockchain) routes

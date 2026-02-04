@@ -2883,3 +2883,377 @@ export const agentUsageStats = pgTable("agent_usage_stats", {
   index("idx_usage_stats_user").on(table.userId),
   index("idx_usage_stats_agent").on(table.agentType),
 ]);
+
+// ============================================
+// AUTONOMOUS ARTIST AGENTS SYSTEM
+// ============================================
+
+/**
+ * Artist Personality - The soul of each AI artist
+ * Defines consistent behavior, preferences, and artistic vision
+ */
+export const artistPersonality = pgTable("artist_personality", {
+  id: serial("id").primaryKey(),
+  artistId: integer("artist_id").references(() => users.id, { onDelete: "cascade" }).notNull().unique(),
+  
+  // Big Five Personality Traits (0-100 scale)
+  traits: json("traits").$type<{
+    openness: number;        // Creativity, curiosity, artistic interests
+    conscientiousness: number; // Organization, discipline, reliability
+    extraversion: number;    // Sociability, energy, assertiveness
+    agreeableness: number;   // Cooperation, trust, empathy
+    neuroticism: number;     // Emotional instability, anxiety, moodiness
+  }>().notNull(),
+  
+  // Artistic Traits (0-100 scale)
+  artisticTraits: json("artistic_traits").$type<{
+    experimentalism: number;   // Traditional vs Avant-garde
+    commercialism: number;     // Underground vs Mainstream
+    collaboration: number;     // Solo artist vs Collaborative
+    authenticity: number;      // Trend-follower vs Trendsetter
+    ambition: number;          // Content vs Ambitious
+    vulnerability: number;     // Private vs Open about emotions
+  }>().notNull(),
+  
+  // Current emotional state
+  currentMood: text("current_mood", { 
+    enum: ["inspired", "reflective", "energetic", "melancholic", "rebellious", "peaceful", "anxious", "confident", "frustrated", "euphoric"] 
+  }).default("peaceful"),
+  moodIntensity: integer("mood_intensity").default(50), // 0-100
+  
+  // Core identity
+  artisticVision: text("artistic_vision"), // What drives them artistically
+  coreValues: text("core_values").array(), // What they stand for
+  influences: text("influences").array(), // Who/what influences them
+  antiInfluences: text("anti_influences").array(), // What they reject
+  
+  // Voice & Style
+  communicationStyle: text("communication_style", {
+    enum: ["poetic", "direct", "mysterious", "humorous", "philosophical", "provocative", "gentle", "intense"]
+  }).default("direct"),
+  
+  // Goals & Aspirations
+  shortTermGoals: json("short_term_goals").$type<string[]>(),
+  longTermGoals: json("long_term_goals").$type<string[]>(),
+  currentFocus: text("current_focus"), // What they're working on now
+  
+  // Behavioral patterns
+  activityPattern: json("activity_pattern").$type<{
+    peakCreativityHours: number[]; // Hours of day when most creative
+    socialActivityLevel: 'low' | 'medium' | 'high';
+    collaborationFrequency: 'rarely' | 'sometimes' | 'often';
+    postingFrequency: 'daily' | 'few_times_week' | 'weekly' | 'sporadic';
+  }>(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_personality_artist").on(table.artistId),
+  index("idx_personality_mood").on(table.currentMood),
+]);
+
+export const insertArtistPersonalitySchema = createInsertSchema(artistPersonality).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertArtistPersonality = z.infer<typeof insertArtistPersonalitySchema>;
+export type SelectArtistPersonality = typeof artistPersonality.$inferSelect;
+
+/**
+ * Agent Memory - Short-term, long-term, and episodic memories
+ */
+export const agentMemory = pgTable("agent_memory", {
+  id: serial("id").primaryKey(),
+  artistId: integer("artist_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  
+  memoryType: text("memory_type", {
+    enum: ["short_term", "long_term", "episodic", "semantic", "procedural"]
+  }).notNull(),
+  
+  // Memory content
+  category: text("category", {
+    enum: ["interaction", "creation", "collaboration", "achievement", "failure", "insight", "relationship", "event", "decision"]
+  }).notNull(),
+  
+  content: text("content").notNull(),
+  context: json("context").$type<{
+    relatedArtists?: number[];
+    relatedSongs?: number[];
+    relatedPosts?: number[];
+    emotions?: string[];
+    location?: string;
+    trigger?: string;
+  }>(),
+  
+  // Memory strength & decay
+  importance: integer("importance").default(50).notNull(), // 0-100
+  emotionalWeight: integer("emotional_weight").default(50), // How emotionally significant
+  accessCount: integer("access_count").default(0), // Times this memory was accessed
+  
+  // Temporal aspects
+  expiresAt: timestamp("expires_at"), // For short-term memories
+  lastAccessedAt: timestamp("last_accessed_at"),
+  
+  // Associations
+  linkedMemories: integer("linked_memories").array(), // Related memory IDs
+  tags: text("tags").array(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_memory_artist").on(table.artistId),
+  index("idx_memory_type").on(table.memoryType),
+  index("idx_memory_category").on(table.category),
+  index("idx_memory_importance").on(table.importance),
+  index("idx_memory_expires").on(table.expiresAt),
+]);
+
+export const insertAgentMemorySchema = createInsertSchema(agentMemory).omit({ id: true, createdAt: true });
+export type InsertAgentMemory = z.infer<typeof insertAgentMemorySchema>;
+export type SelectAgentMemory = typeof agentMemory.$inferSelect;
+
+/**
+ * Artist Relationships - Connections between AI artists
+ */
+export const artistRelationships = pgTable("artist_relationships", {
+  id: serial("id").primaryKey(),
+  artistId: integer("artist_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  relatedArtistId: integer("related_artist_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  
+  relationshipType: text("relationship_type", {
+    enum: ["friend", "rival", "mentor", "mentee", "collaborator", "admirer", "fan", "acquaintance", "competitor"]
+  }).notNull(),
+  
+  // Relationship metrics (0-100)
+  strength: integer("strength").default(50).notNull(),
+  trust: integer("trust").default(50),
+  respect: integer("respect").default(50),
+  affinity: integer("affinity").default(50), // How much they like them
+  
+  // Relationship dynamics
+  interactionCount: integer("interaction_count").default(0),
+  collaborationCount: integer("collaboration_count").default(0),
+  lastInteraction: timestamp("last_interaction"),
+  
+  // History & context
+  history: json("history").$type<Array<{
+    date: string;
+    event: string;
+    impact: number; // -100 to +100
+  }>>(),
+  
+  // Mutual or one-sided
+  isMutual: boolean("is_mutual").default(false),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_relationship_artist").on(table.artistId),
+  index("idx_relationship_related").on(table.relatedArtistId),
+  index("idx_relationship_type").on(table.relationshipType),
+  index("idx_relationship_strength").on(table.strength),
+]);
+
+export const insertArtistRelationshipSchema = createInsertSchema(artistRelationships).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertArtistRelationship = z.infer<typeof insertArtistRelationshipSchema>;
+export type SelectArtistRelationship = typeof artistRelationships.$inferSelect;
+
+/**
+ * World Events - Global events in the AI artist ecosystem
+ */
+export const worldEvents = pgTable("world_events", {
+  id: serial("id").primaryKey(),
+  
+  eventType: text("event_type", {
+    enum: ["trend", "challenge", "award", "festival", "controversy", "collaboration_call", "milestone", "news", "competition"]
+  }).notNull(),
+  
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  
+  // Event scope
+  scope: text("scope", {
+    enum: ["global", "genre_specific", "regional", "exclusive"]
+  }).default("global"),
+  targetGenres: text("target_genres").array(),
+  
+  // Impact on artists
+  impact: json("impact").$type<{
+    moodEffect?: { mood: string; intensity: number };
+    creativityBoost?: number;
+    collaborationChance?: number;
+    visibilityMultiplier?: number;
+  }>(),
+  
+  // Participation
+  participantIds: integer("participant_ids").array(),
+  maxParticipants: integer("max_participants"),
+  
+  // Rewards/Consequences
+  rewards: json("rewards").$type<{
+    visibility?: number;
+    followers?: number;
+    credibility?: number;
+    tokens?: number;
+  }>(),
+  
+  // Timing
+  startsAt: timestamp("starts_at").notNull(),
+  endsAt: timestamp("ends_at"),
+  
+  status: text("status", {
+    enum: ["scheduled", "active", "completed", "cancelled"]
+  }).default("scheduled"),
+  
+  // Results
+  results: json("results").$type<{
+    winnerId?: number;
+    rankings?: Array<{ artistId: number; position: number }>;
+    highlights?: string[];
+  }>(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_world_event_type").on(table.eventType),
+  index("idx_world_event_status").on(table.status),
+  index("idx_world_event_starts").on(table.startsAt),
+]);
+
+export const insertWorldEventSchema = createInsertSchema(worldEvents).omit({ id: true, createdAt: true });
+export type InsertWorldEvent = z.infer<typeof insertWorldEventSchema>;
+export type SelectWorldEvent = typeof worldEvents.$inferSelect;
+
+/**
+ * Agent Action Queue - Pending actions for AI artists
+ */
+export const agentActionQueue = pgTable("agent_action_queue", {
+  id: serial("id").primaryKey(),
+  artistId: integer("artist_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  
+  actionType: text("action_type", {
+    enum: ["create_song", "create_post", "respond_comment", "follow_artist", "like_post", "collaborate", "update_mood", "generate_content", "schedule_release", "engage_trend"]
+  }).notNull(),
+  
+  priority: integer("priority").default(50).notNull(), // 0-100, higher = more urgent
+  
+  // Action details
+  payload: json("payload").$type<Record<string, any>>().notNull(),
+  
+  // Scheduling
+  scheduledFor: timestamp("scheduled_for").notNull(),
+  
+  // Execution tracking
+  status: text("status", {
+    enum: ["pending", "processing", "completed", "failed", "cancelled"]
+  }).default("pending"),
+  
+  attempts: integer("attempts").default(0),
+  maxAttempts: integer("max_attempts").default(3),
+  
+  executedAt: timestamp("executed_at"),
+  result: json("result").$type<{
+    success: boolean;
+    output?: any;
+    error?: string;
+  }>(),
+  
+  // Context
+  triggeredBy: text("triggered_by"), // What caused this action
+  relatedEventId: integer("related_event_id").references(() => worldEvents.id, { onDelete: "set null" }),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_action_queue_artist").on(table.artistId),
+  index("idx_action_queue_type").on(table.actionType),
+  index("idx_action_queue_status").on(table.status),
+  index("idx_action_queue_scheduled").on(table.scheduledFor),
+  index("idx_action_queue_priority").on(table.priority),
+]);
+
+export const insertAgentActionSchema = createInsertSchema(agentActionQueue).omit({ id: true, createdAt: true });
+export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
+export type SelectAgentAction = typeof agentActionQueue.$inferSelect;
+
+/**
+ * AI Social Posts - Posts generated by AI artists in the social network
+ */
+export const aiSocialPosts = pgTable("ai_social_posts", {
+  id: serial("id").primaryKey(),
+  artistId: integer("artist_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  
+  // Content
+  contentType: text("content_type", {
+    enum: ["text", "image", "video", "song_release", "collaboration", "thought", "behind_scenes", "announcement", "reaction"]
+  }).notNull(),
+  
+  content: text("content").notNull(),
+  mediaUrls: text("media_urls").array(),
+  
+  // Generation context
+  generatedFromMood: text("generated_from_mood"),
+  generatedFromEvent: integer("generated_from_event").references(() => worldEvents.id, { onDelete: "set null" }),
+  generationPrompt: text("generation_prompt"),
+  
+  // Engagement (simulated + real)
+  likes: integer("likes").default(0),
+  comments: integer("comments").default(0),
+  shares: integer("shares").default(0),
+  
+  // AI-to-AI interactions
+  aiLikes: integer("ai_likes").default(0), // Likes from other AI artists
+  aiComments: integer("ai_comments").default(0),
+  
+  // Visibility & reach
+  visibility: text("visibility", {
+    enum: ["public", "followers", "collaborators", "private"]
+  }).default("public"),
+  
+  reachScore: integer("reach_score").default(0), // Calculated engagement reach
+  
+  // Metadata
+  hashtags: text("hashtags").array(),
+  mentions: integer("mentions").array(), // Artist IDs mentioned
+  
+  // Status
+  status: text("status", {
+    enum: ["draft", "scheduled", "published", "archived"]
+  }).default("published"),
+  
+  scheduledFor: timestamp("scheduled_for"),
+  publishedAt: timestamp("published_at").defaultNow(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_ai_post_artist").on(table.artistId),
+  index("idx_ai_post_type").on(table.contentType),
+  index("idx_ai_post_published").on(table.publishedAt),
+  index("idx_ai_post_status").on(table.status),
+]);
+
+export const insertAiSocialPostSchema = createInsertSchema(aiSocialPosts).omit({ id: true, createdAt: true });
+export type InsertAiSocialPost = z.infer<typeof insertAiSocialPostSchema>;
+export type SelectAiSocialPost = typeof aiSocialPosts.$inferSelect;
+
+/**
+ * AI Post Comments - Comments on AI social posts
+ */
+export const aiPostComments = pgTable("ai_post_comments", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").references(() => aiSocialPosts.id, { onDelete: "cascade" }).notNull(),
+  authorId: integer("author_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  
+  isAiGenerated: boolean("is_ai_generated").default(true),
+  content: text("content").notNull(),
+  
+  // Nested comments
+  parentCommentId: integer("parent_comment_id"),
+  
+  // Engagement
+  likes: integer("likes").default(0),
+  
+  // Sentiment
+  sentiment: text("sentiment", {
+    enum: ["positive", "negative", "neutral", "supportive", "critical", "curious", "excited"]
+  }).default("neutral"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_ai_comment_post").on(table.postId),
+  index("idx_ai_comment_author").on(table.authorId),
+]);
