@@ -719,20 +719,20 @@ export default function ProducerToolsPage() {
             transition={{ duration: 0.5 }}
             className="mb-8 sm:mb-12"
           >
-            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-5">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 md:gap-5">
               {isLoadingImages ? (
                 // Loading skeleton
                 Array.from({ length: 6 }).map((_, i) => (
                   <Card key={`skeleton-${i}`} className="overflow-hidden animate-pulse backdrop-blur-sm border border-orange-500/10 shadow-xl shadow-orange-500/5">
-                    <div className="aspect-[4/3] sm:aspect-[4/3] bg-muted" />
-                    <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
-                      <div className="h-4 bg-muted rounded w-3/4" />
-                      <div className="h-4 bg-muted rounded w-1/2" />
+                    <div className="aspect-square sm:aspect-[4/3] bg-muted" />
+                    <div className="p-2 sm:p-4 md:p-6 space-y-2 sm:space-y-4">
+                      <div className="h-3 sm:h-4 bg-muted rounded w-3/4" />
+                      <div className="h-3 sm:h-4 bg-muted rounded w-1/2" />
                       <div className="flex justify-between items-center">
-                        <div className="h-4 bg-muted rounded w-1/4" />
-                        <div className="h-4 bg-muted rounded w-1/4" />
+                        <div className="h-3 sm:h-4 bg-muted rounded w-1/4" />
+                        <div className="h-3 sm:h-4 bg-muted rounded w-1/4" />
                       </div>
-                      <div className="h-10 bg-muted rounded w-full" />
+                      <div className="h-8 sm:h-10 bg-muted rounded w-full" />
                     </div>
                   </Card>
                 ))
@@ -745,7 +745,7 @@ export default function ProducerToolsPage() {
                     transition={{ duration: 0.3, delay: index * 0.05 }}
                   >
                     <Card className="overflow-hidden backdrop-blur-sm bg-background/80 border border-orange-500/10 shadow-lg hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 group">
-                      <div className="aspect-[3/2] sm:aspect-[4/3] bg-orange-500/10 relative overflow-hidden">
+                      <div className="aspect-square sm:aspect-[4/3] bg-orange-500/10 relative overflow-hidden">
                         <img
                           src={musician.photo || "/assets/musician-placeholder.jpg"}
                           alt={musician.title}
@@ -753,39 +753,39 @@ export default function ProducerToolsPage() {
                           loading="lazy"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10">
-                          <Badge variant="outline" className="bg-black/50 backdrop-blur-md border-orange-500/20 text-white px-1.5 py-0.5 sm:px-2.5 sm:py-1 text-xs sm:text-sm">
+                        <div className="absolute top-1 right-1 sm:top-3 sm:right-3 z-10">
+                          <Badge variant="outline" className="bg-black/50 backdrop-blur-md border-orange-500/20 text-white px-1 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-sm">
                             {musician.instrument}
                           </Badge>
                         </div>
                       </div>
-                      <div className="p-3 sm:p-4 md:p-6">
-                        <div className="flex items-center justify-between mb-2 sm:mb-3">
-                          <h3 className="text-base sm:text-lg md:text-xl font-semibold group-hover:text-orange-500 transition-colors truncate mr-2">{musician.title}</h3>
-                          <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
-                            <Star className="h-3 w-3 sm:h-4 sm:w-4 text-orange-500 fill-orange-500" />
-                            <span className="font-medium text-xs sm:text-sm">{musician.rating.toFixed(1)}</span>
+                      <div className="p-2 sm:p-4 md:p-6">
+                        <div className="flex items-center justify-between mb-1 sm:mb-3">
+                          <h3 className="text-xs sm:text-lg md:text-xl font-semibold group-hover:text-orange-500 transition-colors truncate mr-1">{musician.title}</h3>
+                          <div className="flex items-center gap-0.5 flex-shrink-0">
+                            <Star className="h-2.5 w-2.5 sm:h-4 sm:w-4 text-orange-500 fill-orange-500" />
+                            <span className="font-medium text-[10px] sm:text-sm">{musician.rating.toFixed(1)}</span>
                           </div>
                         </div>
-                        <p className="text-muted-foreground mb-2 sm:mb-4 line-clamp-2 text-xs sm:text-sm">{musician.description}</p>
-                        <div className="flex flex-wrap gap-1 sm:gap-2 mb-2 sm:mb-4">
-                          {musician.genres?.slice(0, 3).map(genre => (
-                            <Badge key={genre} variant="secondary" className="bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">
+                        <p className="text-muted-foreground mb-1.5 sm:mb-4 line-clamp-2 text-[10px] sm:text-sm hidden sm:block">{musician.description}</p>
+                        <div className="flex flex-wrap gap-0.5 sm:gap-2 mb-1.5 sm:mb-4">
+                          {musician.genres?.slice(0, 2).map(genre => (
+                            <Badge key={genre} variant="secondary" className="bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 text-[9px] sm:text-xs px-1 py-0 sm:px-2 sm:py-1">
                               {genre}
                             </Badge>
                           ))}
                         </div>
-                        <div className="flex justify-between items-center mb-3 sm:mb-4">
-                          <div className="text-muted-foreground text-xs sm:text-sm">
+                        <div className="flex justify-between items-center mb-2 sm:mb-4">
+                          <div className="text-muted-foreground text-[9px] sm:text-sm hidden sm:block">
                             {musician.totalReviews} valoraciones
                           </div>
-                          <div className="flex items-center gap-1 sm:gap-2 text-sm sm:text-base font-semibold text-orange-500">
-                            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
-                            ${musician.price}/sesión
+                          <div className="flex items-center gap-0.5 sm:gap-2 text-[10px] sm:text-base font-semibold text-orange-500">
+                            <DollarSign className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
+                            ${musician.price}
                           </div>
                         </div>
                         <Button
-                          className="w-full bg-orange-500 hover:bg-orange-600 shadow-md hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300 text-sm sm:text-base h-9 sm:h-10"
+                          className="w-full bg-orange-500 hover:bg-orange-600 shadow-md hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300 text-[10px] sm:text-base h-7 sm:h-10"
                           asChild
                         >
                           <BookingDialog musician={musician} />

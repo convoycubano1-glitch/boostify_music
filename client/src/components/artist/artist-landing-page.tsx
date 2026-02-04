@@ -153,7 +153,7 @@ export function ArtistLandingPage() {
             </p>
 
             {/* Clerk SignIn */}
-            <Card className="max-w-md mx-auto bg-gradient-to-b from-gray-900/95 to-gray-900/80 border border-gray-700/50 p-8 backdrop-blur-xl shadow-2xl shadow-black/50 rounded-2xl">
+            <Card className="max-w-md mx-auto bg-gradient-to-b from-gray-900/95 to-gray-900/80 border border-gray-700/50 p-4 sm:p-8 backdrop-blur-xl shadow-2xl shadow-black/50 rounded-2xl overflow-hidden">
               <div className="text-center mb-6">
                 <div className="w-16 h-16 mx-auto bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-orange-500/30">
                   <Music className="h-8 w-8 text-white" />
@@ -175,25 +175,29 @@ export function ArtistLandingPage() {
                     borderRadius: "0.75rem",
                   },
                   elements: {
-                    rootBox: "mx-auto w-full",
-                    card: "bg-transparent shadow-none p-0 gap-4",
+                    rootBox: "mx-auto w-full max-w-full overflow-hidden",
+                    card: "bg-transparent shadow-none p-0 gap-4 w-full max-w-full",
                     header: "hidden",
                     headerTitle: "hidden",
                     headerSubtitle: "hidden",
-                    main: "gap-4",
-                    form: "gap-4",
+                    main: "gap-4 w-full",
+                    form: "gap-4 w-full",
                     formFieldRow: "mb-3",
                     formFieldLabel: "text-gray-300 font-medium text-sm mb-1.5",
-                    formFieldInput: "bg-gray-800/90 border border-gray-600 text-white placeholder:text-gray-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 rounded-xl h-12 px-4 transition-all",
+                    formFieldInput: "bg-gray-800/90 border border-gray-600 text-white placeholder:text-gray-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 rounded-xl h-12 px-4 transition-all w-full",
                     formFieldInputShowPasswordButton: "text-gray-400 hover:text-white transition-colors",
-                    formButtonPrimary: "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold shadow-lg shadow-orange-500/30 rounded-xl h-14 text-base transition-all hover:shadow-orange-500/40 hover:scale-[1.02]",
+                    formButtonPrimary: "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold shadow-lg shadow-orange-500/30 rounded-xl h-14 text-base transition-all hover:shadow-orange-500/40 hover:scale-[1.02] w-full",
                     footerAction: "hidden",
                     footerActionLink: "text-orange-400 hover:text-orange-300 font-medium",
-                    socialButtons: "gap-3",
-                    socialButtonsBlockButton: "bg-white border border-gray-200 text-gray-800 hover:bg-gray-100 hover:border-gray-300 rounded-xl h-12 transition-all hover:scale-[1.02] gap-3 shadow-sm",
+                    socialButtons: "flex flex-col gap-2 w-full",
+                    socialButtonsBlockButton: "bg-white border border-gray-200 text-gray-800 hover:bg-gray-100 hover:border-gray-300 rounded-xl h-12 transition-all hover:scale-[1.02] gap-3 shadow-sm w-full flex items-center justify-center",
                     socialButtonsBlockButtonText: "text-gray-800 font-medium text-sm",
-                    socialButtonsProviderIcon: "w-5 h-5",
+                    socialButtonsProviderIcon: "w-5 h-5 flex-shrink-0",
                     socialButtonsBlockButtonArrow: "hidden",
+                    socialButtonsIconButton: "bg-white/10 border border-gray-600 rounded-xl h-12 w-12 flex items-center justify-center hover:bg-white/20 transition-all",
+                    socialButtonsProviderIcon__apple: "w-5 h-5",
+                    socialButtonsProviderIcon__facebook: "w-5 h-5",
+                    socialButtonsProviderIcon__google: "w-5 h-5",
                     dividerRow: "my-4",
                     dividerLine: "bg-gray-700",
                     dividerText: "text-gray-500 text-sm px-3",
@@ -204,7 +208,7 @@ export function ArtistLandingPage() {
                     alert: "bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl",
                     alertText: "text-red-400",
                     footer: "hidden",
-                    alternativeMethodsBlockButton: "bg-gray-800/50 border border-gray-700 text-gray-300 hover:bg-gray-700 rounded-xl",
+                    alternativeMethodsBlockButton: "bg-gray-800/50 border border-gray-700 text-gray-300 hover:bg-gray-700 rounded-xl w-full",
                   },
                   layout: {
                     socialButtonsPlacement: "top",

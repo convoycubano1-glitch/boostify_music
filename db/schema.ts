@@ -2745,3 +2745,141 @@ export const outreachDailyQuota = pgTable("outreach_daily_quota", {
 }, (table) => [
   index("idx_daily_quota_user_date").on(table.userId, table.date),
 ]);
+
+// ============================================
+// AI AGENTS SYSTEM TABLES
+// ============================================
+
+/**
+ * AI Agent Sessions - Track all agent interactions
+ */
+export const agentSessions = pgTable("agent_sessions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  artistId: integer("artist_id").references(() => users.id, { onDelete: "set null" }), // The AI artist being worked on
+  
+  agentType: text("agent_type", { 
+    enum: ["composer", "video-director", "photographer", "marketing", "social-media", "merchandise", "manager"] 
+  }).notNull(),
+  
+  sessionName: text("session_name"), // Optional name for the session
+  
+  // Input/Output
+  inputParams: json("input_params").$type<Record<string, any>>(), // Parameters sent to the agent
+  outputContent: text("output_content"), // The generated content/response
+  outputMetadata: json("output_metadata").$type<{
+    tokensUsed?: number;
+    modelUsed?: string;
+    generationTime?: number;
+    contentType?: string;
+  }>(),
+  
+  // Status
+  status: text("status", { enum: ["pending", "processing", "completed", "failed", "saved"] }).default("pending"),
+  
+  // Rating/Feedback
+  userRating: integer("user_rating"), // 1-5 stars
+  userFeedback: text("user_feedback"),
+  
+  // Usage tracking
+  tokensUsed: integer("tokens_used").default(0),
+  costUsd: decimal("cost_usd", { precision: 10, scale: 6 }),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+}, (table) => [
+  index("idx_agent_session_user").on(table.userId),
+  index("idx_agent_session_artist").on(table.artistId),
+  index("idx_agent_session_type").on(table.agentType),
+  index("idx_agent_session_status").on(table.status),
+  index("idx_agent_session_created").on(table.createdAt),
+]);
+
+export const insertAgentSessionSchema = createInsertSchema(agentSessions).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectAgentSessionSchema = createSelectSchema(agentSessions);
+export type InsertAgentSession = z.infer<typeof insertAgentSessionSchema>;
+export type SelectAgentSession = typeof agentSessions.$inferSelect;
+
+/**
+ * Agent Saved Results - User-saved outputs from agents
+ */
+export const agentSavedResults = pgTable("agent_saved_results", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  artistId: integer("artist_id").references(() => users.id, { onDelete: "set null" }),
+  sessionId: integer("session_id").references(() => agentSessions.id, { onDelete: "set null" }),
+  
+  agentType: text("agent_type", { 
+    enum: ["composer", "video-director", "photographer", "marketing", "social-media", "merchandise", "manager"] 
+  }).notNull(),
+  
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  contentType: text("content_type", { 
+    enum: ["lyrics", "music", "video-concept", "image", "strategy", "post", "design", "plan"] 
+  }).notNull(),
+  
+  // Rich metadata
+  metadata: json("metadata").$type<{
+    genre?: string;
+    mood?: string;
+    style?: string;
+    platform?: string;
+    tags?: string[];
+  }>(),
+  
+  // Files/Media
+  attachedFiles: json("attached_files").$type<Array<{
+    url: string;
+    type: string;
+    name: string;
+  }>>(),
+  
+  // Organization
+  isFavorite: boolean("is_favorite").default(false),
+  tags: text("tags").array(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_saved_result_user").on(table.userId),
+  index("idx_saved_result_artist").on(table.artistId),
+  index("idx_saved_result_type").on(table.agentType),
+  index("idx_saved_result_favorite").on(table.isFavorite),
+]);
+
+export const insertAgentSavedResultSchema = createInsertSchema(agentSavedResults).omit({ id: true, createdAt: true, updatedAt: true });
+export const selectAgentSavedResultSchema = createSelectSchema(agentSavedResults);
+export type InsertAgentSavedResult = z.infer<typeof insertAgentSavedResultSchema>;
+export type SelectAgentSavedResult = typeof agentSavedResults.$inferSelect;
+
+/**
+ * Agent Usage Analytics - Aggregated stats
+ */
+export const agentUsageStats = pgTable("agent_usage_stats", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  
+  agentType: text("agent_type", { 
+    enum: ["composer", "video-director", "photographer", "marketing", "social-media", "merchandise", "manager"] 
+  }).notNull(),
+  
+  // Usage counts
+  totalSessions: integer("total_sessions").default(0),
+  totalTokensUsed: integer("total_tokens_used").default(0),
+  totalSavedResults: integer("total_saved_results").default(0),
+  
+  // Time tracking
+  averageSessionDuration: integer("avg_session_duration"), // in seconds
+  lastUsedAt: timestamp("last_used_at"),
+  
+  // Preferences
+  preferredSettings: json("preferred_settings").$type<Record<string, any>>(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_usage_stats_user").on(table.userId),
+  index("idx_usage_stats_agent").on(table.agentType),
+]);

@@ -69,6 +69,8 @@ import marketingRouter from './routes/marketing'; // Import the marketing router
 import aiAssistantRouter from './routes/ai-assistant'; // Import the AI assistant router
 import albumGeneratorRouter from './routes/album-generator'; // Import the album generator router
 import geminiAgentsRouter from './routes/gemini-agents'; // Import the Gemini agents router
+import aiAgentsRouter from './routes/agents'; // Import AI Agents System router
+import aiAdvisorRouter from './routes/ai-advisor'; // Import AI Advisor Chat router
 import contractsRouter from './routes/contracts'; // Import the contracts router with Gemini AI
 import falApiRouter from './routes/fal-api'; // Import the FAL AI router for secure backend processing
 import creditsRouter from './routes/credits'; // Import the credits and payments router
@@ -420,6 +422,13 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   app.use('/api', albumGeneratorRouter);
   app.use('/api/fal', falApiRouter); // FAL AI backend routes (MuseTalk lip-sync, etc.)
   app.use('/api/gemini-agents', geminiAgentsRouter);
+  app.use('/api/agents', aiAgentsRouter); // AI Agents System (sessions, saved results, analytics)
+  app.use('/api/ai-advisor', aiAdvisorRouter); // AI Advisor Chat (real-time chat with specialist advisors)
+  
+  // MCP (Model Context Protocol) Server for AI Agents
+  const { registerMCPRoutes } = await import('./mcp/index');
+  registerMCPRoutes(app);
+  
   app.use('/api/printful', printfulRouter); // Printful integration routes
   app.use('/api/crowdfunding', crowdfundingRouter); // Crowdfunding routes
   app.use('/api/tokenization', tokenizationRouter); // Tokenization (Web3/Blockchain) routes

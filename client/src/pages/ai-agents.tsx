@@ -29,7 +29,11 @@ import {
   Calendar,
   Clock,
   Award,
-  CheckCircle2
+  CheckCircle2,
+  Zap,
+  ArrowRight,
+  Play,
+  ExternalLink
 } from "lucide-react";
 import { agentUsageService } from "../lib/services/agent-usage-service";
 import { ComposerAgent } from "../components/ai/composer-agent";
@@ -40,6 +44,11 @@ import { MerchandiseAgent } from "../components/ai/merchandise-agent";
 import { ManagerAgent } from "../components/ai/manager-agent";
 import { PhotographerAgent } from "../components/ai/photographer-agent";
 import { AIDataManager } from "../components/ai/ai-data-manager";
+import { ArtistSelector } from "../components/ai/artist-selector";
+import { AgentCard, AgentCardCompact } from "../components/ai/agent-card";
+import { AgentAnalyticsDashboard } from "../components/ai/agent-analytics-dashboard";
+import { QuickActionsPanel } from "../components/ai/quick-actions-panel";
+import { useArtistContext } from "../hooks/use-artist-context";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -78,21 +87,27 @@ const agentInfo = [
     id: "composer",
     name: "AI Music Composer",
     description: "Your creative companion for musical composition",
+    longDescription: "Create original songs, generate professional lyrics, and experiment with new genres. This AI understands music theory and can adapt to any style.",
     icon: Music2,
     color: "from-purple-600 to-blue-600",
     category: "creative",
     component: ComposerAgent,
     trending: true,
+    isNew: false,
+    linkedPage: "/music-video-creator",
+    linkedPageLabel: "Create Video",
     useCases: [
       "Create original songs matching your style",
       "Generate lyrics for specific themes",
-      "Experiment with new music genres"
+      "Experiment with new music genres",
+      "Get chord progressions and melodies"
     ],
     quickTip: "Include references to similar artists for better results",
     benefits: [
       "Save time in creative processes",
       "Overcome writer's block",
-      "Explore new musical possibilities"
+      "Explore new musical possibilities",
+      "Professional quality output"
     ],
     recommendedWith: ["video-director", "marketing"]
   },
@@ -100,21 +115,27 @@ const agentInfo = [
     id: "video-director",
     name: "Video Director AI",
     description: "Create stunning music videos with AI assistance",
+    longDescription: "From concept to storyboard, get complete video direction assistance. Generate scene-by-scene scripts with camera angles, lighting, and visual effects.",
     icon: Video,
     color: "from-rose-500 to-pink-600",
     category: "visual",
     component: VideoDirectorAgent,
     trending: true,
+    isNew: false,
+    linkedPage: "/music-video-creator",
+    linkedPageLabel: "Video Creator",
     useCases: [
       "Conceptualize innovative music videos",
       "Create detailed scene-by-scene scripts",
-      "Get visual ideas that complement your music"
+      "Get visual ideas that complement your music",
+      "Plan camera movements and transitions"
     ],
     quickTip: "Include the emotional tone you want to convey for better concepts",
     benefits: [
       "Reduce pre-production planning time",
       "Find unique visual concepts",
-      "Better align visuals with your music"
+      "Better align visuals with your music",
+      "Professional storyboards"
     ],
     recommendedWith: ["composer", "social-media"]
   },
@@ -122,21 +143,27 @@ const agentInfo = [
     id: "photographer",
     name: "AI Photographer",
     description: "Generate professional album covers and promotional images",
+    longDescription: "Create stunning cover art and promotional photos using AI. Upload reference images to maintain consistency with your artistic vision.",
     icon: Camera,
     color: "from-cyan-500 to-blue-600",
     category: "visual",
     component: PhotographerAgent,
     trending: true,
+    isNew: true,
+    linkedPage: "/my-artists",
+    linkedPageLabel: "My Artists",
     useCases: [
       "Create stunning album/single cover art",
       "Generate promotional images with different styles",
-      "Use reference images to inspire AI-generated photos"
+      "Use reference images to inspire AI-generated photos",
+      "Create consistent visual branding"
     ],
     quickTip: "Upload reference images for better style matching",
     benefits: [
       "Professional studio-quality images",
       "Multiple artistic styles available",
-      "Save time and costs on photoshoots"
+      "Save time and costs on photoshoots",
+      "Unlimited creative iterations"
     ],
     recommendedWith: ["composer", "video-director"]
   },
@@ -144,21 +171,27 @@ const agentInfo = [
     id: "marketing",
     name: "Strategic Marketing AI",
     description: "Develop effective marketing strategies for your music",
+    longDescription: "Get data-driven marketing strategies tailored to your music and audience. Plan launches, optimize campaigns, and maximize your reach.",
     icon: BarChart2,
     color: "from-blue-500 to-indigo-600",
     category: "marketing",
     component: MarketingAgent,
     trending: false,
+    isNew: false,
+    linkedPage: "/youtube-views",
+    linkedPageLabel: "Growth Tools",
     useCases: [
       "Create launch plans for singles and albums",
       "Develop optimized social media campaigns",
-      "Analyze metrics and improve existing strategies"
+      "Analyze metrics and improve existing strategies",
+      "Budget allocation recommendations"
     ],
     quickTip: "Clearly define your target audience for more effective strategies",
     benefits: [
       "Increase audience reach",
       "Optimize marketing budget",
-      "Personalize promotion for different platforms"
+      "Personalize promotion for different platforms",
+      "Track and measure results"
     ],
     recommendedWith: ["social-media", "manager"]
   },
@@ -166,21 +199,27 @@ const agentInfo = [
     id: "social-media",
     name: "Social Media Agent",
     description: "Optimize your presence across social platforms",
+    longDescription: "Master every platform with AI-powered content strategies. Get posting schedules, content ideas, and engagement tactics tailored to your audience.",
     icon: Users,
     color: "from-green-500 to-emerald-600",
     category: "marketing",
     component: SocialMediaAgent,
     trending: true,
+    isNew: false,
+    linkedPage: "/dashboard",
+    linkedPageLabel: "Dashboard",
     useCases: [
       "Develop optimized content calendars",
       "Generate post ideas to increase engagement",
-      "Create platform-specific strategies"
+      "Create platform-specific strategies",
+      "Hashtag and trend optimization"
     ],
     quickTip: "Share examples of successful previous posts for better recommendations",
     benefits: [
       "Save time on content planning",
       "Maintain consistent posting schedule",
-      "Increase follower engagement"
+      "Increase follower engagement",
+      "Cross-platform optimization"
     ],
     recommendedWith: ["marketing", "video-director"]
   },
@@ -188,11 +227,15 @@ const agentInfo = [
     id: "merchandise",
     name: "Merchandise Designer",
     description: "Create custom merch designs for your brand",
+    longDescription: "Design unique merchandise that represents your brand. From t-shirts to accessories, get AI-generated designs that resonate with your fans.",
     icon: ShoppingBag,
     color: "from-amber-500 to-orange-600",
     category: "visual",
     component: MerchandiseAgent,
     trending: false,
+    isNew: false,
+    linkedPage: "/merch",
+    linkedPageLabel: "Merch Store",
     useCases: [
       "Design unique merch based on your artistic identity",
       "Create themed collections for events and releases",
@@ -202,7 +245,8 @@ const agentInfo = [
     benefits: [
       "Create multiple design concepts quickly",
       "Align merchandise with your brand identity",
-      "Expand revenue streams beyond music"
+      "Expand revenue streams beyond music",
+      "Print-on-demand ready designs"
     ],
     recommendedWith: ["marketing", "manager"]
   },
@@ -210,21 +254,27 @@ const agentInfo = [
     id: "manager",
     name: "Career Manager AI",
     description: "Strategic career planning and management assistance",
+    longDescription: "Get personalized career advice based on your goals. From contract negotiations to strategic decisions, your AI manager is always available.",
     icon: Briefcase,
     color: "from-cyan-500 to-blue-600",
     category: "business",
     component: ManagerAgent,
     trending: false,
+    isNew: false,
+    linkedPage: "/dashboard",
+    linkedPageLabel: "Dashboard",
     useCases: [
       "Plan and optimize your music career path",
       "Receive guidance on strategic decisions",
-      "Get help with contracts and negotiations"
+      "Get help with contracts and negotiations",
+      "Industry networking strategies"
     ],
     quickTip: "Be specific about your short and long-term goals for better advice",
     benefits: [
       "Make more informed business decisions",
       "Develop a structured career plan",
-      "Optimize resources and opportunities"
+      "Optimize resources and opportunities",
+      "24/7 career guidance"
     ],
     recommendedWith: ["marketing", "social-media"]
   }
@@ -248,6 +298,14 @@ export default function AIAgentsPage() {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [recentAgents, setRecentAgents] = useState<string[]>([]);
   const [bookmarkedAgents, setBookmarkedAgents] = useState<string[]>([]);
+
+  // Artist context for agents
+  const { 
+    artists, 
+    selectedArtist, 
+    setSelectedArtistId, 
+    isLoading: isLoadingArtists 
+  } = useArtistContext();
 
   // Check if user is admin
   const userEmail = clerkUser?.primaryEmailAddress?.emailAddress || "";
@@ -604,17 +662,32 @@ export default function AIAgentsPage() {
     <div className="min-h-screen flex flex-col bg-[#0F0F13]">
       <Header />
       <main className="flex-1 pt-16">
-        {/* Floating particles as background decoration */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-          {[...Array(20)].map((_, i) => (
-            <div
+        {/* Animated floating particles background */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          {[...Array(30)].map((_, i) => (
+            <motion.div
               key={i}
-              className="absolute rounded-full bg-orange-500/30"
+              className="absolute rounded-full"
               style={{
-                width: `${Math.random() * 4 + 2}px`,
-                height: `${Math.random() * 4 + 2}px`,
+                width: `${Math.random() * 6 + 2}px`,
+                height: `${Math.random() * 6 + 2}px`,
+                background: i % 3 === 0 
+                  ? 'rgba(249, 115, 22, 0.4)' 
+                  : i % 3 === 1 
+                    ? 'rgba(168, 85, 247, 0.3)' 
+                    : 'rgba(59, 130, 246, 0.3)',
                 top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`
+                left: `${Math.random() * 100}%`,
+                filter: 'blur(1px)',
+              }}
+              animate={{
+                y: [0, -30, 0],
+                opacity: [0.3, 0.8, 0.3],
+              }}
+              transition={{
+                duration: Math.random() * 5 + 3,
+                repeat: Infinity,
+                delay: Math.random() * 2,
               }}
             />
           ))}
@@ -627,37 +700,118 @@ export default function AIAgentsPage() {
             transition={{ duration: 0.5 }}
             className="mb-8"
           >
-            <div className="flex flex-col md:flex-row items-center md:items-start md:justify-between gap-4 mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500 to-purple-600">
-                  <Brain className="h-8 w-8 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-purple-500 to-blue-600">
-                    AI Agents Orchestra
-                  </h1>
-                  <p className="text-lg text-gray-400 mt-1">
-                    Potencia tu música con nuestro equipo de agentes especializados
-                  </p>
-                </div>
-              </div>
+            {/* Hero Section with Gradient */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1C1C24] to-[#0F0F13] border border-[#27272A] p-6 md:p-8 mb-8">
+              {/* Background glow */}
+              <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl" />
+              <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl" />
               
-              <div className="flex gap-3">
-                <Link href="/ai-advisors">
-                  <Button variant="outline" className="border-orange-500/30 text-orange-500 hover:bg-orange-500/10">
-                    <HelpCircle className="h-4 w-4 mr-2" />
-                    <span>AI Advisors</span>
-                  </Button>
-                </Link>
-                <Button 
-                  className="bg-gradient-to-r from-orange-500 to-orange-600 hover:opacity-90"
-                  onClick={() => setActiveTab("data")}
-                >
-                  <Database className="h-4 w-4 mr-2" />
-                  <span>Ver Analytics</span>
-                </Button>
+              <div className="relative z-10">
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                  <div className="flex items-start gap-4">
+                    <motion.div 
+                      className="p-4 rounded-2xl bg-gradient-to-br from-orange-500 to-purple-600 shadow-lg shadow-orange-500/25"
+                      animate={{ 
+                        boxShadow: [
+                          '0 10px 40px rgba(249, 115, 22, 0.25)',
+                          '0 10px 40px rgba(168, 85, 247, 0.25)',
+                          '0 10px 40px rgba(249, 115, 22, 0.25)',
+                        ]
+                      }}
+                      transition={{ duration: 3, repeat: Infinity }}
+                    >
+                      <Brain className="h-10 w-10 text-white" />
+                    </motion.div>
+                    <div>
+                      <motion.h1 
+                        className="text-3xl md:text-4xl lg:text-5xl font-bold"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-purple-500 to-blue-500">
+                          AI Agents Orchestra
+                        </span>
+                      </motion.h1>
+                      <motion.p 
+                        className="text-lg text-gray-400 mt-2 max-w-xl"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.4 }}
+                      >
+                        Your personal team of AI specialists. Create music, videos, marketing strategies, and more with intelligent agents that understand your artistic vision.
+                      </motion.p>
+                      
+                      {/* Quick stats */}
+                      <motion.div 
+                        className="flex flex-wrap gap-4 mt-4"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.6 }}
+                      >
+                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                          <Zap className="h-4 w-4 text-orange-500" />
+                          <span><strong className="text-white">7</strong> Specialized Agents</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                          <Sparkles className="h-4 w-4 text-purple-500" />
+                          <span><strong className="text-white">Unlimited</strong> Generations</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          <span><strong className="text-white">Connected</strong> to Your Artists</span>
+                        </div>
+                      </motion.div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col gap-3 w-full lg:w-auto">
+                    {/* Artist Selector */}
+                    <div className="bg-[#1C1C24]/80 border border-[#27272A] rounded-xl p-3">
+                      <label className="text-xs text-gray-400 mb-1.5 block">Working with:</label>
+                      <ArtistSelector
+                        artists={artists}
+                        selectedArtist={selectedArtist}
+                        onSelect={(id) => setSelectedArtistId(id)}
+                        isLoading={isLoadingArtists}
+                        className="w-full lg:w-[280px]"
+                      />
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Link href="/ai-advisors" className="flex-1">
+                        <Button variant="outline" className="w-full border-orange-500/30 text-orange-500 hover:bg-orange-500/10">
+                          <HelpCircle className="h-4 w-4 mr-2" />
+                          <span>AI Advisors</span>
+                        </Button>
+                      </Link>
+                      <Button 
+                        className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:opacity-90"
+                        onClick={() => setActiveTab("data")}
+                      >
+                        <Database className="h-4 w-4 mr-2" />
+                        <span>Analytics</span>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+          </motion.div>
+
+          {/* Quick Actions Panel */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mb-8"
+          >
+            <QuickActionsPanel
+              onSelectAgent={(agentId) => {
+                setSelectedAgent(agentId);
+                setActiveTab("agents");
+              }}
+            />
           </motion.div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
@@ -1178,8 +1332,19 @@ export default function AIAgentsPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
+                className="space-y-8"
               >
-                <AIDataManager />
+                {/* Agent Analytics Dashboard */}
+                <AgentAnalyticsDashboard />
+                
+                {/* Data Manager section below */}
+                <div className="pt-6 border-t border-[#27272A]">
+                  <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                    <Database className="h-5 w-5 text-orange-500" />
+                    Data Management
+                  </h3>
+                  <AIDataManager />
+                </div>
               </motion.div>
             </TabsContent>
           </Tabs>

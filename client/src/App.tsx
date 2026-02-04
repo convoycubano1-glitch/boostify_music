@@ -74,7 +74,7 @@ import ProfilePage from "./pages/profile";
 
 const AdminPage = lazy(() => import("./pages/admin"));
 const AIAgentsPage = lazy(() => import("./pages/ai-agents"));
-const AIAdvisorsPage = lazy(() => import("./pages/ai-advisors"));
+const AIAdvisorsPage = lazy(() => import("./pages/ai-advisors-new"));
 const AIAdvisorsPageV2 = lazy(() => import("./pages/ai-advisors-v2"));
 const AnalyticsPage = lazy(() => import("./pages/analytics"));
 const ArtistDashboard = lazy(() => import("./pages/artist-dashboard"));
