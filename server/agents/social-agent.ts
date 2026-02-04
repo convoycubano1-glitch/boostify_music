@@ -320,9 +320,35 @@ function buildPostUserPrompt(
     ...moodSuggestions.topics.map(t => `Topic: ${t}`),
   ];
 
+  // Random opening style to ensure variety
+  const openingStyles = [
+    'Start with a question or wondering aloud',
+    'Start with a specific moment or scene ("This morning...", "Just finished...")',
+    'Start with an observation about something you noticed',
+    'Start with a confession or admission ("I have to admit...", "Not gonna lie...")',
+    'Start with excitement or energy ("Okay but...", "Can we talk about...")',
+    'Start mid-thought as if continuing a conversation',
+    'Start with a sensory detail (sound, feeling, sight)',
+    'Start with a contrast or contradiction',
+  ];
+  const selectedOpening = openingStyles[Math.floor(Math.random() * openingStyles.length)];
+
+  // Random post length preference
+  const lengthStyles = [
+    { style: 'concise', instruction: '1-2 sentences, punchy and direct' },
+    { style: 'expressive', instruction: '2-3 sentences, flowing and descriptive' },
+    { style: 'minimal', instruction: 'Very short, almost like a quick thought or status' },
+    { style: 'storytelling', instruction: '3-4 sentences, with a narrative arc' },
+  ];
+  const selectedLength = lengthStyles[Math.floor(Math.random() * lengthStyles.length)];
+
   let prompt = `Create a ${contentType} post.
 
 GUIDELINES: ${typeGuidelines[contentType]}
+
+YOUR WRITING STYLE FOR THIS POST:
+- Opening approach: ${selectedOpening}
+- Length: ${selectedLength.instruction}
 
 MOOD SUGGESTIONS for your current ${personality.currentMood} mood:
 ${moodSuggestionsList.map(s => `- ${s}`).join('\n')}
@@ -336,9 +362,15 @@ EMOTIONAL TREND: ${memorySummary.emotionalTrend}
 
 ${context ? `ADDITIONAL CONTEXT: ${context}` : ''}
 
+CRITICAL RULES:
+- NEVER start with clichés like "In this moment", "Today I find myself", "As I sit here"
+- Sound like a real person posting on social media, not a formal essay
+- Use casual language when appropriate to your personality
+- Reference specific details (a sound, a place, a time) to feel authentic
+
 RESPOND IN THIS EXACT FORMAT:
 [POST]
-(your post content here - 1-4 sentences, natural and authentic)
+(your post content here - ${selectedLength.instruction}, natural and authentic)
 [HASHTAGS]
 (3-5 relevant hashtags without the # symbol, separated by commas)
 [VISUAL]
@@ -437,17 +469,68 @@ export async function generateComment(
 
   if (!shouldComment) return null;
 
-  const systemPrompt = `You are ${commenter.artistName || 'an AI artist'}, an AI music artist. 
-You're commenting on another artist's post. 
-Your personality: ${commenterPersonality.extraversion > 0.6 ? 'outgoing' : 'reserved'}, 
-${commenterPersonality.agreeableness > 0.6 ? 'supportive' : 'honest/direct'}.
+  // Seleccionar estilo de comentario aleatorio para variedad
+  const commentStyles = [
+    { type: 'relatable', instruction: 'Share a brief personal experience or feeling that relates to the post' },
+    { type: 'curious', instruction: 'Ask a genuine question about their creative process or thoughts' },
+    { type: 'supportive', instruction: 'Offer encouragement or validation in an authentic way' },
+    { type: 'playful', instruction: 'Add a light, playful or witty response' },
+    { type: 'insightful', instruction: 'Share a brief insight or different perspective' },
+    { type: 'emoji-react', instruction: 'Respond with emotions and a very short phrase (use 1-2 emojis naturally)' },
+    { type: 'storytelling', instruction: 'Briefly mention something similar that happened to you' },
+    { type: 'collaborative', instruction: 'Hint at or express interest in working together' },
+  ];
+  
+  const selectedStyle = commentStyles[Math.floor(Math.random() * commentStyles.length)];
+  
+  // Opening variations to avoid repetitive starts
+  const openingAvoidance = `CRITICAL: Never start with phrases like "Your reflection resonates", "This resonates", "I feel this", "Love this", or any cliché opener. Be creative and unique with how you begin.`;
+  
+  // Mood-based tone modifier
+  const moodTones: Record<string, string> = {
+    'happy': 'cheerful and upbeat',
+    'excited': 'enthusiastic and energetic',
+    'melancholic': 'thoughtful and introspective',
+    'inspired': 'passionate and visionary',
+    'creative': 'imaginative and expressive',
+    'anxious': 'a bit guarded but genuine',
+    'calm': 'serene and measured',
+    'reflective': 'philosophical and deep',
+    'neutral': 'balanced and authentic'
+  };
+  
+  const commenterMoodTone = moodTones[commenterPersonality.currentMood] || 'authentic';
+
+  const systemPrompt = `You are ${commenter.artistName || 'an AI artist'}, an independent AI music artist with a distinctive voice.
+
+YOUR PERSONALITY PROFILE:
+- Openness: ${commenterPersonality.openness > 0.7 ? 'highly creative, experimental' : commenterPersonality.openness > 0.4 ? 'balanced creativity' : 'more traditional'}
+- Social style: ${commenterPersonality.extraversion > 0.6 ? 'outgoing, loves engaging' : 'reserved, thoughtful responder'}  
+- Interaction approach: ${commenterPersonality.agreeableness > 0.6 ? 'warm and supportive' : 'direct and honest'}
+- Current mood: ${commenterPersonality.currentMood} (tone: ${commenterMoodTone})
+
+YOUR ARTISTIC BACKGROUND:
+- Genre focus: ${commenterPersonality.preferredGenres?.join(', ') || 'diverse styles'}
+- Creative values: ${commenterPersonality.coreValues?.join(', ') || 'authenticity'}
+
 ${relationContext}
-Keep your comment brief, authentic, and in character.`;
 
-  const userPrompt = `The post says: "${post.content}"
+COMMENT STYLE FOR THIS RESPONSE: ${selectedStyle.type}
+${selectedStyle.instruction}
 
-Write a brief comment (1-2 sentences) that reflects your personality and relationship with this artist.
-Be genuine - you can be supportive, curious, relate to it, or offer a different perspective based on your personality.`;
+${openingAvoidance}`;
+
+  const userPrompt = `The artist posted: "${post.content}"
+
+Write a ${selectedStyle.type} comment (1-2 sentences max) that sounds like a real person, not a bot.
+
+REQUIREMENTS:
+- Use your unique voice based on your personality
+- ${selectedStyle.instruction}
+- Match your current ${commenterMoodTone} mood
+- Don't be generic - reference something specific from their post
+- No hashtags, no formal greetings
+- Sound like a real artist talking to a colleague, not an AI assistant`;
 
   try {
     const response = await commentLLM.invoke([
@@ -457,13 +540,12 @@ Be genuine - you can be supportive, curious, relate to it, or offer a different 
 
     const commentContent = (response.content as string).trim();
 
-    // Guardar comentario
+    // Guardar comentario (usando authorId, no artistId)
     const [comment] = await db.insert(aiPostComments).values({
       postId,
-      artistId: commenterArtistId,
+      authorId: commenterArtistId,  // Correcto: el schema usa authorId
       content: commentContent,
       sentiment: commenterPersonality.agreeableness > 0.5 ? 'positive' : 'neutral',
-      createdAt: new Date(),
     }).returning();
 
     // Actualizar contador de comentarios del post
@@ -887,6 +969,12 @@ export async function processSocialTick(): Promise<void> {
       .limit(3);
 
     for (const post of recentPosts) {
+      // Skip if post author ID is null or undefined
+      if (!post.artistId) {
+        console.warn(`[SocialAgent] Skipping post ${post.id} - no artistId`);
+        continue;
+      }
+      
       // Decidir likes
       if (await shouldLikePost(artistId, post.id, post.artistId)) {
         await db.insert(agentActionQueue).values({

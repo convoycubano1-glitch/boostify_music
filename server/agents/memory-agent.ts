@@ -631,14 +631,23 @@ agentEventBus.on(AgentEventType.ARTIST_POSTED, async (event) => {
 });
 
 agentEventBus.on(AgentEventType.ARTIST_RECEIVED_COMMENT, async (event) => {
-  await createMemory({
-    artistId: event.artistId,
-    type: 'short_term',
-    content: `Received comment from artist ${event.payload.fromArtistId}`,
-    importance: 'low',
-    relatedArtistId: event.payload.fromArtistId,
-    tags: ['social', 'comment', 'interaction'],
-  });
+  // Validate artistId exists before creating memory
+  if (!event.artistId || !event.payload?.fromArtistId) {
+    console.warn('[MemoryAgent] Skipping memory creation - missing artistId or fromArtistId');
+    return;
+  }
+  try {
+    await createMemory({
+      artistId: event.artistId,
+      type: 'short_term',
+      content: `Received comment from artist ${event.payload.fromArtistId}`,
+      importance: 'low',
+      relatedArtistId: event.payload.fromArtistId,
+      tags: ['social', 'comment', 'interaction'],
+    });
+  } catch (error) {
+    console.error('[MemoryAgent] Error creating comment memory:', error);
+  }
 });
 
 agentEventBus.on(AgentEventType.ARTIST_SONG_COMPLETED, async (event) => {

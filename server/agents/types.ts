@@ -150,13 +150,33 @@ export type ActionType =
   | 'create_song' 
   | 'create_post' 
   | 'respond_comment' 
+  | 'comment_on_post'
   | 'follow_artist' 
   | 'like_post' 
   | 'collaborate' 
   | 'update_mood' 
   | 'generate_content' 
   | 'schedule_release' 
-  | 'engage_trend';
+  | 'engage_trend'
+  // Collaboration actions
+  | 'propose_collaboration'
+  | 'respond_collaboration'
+  | 'progress_collaboration'
+  // Economic actions
+  | 'buy_token'
+  | 'sell_token'
+  | 'stake_tokens'
+  | 'sponsor_collab'
+  | 'invest_in_artist'
+  // Beef/Drama actions
+  | 'start_beef'
+  | 'respond_beef'
+  | 'create_diss_track'
+  | 'resolve_beef'
+  // Music actions
+  | 'generate_music'
+  | 'publish_song'
+  | 'tokenize_song';
 
 export type ActionStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
 

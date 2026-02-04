@@ -50,6 +50,200 @@ const fadeIn = {
 };
 
 /* =============================
+   HERO CREATIVE ANIMATIONS
+============================= */
+
+// Barras de Equalizer animadas en los bordes
+const EqualizerBars = ({ position }: { position: 'left' | 'right' }) => {
+  const barCount = 12;
+  return (
+    <div className={`absolute top-1/2 -translate-y-1/2 ${position === 'left' ? 'left-4 md:left-8' : 'right-4 md:right-8'} flex gap-1 md:gap-1.5 items-end h-32 md:h-48`}>
+      {[...Array(barCount)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="w-1 md:w-1.5 bg-gradient-to-t from-orange-500/60 via-red-500/40 to-transparent rounded-full"
+          animate={{
+            height: [
+              `${20 + Math.random() * 30}%`,
+              `${60 + Math.random() * 40}%`,
+              `${30 + Math.random() * 40}%`,
+              `${70 + Math.random() * 30}%`,
+              `${20 + Math.random() * 30}%`
+            ]
+          }}
+          transition={{
+            duration: 0.8 + Math.random() * 0.4,
+            repeat: Infinity,
+            ease: 'easeInOut',
+            delay: i * 0.05
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+// Ondas de sonido circulares que se expanden
+const SoundWaves = () => {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      {[...Array(4)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-[200px] md:w-[400px] h-[200px] md:h-[400px] border border-orange-500/20 rounded-full"
+          initial={{ scale: 0.3, opacity: 0 }}
+          animate={{ scale: 2.5, opacity: [0, 0.3, 0] }}
+          transition={{
+            duration: 4,
+            delay: i * 1,
+            repeat: Infinity,
+            ease: 'easeOut'
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+// Líneas de conexión de red neuronal
+const NeuralNetwork = () => {
+  const points = [
+    { x: '10%', y: '20%' }, { x: '25%', y: '40%' }, { x: '15%', y: '70%' },
+    { x: '85%', y: '25%' }, { x: '75%', y: '55%' }, { x: '90%', y: '80%' },
+    { x: '40%', y: '15%' }, { x: '60%', y: '85%' }
+  ];
+  
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <svg className="absolute w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="rgb(249, 115, 22)" stopOpacity="0" />
+            <stop offset="50%" stopColor="rgb(249, 115, 22)" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="rgb(249, 115, 22)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {points.map((point, i) => (
+          points.slice(i + 1).map((target, j) => (
+            <motion.line
+              key={`${i}-${j}`}
+              x1={point.x}
+              y1={point.y}
+              x2={target.x}
+              y2={target.y}
+              stroke="url(#lineGradient)"
+              strokeWidth="1"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: [0, 0.5, 0] }}
+              transition={{
+                duration: 3 + Math.random() * 2,
+                delay: Math.random() * 2,
+                repeat: Infinity,
+                ease: 'easeInOut'
+              }}
+            />
+          ))
+        ))}
+      </svg>
+      {points.map((point, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-2 h-2 md:w-3 md:h-3 bg-orange-500 rounded-full"
+          style={{ left: point.x, top: point.y }}
+          animate={{
+            scale: [1, 1.5, 1],
+            opacity: [0.3, 0.8, 0.3],
+            boxShadow: [
+              '0 0 0px rgba(249,115,22,0)',
+              '0 0 20px rgba(249,115,22,0.8)',
+              '0 0 0px rgba(249,115,22,0)'
+            ]
+          }}
+          transition={{
+            duration: 2 + Math.random(),
+            delay: Math.random() * 2,
+            repeat: Infinity,
+            ease: 'easeInOut'
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+// Orbes de gradiente mejorados con movimiento fluido
+const EnhancedGradientOrbs = () => {
+  return (
+    <>
+      <motion.div
+        className="absolute w-[300px] md:w-[500px] h-[300px] md:h-[500px] rounded-full filter blur-[80px] md:blur-[120px]"
+        style={{
+          background: 'radial-gradient(circle, rgba(249,115,22,0.3) 0%, rgba(249,115,22,0) 70%)'
+        }}
+        animate={{
+          x: ['-10%', '10%', '-5%', '15%', '-10%'],
+          y: ['-10%', '15%', '-5%', '10%', '-10%'],
+          scale: [1, 1.2, 0.9, 1.1, 1]
+        }}
+        transition={{
+          duration: 20,
+          repeat: Infinity,
+          ease: 'easeInOut'
+        }}
+        initial={{ left: '10%', top: '20%' }}
+      />
+      <motion.div
+        className="absolute w-[250px] md:w-[400px] h-[250px] md:h-[400px] rounded-full filter blur-[60px] md:blur-[100px]"
+        style={{
+          background: 'radial-gradient(circle, rgba(239,68,68,0.25) 0%, rgba(239,68,68,0) 70%)'
+        }}
+        animate={{
+          x: ['10%', '-10%', '5%', '-15%', '10%'],
+          y: ['10%', '-15%', '5%', '-10%', '10%'],
+          scale: [1.1, 0.9, 1.2, 1, 1.1]
+        }}
+        transition={{
+          duration: 18,
+          repeat: Infinity,
+          ease: 'easeInOut'
+        }}
+        initial={{ right: '15%', bottom: '25%' }}
+      />
+      <motion.div
+        className="absolute w-[200px] md:w-[350px] h-[200px] md:h-[350px] rounded-full filter blur-[70px] md:blur-[90px]"
+        style={{
+          background: 'radial-gradient(circle, rgba(168,85,247,0.2) 0%, rgba(168,85,247,0) 70%)'
+        }}
+        animate={{
+          x: ['-5%', '15%', '-10%', '5%', '-5%'],
+          y: ['5%', '-10%', '15%', '-5%', '5%'],
+          scale: [0.9, 1.1, 1, 1.2, 0.9]
+        }}
+        transition={{
+          duration: 15,
+          repeat: Infinity,
+          ease: 'easeInOut'
+        }}
+        initial={{ left: '50%', top: '60%', transform: 'translate(-50%, -50%)' }}
+      />
+    </>
+  );
+};
+
+// Componente principal de animaciones del Hero
+const HeroAnimations = () => {
+  return (
+    <>
+      <EnhancedGradientOrbs />
+      <NeuralNetwork />
+      <SoundWaves />
+      <EqualizerBars position="left" />
+      <EqualizerBars position="right" />
+    </>
+  );
+};
+
+/* =============================
    TIPOS Y INTERFACES
 ============================= */
 interface FeatureCardProps {
@@ -481,13 +675,10 @@ export default function HomePage() {
           className="absolute inset-0 w-full h-full object-cover"
           src="/assets/kling_20251109_Image_to_Video_dancing_sl_2309_0 (1)_1762701934696.mp4"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/70 to-black" />
         
-        {/* Animated gradient orbs in background */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-500/20 rounded-full filter blur-3xl animate-pulse" 
-             style={{ animationDuration: '7s' }} />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-red-500/20 rounded-full filter blur-3xl animate-pulse" 
-             style={{ animationDuration: '10s' }} />
+        {/* Creative Animated Background Elements */}
+        <HeroAnimations />
         
         <div className="container relative z-10 mx-auto px-4">
           <div className="max-w-5xl mx-auto">

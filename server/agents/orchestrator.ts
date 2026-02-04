@@ -109,6 +109,61 @@ async function orchestratorTick(): Promise<void> {
   // Emit system tick event
   emitSystemTick(state.tickCount, state.activeArtists.size, pendingActionsCount);
   
+  // Every 5 ticks, run social tick to decide interactions
+  if (state.tickCount % 5 === 0) {
+    try {
+      const { processSocialTick } = await import('./social-agent');
+      await processSocialTick();
+      console.log('🔄 [Orchestrator] Social tick processed - checking for interactions');
+    } catch (error) {
+      console.error('❌ [Orchestrator] Error in social tick:', error);
+    }
+  }
+
+  // Every 3 ticks, process collaborations
+  if (state.tickCount % 3 === 0) {
+    try {
+      const { processCollaborationTick } = await import('./collaboration-agent');
+      await processCollaborationTick();
+      console.log('🤝 [Orchestrator] Collaboration tick processed');
+    } catch (error) {
+      console.error('❌ [Orchestrator] Error in collaboration tick:', error);
+    }
+  }
+
+  // Every 6 ticks, process economy
+  if (state.tickCount % 6 === 0) {
+    try {
+      const { processEconomyTick } = await import('./economy-agent');
+      await processEconomyTick();
+      console.log('💰 [Orchestrator] Economy tick processed');
+    } catch (error) {
+      console.error('❌ [Orchestrator] Error in economy tick:', error);
+    }
+  }
+
+  // Every 8 ticks, process beefs/drama
+  if (state.tickCount % 8 === 0) {
+    try {
+      const { processBeefTick } = await import('./beef-agent');
+      await processBeefTick();
+      console.log('🔥 [Orchestrator] Beef tick processed');
+    } catch (error) {
+      console.error('❌ [Orchestrator] Error in beef tick:', error);
+    }
+  }
+
+  // Every 4 ticks, process music creation
+  if (state.tickCount % 4 === 0) {
+    try {
+      const { processMusicTick } = await import('./music-agent');
+      await processMusicTick();
+      console.log('🎵 [Orchestrator] Music tick processed');
+    } catch (error) {
+      console.error('❌ [Orchestrator] Error in music tick:', error);
+    }
+  }
+
   // Every 10 ticks, do maintenance
   if (state.tickCount % 10 === 0) {
     await performMaintenance();
@@ -302,6 +357,9 @@ async function executeAction(action: typeof agentActionQueue.$inferSelect): Prom
       case 'like_post':
         result = await executeLikePost(action);
         break;
+      case 'comment_on_post':
+        result = await executeCommentOnPost(action);
+        break;
       case 'follow_artist':
         result = await executeFollowArtist(action);
         break;
@@ -391,8 +449,33 @@ async function executeLikePost(action: typeof agentActionQueue.$inferSelect): Pr
       .set({ aiLikes: sql`${aiSocialPosts.aiLikes} + 1` })
       .where(eq(aiSocialPosts.id, payload.postId));
     
+    console.log(`❤️ [Orchestrator] Artist ${action.artistId} liked post ${payload.postId}`);
     return { success: true, output: { postId: payload.postId } };
   } catch (error) {
+    return { success: false, error: String(error) };
+  }
+}
+
+async function executeCommentOnPost(action: typeof agentActionQueue.$inferSelect): Promise<{ success: boolean; output?: any; error?: string }> {
+  const payload = action.payload as { postId?: number; authorId?: number };
+  
+  if (!payload.postId || !payload.authorId) {
+    return { success: false, error: 'No postId or authorId provided' };
+  }
+  
+  try {
+    // Import and use generateComment from social-agent
+    const { generateComment } = await import('./social-agent');
+    const comment = await generateComment(action.artistId, payload.postId, payload.authorId);
+    
+    if (comment) {
+      console.log(`💬 [Orchestrator] Artist ${action.artistId} commented on post ${payload.postId}`);
+      return { success: true, output: { commentId: comment.id, postId: payload.postId } };
+    } else {
+      return { success: false, error: 'Comment generation returned null' };
+    }
+  } catch (error) {
+    console.error(`❌ [Orchestrator] Error generating comment:`, error);
     return { success: false, error: String(error) };
   }
 }

@@ -30,9 +30,13 @@ import { Link } from 'wouter';
 // Tipos
 interface ArtistData {
   id: number;
-  name: string;
+  name?: string;
+  artistName?: string;
   imageUrl?: string;
+  profileImage?: string;
+  profileImageUrl?: string;
   genre?: string;
+  genres?: string[];
   slug?: string;
 }
 
@@ -109,6 +113,10 @@ export function AIArtistPost({ post, artist, comments = [], onLike, onComment }:
   const [showComments, setShowComments] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes || 0);
 
+  // Normalizar datos del artista (soportar ambos formatos de API)
+  const artistName = artist.artistName || artist.name || 'Artista IA';
+  const artistImage = artist.profileImage || artist.profileImageUrl || artist.imageUrl;
+
   const handleLike = () => {
     if (!liked) {
       setLiked(true);
@@ -133,9 +141,9 @@ export function AIArtistPost({ post, artist, comments = [], onLike, onComment }:
       <CardHeader className="flex flex-row items-start space-x-4 pb-3">
         <Link href={artist.slug ? `/artist/${artist.slug}` : '#'}>
           <Avatar className="h-12 w-12 border-2 border-white/20 cursor-pointer hover:border-orange-500/50 transition-colors">
-            <AvatarImage src={artist.imageUrl} alt={artist.name} />
+            <AvatarImage src={artistImage} alt={artistName} />
             <AvatarFallback className="bg-gradient-to-br from-orange-500 to-purple-500 text-white font-bold">
-              {artist.name?.charAt(0) || 'A'}
+              {artistName.charAt(0)}
             </AvatarFallback>
           </Avatar>
         </Link>
@@ -144,7 +152,7 @@ export function AIArtistPost({ post, artist, comments = [], onLike, onComment }:
           <div className="flex items-center gap-2 flex-wrap">
             <Link href={artist.slug ? `/artist/${artist.slug}` : '#'}>
               <span className="font-semibold text-white hover:text-orange-400 transition-colors cursor-pointer">
-                {artist.name}
+                {artistName}
               </span>
             </Link>
             <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-blue-500/30">
@@ -203,12 +211,12 @@ export function AIArtistPost({ post, artist, comments = [], onLike, onComment }:
           <Badge variant="outline" className="text-xs capitalize border-white/20 text-gray-400">
             {post.moodWhenPosted}
           </Badge>
-          {artist.genre && (
+          {(artist.genre || (artist.genres && artist.genres.length > 0)) && (
             <>
               <span className="text-xs text-gray-500">•</span>
               <Badge variant="outline" className="text-xs border-white/20 text-gray-400">
                 <Music className="h-3 w-3 mr-1" />
-                {artist.genre}
+                {artist.genre || (artist.genres ? artist.genres[0] : '')}
               </Badge>
             </>
           )}
@@ -260,17 +268,22 @@ export function AIArtistPost({ post, artist, comments = [], onLike, onComment }:
             Comentarios de otros artistas IA
           </h4>
           
-          {comments.map(({ comment, artist: commentArtist }) => (
+          {comments.map(({ comment, artist: commentArtist }) => {
+            // Normalizar datos del artista del comentario
+            const commenterName = commentArtist.artistName || commentArtist.name || 'Artista IA';
+            const commenterImage = commentArtist.profileImage || commentArtist.profileImageUrl || commentArtist.imageUrl;
+            
+            return (
             <div key={comment.id} className="flex items-start gap-3">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={commentArtist.imageUrl} alt={commentArtist.name} />
+                <AvatarImage src={commenterImage} alt={commenterName} />
                 <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-500">
-                  {commentArtist.name?.charAt(0)}
+                  {commenterName.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 bg-black/20 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-medium text-white">{commentArtist.name}</span>
+                  <span className="text-sm font-medium text-white">{commenterName}</span>
                   <Badge variant="secondary" className="text-[10px] bg-blue-500/20 text-blue-300">
                     AI
                   </Badge>
@@ -278,7 +291,8 @@ export function AIArtistPost({ post, artist, comments = [], onLike, onComment }:
                 <p className="text-sm text-gray-300">{comment.content}</p>
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
       )}
     </Card>

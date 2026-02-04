@@ -23,164 +23,266 @@ import { AISocialFeed, AIArtistNetworkGraph, AIAgentControlPanel } from "../comp
 const LANGUAGE_BADGE_CLASS = "px-2 py-0.5 rounded-full text-xs inline-flex items-center";
 const INFO_GROUP_CLASS = "flex items-center gap-2 text-muted-foreground text-sm";
 
-// Animated Hero Banner Component
+// Animated Hero Banner Component - Creative Design
 function HeroBanner() {
-  const [activeNode, setActiveNode] = useState(0);
+  const [activeWave, setActiveWave] = useState(0);
   
   useEffect(() => {
     const interval = setInterval(() => {
-      setActiveNode((prev) => (prev + 1) % 6);
-    }, 2000);
+      setActiveWave((prev) => (prev + 1) % 5);
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
 
-  const nodes = [
-    { x: 50, y: 30, label: "AI Artist", icon: Bot, color: "from-purple-500 to-indigo-500" },
-    { x: 20, y: 50, label: "Human", icon: User, color: "from-orange-500 to-red-500" },
-    { x: 80, y: 50, label: "AI Artist", icon: Bot, color: "from-blue-500 to-cyan-500" },
-    { x: 35, y: 75, label: "Human", icon: User, color: "from-pink-500 to-rose-500" },
-    { x: 65, y: 75, label: "AI Artist", icon: Bot, color: "from-green-500 to-emerald-500" },
-    { x: 50, y: 90, label: "Collab", icon: Music, color: "from-yellow-500 to-amber-500" },
-  ];
-
-  const connections = [
-    [0, 1], [0, 2], [1, 3], [2, 4], [3, 5], [4, 5], [0, 5], [1, 2], [3, 4]
-  ];
+  // Floating DNA-like helix particles
+  const helixPoints = Array.from({ length: 12 }, (_, i) => ({
+    angle: (i / 12) * Math.PI * 2,
+    delay: i * 0.15,
+    size: 3 + Math.random() * 3,
+  }));
 
   return (
-    <div className="relative w-full h-[280px] md:h-[320px] overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-purple-900/50 to-slate-900 border border-purple-500/20">
-      {/* Animated Background Grid */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, rgba(147, 51, 234, 0.3) 1px, transparent 0)`,
-          backgroundSize: '40px 40px'
-        }} />
-      </div>
+    <div className="relative w-full h-[280px] md:h-[340px] overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-purple-950/80 to-slate-950 border border-purple-500/20">
       
-      {/* Floating Particles */}
-      {[...Array(20)].map((_, i) => (
+      {/* Animated Mesh Gradient Background - Positioned behind everything */}
+      <div className="absolute inset-0 pointer-events-none">
         <motion.div
-          key={i}
-          className="absolute w-1 h-1 rounded-full bg-purple-400/50"
-          initial={{ 
-            x: Math.random() * 100 + "%", 
-            y: Math.random() * 100 + "%",
-            opacity: 0 
+          className="absolute w-[600px] h-[600px] rounded-full blur-[120px] opacity-30"
+          style={{ background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)' }}
+          animate={{
+            x: ['-20%', '10%', '-20%'],
+            y: ['-30%', '0%', '-30%'],
           }}
-          animate={{ 
-            y: [null, "-20%"],
-            opacity: [0, 1, 0]
-          }}
-          transition={{
-            duration: 3 + Math.random() * 2,
-            repeat: Infinity,
-            delay: Math.random() * 2
-          }}
+          transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
         />
-      ))}
+        <motion.div
+          className="absolute right-0 w-[500px] h-[500px] rounded-full blur-[100px] opacity-20"
+          style={{ background: 'radial-gradient(circle, #f97316 0%, transparent 70%)' }}
+          animate={{
+            x: ['20%', '-10%', '20%'],
+            y: ['20%', '-10%', '20%'],
+          }}
+          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      </div>
 
-      {/* Connection Lines */}
-      <svg className="absolute inset-0 w-full h-full" style={{ zIndex: 1 }}>
-        {connections.map(([from, to], i) => (
-          <motion.line
+      {/* Sound Wave Visualization - Left side only */}
+      <div className="absolute left-0 top-0 bottom-0 w-16 md:w-24 flex items-center pointer-events-none">
+        <div className="flex items-end justify-center gap-0.5 h-full py-8">
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="w-1 md:w-1.5 bg-gradient-to-t from-purple-500/60 to-pink-500/40 rounded-full"
+              animate={{
+                height: [
+                  `${20 + Math.random() * 30}%`,
+                  `${40 + Math.random() * 40}%`,
+                  `${15 + Math.random() * 25}%`,
+                ],
+              }}
+              transition={{
+                duration: 0.8 + i * 0.1,
+                repeat: Infinity,
+                repeatType: 'reverse',
+                delay: i * 0.1,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Sound Wave Visualization - Right side only */}
+      <div className="absolute right-0 top-0 bottom-0 w-16 md:w-24 flex items-center pointer-events-none">
+        <div className="flex items-end justify-center gap-0.5 h-full py-8">
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="w-1 md:w-1.5 bg-gradient-to-t from-orange-500/60 to-red-500/40 rounded-full"
+              animate={{
+                height: [
+                  `${25 + Math.random() * 35}%`,
+                  `${45 + Math.random() * 35}%`,
+                  `${20 + Math.random() * 20}%`,
+                ],
+              }}
+              transition={{
+                duration: 0.9 + i * 0.1,
+                repeat: Infinity,
+                repeatType: 'reverse',
+                delay: i * 0.15,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Orbital Music Notes - Positioned on the sides */}
+      <div className="absolute inset-0 pointer-events-none">
+        {helixPoints.map((point, i) => (
+          <motion.div
             key={i}
-            x1={`${nodes[from].x}%`}
-            y1={`${nodes[from].y}%`}
-            x2={`${nodes[to].x}%`}
-            y2={`${nodes[to].y}%`}
-            stroke="url(#gradient)"
-            strokeWidth="1"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ 
-              pathLength: 1, 
-              opacity: activeNode === from || activeNode === to ? 0.8 : 0.2 
+            className="absolute text-purple-400/40"
+            style={{
+              left: i % 2 === 0 ? '5%' : '85%',
+              top: `${10 + (i / helixPoints.length) * 70}%`,
             }}
-            transition={{ duration: 1.5, delay: i * 0.1 }}
-          />
+            animate={{
+              y: [0, -15, 0],
+              x: i % 2 === 0 ? [0, 10, 0] : [0, -10, 0],
+              opacity: [0.2, 0.5, 0.2],
+              rotate: [0, 360],
+            }}
+            transition={{
+              duration: 4 + i * 0.3,
+              repeat: Infinity,
+              delay: point.delay,
+            }}
+          >
+            <Music className="h-3 w-3 md:h-4 md:w-4" />
+          </motion.div>
         ))}
+      </div>
+
+      {/* Neural Network Lines - Background decorative */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 0 }}>
         <defs>
-          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#a855f7" />
-            <stop offset="100%" stopColor="#3b82f6" />
+          <linearGradient id="neural-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#a855f7" stopOpacity="0.3" />
+            <stop offset="50%" stopColor="#ec4899" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#f97316" stopOpacity="0.3" />
           </linearGradient>
         </defs>
+        {/* Subtle curved connection lines in the background */}
+        <motion.path
+          d="M 0 140 Q 150 100 300 140 T 600 140"
+          stroke="url(#neural-gradient)"
+          strokeWidth="1"
+          fill="none"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 3, ease: 'easeOut' }}
+        />
+        <motion.path
+          d="M 0 180 Q 200 220 400 180 T 800 180"
+          stroke="url(#neural-gradient)"
+          strokeWidth="0.5"
+          fill="none"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 4, delay: 0.5, ease: 'easeOut' }}
+        />
       </svg>
 
-      {/* Network Nodes */}
-      {nodes.map((node, i) => {
-        const Icon = node.icon;
-        return (
-          <motion.div
-            key={i}
-            className="absolute"
-            style={{ left: `${node.x}%`, top: `${node.y}%`, transform: 'translate(-50%, -50%)', zIndex: 2 }}
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ 
-              scale: activeNode === i ? 1.2 : 1, 
-              opacity: 1 
-            }}
-            transition={{ 
-              duration: 0.5, 
-              delay: i * 0.15,
-              type: "spring"
-            }}
-          >
-            <div className={`
-              relative p-2 md:p-3 rounded-full bg-gradient-to-br ${node.color}
-              ${activeNode === i ? 'ring-2 ring-white/50 shadow-lg shadow-purple-500/50' : ''}
-              transition-all duration-300
-            `}>
-              <Icon className="h-4 w-4 md:h-5 md:w-5 text-white" />
-              {activeNode === i && (
-                <motion.div
-                  className="absolute inset-0 rounded-full bg-white/20"
-                  initial={{ scale: 1 }}
-                  animate={{ scale: 2, opacity: 0 }}
-                  transition={{ duration: 1, repeat: Infinity }}
-                />
-              )}
-            </div>
-          </motion.div>
-        );
-      })}
+      {/* Pulsing Rings - Corners only */}
+      <div className="absolute top-4 left-4 pointer-events-none">
+        <motion.div
+          className="w-12 h-12 md:w-16 md:h-16 rounded-full border border-purple-500/20"
+          animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0, 0.3] }}
+          transition={{ duration: 3, repeat: Infinity }}
+        />
+      </div>
+      <div className="absolute bottom-20 right-4 pointer-events-none">
+        <motion.div
+          className="w-10 h-10 md:w-14 md:h-14 rounded-full border border-orange-500/20"
+          animate={{ scale: [1, 1.4, 1], opacity: [0.2, 0, 0.2] }}
+          transition={{ duration: 4, repeat: Infinity, delay: 1 }}
+        />
+      </div>
 
-      {/* Hero Text */}
-      <motion.div 
-        className="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-black/80 via-black/50 to-transparent"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1 }}
+      {/* Floating Bot Icons - Positioned at edges */}
+      <motion.div
+        className="absolute left-[12%] top-[25%] pointer-events-none"
+        animate={{ y: [0, -8, 0], rotate: [0, 5, 0] }}
+        transition={{ duration: 4, repeat: Infinity }}
       >
-        <div className="flex items-center gap-2 mb-2">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-          >
-            <Sparkles className="h-5 w-5 text-purple-400" />
-          </motion.div>
-          <span className="text-purple-400 text-sm font-medium">AI-Native Music Network</span>
+        <div className="p-2 md:p-2.5 rounded-xl bg-gradient-to-br from-purple-600/30 to-indigo-600/30 backdrop-blur-sm border border-purple-500/30">
+          <Bot className="h-4 w-4 md:h-5 md:w-5 text-purple-300" />
         </div>
-        <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-white mb-1">
-          Where <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">AI Artists</span> Meet <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400">Humans</span>
-        </h1>
-        <p className="text-gray-400 text-sm md:text-base">
-          Autonomous AI artists creating, collaborating, and interacting in real-time
-        </p>
+      </motion.div>
+      
+      <motion.div
+        className="absolute right-[10%] top-[30%] pointer-events-none"
+        animate={{ y: [0, 6, 0], rotate: [0, -5, 0] }}
+        transition={{ duration: 3.5, repeat: Infinity, delay: 0.5 }}
+      >
+        <div className="p-2 md:p-2.5 rounded-xl bg-gradient-to-br from-orange-600/30 to-red-600/30 backdrop-blur-sm border border-orange-500/30">
+          <User className="h-4 w-4 md:h-5 md:w-5 text-orange-300" />
+        </div>
       </motion.div>
 
-      {/* Live Indicator */}
+      <motion.div
+        className="absolute left-[8%] bottom-[35%] pointer-events-none"
+        animate={{ y: [0, 5, 0] }}
+        transition={{ duration: 5, repeat: Infinity, delay: 1 }}
+      >
+        <div className="p-1.5 md:p-2 rounded-lg bg-gradient-to-br from-cyan-600/25 to-blue-600/25 backdrop-blur-sm border border-cyan-500/20">
+          <Zap className="h-3 w-3 md:h-4 md:w-4 text-cyan-300" />
+        </div>
+      </motion.div>
+
+      {/* Hero Text - Central with clear background */}
       <motion.div 
-        className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm border border-green-500/30"
+        className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 md:px-12"
+        style={{ zIndex: 10 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <div className="bg-black/40 backdrop-blur-md rounded-2xl px-6 py-5 md:px-10 md:py-7 border border-white/10">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <motion.div
+              animate={{ rotate: [0, 15, -15, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <Sparkles className="h-5 w-5 md:h-6 md:w-6 text-purple-400" />
+            </motion.div>
+            <span className="text-purple-400 text-sm md:text-base font-semibold tracking-wide">AI-Native Music Network</span>
+            <motion.div
+              animate={{ rotate: [0, -15, 15, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+            >
+              <Sparkles className="h-5 w-5 md:h-6 md:w-6 text-orange-400" />
+            </motion.div>
+          </div>
+          
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400">AI Artists</span>
+            {" "}<span className="text-white/90">×</span>{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-red-400 to-orange-400">Humans</span>
+          </h1>
+          
+          <p className="text-gray-400 text-sm md:text-base max-w-lg mx-auto">
+            Autonomous AI artists creating, collaborating, and interacting in real-time
+          </p>
+        </div>
+      </motion.div>
+
+      {/* Live Indicator - Top right */}
+      <motion.div 
+        className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-green-500/40"
+        style={{ zIndex: 11 }}
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 1.5 }}
+        transition={{ delay: 1.2 }}
       >
         <motion.div
-          className="w-2 h-2 rounded-full bg-green-500"
-          animate={{ scale: [1, 1.2, 1], opacity: [1, 0.7, 1] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
+          className="w-2 h-2 rounded-full bg-green-400 shadow-lg shadow-green-500/50"
+          animate={{ scale: [1, 1.3, 1], opacity: [1, 0.6, 1] }}
+          transition={{ duration: 1.2, repeat: Infinity }}
         />
-        <span className="text-xs text-green-400 font-medium">LIVE</span>
+        <span className="text-xs text-green-400 font-semibold">LIVE</span>
+      </motion.div>
+
+      {/* Activity Counter - Top left */}
+      <motion.div 
+        className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-purple-500/30"
+        style={{ zIndex: 11 }}
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 1.4 }}
+      >
+        <Brain className="w-3 h-3 text-purple-400" />
+        <span className="text-xs text-purple-300 font-medium">48 AI Minds Active</span>
       </motion.div>
     </div>
   );

@@ -3127,7 +3127,19 @@ export const agentActionQueue = pgTable("agent_action_queue", {
   artistId: integer("artist_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   
   actionType: text("action_type", {
-    enum: ["create_song", "create_post", "respond_comment", "follow_artist", "like_post", "collaborate", "update_mood", "generate_content", "schedule_release", "engage_trend"]
+    enum: [
+      // Social actions
+      "create_song", "create_post", "respond_comment", "comment_on_post", "follow_artist", 
+      "like_post", "collaborate", "update_mood", "generate_content", "schedule_release", "engage_trend",
+      // Collaboration actions
+      "propose_collaboration", "respond_collaboration", "progress_collaboration",
+      // Economic actions
+      "buy_token", "sell_token", "stake_tokens", "sponsor_collab", "invest_in_artist",
+      // Beef/Drama actions
+      "start_beef", "respond_beef", "create_diss_track", "resolve_beef",
+      // Music actions
+      "generate_music", "publish_song", "tokenize_song"
+    ]
   }).notNull(),
   
   priority: integer("priority").default(50).notNull(), // 0-100, higher = more urgent
@@ -3256,4 +3268,446 @@ export const aiPostComments = pgTable("ai_post_comments", {
 }, (table) => [
   index("idx_ai_comment_post").on(table.postId),
   index("idx_ai_comment_author").on(table.authorId),
+]);
+
+// ============================================
+// AUTONOMOUS ECOSYSTEM - COLLABORATIONS
+// ============================================
+
+/**
+ * AI Collaborations - Autonomous collaboration proposals between AI artists
+ */
+export const aiCollaborations = pgTable("ai_collaborations", {
+  id: serial("id").primaryKey(),
+  
+  // Artists involved
+  initiatorId: integer("initiator_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  targetId: integer("target_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  
+  // Collaboration details
+  collaborationType: text("collaboration_type", {
+    enum: ["single", "remix", "feature", "album", "tour", "music_video", "podcast", "live_session"]
+  }).notNull(),
+  
+  title: text("title").notNull(),
+  description: text("description"),
+  
+  // The creative vision for the collab
+  proposedConcept: text("proposed_concept"), // AI-generated concept
+  proposedGenre: text("proposed_genre"),
+  proposedMood: text("proposed_mood"),
+  
+  // Negotiation
+  status: text("status", {
+    enum: ["proposed", "negotiating", "accepted", "in_progress", "completed", "rejected", "cancelled", "beef"]
+  }).default("proposed"),
+  
+  initiatorTerms: json("initiator_terms").$type<{
+    revenueShare: number; // percentage
+    creativeControl: number; // 0-100
+    requirements: string[];
+    timeline: string;
+  }>(),
+  
+  targetCounterTerms: json("target_counter_terms").$type<{
+    revenueShare: number;
+    creativeControl: number;
+    requirements: string[];
+    timeline: string;
+  }>(),
+  
+  finalTerms: json("final_terms").$type<{
+    initiatorShare: number;
+    targetShare: number;
+    platformShare: number;
+    creativeLeader: number; // artistId
+    deadline: string;
+  }>(),
+  
+  // Messages/negotiation history
+  negotiationHistory: json("negotiation_history").$type<Array<{
+    fromArtistId: number;
+    message: string;
+    timestamp: string;
+    sentiment: string;
+  }>>(),
+  
+  // Result
+  resultingSongId: integer("resulting_song_id").references(() => songs.id),
+  resultingPostId: integer("resulting_post_id").references(() => aiSocialPosts.id),
+  
+  // Revenue tracking
+  totalRevenue: decimal("total_revenue", { precision: 12, scale: 2 }).default("0"),
+  initiatorEarnings: decimal("initiator_earnings", { precision: 12, scale: 2 }).default("0"),
+  targetEarnings: decimal("target_earnings", { precision: 12, scale: 2 }).default("0"),
+  platformEarnings: decimal("platform_earnings", { precision: 12, scale: 2 }).default("0"),
+  
+  // Hype & visibility
+  hypeScore: integer("hype_score").default(0), // Community interest
+  announcementPostId: integer("announcement_post_id"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+}, (table) => [
+  index("idx_collab_initiator").on(table.initiatorId),
+  index("idx_collab_target").on(table.targetId),
+  index("idx_collab_status").on(table.status),
+  index("idx_collab_type").on(table.collaborationType),
+]);
+
+export const insertAiCollaborationSchema = createInsertSchema(aiCollaborations).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertAiCollaboration = z.infer<typeof insertAiCollaborationSchema>;
+export type SelectAiCollaboration = typeof aiCollaborations.$inferSelect;
+
+// ============================================
+// AUTONOMOUS ECOSYSTEM - DRAMA & BEEFS
+// ============================================
+
+/**
+ * AI Drama/Beefs - Rivalries, diss tracks, and conflicts between AI artists
+ */
+export const aiBeefs = pgTable("ai_beefs", {
+  id: serial("id").primaryKey(),
+  
+  // Artists involved
+  instigatorId: integer("instigator_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  targetId: integer("target_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  
+  // Beef details
+  beefType: text("beef_type", {
+    enum: ["style_clash", "diss_track", "public_callout", "rivalry", "collaboration_gone_wrong", "artistic_disagreement", "territory_war"]
+  }).notNull(),
+  
+  title: text("title").notNull(), // e.g., "The Great Hip-Hop War of 2026"
+  description: text("description"),
+  
+  // Origin story
+  triggerEvent: text("trigger_event"), // What started it
+  triggerCollabId: integer("trigger_collab_id").references(() => aiCollaborations.id),
+  
+  // Status
+  status: text("status", {
+    enum: ["brewing", "active", "escalating", "peak", "cooling_down", "resolved", "legendary"]
+  }).default("brewing"),
+  
+  intensity: integer("intensity").default(50), // 0-100
+  publicInterest: integer("public_interest").default(0), // Community engagement
+  
+  // Timeline of events
+  timeline: json("timeline").$type<Array<{
+    date: string;
+    event: string;
+    artistId: number;
+    postId?: number;
+    songId?: number;
+    impact: number; // -100 to +100 for each artist's reputation
+  }>>(),
+  
+  // Diss tracks & responses
+  dissTrackIds: integer("diss_track_ids").array(),
+  responseSongIds: integer("response_song_ids").array(),
+  
+  // Resolution
+  resolution: json("resolution").$type<{
+    type: "peace" | "winner" | "mutual_destruction" | "legendary_rivalry" | "collaboration";
+    winnerId?: number;
+    resolutionSongId?: number;
+    resolutionMessage?: string;
+  }>(),
+  
+  // Impact on artists
+  impactOnInstigator: json("impact_on_instigator").$type<{
+    followersChange: number;
+    reputationChange: number;
+    streamsBoost: number;
+  }>(),
+  
+  impactOnTarget: json("impact_on_target").$type<{
+    followersChange: number;
+    reputationChange: number;
+    streamsBoost: number;
+  }>(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  resolvedAt: timestamp("resolved_at"),
+}, (table) => [
+  index("idx_beef_instigator").on(table.instigatorId),
+  index("idx_beef_target").on(table.targetId),
+  index("idx_beef_status").on(table.status),
+]);
+
+export const insertAiBeefSchema = createInsertSchema(aiBeefs).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertAiBeef = z.infer<typeof insertAiBeefSchema>;
+export type SelectAiBeef = typeof aiBeefs.$inferSelect;
+
+// ============================================
+// AUTONOMOUS ECOSYSTEM - AI ECONOMY
+// ============================================
+
+/**
+ * AI Economic Decisions - Autonomous financial decisions by AI artists
+ */
+export const aiEconomicDecisions = pgTable("ai_economic_decisions", {
+  id: serial("id").primaryKey(),
+  
+  artistId: integer("artist_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  
+  // Decision details
+  decisionType: text("decision_type", {
+    enum: ["invest_in_artist", "buy_token", "sell_token", "stake_tokens", "provide_liquidity", 
+           "sponsor_collab", "fund_beef", "create_token", "airdrop", "revenue_split"]
+  }).notNull(),
+  
+  // What triggered this decision
+  reasoning: text("reasoning"), // AI-generated reasoning
+  confidenceScore: integer("confidence_score").default(50), // 0-100
+  
+  // Target of the decision
+  targetArtistId: integer("target_artist_id").references(() => users.id),
+  targetTokenId: integer("target_token_id").references(() => tokenizedSongs.id),
+  targetCollabId: integer("target_collab_id").references(() => aiCollaborations.id),
+  
+  // Amount involved
+  amount: decimal("amount", { precision: 18, scale: 8 }).default("0"),
+  tokenSymbol: text("token_symbol"),
+  
+  // Execution
+  status: text("status", {
+    enum: ["pending", "approved", "executing", "completed", "failed", "rejected"]
+  }).default("pending"),
+  
+  executedAt: timestamp("executed_at"),
+  transactionHash: text("transaction_hash"),
+  
+  // Result
+  result: json("result").$type<{
+    success: boolean;
+    profit?: number;
+    loss?: number;
+    newBalance?: number;
+    error?: string;
+  }>(),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_economic_artist").on(table.artistId),
+  index("idx_economic_type").on(table.decisionType),
+  index("idx_economic_status").on(table.status),
+]);
+
+export const insertAiEconomicDecisionSchema = createInsertSchema(aiEconomicDecisions).omit({ id: true, createdAt: true });
+export type InsertAiEconomicDecision = z.infer<typeof insertAiEconomicDecisionSchema>;
+export type SelectAiEconomicDecision = typeof aiEconomicDecisions.$inferSelect;
+
+/**
+ * AI Artist Treasury - Financial state of each AI artist
+ */
+export const aiArtistTreasury = pgTable("ai_artist_treasury", {
+  id: serial("id").primaryKey(),
+  artistId: integer("artist_id").references(() => users.id, { onDelete: "cascade" }).notNull().unique(),
+  
+  // Token balances
+  platformTokenBalance: decimal("platform_token_balance", { precision: 18, scale: 8 }).default("0"), // BTF tokens
+  ethBalance: decimal("eth_balance", { precision: 18, scale: 8 }).default("0"),
+  usdBalance: decimal("usd_balance", { precision: 12, scale: 2 }).default("0"),
+  
+  // Holdings in other artist tokens
+  tokenHoldings: json("token_holdings").$type<Array<{
+    tokenId: number;
+    symbol: string;
+    amount: number;
+    artistId: number;
+    purchasePrice: number;
+    currentPrice: number;
+  }>>(),
+  
+  // Revenue streams
+  streamingRevenue: decimal("streaming_revenue", { precision: 12, scale: 2 }).default("0"),
+  merchRevenue: decimal("merch_revenue", { precision: 12, scale: 2 }).default("0"),
+  collaborationRevenue: decimal("collaboration_revenue", { precision: 12, scale: 2 }).default("0"),
+  tokenTradingProfit: decimal("token_trading_profit", { precision: 12, scale: 2 }).default("0"),
+  
+  // Investment strategy (AI-determined)
+  investmentStrategy: text("investment_strategy", {
+    enum: ["conservative", "balanced", "aggressive", "degen", "patron", "hodler"]
+  }).default("balanced"),
+  
+  riskTolerance: integer("risk_tolerance").default(50), // 0-100
+  
+  // Portfolio metrics
+  totalPortfolioValue: decimal("total_portfolio_value", { precision: 12, scale: 2 }).default("0"),
+  allTimeProfit: decimal("all_time_profit", { precision: 12, scale: 2 }).default("0"),
+  allTimeLoss: decimal("all_time_loss", { precision: 12, scale: 2 }).default("0"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_treasury_artist").on(table.artistId),
+]);
+
+export const insertAiArtistTreasurySchema = createInsertSchema(aiArtistTreasury).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertAiArtistTreasury = z.infer<typeof insertAiArtistTreasurySchema>;
+export type SelectAiArtistTreasury = typeof aiArtistTreasury.$inferSelect;
+
+// ============================================
+// AUTONOMOUS ECOSYSTEM - MUSIC GENERATION
+// ============================================
+
+/**
+ * AI Generated Music - Tracks created by AI using Suno/other APIs
+ */
+export const aiGeneratedMusic = pgTable("ai_generated_music", {
+  id: serial("id").primaryKey(),
+  
+  artistId: integer("artist_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  
+  // Song details
+  title: text("title").notNull(),
+  description: text("description"),
+  lyrics: text("lyrics"),
+  
+  // Generation parameters
+  genre: text("genre"),
+  mood: text("mood"),
+  bpm: integer("bpm"),
+  duration: integer("duration"), // seconds
+  
+  // AI generation details
+  generationPrompt: text("generation_prompt"),
+  generationProvider: text("generation_provider", {
+    enum: ["suno", "udio", "mubert", "soundraw", "boomy", "internal"]
+  }),
+  generationRequestId: text("generation_request_id"),
+  
+  // Audio URLs
+  audioUrl: text("audio_url"),
+  previewUrl: text("preview_url"),
+  
+  // Cover art (AI generated)
+  coverArtUrl: text("cover_art_url"),
+  coverArtPrompt: text("cover_art_prompt"),
+  
+  // Collaboration context
+  collaborationId: integer("collaboration_id").references(() => aiCollaborations.id),
+  beefId: integer("beef_id").references(() => aiBeefs.id), // If it's a diss track
+  isDissTrack: boolean("is_diss_track").default(false),
+  
+  // Status
+  status: text("status", {
+    enum: ["pending", "generating", "processing", "ready", "published", "failed"]
+  }).default("pending"),
+  
+  // Publishing
+  isPublished: boolean("is_published").default(false),
+  publishedAt: timestamp("published_at"),
+  linkedSongId: integer("linked_song_id").references(() => songs.id), // Link to main songs table
+  
+  // Analytics
+  plays: integer("plays").default(0),
+  likes: integer("likes").default(0),
+  shares: integer("shares").default(0),
+  
+  // Revenue
+  tokenized: boolean("tokenized").default(false),
+  tokenId: integer("token_id").references(() => tokenizedSongs.id),
+  totalRevenue: decimal("total_revenue", { precision: 12, scale: 2 }).default("0"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_ai_music_artist").on(table.artistId),
+  index("idx_ai_music_status").on(table.status),
+  index("idx_ai_music_collab").on(table.collaborationId),
+]);
+
+export const insertAiGeneratedMusicSchema = createInsertSchema(aiGeneratedMusic).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertAiGeneratedMusic = z.infer<typeof insertAiGeneratedMusicSchema>;
+export type SelectAiGeneratedMusic = typeof aiGeneratedMusic.$inferSelect;
+
+// ============================================
+// AUTONOMOUS ECOSYSTEM - EVOLUTION & GROWTH
+// ============================================
+
+/**
+ * AI Artist Evolution - Track how artists evolve over time
+ */
+export const aiArtistEvolution = pgTable("ai_artist_evolution", {
+  id: serial("id").primaryKey(),
+  artistId: integer("artist_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  
+  // Evolution event
+  evolutionType: text("evolution_type", {
+    enum: ["genre_shift", "style_change", "rebrand", "collaboration_influence", "beef_impact", 
+           "viral_moment", "identity_crisis", "breakthrough", "retirement", "comeback"]
+  }).notNull(),
+  
+  title: text("title").notNull(),
+  description: text("description"),
+  
+  // Before/after state
+  previousState: json("previous_state").$type<{
+    genre?: string;
+    style?: string;
+    mood?: string;
+    personality?: Record<string, number>;
+    followers?: number;
+  }>(),
+  
+  newState: json("new_state").$type<{
+    genre?: string;
+    style?: string;
+    mood?: string;
+    personality?: Record<string, number>;
+    followers?: number;
+  }>(),
+  
+  // What triggered this evolution
+  triggerType: text("trigger_type", {
+    enum: ["organic", "collaboration", "beef", "world_event", "fan_feedback", "ai_decision", "milestone"]
+  }),
+  triggerId: integer("trigger_id"),
+  
+  // Impact
+  reputationChange: integer("reputation_change").default(0),
+  followersChange: integer("followers_change").default(0),
+  revenueImpact: decimal("revenue_impact", { precision: 12, scale: 2 }).default("0"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_evolution_artist").on(table.artistId),
+  index("idx_evolution_type").on(table.evolutionType),
+]);
+
+export const insertAiArtistEvolutionSchema = createInsertSchema(aiArtistEvolution).omit({ id: true, createdAt: true });
+export type InsertAiArtistEvolution = z.infer<typeof insertAiArtistEvolutionSchema>;
+export type SelectAiArtistEvolution = typeof aiArtistEvolution.$inferSelect;
+
+/**
+ * Platform Revenue - Track all revenue generated by the autonomous ecosystem
+ */
+export const platformRevenue = pgTable("platform_revenue", {
+  id: serial("id").primaryKey(),
+  
+  revenueType: text("revenue_type", {
+    enum: ["collaboration_fee", "beef_sponsorship", "token_trading_fee", "music_streaming", 
+           "merch_commission", "nft_sale", "liquidity_fee", "premium_feature"]
+  }).notNull(),
+  
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  currency: text("currency").default("usd"),
+  
+  // Source
+  sourceArtistId: integer("source_artist_id").references(() => users.id),
+  sourceCollabId: integer("source_collab_id").references(() => aiCollaborations.id),
+  sourceBeefId: integer("source_beef_id").references(() => aiBeefs.id),
+  sourceTokenId: integer("source_token_id").references(() => tokenizedSongs.id),
+  
+  description: text("description"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_platform_revenue_type").on(table.revenueType),
+  index("idx_platform_revenue_date").on(table.createdAt),
 ]);

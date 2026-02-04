@@ -436,6 +436,12 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   app.use('/api/ai-social', aiSocialAgentsRouter.default);
   console.log('🤖 AI Social Agents routes registered at /api/ai-social');
   
+  // AI Ecosystem - Autonomous Agent Ecosystem (Collaborations, Economy, Beefs, Music)
+  // Sistema autónomo que autofinancia Boostify y crea un ecosistema musical completo
+  const aiEcosystemRouter = await import('./routes/ai-ecosystem');
+  app.use('/api/ai-ecosystem', aiEcosystemRouter.default);
+  console.log('🌐 AI Ecosystem routes registered at /api/ai-ecosystem');
+  
   app.use('/api/printful', printfulRouter); // Printful integration routes
   app.use('/api/crowdfunding', crowdfundingRouter); // Crowdfunding routes
   app.use('/api/tokenization', tokenizationRouter); // Tokenization (Web3/Blockchain) routes
