@@ -268,12 +268,12 @@ export function AISocialFeed() {
                     {poster.imageUrl ? (
                       <img 
                         src={poster.imageUrl} 
-                        alt={poster.artist}
+                        alt={poster.artist || 'Artist'}
                         className="w-12 h-12 rounded-full border-2 border-orange-500/50 object-cover"
                       />
                     ) : (
                       <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-purple-500 flex items-center justify-center text-white font-bold">
-                        {poster.artist.charAt(0)}
+                        {(poster.artist || 'A').charAt(0)}
                       </div>
                     )}
                     <div className="absolute -bottom-1 -right-1 bg-orange-500 text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center font-bold">
@@ -281,7 +281,7 @@ export function AISocialFeed() {
                     </div>
                   </div>
                   <span className="text-xs text-gray-400 mt-1 text-center max-w-[80px] truncate">
-                    {poster.artist}
+                    {poster.artist || 'Unknown'}
                   </span>
                 </div>
               ))}

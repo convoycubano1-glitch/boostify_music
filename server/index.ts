@@ -15,6 +15,19 @@ import fs from 'fs';
 import fileUpload from 'express-fileupload';
 console.log('[BOOT] All imports completed');
 
+// Global error handlers to prevent server from crashing
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err.message);
+  console.error(err.stack);
+  // Don't exit - let the server keep running
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise);
+  console.error('Reason:', reason);
+  // Don't exit - let the server keep running
+});
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Detect deployment environment
@@ -370,25 +383,11 @@ app.use((req, res, next) => {
     }
 
     // ONLY setup Vite in development - NEVER in production builds
-    // The production build excludes vite completely
+    // Skip internal Vite completely - use external Vite via npm run dev
+    // This prevents esbuild EPIPE errors on Windows
     if (process.env.NODE_ENV !== "production" && !isProduction) {
-      console.log('🛠 Development mode: Setting up Vite server');
-      log('🛠 Setting up Vite development server');
-      log('📌 Configuring Vite to handle frontend routes like "/"');
-      // Dynamic import of Vite module only in development
-      try {
-        const { setupVite } = await import("./vite");
-        await setupVite(app, server);
-        log('✅ Vite development server configured');
-        app.use('*', (req, res, next) => {
-          if (!req.path.startsWith('/api/') && !req.path.startsWith('/@') && !req.path.startsWith('/src/')) {
-            log(`⚠️ Route not handled by Vite: ${req.method} ${req.path}`);
-          }
-          next();
-        });
-      } catch (err) {
-        console.error('Failed to load Vite (expected in production):', err);
-      }
+      console.log('⏭️ Development mode: Using external Vite dev server (port 5000)');
+      console.log('📌 API server running on port 3000, frontend proxies /api requests');
     } else {
       console.log('🚀 Production mode: Serving static files, Vite disabled');
     }
@@ -414,6 +413,19 @@ app.use((req, res, next) => {
           `http://localhost:${PORT}`);
 
       log(`🔗 Access URL: ${accessURL}`);
+      
+      // Keep the server running with a heartbeat
+      console.log('💓 Server heartbeat started - server is running...');
+    });
+    
+    // Keep-alive interval to prevent Node from exiting
+    setInterval(() => {
+      // Silent heartbeat every 30 seconds to keep the event loop active
+    }, 30000);
+
+    // Prevent unhandled promise rejections from crashing the server
+    process.on('unhandledRejection', (reason, promise) => {
+      console.error('Unhandled Rejection at:', promise, 'reason:', reason);
     });
 
     server.on('error', (error: any) => {

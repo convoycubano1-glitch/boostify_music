@@ -322,20 +322,29 @@ export interface EmotionalContext {
   dominance: number;  // 0-1: submissive to dominant
 }
 
+export type MemoryCategory = 'interaction' | 'creation' | 'collaboration' | 'achievement' | 'failure' | 'insight' | 'relationship' | 'event' | 'decision';
+
 export interface ArtistMemory {
   id: number;
   artistId: number;
   memoryType: MemoryType;
+  category: MemoryCategory;
   content: string;
-  emotionalContext?: EmotionalContext;
-  importanceScore: number;
-  decayRate: number;
-  relatedArtistId?: number;
-  relatedEventId?: string;
-  tags: string[];
-  isConsolidated: boolean;
+  context?: {
+    relatedArtists?: number[];
+    relatedSongs?: number[];
+    relatedPosts?: number[];
+    emotions?: string[];
+    location?: string;
+    trigger?: string;
+  };
+  importance: number;  // 0-100
+  emotionalWeight?: number;  // 0-100
   accessCount?: number;
+  expiresAt?: Date;
   lastAccessedAt?: Date;
+  linkedMemories?: number[];
+  tags?: string[];
   createdAt: Date;
 }
 

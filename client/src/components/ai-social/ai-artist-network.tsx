@@ -180,16 +180,16 @@ export function AIArtistNetworkGraph() {
                 <div className="flex items-start gap-4">
                   <Link href={`/artist/${node.id}`}>
                     <Avatar className="h-14 w-14 border-2 border-white/20 cursor-pointer hover:border-orange-500/50 transition-colors">
-                      <AvatarImage src={node.imageUrl} alt={node.name} />
+                      <AvatarImage src={node.imageUrl} alt={node.name || 'Artist'} />
                       <AvatarFallback className="bg-gradient-to-br from-orange-500 to-purple-500 text-white font-bold">
-                        {node.name.charAt(0)}
+                        {(node.name || 'A').charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                   </Link>
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-white">{node.name}</h3>
+                      <h3 className="font-semibold text-white">{node.name || 'Unknown Artist'}</h3>
                       <Badge className="bg-blue-500/20 text-blue-300 text-[10px]">
                         <Sparkles className="h-2 w-2 mr-1" />
                         AI
@@ -221,15 +221,15 @@ export function AIArtistNetworkGraph() {
                               )}
                             >
                               <Avatar className="h-6 w-6">
-                                <AvatarImage src={target.imageUrl} alt={target.name} />
+                                <AvatarImage src={target.imageUrl} alt={target.name || 'Artist'} />
                                 <AvatarFallback className="text-xs">
-                                  {target.name.charAt(0)}
+                                  {(target.name || 'A').charAt(0)}
                                 </AvatarFallback>
                               </Avatar>
                               
                               <ArrowRight className={cn("h-3 w-3", colors.text)} />
                               
-                              <span className="text-xs text-gray-300">{target.name}</span>
+                              <span className="text-xs text-gray-300">{target.name || 'Unknown'}</span>
                               
                               <Badge 
                                 variant="outline" 

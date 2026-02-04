@@ -34,8 +34,16 @@ export default defineConfig({
       '@radix-ui/react-tooltip',
       'react-hook-form',
       '@hookform/resolvers',
+      'use-sync-external-store',
+      'use-sync-external-store/shim',
+      'use-sync-external-store/shim/with-selector',
+      'zustand',
     ],
     exclude: [],
+    esbuildOptions: {
+      // Fix for CommonJS modules that don't properly export named exports
+      mainFields: ['module', 'main'],
+    },
   },
   root: path.resolve(__dirname, "client"),
   server: {

@@ -46,6 +46,36 @@ import { agentEventBus, AgentEventType } from '../agents/events';
 const router = Router();
 
 // ==========================================
+// DEBUG ENDPOINT
+// ==========================================
+
+/**
+ * GET /api/ai-social/debug/personality/:id
+ * Debug endpoint to test personality fetch directly
+ */
+router.get('/debug/personality/:id', async (req: Request, res: Response) => {
+  const artistId = parseInt(req.params.id);
+  console.log('[DEBUG] Testing getPersonality for artistId:', artistId);
+  
+  try {
+    const personality = await getPersonality(artistId);
+    console.log('[DEBUG] Result:', personality ? 'Found personality' : 'null');
+    res.json({
+      success: true,
+      artistId,
+      personalityExists: !!personality,
+      mood: personality?.currentMood || null,
+    });
+  } catch (error) {
+    console.error('[DEBUG] Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// ==========================================
 // SOCIAL FEED ENDPOINTS
 // ==========================================
 
@@ -57,8 +87,12 @@ router.get('/feed', async (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 20;
     const offset = parseInt(req.query.offset as string) || 0;
+    
+    console.log('[ai-social/feed] Fetching feed with limit:', limit, 'offset:', offset);
 
     const feed = await getAISocialFeed(limit, offset);
+    
+    console.log('[ai-social/feed] Feed fetched successfully, posts count:', feed.length);
 
     res.json({
       success: true,
@@ -70,10 +104,11 @@ router.get('/feed', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Error fetching AI social feed:', error);
+    console.error('[ai-social/feed] Error fetching AI social feed:', error);
     res.status(500).json({ 
       success: false, 
-      error: 'Failed to fetch feed' 
+      error: 'Failed to fetch feed',
+      details: error instanceof Error ? error.message : String(error)
     });
   }
 });
@@ -109,6 +144,7 @@ router.get('/artist/:id/posts', async (req: Request, res: Response) => {
 router.post('/generate-post', async (req: Request, res: Response) => {
   try {
     const { artistId, contentType, context } = req.body;
+    console.log('[generate-post] Request:', { artistId, contentType, context });
 
     if (!artistId) {
       return res.status(400).json({ 
@@ -117,6 +153,7 @@ router.post('/generate-post', async (req: Request, res: Response) => {
       });
     }
 
+    console.log('[generate-post] Calling generatePost for artist:', artistId);
     const post = await generatePost({
       artistId: parseInt(artistId),
       contentType,
@@ -125,21 +162,24 @@ router.post('/generate-post', async (req: Request, res: Response) => {
     });
 
     if (!post) {
+      console.log('[generate-post] No post returned for artist:', artistId);
       return res.status(400).json({ 
         success: false, 
         error: 'Failed to generate post - artist may not have personality initialized' 
       });
     }
 
+    console.log('[generate-post] Post created successfully:', post.id);
     res.json({
       success: true,
       data: post,
     });
   } catch (error) {
-    console.error('Error generating post:', error);
+    console.error('[generate-post] Error:', error);
     res.status(500).json({ 
       success: false, 
-      error: 'Failed to generate post' 
+      error: 'Failed to generate post',
+      details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });

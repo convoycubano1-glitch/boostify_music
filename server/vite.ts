@@ -27,8 +27,19 @@ export async function setupVite(app: Express, server: Server) {
       ...viteLogger,
       error: (msg, options) => {
         viteLogger.error(msg, options);
-        process.exit(1);
+        // Don't exit on Vite errors - just log them
+        console.error('[Vite Error]', msg);
       },
+    },
+    optimizeDeps: {
+      // Disable dependency scanning to avoid esbuild EPIPE errors on Windows
+      noDiscovery: true,
+      include: [
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        'react/jsx-dev-runtime',
+      ],
     },
     server: {
       middlewareMode: true,

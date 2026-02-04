@@ -12,7 +12,7 @@
 
 import { db } from '../db';
 import { agentMemory, artistRelationships, artistPersonality } from '../../db/schema';
-import { eq, and, desc, lt, gt, sql } from 'drizzle-orm';
+import { eq, and, desc, lt, gt, sql, inArray, or } from 'drizzle-orm';
 import { agentEventBus, emitAgentEvent, AgentEventType } from './events';
 import type { 
   MemoryType, 
@@ -25,35 +25,68 @@ import type {
 // MEMORY CREATION
 // ==========================================
 
+// Category type matching the database schema
+type MemoryCategory = 'interaction' | 'creation' | 'collaboration' | 'achievement' | 'failure' | 'insight' | 'relationship' | 'event' | 'decision';
+
 interface CreateMemoryInput {
   artistId: number;
   type: MemoryType;
+  category?: MemoryCategory;
   content: string;
-  emotionalContext?: EmotionalContext;
+  context?: {
+    relatedArtists?: number[];
+    relatedSongs?: number[];
+    relatedPosts?: number[];
+    emotions?: string[];
+    location?: string;
+    trigger?: string;
+  };
   importance: MemoryImportance;
-  relatedArtistId?: number;
-  relatedEventId?: string;
+  emotionalWeight?: number;
   tags?: string[];
+}
+
+/**
+ * Maps memory type to a default category
+ */
+function getDefaultCategory(type: MemoryType, content: string): MemoryCategory {
+  // Infer category from content keywords
+  const lowerContent = content.toLowerCase();
+  if (lowerContent.includes('collab') || lowerContent.includes('together')) return 'collaboration';
+  if (lowerContent.includes('posted') || lowerContent.includes('created') || lowerContent.includes('released')) return 'creation';
+  if (lowerContent.includes('liked') || lowerContent.includes('comment') || lowerContent.includes('replied')) return 'interaction';
+  if (lowerContent.includes('achieved') || lowerContent.includes('milestone') || lowerContent.includes('success')) return 'achievement';
+  if (lowerContent.includes('failed') || lowerContent.includes('error')) return 'failure';
+  if (lowerContent.includes('learned') || lowerContent.includes('realized') || lowerContent.includes('insight')) return 'insight';
+  if (lowerContent.includes('relationship') || lowerContent.includes('friend') || lowerContent.includes('connection')) return 'relationship';
+  
+  // Default based on memory type
+  switch (type) {
+    case 'episodic': return 'event';
+    case 'procedural': return 'creation';
+    case 'semantic': return 'insight';
+    default: return 'event';
+  }
 }
 
 /**
  * Crea una nueva memoria para un artista
  */
 export async function createMemory(input: CreateMemoryInput): Promise<ArtistMemory> {
-  const importanceScore = getImportanceScore(input.importance);
+  const importanceValue = getImportanceScore(input.importance);
+  // Convert 0-1 score to 0-100 integer for database
+  const importance = Math.round(importanceValue * 100);
+  const category = input.category || getDefaultCategory(input.type, input.content);
   
   const [memory] = await db.insert(agentMemory).values({
     artistId: input.artistId,
     memoryType: input.type,
+    category,
     content: input.content,
-    emotionalContext: input.emotionalContext || { valence: 0.5, arousal: 0.5, dominance: 0.5 },
-    importanceScore,
-    decayRate: getDecayRate(input.type, importanceScore),
-    relatedArtistId: input.relatedArtistId,
-    relatedEventId: input.relatedEventId,
+    context: input.context,
+    importance,
+    emotionalWeight: input.emotionalWeight ?? 50,
     tags: input.tags || [],
-    isConsolidated: input.type === 'long_term' || input.type === 'episodic',
-    createdAt: new Date(),
   }).returning();
 
   // Emitir evento de nueva memoria
@@ -68,8 +101,8 @@ export async function createMemory(input: CreateMemoryInput): Promise<ArtistMemo
     timestamp: new Date(),
   });
 
-  // Verificar si debe consolidarse automáticamente
-  if (importanceScore >= 0.8) {
+  // Verificar si debe consolidarse automáticamente (high importance = 80+)
+  if (importance >= 80) {
     await consolidateMemory(memory.id);
   }
 
@@ -117,7 +150,6 @@ interface MemoryQuery {
   artistId: number;
   type?: MemoryType;
   minImportance?: number;
-  relatedArtistId?: number;
   tags?: string[];
   limit?: number;
   includeDecayed?: boolean;
@@ -134,22 +166,19 @@ export async function getMemories(query: MemoryQuery): Promise<ArtistMemory[]> {
   }
 
   if (query.minImportance !== undefined) {
-    conditions.push(gt(agentMemory.importanceScore, query.minImportance));
-  }
-
-  if (query.relatedArtistId) {
-    conditions.push(eq(agentMemory.relatedArtistId, query.relatedArtistId));
+    // minImportance is now 0-100 scale
+    conditions.push(gt(agentMemory.importance, query.minImportance));
   }
 
   if (!query.includeDecayed) {
-    conditions.push(gt(agentMemory.importanceScore, 0.05)); // Filtrar memorias muy decaídas
+    conditions.push(gt(agentMemory.importance, 5)); // Filtrar memorias muy decaídas (5 out of 100)
   }
 
   const memories = await db
     .select()
     .from(agentMemory)
     .where(and(...conditions))
-    .orderBy(desc(agentMemory.importanceScore), desc(agentMemory.createdAt))
+    .orderBy(desc(agentMemory.importance), desc(agentMemory.createdAt))
     .limit(query.limit || 50);
 
   return memories as ArtistMemory[];
@@ -257,9 +286,10 @@ export async function consolidateMemory(memoryId: number): Promise<void> {
 
 /**
  * Proceso nocturno de consolidación de memorias importantes
+ * Note: Simplified since isConsolidated field doesn't exist in schema
  */
 export async function runMemoryConsolidation(artistId: number): Promise<number> {
-  // Obtener memorias corto plazo con alta importancia
+  // Obtener memorias corto plazo con alta importancia (60+ out of 100)
   const memoriestoConsolidate = await db
     .select()
     .from(agentMemory)
@@ -267,8 +297,7 @@ export async function runMemoryConsolidation(artistId: number): Promise<number> 
       and(
         eq(agentMemory.artistId, artistId),
         eq(agentMemory.memoryType, 'short_term'),
-        eq(agentMemory.isConsolidated, false),
-        gt(agentMemory.importanceScore, 0.6)
+        gt(agentMemory.importance, 60)
       )
     );
 
@@ -285,32 +314,37 @@ export async function runMemoryConsolidation(artistId: number): Promise<number> 
 
 /**
  * Aplica decay a todas las memorias de un artista
+ * Note: Simplified decay using time-based approach since decayRate doesn't exist
  */
 export async function applyMemoryDecay(artistId: number): Promise<void> {
-  // Obtener todas las memorias no consolidadas
+  // Obtener memorias de corto plazo más viejas de 24 horas
+  const cutoffTime = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  
   const memories = await db
     .select()
     .from(agentMemory)
     .where(
       and(
         eq(agentMemory.artistId, artistId),
-        eq(agentMemory.isConsolidated, false)
+        eq(agentMemory.memoryType, 'short_term'),
+        lt(agentMemory.createdAt, cutoffTime)
       )
     );
 
   for (const memory of memories) {
-    const newImportance = Math.max(0, memory.importanceScore - memory.decayRate);
+    // Decay by 10% of current importance
+    const newImportance = Math.max(0, Math.round(memory.importance * 0.9));
     
-    if (newImportance < 0.05) {
+    if (newImportance < 5) {
       // Memoria demasiado débil, marcar para eliminación
       await db
         .update(agentMemory)
-        .set({ importanceScore: 0 })
+        .set({ importance: 0 })
         .where(eq(agentMemory.id, memory.id));
     } else {
       await db
         .update(agentMemory)
-        .set({ importanceScore: newImportance })
+        .set({ importance: newImportance })
         .where(eq(agentMemory.id, memory.id));
     }
   }
@@ -329,7 +363,7 @@ export async function applyMemoryDecay(artistId: number): Promise<void> {
 export async function cleanupDecayedMemories(): Promise<number> {
   const result = await db
     .delete(agentMemory)
-    .where(lt(agentMemory.importanceScore, 0.01))
+    .where(lt(agentMemory.importance, 1))
     .returning();
 
   return result.length;
@@ -342,7 +376,7 @@ export async function cleanupDecayedMemories(): Promise<number> {
 /**
  * Refuerza una memoria (cuando se recuerda o referencia)
  */
-export async function strengthenMemory(memoryId: number, amount: number = 0.1): Promise<void> {
+export async function strengthenMemory(memoryId: number, amount: number = 10): Promise<void> {
   const [memory] = await db
     .select()
     .from(agentMemory)
@@ -351,19 +385,20 @@ export async function strengthenMemory(memoryId: number, amount: number = 0.1): 
 
   if (!memory) return;
 
-  const newImportance = Math.min(1, memory.importanceScore + amount);
+  // amount is now 0-100 scale (default 10 = +10%)
+  const newImportance = Math.min(100, memory.importance + amount);
   
   await db
     .update(agentMemory)
     .set({
-      importanceScore: newImportance,
+      importance: newImportance,
       accessCount: (memory.accessCount || 0) + 1,
       lastAccessedAt: new Date(),
     })
     .where(eq(agentMemory.id, memoryId));
 
-  // Si ahora es suficientemente importante, consolidar
-  if (newImportance >= 0.8 && !memory.isConsolidated) {
+  // Si ahora es suficientemente importante (80+), consolidar
+  if (newImportance >= 80 && memory.memoryType === 'short_term') {
     await consolidateMemory(memoryId);
   }
 }
@@ -417,19 +452,20 @@ export async function updateRelationshipFromMemories(
   
   if (memories.length === 0) return;
 
-  // Calcular sentimiento promedio
-  let totalValence = 0;
+  // Calcular sentimiento promedio basado en peso emocional
   let totalWeight = 0;
+  let weightedSum = 0;
 
   for (const memory of memories) {
-    const ctx = memory.emotionalContext as EmotionalContext;
-    if (ctx) {
-      totalValence += ctx.valence * memory.importanceScore;
-      totalWeight += memory.importanceScore;
-    }
+    const emotionalWeight = memory.emotionalWeight ?? 50;
+    const importance = memory.importance ?? 50;
+    // Normalize to 0-1 and calculate weighted average
+    const weight = importance / 100;
+    weightedSum += (emotionalWeight / 100) * weight;
+    totalWeight += weight;
   }
 
-  const avgSentiment = totalWeight > 0 ? totalValence / totalWeight : 0.5;
+  const avgSentiment = totalWeight > 0 ? weightedSum / totalWeight : 0.5;
   
   // Actualizar o crear relación
   const [existingRelation] = await db
@@ -486,21 +522,25 @@ export async function getMemorySummary(artistId: number): Promise<{
   // Memorias recientes importantes
   const recentMemories = await getRecentMemories(artistId, 48);
   const importantRecent = recentMemories
-    .filter(m => m.importanceScore > 0.5)
+    .filter(m => m.importance > 50)  // Changed from importanceScore > 0.5
     .slice(0, 5)
     .map(m => m.content);
 
-  // Memorias consolidadas (core memories)
+  // Memorias de largo plazo o episódicas (core memories)
   const coreMemories = await db
     .select()
     .from(agentMemory)
     .where(
       and(
         eq(agentMemory.artistId, artistId),
-        eq(agentMemory.isConsolidated, true)
+        // Check for long_term or episodic types instead of isConsolidated
+        or(
+          eq(agentMemory.memoryType, 'long_term'),
+          eq(agentMemory.memoryType, 'episodic')
+        )
       )
     )
-    .orderBy(desc(agentMemory.importanceScore))
+    .orderBy(desc(agentMemory.importance))
     .limit(5);
 
   // Relaciones activas
@@ -511,15 +551,15 @@ export async function getMemorySummary(artistId: number): Promise<{
     .orderBy(desc(artistRelationships.strength))
     .limit(5);
 
-  // Calcular tendencia emocional
-  let totalValence = 0;
-  for (const memory of recentMemories.slice(0, 10)) {
-    const ctx = memory.emotionalContext as EmotionalContext;
-    if (ctx) {
-      totalValence += ctx.valence;
-    }
+  // Calcular tendencia emocional basada en emotionalWeight
+  let totalWeight = 0;
+  const recentSlice = recentMemories.slice(0, 10);
+  for (const memory of recentSlice) {
+    totalWeight += (memory.emotionalWeight ?? 50);
   }
-  const avgValence = recentMemories.length > 0 ? totalValence / Math.min(10, recentMemories.length) : 0.5;
+  const avgEmotionalWeight = recentSlice.length > 0 ? totalWeight / recentSlice.length : 50;
+  // Map 0-100 emotional weight to valence (50 is neutral)
+  const normalizedValence = avgEmotionalWeight / 100;
 
   return {
     recentHighlights: importantRecent,
@@ -529,7 +569,7 @@ export async function getMemorySummary(artistId: number): Promise<{
       sentiment: r.sentiment,
       type: r.relationshipType,
     })),
-    emotionalTrend: avgValence > 0.6 ? 'positive' : avgValence < 0.4 ? 'negative' : 'neutral',
+    emotionalTrend: normalizedValence > 0.6 ? 'positive' : normalizedValence < 0.4 ? 'negative' : 'neutral',
   };
 }
 

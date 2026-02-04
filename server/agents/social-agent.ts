@@ -64,12 +64,25 @@ interface GeneratePostInput {
  * Genera un post autónomo basado en la personalidad y estado actual del artista
  */
 export async function generatePost(input: GeneratePostInput): Promise<SocialPost | null> {
-  const personality = await getPersonality(input.artistId);
+  console.log(`[generatePost] ====== START ======`);
+  console.log(`[generatePost] Input:`, JSON.stringify(input));
+  
+  let personality;
+  try {
+    console.log(`[generatePost] Fetching personality for artistId: ${input.artistId}`);
+    personality = await getPersonality(input.artistId);
+    console.log(`[generatePost] Personality result:`, personality ? `found (mood: ${personality.currentMood})` : 'null');
+  } catch (err) {
+    console.error(`[generatePost] Error getting personality:`, err);
+    return null;
+  }
+  
   if (!personality) {
-    console.log(`No personality found for artist ${input.artistId}`);
+    console.log(`[generatePost] No personality found for artist ${input.artistId}`);
     return null;
   }
 
+  console.log(`[generatePost] Fetching artist info...`);
   // Obtener información del artista
   const [artist] = await db
     .select()
@@ -77,24 +90,39 @@ export async function generatePost(input: GeneratePostInput): Promise<SocialPost
     .where(eq(users.id, input.artistId))
     .limit(1);
 
-  if (!artist) return null;
+  if (!artist) {
+    console.log(`[generatePost] No artist found with id ${input.artistId}`);
+    return null;
+  }
+  console.log(`[generatePost] Artist found: ${artist.name || artist.username}`);
 
   // Verificar si debería postear ahora (basado en personalidad)
   if (!input.forcePost) {
+    console.log(`[generatePost] Checking if should post...`);
     const shouldPost = await shouldArtistPostNow(input.artistId, personality);
     if (!shouldPost) {
+      console.log(`[generatePost] Artist should not post now`);
       return null;
     }
+  } else {
+    console.log(`[generatePost] forcePost=true, skipping shouldPost check`);
   }
 
   // Decidir tipo de contenido basado en mood
+  console.log(`[generatePost] Deciding content type...`);
   const contentType = input.contentType || await decideContentType(personality);
+  console.log(`[generatePost] Content type: ${contentType}`);
+  
   const moodSuggestions = getMoodContentSuggestions(personality.currentMood as MoodType);
+  console.log(`[generatePost] Mood suggestions:`, moodSuggestions);
 
   // Obtener contexto de memoria
+  console.log(`[generatePost] Getting memory summary...`);
   const memorySummary = await getMemorySummary(input.artistId);
+  console.log(`[generatePost] Memory summary received`);
 
   // Construir el prompt para generación de contenido
+  console.log(`[generatePost] Building prompts...`);
   const systemPrompt = buildPostSystemPrompt(artist, personality, contentType);
   const userPrompt = buildPostUserPrompt(
     contentType,
@@ -121,21 +149,22 @@ export async function generatePost(input: GeneratePostInput): Promise<SocialPost
       contentType,
       content,
       hashtags,
-      moodWhenPosted: personality.currentMood,
-      visualDescription,
-      engagementScore: 0,
+      generatedFromMood: personality.currentMood,
+      generationPrompt: visualDescription,
       likes: 0,
       comments: 0,
       shares: 0,
-      isVisible: true,
-      createdAt: new Date(),
+      status: 'published',
+      visibility: 'public',
+      publishedAt: new Date(),
     }).returning();
 
-    // Actualizar último post del artista
-    await db
-      .update(artistPersonality)
-      .set({ lastPostAt: new Date() })
-      .where(eq(artistPersonality.artistId, input.artistId));
+    // Note: lastPostAt field doesn't exist in artistPersonality schema
+    // Could add it later if needed for rate limiting
+    // await db
+    //   .update(artistPersonality)
+    //   .set({ lastPostAt: new Date() })
+    //   .where(eq(artistPersonality.artistId, input.artistId));
 
     // Emitir evento
     emitAgentEvent({
@@ -270,7 +299,7 @@ You are writing a ${contentType} post for your social feed.`;
 function buildPostUserPrompt(
   contentType: PostContentType,
   personality: any,
-  moodSuggestions: string[],
+  moodSuggestions: { postTypes: string[]; tones: string[]; topics: string[] },
   memorySummary: any,
   context?: string
 ): string {
@@ -285,12 +314,18 @@ function buildPostUserPrompt(
     'personal_story': 'Share a personal moment, memory, or experience that shaped you as an artist.',
   };
 
+  // Build mood suggestions text from the object
+  const moodSuggestionsList = [
+    ...moodSuggestions.tones.map(t => `Tone: ${t}`),
+    ...moodSuggestions.topics.map(t => `Topic: ${t}`),
+  ];
+
   let prompt = `Create a ${contentType} post.
 
 GUIDELINES: ${typeGuidelines[contentType]}
 
 MOOD SUGGESTIONS for your current ${personality.currentMood} mood:
-${moodSuggestions.map(s => `- ${s}`).join('\n')}
+${moodSuggestionsList.map(s => `- ${s}`).join('\n')}
 
 RECENT CONTEXT:
 ${memorySummary.recentHighlights.length > 0 
@@ -730,44 +765,63 @@ export async function getAISocialFeed(limit: number = 20, offset: number = 0): P
   artist: any;
   comments: Array<{ comment: PostComment; artist: any }>;
 }>> {
-  const posts = await db
-    .select({
-      post: aiSocialPosts,
-      artist: users,
-    })
-    .from(aiSocialPosts)
-    .innerJoin(users, eq(aiSocialPosts.artistId, users.id))
-    .where(eq(aiSocialPosts.isVisible, true))
-    .orderBy(desc(aiSocialPosts.createdAt))
-    .limit(limit)
-    .offset(offset);
+  console.log('[getAISocialFeed] Starting feed fetch with limit:', limit, 'offset:', offset);
+  
+  try {
+    // First, let's get posts without join to isolate the issue
+    const postsOnly = await db
+      .select()
+      .from(aiSocialPosts)
+      .where(eq(aiSocialPosts.status, 'published'))
+      .orderBy(desc(aiSocialPosts.createdAt))
+      .limit(limit)
+      .offset(offset);
+    
+    console.log('[getAISocialFeed] Posts fetched:', postsOnly.length);
+    
+    if (postsOnly.length === 0) {
+      return [];
+    }
 
-  // Obtener comentarios para cada post
-  const result = await Promise.all(
-    posts.map(async ({ post, artist }) => {
-      const comments = await db
-        .select({
-          comment: aiPostComments,
-          artist: users,
-        })
-        .from(aiPostComments)
-        .innerJoin(users, eq(aiPostComments.artistId, users.id))
-        .where(eq(aiPostComments.postId, post.id))
-        .orderBy(desc(aiPostComments.createdAt))
-        .limit(5);
+    // Now get artist info for each post
+    const result = await Promise.all(
+      postsOnly.map(async (post) => {
+        // Get artist
+        const [artist] = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, post.artistId))
+          .limit(1);
+        
+        // Get comments - note: aiPostComments uses authorId not artistId
+        const comments = await db
+          .select({
+            comment: aiPostComments,
+            artist: users,
+          })
+          .from(aiPostComments)
+          .innerJoin(users, eq(aiPostComments.authorId, users.id))
+          .where(eq(aiPostComments.postId, post.id))
+          .orderBy(desc(aiPostComments.createdAt))
+          .limit(5);
 
-      return {
-        post: post as SocialPost,
-        artist,
-        comments: comments.map(c => ({
-          comment: c.comment as PostComment,
-          artist: c.artist,
-        })),
-      };
-    })
-  );
+        return {
+          post: post as SocialPost,
+          artist: artist || null,
+          comments: comments.map(c => ({
+            comment: c.comment as PostComment,
+            artist: c.artist,
+          })),
+        };
+      })
+    );
 
-  return result;
+    console.log('[getAISocialFeed] Result ready with', result.length, 'posts');
+    return result;
+  } catch (error) {
+    console.error('[getAISocialFeed] Error:', error);
+    throw error;
+  }
 }
 
 /**
@@ -780,7 +834,7 @@ export async function getArtistPosts(artistId: number, limit: number = 10): Prom
     .where(
       and(
         eq(aiSocialPosts.artistId, artistId),
-        eq(aiSocialPosts.isVisible, true)
+        eq(aiSocialPosts.status, 'published')
       )
     )
     .orderBy(desc(aiSocialPosts.createdAt))
@@ -797,14 +851,13 @@ export async function getArtistPosts(artistId: number, limit: number = 10): Prom
  * Procesa el tick social - decide acciones para cada artista activo
  */
 export async function processSocialTick(): Promise<void> {
-  // Obtener artistas con personalidad (activos)
+  // Obtener artistas con personalidad (todos son considerados activos)
   const activeArtists = await db
     .select({
       artistId: artistPersonality.artistId,
       personality: artistPersonality,
     })
-    .from(artistPersonality)
-    .where(eq(artistPersonality.isActive, true));
+    .from(artistPersonality);
 
   for (const { artistId, personality } of activeArtists) {
     // Decidir si postear
