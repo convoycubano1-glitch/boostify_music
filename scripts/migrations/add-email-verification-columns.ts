@@ -6,7 +6,10 @@
 
 import { Pool } from 'pg';
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool({ 
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
 async function migrate() {
   const client = await pool.connect();
@@ -14,19 +17,49 @@ async function migrate() {
   try {
     console.log('🚀 Starting email verification migration...\n');
     
-    // 1. Add columns to artist_leads
-    console.log('📋 Adding columns to artist_leads...');
+    // 0. Create artist_leads table if it doesn't exist
+    console.log('📋 Checking/Creating artist_leads table...');
     await client.query(`
-      ALTER TABLE artist_leads 
-      ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT NULL,
-      ADD COLUMN IF NOT EXISTS verification_score INTEGER DEFAULT NULL,
-      ADD COLUMN IF NOT EXISTS verified_at TIMESTAMP DEFAULT NULL,
-      ADD COLUMN IF NOT EXISTS bounce_reason TEXT DEFAULT NULL,
-      ADD COLUMN IF NOT EXISTS bounced_at TIMESTAMP DEFAULT NULL,
-      ADD COLUMN IF NOT EXISTS spam_complaint_at TIMESTAMP DEFAULT NULL,
-      ADD COLUMN IF NOT EXISTS unsubscribed_at TIMESTAMP DEFAULT NULL
+      CREATE TABLE IF NOT EXISTS artist_leads (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) NOT NULL,
+        name VARCHAR(255),
+        artist_name VARCHAR(255),
+        genre VARCHAR(100),
+        lead_status VARCHAR(50) DEFAULT 'new',
+        source VARCHAR(100),
+        emails_sent INTEGER DEFAULT 0,
+        last_email_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        email_verified BOOLEAN DEFAULT NULL,
+        verification_score INTEGER DEFAULT NULL,
+        verified_at TIMESTAMP DEFAULT NULL,
+        bounce_reason TEXT DEFAULT NULL,
+        bounced_at TIMESTAMP DEFAULT NULL,
+        spam_complaint_at TIMESTAMP DEFAULT NULL,
+        unsubscribed_at TIMESTAMP DEFAULT NULL
+      )
     `);
-    console.log('   ✅ artist_leads updated');
+    console.log('   ✅ artist_leads ready');
+    
+    // 1. Add columns to artist_leads (in case table existed without these columns)
+    console.log('📋 Adding verification columns to artist_leads...');
+    try {
+      await client.query(`
+        ALTER TABLE artist_leads 
+        ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT NULL,
+        ADD COLUMN IF NOT EXISTS verification_score INTEGER DEFAULT NULL,
+        ADD COLUMN IF NOT EXISTS verified_at TIMESTAMP DEFAULT NULL,
+        ADD COLUMN IF NOT EXISTS bounce_reason TEXT DEFAULT NULL,
+        ADD COLUMN IF NOT EXISTS bounced_at TIMESTAMP DEFAULT NULL,
+        ADD COLUMN IF NOT EXISTS spam_complaint_at TIMESTAMP DEFAULT NULL,
+        ADD COLUMN IF NOT EXISTS unsubscribed_at TIMESTAMP DEFAULT NULL
+      `);
+      console.log('   ✅ Columns added');
+    } catch (err) {
+      console.log('   ✅ Columns already exist');
+    }
     
     // 2. Add columns to investor_leads
     console.log('📋 Adding columns to investor_leads...');
