@@ -11,7 +11,8 @@ import {
   MessageCircle, BarChart2, Calendar, UserCircle2, Video, Sparkles, Wand2, 
   Play, Volume2, ChevronRight, ArrowRight, Headphones, MoveRight, MousePointer,
   Zap, LucideIcon, Check, ExternalLink, CloudLightning, Pause, PlaySquare,
-  DollarSign, Share2, Users, CheckCircle2, Coins, FileCode, X, Layers, Shield, Scale
+  DollarSign, Share2, Users, CheckCircle2, Coins, FileCode, X, Layers, Shield, Scale,
+  User, Bot
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion, useAnimation } from "framer-motion";
@@ -645,7 +646,11 @@ export default function HomePage() {
     };
   }, []);
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = (redirectTo?: string) => {
+    // Guardar el redirect path si se especifica
+    if (redirectTo) {
+      localStorage.setItem('auth_redirect_path', redirectTo);
+    }
     // Redirigir a la página de signup que muestra los planes
     window.location.href = '/auth';
   };
@@ -741,28 +746,32 @@ export default function HomePage() {
                   </>
                 ) : (
                   // Mostrar botones de login cuando no está logueado
-                  <>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    {/* Human Artist Button */}
                     <Button
                       size="lg"
-                      onClick={handleGoogleLogin}
-                      className="relative overflow-hidden group bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 hover:from-orange-600 hover:via-red-600 hover:to-orange-600 text-white h-14 px-8 shadow-xl transition-all duration-300 transform hover:scale-105"
-                      aria-label="Login with Google"
+                      onClick={() => handleGoogleLogin()}
+                      className="relative overflow-hidden group bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white h-14 px-8 shadow-xl transition-all duration-300 transform hover:scale-105 border-2 border-blue-400/30"
+                      aria-label="Login as Human Artist"
                     >
-                      <SiGoogle className="w-5 h-5 mr-2" />
-                      <span className="font-medium">Get Started</span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <User className="w-5 h-5 mr-2" />
+                      <span className="font-bold tracking-wide">HUMAN ARTIST</span>
                     </Button>
                     
-                    <Link href="/pricing">
-                      <Button 
-                        size="lg" 
-                        variant="outline" 
-                        className="h-14 px-8 border-white/30 text-white hover:bg-white/10 hover:text-white"
-                      >
-                        View Pricing
-                        <ChevronRight className="ml-1 h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </>
+                    {/* AI Artist Button */}
+                    <Button
+                      size="lg"
+                      onClick={() => handleGoogleLogin('/my-artists')}
+                      className="relative overflow-hidden group bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 hover:from-orange-600 hover:via-red-600 hover:to-pink-600 text-white h-14 px-8 shadow-xl transition-all duration-300 transform hover:scale-105 border-2 border-orange-400/30"
+                      aria-label="Login as AI Artist"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-orange-400/20 to-pink-400/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <Bot className="w-5 h-5 mr-2" />
+                      <span className="font-bold tracking-wide">AI ARTIST</span>
+                      <Sparkles className="w-4 h-4 ml-2 animate-pulse" />
+                    </Button>
+                  </div>
                 )}
               </motion.div>
             </motion.div>

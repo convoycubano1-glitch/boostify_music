@@ -12,11 +12,22 @@ export default function AuthPage() {
   const { isSignedIn, isLoaded } = useUser();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
+  const [redirectUrl, setRedirectUrl] = useState('/dashboard');
 
-  // Redirect to dashboard if already signed in
+  // Read stored redirect path on mount
+  useEffect(() => {
+    const storedRedirect = localStorage.getItem('auth_redirect_path');
+    if (storedRedirect) {
+      setRedirectUrl(storedRedirect);
+    }
+  }, []);
+
+  // Redirect to stored path or dashboard if already signed in
   useEffect(() => {
     if (isLoaded && isSignedIn) {
-      setLocation('/dashboard');
+      const redirectPath = localStorage.getItem('auth_redirect_path') || '/dashboard';
+      localStorage.removeItem('auth_redirect_path');
+      setLocation(redirectPath);
     }
   }, [isLoaded, isSignedIn, setLocation]);
 
@@ -334,14 +345,14 @@ export default function AuthPage() {
               appearance={clerkAppearance}
               routing="hash"
               signUpUrl="/auth?signup=true"
-              afterSignInUrl="/dashboard"
+              afterSignInUrl={redirectUrl}
             />
           ) : (
             <SignUp 
               appearance={clerkAppearance}
               routing="hash"
               signInUrl="/auth"
-              afterSignUpUrl="/dashboard"
+              afterSignUpUrl={redirectUrl}
             />
           )}
         </div>

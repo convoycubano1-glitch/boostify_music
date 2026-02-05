@@ -571,7 +571,7 @@ export default function MyArtistsPage() {
               </Button>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {artists.map((artist) => (
                 <Card
                   key={artist.id}
@@ -579,12 +579,12 @@ export default function MyArtistsPage() {
                   data-testid={`card-artist-${artist.id}`}
                 >
                   {/* Cover Image */}
-                  <div className="relative h-48 overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900">
                     {artist.coverImage || artist.profileImage ? (
                       <img
                         src={artist.coverImage || artist.profileImage}
                         alt={artist.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -602,15 +602,15 @@ export default function MyArtistsPage() {
                   </div>
 
                   {/* Content */}
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold mb-2 truncate">{artist.name}</h3>
+                  <div className="p-4">
+                    <h3 className="text-lg font-bold mb-2 truncate">{artist.name}</h3>
                     
                     {artist.genres && artist.genres.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-3">
+                      <div className="flex flex-wrap gap-1.5 mb-2">
                         {artist.genres.slice(0, 2).map((genre, idx) => (
                           <span
                             key={idx}
-                            className="text-xs px-2 py-1 bg-orange-500/10 text-orange-500 rounded-full"
+                            className="text-xs px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded-full"
                           >
                             {genre}
                           </span>
@@ -619,56 +619,57 @@ export default function MyArtistsPage() {
                     )}
 
                     {artist.country && (
-                      <div className="flex items-center gap-2 text-sm text-gray-400 mb-3">
-                        <MapPin className="h-4 w-4" />
+                      <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2">
+                        <MapPin className="h-3 w-3" />
                         {artist.country}
                       </div>
                     )}
 
                     {artist.biography && (
-                      <p className="text-sm text-gray-400 line-clamp-3 mb-4">
+                      <p className="text-xs text-gray-400 line-clamp-2 mb-3">
                         {artist.biography}
                       </p>
                     )}
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5">
                       <Link href={`/artist/${artist.slug}`} className="flex-1">
                         <Button
                           variant="outline"
-                          className="w-full border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
+                          size="sm"
+                          className="w-full border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white text-xs"
                           data-testid={`button-view-artist-${artist.id}`}
                         >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          View Profile
+                          <ExternalLink className="h-3 w-3 mr-1.5" />
+                          View
                         </Button>
                       </Link>
                       <Button
                         variant="outline"
                         size="icon"
-                        className="border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
+                        className="h-8 w-8 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
                         onClick={() => regenerateImagesMutation.mutate(artist.id)}
                         disabled={regeneratingArtistId === artist.id}
                         title="Regenerate images with AI"
                         data-testid={`button-regenerate-artist-${artist.id}`}
                       >
                         {regeneratingArtistId === artist.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <Loader2 className="h-3 w-3 animate-spin" />
                         ) : (
-                          <RefreshCw className="h-4 w-4" />
+                          <RefreshCw className="h-3 w-3" />
                         )}
                       </Button>
                       <Button
                         variant="outline"
                         size="icon"
-                        className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                        className="h-8 w-8 border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
                         onClick={() => handleDeleteArtist(artist.id, artist.name)}
                         disabled={deletingArtistId === artist.id}
                         data-testid={`button-delete-artist-${artist.id}`}
                       >
                         {deletingArtistId === artist.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <Loader2 className="h-3 w-3 animate-spin" />
                         ) : (
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3 w-3" />
                         )}
                       </Button>
                     </div>
