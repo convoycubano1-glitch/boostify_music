@@ -34,6 +34,10 @@ import {
   processOutreachTick
 } from '../agents/outreach-agent';
 
+import { db } from '../db';
+import { outreachEmails } from '../../db/schema';
+import { sql, gte } from 'drizzle-orm';
+
 const router = Router();
 
 // ============================================
@@ -273,6 +277,36 @@ router.post('/generate-video-story/:songId', async (req: Request, res: Response)
 // ============================================
 // OUTREACH AGENT ENDPOINTS
 // ============================================
+
+/**
+ * GET /api/ai-intelligence/outreach/daily-limit
+ * Get current daily email limit status
+ */
+router.get('/outreach/daily-limit', async (req: Request, res: Response) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(outreachEmails)
+      .where(gte(outreachEmails.sentAt, today));
+    
+    const sentToday = result[0]?.count || 0;
+    const maxPerDay = 10; // MAX_EMAILS_PER_DAY constant
+    
+    res.json({
+      success: true,
+      dailyLimit: maxPerDay,
+      sentToday,
+      remaining: Math.max(0, maxPerDay - sentToday),
+      limitReached: sentToday >= maxPerDay
+    });
+  } catch (error: any) {
+    console.error('Error checking daily limit:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 /**
  * GET /api/ai-intelligence/outreach/artists

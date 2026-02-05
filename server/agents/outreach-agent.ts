@@ -279,6 +279,22 @@ export async function executeOutreachCampaign(
   
   const results: OutreachResult[] = [];
   
+  // Check daily limit first (unless dry run)
+  if (!dryRun) {
+    const emailsSentToday = await getEmailsSentToday();
+    if (emailsSentToday >= MAX_EMAILS_PER_DAY) {
+      console.log(`⚠️ [OutreachAgent] Daily email limit reached (${emailsSentToday}/${MAX_EMAILS_PER_DAY}). No emails will be sent.`);
+      return results;
+    }
+    
+    // Adjust contactLimit to respect daily quota
+    const remainingQuota = MAX_EMAILS_PER_DAY - emailsSentToday;
+    if (contactLimit > remainingQuota) {
+      console.log(`📧 [OutreachAgent] Adjusting contact limit from ${contactLimit} to ${remainingQuota} (daily quota)`);
+      contactLimit = remainingQuota;
+    }
+  }
+  
   try {
     // Get artist highlights
     const artists = await selectArtistsForOutreach(artistIds.length || 3);
@@ -440,6 +456,27 @@ function formatEmailHtml(email: PersonalizedEmail): string {
 }
 
 // ============================================
+// DAILY LIMIT CONFIGURATION
+// ============================================
+
+const MAX_EMAILS_PER_DAY = 10;
+
+/**
+ * Get the count of emails sent today
+ */
+async function getEmailsSentToday(): Promise<number> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const result = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(outreachEmails)
+    .where(gte(outreachEmails.sentAt, today));
+  
+  return result[0]?.count || 0;
+}
+
+// ============================================
 // SCHEDULED OUTREACH (Called by Orchestrator)
 // ============================================
 
@@ -460,8 +497,21 @@ export async function processOutreachTick(): Promise<void> {
     return;
   }
   
-  // Send a small batch of emails
-  await executeOutreachCampaign([], 3, false);
+  // Check daily limit
+  const emailsSentToday = await getEmailsSentToday();
+  if (emailsSentToday >= MAX_EMAILS_PER_DAY) {
+    console.log(`📧 [OutreachAgent] Daily limit reached (${emailsSentToday}/${MAX_EMAILS_PER_DAY}), skipping...`);
+    return;
+  }
+  
+  // Calculate how many emails we can still send today
+  const remainingQuota = MAX_EMAILS_PER_DAY - emailsSentToday;
+  const batchSize = Math.min(3, remainingQuota);
+  
+  console.log(`📧 [OutreachAgent] Emails sent today: ${emailsSentToday}/${MAX_EMAILS_PER_DAY}, sending batch of ${batchSize}`);
+  
+  // Send a small batch of emails (respecting daily limit)
+  await executeOutreachCampaign([], batchSize, false);
   
   console.log('📧 [OutreachAgent] ====== OUTREACH TICK COMPLETE ======');
 }
