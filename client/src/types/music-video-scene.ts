@@ -431,6 +431,88 @@ export function validateSceneBalance(scenes: MusicVideoScene[]): {
 }
 
 /**
+ * 🔧 NEW: Validador de letras en escenas
+ * Verifica que las escenas tengan letras asignadas correctamente
+ */
+export function validateLyricsInScenes(scenes: MusicVideoScene[], fullLyrics?: string): {
+  valid: boolean;
+  scenesWithLyrics: number;
+  scenesWithoutLyrics: number;
+  coveragePercent: number;
+  warnings: string[];
+  errors: string[];
+} {
+  const warnings: string[] = [];
+  const errors: string[] = [];
+  
+  // Contar escenas con y sin letras
+  const withLyrics = scenes.filter(s => 
+    s.lyrics_segment && s.lyrics_segment.trim().length > 3
+  );
+  const withoutLyrics = scenes.filter(s => 
+    !s.lyrics_segment || s.lyrics_segment.trim().length <= 3
+  );
+  
+  const coveragePercent = (withLyrics.length / scenes.length) * 100;
+  
+  // Verificar escenas PERFORMANCE sin letras (crítico)
+  const performanceWithoutLyrics = scenes.filter(s => 
+    s.role === SceneRole.PERFORMANCE && 
+    (!s.lyrics_segment || s.lyrics_segment.trim().length <= 3)
+  );
+  
+  if (performanceWithoutLyrics.length > 0) {
+    errors.push(`🔴 ${performanceWithoutLyrics.length} escenas PERFORMANCE sin letras asignadas`);
+  }
+  
+  // Verificar si hay letras duplicadas exactas
+  const lyricsMap = new Map<string, number>();
+  withLyrics.forEach(s => {
+    const normalized = s.lyrics_segment?.toLowerCase().trim() || '';
+    lyricsMap.set(normalized, (lyricsMap.get(normalized) || 0) + 1);
+  });
+  
+  const duplicates = Array.from(lyricsMap.entries())
+    .filter(([_, count]) => count > 2);
+  
+  if (duplicates.length > 0) {
+    warnings.push(`⚠️ ${duplicates.length} fragmentos de letra repetidos más de 2 veces`);
+  }
+  
+  // Verificar cobertura mínima
+  if (coveragePercent < 50) {
+    errors.push(`🔴 Solo ${coveragePercent.toFixed(0)}% de las escenas tienen letras (mínimo 50%)`);
+  } else if (coveragePercent < 75) {
+    warnings.push(`⚠️ ${coveragePercent.toFixed(0)}% de cobertura de letras (recomendado 75%+)`);
+  }
+  
+  // Verificar que la letra completa esté cubierta (si se proporciona)
+  if (fullLyrics && fullLyrics.trim().length > 20) {
+    const fullLyricsNormalized = fullLyrics.toLowerCase().replace(/\[.*?\]/g, '').trim();
+    const coveredLyrics = withLyrics.map(s => s.lyrics_segment?.toLowerCase().trim() || '').join(' ');
+    
+    const fullWords = new Set(fullLyricsNormalized.split(/\s+/).filter(w => w.length > 2));
+    const coveredWords = new Set(coveredLyrics.split(/\s+/).filter(w => w.length > 2));
+    
+    const missingWords = Array.from(fullWords).filter(w => !coveredWords.has(w));
+    const missedPercent = (missingWords.length / fullWords.size) * 100;
+    
+    if (missedPercent > 30) {
+      warnings.push(`⚠️ ~${missedPercent.toFixed(0)}% de la letra original no está asignada a escenas`);
+    }
+  }
+  
+  return {
+    valid: errors.length === 0,
+    scenesWithLyrics: withLyrics.length,
+    scenesWithoutLyrics: withoutLyrics.length,
+    coveragePercent,
+    warnings,
+    errors
+  };
+}
+
+/**
  * Generador de shot_type variado
  * Asegura que no haya muchos shots consecutivos del mismo tipo
  */

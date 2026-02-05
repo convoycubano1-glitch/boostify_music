@@ -242,6 +242,28 @@ export async function generateImageWithNanoBanana(
     throw new Error('No se recibió imagen en la respuesta');
   } catch (error: any) {
     logger.error('[FAL] Error generando imagen con nano-banana:', error.response?.data || error.message);
+    
+    // 🔧 FALLBACK: Intentar con Gemini cuando FAL falla
+    logger.log('[FAL] 🔄 Intentando fallback con Gemini...');
+    try {
+      const geminiService = await import('./gemini-image-service');
+      const geminiResult = await geminiService.generateCinematicImage(prompt, {
+        aspectRatio: options.aspectRatio || '1:1'
+      });
+      
+      if (geminiResult.success && geminiResult.imageUrl) {
+        logger.log('[FAL] ✅ Fallback Gemini exitoso');
+        return {
+          success: true,
+          imageUrl: geminiResult.imageUrl,
+          imageBase64: geminiResult.imageBase64,
+          provider: 'gemini-fallback'
+        };
+      }
+    } catch (geminiError: any) {
+      logger.error('[FAL] ❌ Fallback Gemini también falló:', geminiError.message);
+    }
+    
     return {
       success: false,
       error: error.response?.data?.detail || error.message
@@ -580,7 +602,8 @@ export async function generateArtistImagesWithFAL(
  * @param genre - Género musical (pop, hip-hop, rap, electronic, rock, etc.)
  * @param mood - Estado de ánimo (energetic, melancholic, upbeat, etc.)
  * @param artistGender - Género del artista: 'male' | 'female' (para tipo de voz)
- * @param customLyrics - Letras personalizadas (opcional, si no se proporciona se generan automáticamente)
+ * @param customLyrics - Letras personalizadas (opcional, si no se proporciona se generan con AI)
+ * @param artistBio - Biografía del artista (opcional, solo para estilo vocal)
  */
 export async function generateArtistSongWithFAL(
   artistName: string,
@@ -588,107 +611,101 @@ export async function generateArtistSongWithFAL(
   genre: string,
   mood?: string,
   artistGender: 'male' | 'female' = 'male',
-  customLyrics?: string
+  customLyrics?: string,
+  artistBio?: string
 ): Promise<FalMusicResult> {
-  logger.log(`[FAL] 🎵 Generando canción: "${songTitle}" para ${artistName} (${genre}) - Voz: ${artistGender}`);
+  logger.log(`[FAL] 🎵 HIT MACHINE: Generando hit mundial "${songTitle}" para ${artistName} (${genre}) - Voz: ${artistGender}`);
 
-  // Mapear género musical a características de producción TOP QUALITY
-  // Inspirado en los mejores productores: Max Martin, Pharrell, Dr. Dre, etc.
-  const genreStyles: Record<string, { 
-    style: string; 
-    maleVocals: string; 
-    femaleVocals: string; 
-    themes: string[] 
-  }> = {
+  // Importar el generador de letras con IA
+  const { generateHitLyrics, getProductionPrompt } = await import('./ai-lyrics-generator');
+
+  const songMood = mood || 'energetic';
+  
+  // Mapear tipo de voz según género del artista (para el prompt de producción)
+  const vocalStyles: Record<string, { male: string; female: string }> = {
     'pop': { 
-      style: 'Billboard Hot 100 Pop, Max Martin style production, crisp modern synths, punchy drums, catchy melodic hooks, radio-ready mix, pristine vocals, commercial sound', 
-      maleVocals: 'clear powerful male tenor vocals, The Weeknd style, smooth falsetto, emotional delivery',
-      femaleVocals: 'bright powerful female vocals, Ariana Grande style, crystal clear high notes, expressive delivery',
-      themes: ['eternal love', 'dancing all night', 'chasing dreams', 'summer romance', 'unstoppable spirit']
+      male: 'clear powerful male tenor vocals, smooth falsetto, emotional delivery',
+      female: 'bright powerful female vocals, crystal clear high notes, expressive delivery'
     },
     'hip-hop': { 
-      style: 'Platinum Hip-Hop, Metro Boomin production, deep 808 sub-bass, crisp trap hi-hats, hard-hitting kicks, atmospheric pads, stadium ready', 
-      maleVocals: 'confident male rapper, Drake flow, melodic trap vocals, smooth delivery with ad-libs',
-      femaleVocals: 'fierce female rapper, Megan Thee Stallion energy, powerful flow, commanding presence',
-      themes: ['rise to the top', 'luxury lifestyle', 'real recognize real', 'city anthem', 'self-made success']
+      male: 'confident male rapper, melodic trap vocals, smooth delivery with ad-libs',
+      female: 'fierce female rapper, powerful flow, commanding presence'
     },
     'rap': { 
-      style: 'Grammy-winning Rap, Dr. Dre quality production, punchy 808s, intricate hi-hat patterns, cinematic strings, west coast vibes, hard-hitting drums', 
-      maleVocals: 'aggressive male rapper, Eminem intensity, rapid-fire flow, powerful delivery, lyrical precision',
-      femaleVocals: 'fierce female MC, Nicki Minaj versatility, switching flows, confident and bold delivery',
-      themes: ['street wisdom', 'overcoming obstacles', 'loyalty above all', 'legendary status', 'raw authenticity']
+      male: 'aggressive male rapper, rapid-fire flow, powerful delivery, lyrical precision',
+      female: 'fierce female MC, switching flows, confident and bold delivery'
     },
     'electronic': { 
-      style: 'Festival EDM, Swedish House Mafia production, massive synth drops, euphoric builds, pulsing basslines, stadium anthems, professional mastering', 
-      maleVocals: 'ethereal male vocals, The Chainsmokers style, processed harmonies, emotional electronic',
-      femaleVocals: 'angelic female vocals, Zedd collaborator style, soaring high notes, euphoric delivery',
-      themes: ['endless nights', 'electric connection', 'losing ourselves', 'one more time', 'united as one']
+      male: 'ethereal male vocals, processed harmonies, emotional electronic',
+      female: 'angelic female vocals, soaring high notes, euphoric delivery'
     },
     'rock': { 
-      style: 'Arena Rock, Rick Rubin production, crushing electric guitars, thunderous drums, powerful bass, anthemic energy, raw emotion, stadium sound', 
-      maleVocals: 'powerful male rock vocals, Foo Fighters intensity, raw emotional delivery, soaring melodies',
-      femaleVocals: 'fierce female rock vocals, Hayley Williams energy, powerful range, passionate delivery',
-      themes: ['breaking chains', 'eternal fire', 'standing tall', 'wild hearts', 'unstoppable force']
+      male: 'powerful male rock vocals, raw emotional delivery, soaring melodies',
+      female: 'fierce female rock vocals, powerful range, passionate delivery'
     },
     'indie': { 
-      style: 'Critically acclaimed Indie, Bon Iver textures, warm acoustic guitars, dreamy reverb, subtle electronic elements, intimate production, emotional depth', 
-      maleVocals: 'soft introspective male vocals, Bon Iver falsetto, vulnerable delivery, emotional nuance',
-      femaleVocals: 'ethereal female vocals, Phoebe Bridgers intimacy, delicate delivery, haunting beauty',
-      themes: ['quiet longing', 'fading memories', 'simple moments', 'bittersweet love', 'autumn feelings']
+      male: 'soft introspective male vocals, falsetto, vulnerable delivery, emotional nuance',
+      female: 'ethereal female vocals, delicate delivery, haunting beauty'
     },
     'r&b': { 
-      style: 'Platinum R&B, Darkchild production, silky smooth bass, lush neo-soul chords, crisp snares, warm atmospheric pads, sensual groove, Grammy quality', 
-      maleVocals: 'smooth soulful male vocals, Usher style, falsetto runs, romantic and sensual delivery',
-      femaleVocals: 'sultry female R&B vocals, Beyoncé power, melismatic runs, passionate and commanding',
-      themes: ['midnight passion', 'undeniable chemistry', 'forever yours', 'heart on fire', 'silk sheets']
+      male: 'smooth soulful male vocals, falsetto runs, romantic and sensual delivery',
+      female: 'sultry female R&B vocals, melismatic runs, passionate and commanding'
     },
     'jazz': { 
-      style: 'Blue Note Jazz, sophisticated arrangement, warm piano chords, walking upright bass, brushed drums, brass accents, swing feel, timeless elegance', 
-      maleVocals: 'smooth male jazz vocals, Michael Bublé class, sophisticated phrasing, elegant delivery',
-      femaleVocals: 'sultry female jazz vocals, Norah Jones warmth, intimate phrasing, smoky elegance',
-      themes: ['city lights', 'old fashioned love', 'rainy evenings', 'champagne nights', 'timeless romance']
+      male: 'smooth male jazz vocals, sophisticated phrasing, elegant delivery',
+      female: 'sultry female jazz vocals, intimate phrasing, smoky elegance'
     },
     'country': { 
-      style: 'Nashville Modern Country, premium production, warm acoustic guitar, pedal steel, fiddle accents, authentic storytelling, stadium country, radio-ready', 
-      maleVocals: 'authentic male country vocals, Luke Combs warmth, storytelling delivery, heartfelt emotion',
-      femaleVocals: 'powerful female country vocals, Carrie Underwood strength, emotional range, genuine delivery',
-      themes: ['small town dreams', 'back road memories', 'friday night lights', 'true love story', 'coming home']
+      male: 'authentic male country vocals, storytelling delivery, heartfelt emotion',
+      female: 'powerful female country vocals, emotional range, genuine delivery'
     },
     'latin': { 
-      style: 'Latin Grammy production, tropical percussion, brass stabs, reggaeton dembow, sensual rhythms, club-ready mix, international appeal, summer anthem', 
-      maleVocals: 'passionate male Latin vocals, Bad Bunny style, rhythmic flow, charismatic delivery',
-      femaleVocals: 'fiery female Latin vocals, Shakira power, passionate delivery, rhythmic precision',
-      themes: ['tropical nights', 'bailando contigo', 'fuego eterno', 'under the stars', 'island paradise']
+      male: 'passionate male Latin vocals, rhythmic flow, charismatic delivery',
+      female: 'fiery female Latin vocals, passionate delivery, rhythmic precision'
     },
     'reggaeton': { 
-      style: 'Platinum Reggaeton, Tainy production, heavy dembow beat, deep 808 bass, perreo rhythm, club bangers, international hit quality, urban Latino', 
-      maleVocals: 'energetic male reggaeton vocals, J Balvin flow, catchy hooks, party energy with swagger',
-      femaleVocals: 'fierce female reggaeton vocals, Karol G energy, powerful hooks, commanding presence',
-      themes: ['toda la noche', 'perreo intenso', 'mi amor prohibido', 'fiesta sin fin', 'calor del verano']
+      male: 'energetic male reggaeton vocals, catchy hooks, party energy with swagger',
+      female: 'fierce female reggaeton vocals, powerful hooks, commanding presence'
     },
   };
 
-  const genreData = genreStyles[genre.toLowerCase()] || genreStyles['pop'];
-  const songMood = mood || 'energetic';
+  const vocalStyle = vocalStyles[genre.toLowerCase()]?.[artistGender] || vocalStyles['pop'][artistGender];
   
-  // Seleccionar tipo de voz según género del artista
-  const vocalsStyle = artistGender === 'female' ? genreData.femaleVocals : genreData.maleVocals;
-
-  // Construir prompt de estilo TOP QUALITY (10-300 caracteres)
-  const stylePrompt = `${genreData.style}, ${songMood} mood, ${vocalsStyle}`.substring(0, 300);
-
-  // Generar letras si no se proporcionan
   let lyricsPrompt: string;
+  let stylePrompt: string;
   
   if (customLyrics) {
     // Usar letras personalizadas, asegurando que tengan tags
     lyricsPrompt = customLyrics.includes('[verse]') || customLyrics.includes('[chorus]') 
       ? customLyrics 
       : `[verse]\n${customLyrics}`;
+    stylePrompt = `${getProductionPrompt(genre, songMood)}, ${vocalStyle}`.substring(0, 300);
   } else {
-    // Generar letras automáticas basadas en el género y mood - CALIDAD PROFESIONAL
-    const theme = genreData.themes[Math.floor(Math.random() * genreData.themes.length)];
-    lyricsPrompt = generateLyricsForGenre(artistName, songTitle, genre, songMood, theme, artistGender);
+    // 🎵 GENERAR LETRAS CON IA - HIT MACHINE
+    logger.log(`[FAL] 🤖 Generando letras con AI Hit Machine...`);
+    
+    try {
+      const hitResult = await generateHitLyrics({
+        artistName,
+        songTitle,
+        genre,
+        mood: songMood,
+        artistGender,
+        artistBio // Solo para estilo vocal, NO para contenido
+      });
+      
+      lyricsPrompt = hitResult.lyrics;
+      stylePrompt = `${hitResult.productionPrompt}, ${vocalStyle}`.substring(0, 300);
+      
+      logger.log(`[FAL] ✅ Hit generado - Tema: "${hitResult.theme}"`);
+      logger.log(`[FAL] 🎤 Hook: "${hitResult.hookLine.substring(0, 50)}..."`);
+    } catch (aiError) {
+      logger.warn(`[FAL] ⚠️ AI lyrics failed, using fallback:`, aiError);
+      // 🔧 FIX: Si hay customLyrics disponibles (de transcripción previa), usarlas en el fallback
+      // Esto asegura que aunque la AI falle, seguimos usando la letra real de la canción
+      lyricsPrompt = generateLyricsForGenreFallback(artistName, songTitle, genre, songMood, artistGender, customLyrics);
+      stylePrompt = `${getProductionPrompt(genre, songMood)}, ${vocalStyle}`.substring(0, 300);
+    }
   }
 
   // Asegurar que las letras cumplen el mínimo de 10 caracteres
@@ -696,929 +713,115 @@ export async function generateArtistSongWithFAL(
     lyricsPrompt = `[verse]\nThis is the story of ${artistName}\n[chorus]\n${songTitle}, yeah ${songTitle}`;
   }
 
-  logger.log(`[FAL] Estilo: ${stylePrompt}`);
-  logger.log(`[FAL] Letras generadas: ${lyricsPrompt.substring(0, 200)}...`);
+  // Truncar letras a 3000 caracteres (límite de MiniMax)
+  if (lyricsPrompt.length > 3000) {
+    lyricsPrompt = lyricsPrompt.substring(0, 2990) + '\n[outro]';
+  }
+
+  logger.log(`[FAL] 🎹 Estilo de producción: ${stylePrompt.substring(0, 100)}...`);
+  logger.log(`[FAL] 📝 Letras (${lyricsPrompt.length} chars): ${lyricsPrompt.substring(0, 150)}...`);
 
   return generateMusicWithMiniMax(stylePrompt, lyricsPrompt);
 }
 
 /**
- * ============================================================
- * GENERADOR DE LETRAS PROFESIONALES - TOP SONGWRITER QUALITY
- * ============================================================
- * Genera letras de calidad profesional inspiradas en los mejores
- * compositores: Max Martin, Diane Warren, Lin-Manuel Miranda, etc.
- * 
- * @param artistName - Nombre del artista
- * @param songTitle - Título de la canción  
- * @param genre - Género musical
- * @param mood - Estado de ánimo
- * @param theme - Tema de la canción
- * @param artistGender - Género del artista ('male' | 'female')
+ * Fallback lyrics generator (cuando falla OpenAI)
+ * 🔧 FIX: Ahora acepta customLyrics para usar la letra real si existe
  */
-function generateLyricsForGenre(
+function generateLyricsForGenreFallback(
   artistName: string,
   songTitle: string,
   genre: string,
   mood: string,
-  theme: string,
-  artistGender: 'male' | 'female' = 'male'
+  artistGender: 'male' | 'female',
+  customLyrics?: string // 🔧 Nuevo parámetro opcional
 ): string {
-  // Templates de letras profesionales por género - Billboard/Grammy quality
-  const lyricsTemplates: Record<string, { male: string; female: string }> = {
-    'pop': {
-      male: `[intro]
-Yeah, ${artistName}, let's go
+  // 🔧 Si hay letras personalizadas, formatearlas y usarlas
+  if (customLyrics && customLyrics.trim().length > 20) {
+    logger.log(`[FAL] 📝 Usando letras personalizadas en fallback (${customLyrics.length} chars)`);
+    
+    // Asegurar formato básico si no tiene tags
+    if (!customLyrics.includes('[verse]') && !customLyrics.includes('[chorus]')) {
+      // Dividir la letra en secciones estimadas
+      const lines = customLyrics.split('\n').filter(l => l.trim());
+      const linesPerSection = Math.ceil(lines.length / 4);
+      
+      let formatted = `[intro]\n${artistName}\n\n`;
+      formatted += `[verse]\n${lines.slice(0, linesPerSection).join('\n')}\n\n`;
+      formatted += `[chorus]\n${lines.slice(linesPerSection, linesPerSection * 2).join('\n')}\n\n`;
+      formatted += `[verse]\n${lines.slice(linesPerSection * 2, linesPerSection * 3).join('\n')}\n\n`;
+      formatted += `[outro]\n${lines.slice(linesPerSection * 3).join('\n') || songTitle}`;
+      
+      return formatted;
+    }
+    
+    return customLyrics;
+  }
+
+  // Fallback genérico si no hay letras personalizadas
+  const hooks: Record<string, string[]> = {
+    'pop': ['tonight', 'forever', 'one more time', 'never let go'],
+    'hip-hop': ['on top', 'made it', 'real ones', 'we up'],
+    'rap': ['legend', 'untouchable', 'king', 'history'],
+    'electronic': ['feel it', 'higher', 'together', 'let go'],
+    'rock': ['we are', 'stand up', 'never back down', 'alive'],
+    'r&b': ['all night', 'close to me', 'feel you', 'only you'],
+    'reggaeton': ['dale', 'baila', 'toda la noche', 'fuego'],
+    'latin': ['corazón', 'bailamos', 'mi amor', 'contigo'],
+    'indie': ['remember when', 'quietly', 'fade away', 'stay'],
+    'country': ['this town', 'back home', 'friday nights', 'true love'],
+    'jazz': ['in your arms', 'dance with me', 'moonlight', 'forever yours']
+  };
+  
+  const hook = hooks[genre.toLowerCase()]?.[Math.floor(Math.random() * 4)] || 'tonight';
+  
+  return `[intro]
+${artistName}
 
 [verse]
-I've been running through my mind all night
-Searching for the words to make this right
-Every heartbeat leads me back to you
-And there's nothing that I wouldn't do
+In the ${mood} night we come alive
+Every moment feels like the first time
+Chasing dreams through the city lights
+With you everything just feels right
 
 [pre-chorus]
-We're standing on the edge of something beautiful
-This feeling is undeniable
+Can you feel it rising up inside
+There's no way to hide what we feel tonight
 
 [chorus]
-${songTitle}, we're lighting up the sky tonight
-${songTitle}, everything just feels so right
-We're dancing in the neon glow
-And I never want to let you go
-${songTitle}, this is where we come alive
+${songTitle}, ${hook}
+We're taking over, can't be stopped now
+${songTitle}, this is our time
+${hook}, we're gonna shine
 
 [verse]
-The city lights are calling out our names
-Nothing in this world will be the same
-Take my hand and let's escape tonight
-Into the stars, we're taking flight
+Every heartbeat leads us to this place
+Look into my eyes, feel the embrace
+Nothing compares to what we share
+A connection beyond compare
 
 [chorus]
-${songTitle}, we're lighting up the sky tonight
-${songTitle}, everything just feels so right
-We're dancing in the neon glow
-And I never want to let you go
-${songTitle}, this is where we come alive
+${songTitle}, ${hook}
+We're taking over, can't be stopped now
+${songTitle}, this is our time
+${hook}, we're gonna shine
 
 [bridge]
 When the world tries to bring us down
-We'll rise up, we won't make a sound
-Just you and me against it all
-Together we will never fall
-
-[outro]
-${songTitle}, oh ${songTitle}
-This is where we come alive`,
-
-      female: `[intro]
-${artistName}, yeah
-
-[verse]
-Been staring at the ceiling, can't sleep tonight
-Thinking about the way you held me tight
-Every memory playing on repeat
-You're the missing piece that makes me complete
-
-[pre-chorus]
-I'm standing at the edge of something magical
-This love is unconditional
-
-[chorus]
-${songTitle}, we're shining like the stars above
-${songTitle}, you're everything I'm dreaming of
-We're flying through the midnight sky
-With you I feel like I can fly
-${songTitle}, this is our moment, this is love
-
-[verse]
-The moonlight's painting shadows on the wall
-I'm not afraid to give you my all
-Take my heart, I'll give you everything
-You're the fire, you're my everything
-
-[chorus]
-${songTitle}, we're shining like the stars above
-${songTitle}, you're everything I'm dreaming of
-We're flying through the midnight sky
-With you I feel like I can fly
-${songTitle}, this is our moment, this is love
-
-[bridge]
-When doubts try to tear us apart
-I'll hold you closer to my heart
+We'll rise up and wear the crown
 Nothing's gonna stop us now
-We made this sacred vow
+This is ${songTitle}
 
 [outro]
-${songTitle}, oh ${songTitle}
-This is our moment, this is love`
-    },
-
-    'hip-hop': {
-      male: `[intro]
-Yeah, ${artistName} in the building
-Let's get it
-
-[verse]
-Started with a vision and a dream in my head
-Late nights in the studio, sleeping on the bed
-Mama always told me I would make it one day
-Now I'm stacking these checks and I'm paving the way
-
-They said I wouldn't make it, look at me now
-From the bottom to the top, I showed them how
-Every verse I spit is like a work of art
-I've been grinding since the start with a lion heart
-
-[chorus]
-${songTitle}, that's the movement, that's the wave
-${songTitle}, we the ones they couldn't save
-From the struggle to the throne, we made a way
-${songTitle}, legendary every day
-
-[verse]
-Real recognize real, and I see the vision clear
-No time for the fake ones, only real ones here
-Every step I take is calculated, planned
-Building this empire with my own two hands
-
-Success is the revenge, let my haters watch
-From the trenches to the top, never gonna stop
-${artistName} the name that they'll remember
-Every season I deliver, spring through December
-
-[chorus]
-${songTitle}, that's the movement, that's the wave
-${songTitle}, we the ones they couldn't save
-From the struggle to the throne, we made a way
-${songTitle}, legendary every day
-
-[bridge]
-Pour one up for the ones who ain't make it
-Dreams so big, had to go and take it
-History in the making, yeah we made it
-${songTitle}, yeah we made it`,
-
-      female: `[intro]
-${artistName}, yeah
-Let them know
-
-[verse]
-Queen status, never backing down from the crown
-Built this empire up from the ground
-Every hater watching, see me winning now
-Came from nothing, look at me, look at me now
-
-Boss moves only, never second guessing
-Every single day I count my blessings
-Stacking paper, yeah I learned my lesson
-Independent woman, that's a blessing
-
-[chorus]
-${songTitle}, that's the anthem for the queens
-${songTitle}, chasing all our wildest dreams
-From the bottom now we're running things
-${songTitle}, bow down to the queen
-
-[verse]
-They tried to dim my light, but I shine brighter
-Every obstacle just makes me a fighter
-Self-made, self-paid, independent
-Every word I say is transcendent
-
-${artistName} the name on everybody's lips
-Diamonds dripping, yeah I run the ship
-No permission needed, I'm the captain now
-Watch me take the throne, I'll show you how
-
-[chorus]
-${songTitle}, that's the anthem for the queens
-${songTitle}, chasing all our wildest dreams
-From the bottom now we're running things
-${songTitle}, bow down to the queen
-
-[bridge]
-To my ladies holding it down
-We run the world, we wear the crown
-Unstoppable, unbreakable sound
-${songTitle}, queens all around`
-    },
-
-    'rap': {
-      male: `[intro]
-Yo, ${artistName}
-Real talk, let me speak
-
-[verse]
-I came from the concrete where nothing would grow
-They planted doubts but watch me steal the show
-Every bar I spit is like a loaded weapon
-Teaching lessons that you won't be forgetting
-
-Lyrical assassin, call me the legend
-Every syllable measured, every metaphor threaded
-From the block to the top, I've been dedicated
-Every hater motivated me, now they devastated
-
-[chorus]
-${songTitle}, spitting fire, never stop
-${songTitle}, coming straight to the top
-Every rhyme is like a shot to your dome
-${songTitle}, this is how legends are born
-
-[verse]
-Real recognize real, I'm the definition
-Every verse I write is a lyrical mission
-Street smart wisdom combined with ambition
-${artistName} on a mission, breaking every restriction
-
-They say talent is given but the grind is chosen
-Every word that I spit leaves the competition frozen
-From the underground scene to the mainstream flows
-Watch me rise like a phoenix, everybody knows
-
-[chorus]
-${songTitle}, spitting fire, never stop
-${songTitle}, coming straight to the top
-Every rhyme is like a shot to your dome
-${songTitle}, this is how legends are born
-
-[outro]
-${songTitle}, yeah
-Legends never die`,
-
-      female: `[intro]
-It's ${artistName}
-Watch me work
-
-[verse]
-Pen in my hand, I'm a lyrical soldier
-Every verse I spit the game gets colder
-They underestimated, now they looking over
-Their shoulder, cause I'm about to take over
-
-Spitting venom with precision and grace
-Every punchline hitting, putting you in place
-Self-made queen with a killer flow
-Watch me steal the show, let everybody know
-
-[chorus]
-${songTitle}, female MC running things
-${songTitle}, every bar that I bring
-They can't stop me, I'm a lyrical queen
-${songTitle}, the baddest they've seen
-
-[verse]
-From the bedroom to the booth, I've been working
-Every late night session, never stop learning
-Perfecting my craft while they're out there lurking
-Watch me take the crown, yeah I'm really earning
-
-${artistName} spitting facts, no fiction
-Every word I say is a deadly conviction
-Breaking barriers down with my diction
-The future is female, that's my prediction
-
-[chorus]
-${songTitle}, female MC running things
-${songTitle}, every bar that I bring
-They can't stop me, I'm a lyrical queen
-${songTitle}, the baddest they've seen`
-    },
-
-    'rock': {
-      male: `[verse]
-Standing on the edge of destruction tonight
-Every scar I carry is a badge of pride
-They tried to break me but I'm still alive
-${artistName} rising with the tide
-
-The flames are burning, I can feel the heat
-Every heartbeat sounds like a thundering beat
-This is our anthem, feel it in your soul
-Rock and roll will never grow old
-
-[chorus]
-${songTitle}! We're screaming at the sky
-${songTitle}! Tonight we're gonna fly
-Breaking every chain that holds us down
-${songTitle}! We're wearing the crown
-
-[verse]
-Guitar strings bleeding, drums are pounding hard
-Every note we play leaves a permanent scar
-From the underground clubs to the stadium lights
-We're the warriors of the endless nights
-
-No surrender, no retreat tonight
-We're the rebels who are born to fight
-${artistName} leading the revolution
-This is rock and roll absolution
-
-[chorus]
-${songTitle}! We're screaming at the sky
-${songTitle}! Tonight we're gonna fly
-Breaking every chain that holds us down
-${songTitle}! We're wearing the crown
-
-[bridge]
-When the world is falling apart
-We'll light the fire in the dark
-Together we are unbreakable
-This sound is unforgettable`,
-
-      female: `[verse]
-Standing in the fire, I won't burn tonight
-Every wound they gave me made me shine so bright
-They tried to silence me but hear me roar
-${artistName}'s kicking down the door
-
-The thunder's rolling, lightning in my veins
-Every single battle broke my chains
-This is liberation, feel it in your bones
-We're taking back what they have stolen
-
-[chorus]
-${songTitle}! We're rising from the ashes
-${songTitle}! Breaking down the masses
-Nothing's gonna stop us anymore
-${songTitle}! This is what we're fighting for
-
-[verse]
-Hair flying wild, screaming out my pain
-Every single drop of sweat like healing rain
-From the garage shows to the arena stage
-We're rewriting history, turning the page
-
-Fearless and fierce, we're taking our stand
-With my sisters beside me, hand in hand
-${artistName} leading the charge tonight
-We're the warriors bathed in light
-
-[chorus]
-${songTitle}! We're rising from the ashes
-${songTitle}! Breaking down the masses
-Nothing's gonna stop us anymore
-${songTitle}! This is what we're fighting for`
-    },
-
-    'r&b': {
-      male: `[verse]
-Candles burning low, shadows on the wall
-Every time I see you, baby, I just fall
-The way you move your body drives me crazy
-Let me show you love, no ifs or maybes
-
-Your touch is like velvet, your kiss is divine
-I wanna spend forever making you mine
-${artistName} singing just for you tonight
-Under the moonlight, everything feels right
-
-[pre-chorus]
-I've been waiting for someone like you
-Everything I'm feeling is so true
-
-[chorus]
-${songTitle}, you're the one I need
-${songTitle}, you're my every dream
-Let me hold you close until the sunrise
-${songTitle}, baby, you're my paradise
-
-[verse]
-Silk sheets tangled, time standing still
-Every moment with you gives me chills
-The chemistry between us can't be denied
-With you, baby, I've got nothing to hide
-
-Your love is the melody, I'm the harmony
-Together we're creating pure symphony
-${artistName} will always be by your side
-In your arms is where I want to reside
-
-[chorus]
-${songTitle}, you're the one I need
-${songTitle}, you're my every dream
-Let me hold you close until the sunrise
-${songTitle}, baby, you're my paradise`,
-
-      female: `[verse]
-Lying here beneath the chandelier light
-Your cologne still lingers through the night
-The way you whisper makes my heart skip beats
-Every touch of yours feels so complete
-
-I've been searching for a love so true
-And then the universe led me to you
-${artistName} falling deeper every day
-In your embrace I want to stay
-
-[pre-chorus]
-Something about you feels like coming home
-With you I never feel alone
-
-[chorus]
-${songTitle}, this love is like a dream
-${songTitle}, you're my everything
-Hold me close and never let me go
-${songTitle}, this is all I know
-
-[verse]
-Champagne bubbles, rose petals on the bed
-Every love song reminds me of what you said
-The fire burning between us won't fade
-In your arms is where I want to stay
-
-Your love is patient, your love is kind
-The most beautiful soul I'll ever find
-${artistName} giving you all my heart
-Nothing in this world will tear us apart
-
-[chorus]
-${songTitle}, this love is like a dream
-${songTitle}, you're my everything
-Hold me close and never let me go
-${songTitle}, this is all I know`
-    },
-
-    'electronic': {
-      male: `[intro]
-${artistName}
-
-[verse]
-Neon lights pulsing through my veins
-Losing myself in the electronic waves
-The bass is dropping, feel the frequency
-Tonight we're living endlessly
-
-Hands up to the sky, we're reaching for the stars
-This moment right here is who we are
-The synths are screaming, the crowd is one
-Under the lasers, we've just begun
-
-[chorus]
-${songTitle}, feel the beat inside your soul
-${songTitle}, we're losing all control
-The drop is coming, let it take you higher
-${songTitle}, we're burning like a fire
-
-[verse]
-Euphoria rushing, can't stop this feeling
-The music's got us, hearts are healing
-Connected by the rhythm, united as one
-Dancing till we greet the sun
-
-${artistName} leading this electric night
-Everything around us shining bright
-The melody is calling out your name
-After tonight, nothing's the same
-
-[drop]
-
-[chorus]
-${songTitle}, feel the beat inside your soul
-${songTitle}, we're losing all control
-The drop is coming, let it take you higher
-${songTitle}, we're burning like a fire`,
-
-      female: `[intro]
-${artistName}
-
-[verse]
-Strobe lights dancing on my skin tonight
-Every color bleeding into the light
-The bass vibrations in my chest
-Tonight we give it all, nothing less
-
-Lifting higher, ascending to the sky
-With the music we can fly
-The frequencies are taking over me
-This is pure ecstasy
-
-[chorus]
-${songTitle}, surrendering to sound
-${songTitle}, we're levitating off the ground
-Feel the energy, let it pull you in
-${songTitle}, let the night begin
-
-[verse]
-Electric pulses racing through the air
-Finding freedom everywhere
-Connected to the beat, connected to the night
-Everything is feeling so right
-
-${artistName} floating in the melody
-This is who we're meant to be
-The synthesizers calling out our names
-Tonight we're burning up in flames
-
-[drop]
-
-[chorus]
-${songTitle}, surrendering to sound
-${songTitle}, we're levitating off the ground
-Feel the energy, let it pull you in
-${songTitle}, let the night begin`
-    },
-
-    'reggaeton': {
-      male: `[intro]
-${artistName}, yeah
-Dale, dale
-
-[verso]
-Llegué a la disco y todo el mundo lo siente
-El dembow sonando, moving everybody
-Ella me mira con esos ojos calientes
-Tonight we're gonna party, party
-
-La noche está joven, el reggaetón prendido
-Toda la discoteca se mueve conmigo
-${artistName} llegó y todos saben lo que significa
-Perreo intenso hasta que amanezca, mami
-
-[coro]
-${songTitle}, baila baila baila
-${songTitle}, mueve esa cintura
-Toda la noche hasta el amanecer
-${songTitle}, no vamos a parar
-
-[verso]
-El bajo retumba, las luces brillando
-Los cuerpos moviéndose, sudor goteando
-Esta es la fiesta que todos esperaban
-${artistName} en el beat, la discoteca explotando
-
-Con la música en el alma, el ritmo en la piel
-Esta noche es nuestra, baby, you know the deal
-El dembow controlando cada movimiento
-This is the moment, vive el momento
-
-[coro]
-${songTitle}, baila baila baila
-${songTitle}, mueve esa cintura
-Toda la noche hasta el amanecer
-${songTitle}, no vamos a parar
-
-[outro]
-${songTitle}, dale
-${artistName}`,
-
-      female: `[intro]
-${artistName}
-Escucha esto
-
-[verso]
-Llegué al party luciendo increíble
-Todos los ojos en mí, soy irresistible
-El dembow sonando, siento el calor
-Moving my body, soy la sensación
-
-La reina de la noche, nadie me para
-Con mi actitud y mi flow asesina
-${artistName} dominando el baile
-Every single move got them watching, that's fire
-
-[coro]
-${songTitle}, yo controlo la pista
-${songTitle}, soy la protagonista
-Mueve tu cuerpo, sígueme el paso
-${songTitle}, vamos a gozar
-
-[verso]
-Sexy and confident, así es como soy
-Rompiendo la discoteca wherever I go
-Las mujeres empoderadas, we run this place
-${artistName} con el flow and the grace
-
-El reggaetón me llama, el ritmo me mueve
-Toda la noche bailando, el calor se siente
-No necesito a nadie, I'm complete alone
-Pero si quieres bailar, welcome to my zone
-
-[coro]
-${songTitle}, yo controlo la pista
-${songTitle}, soy la protagonista
-Mueve tu cuerpo, sígueme el paso
-${songTitle}, vamos a gozar
-
-[outro]
-${songTitle}
-${artistName}, la reina del perreo`
-    },
-
-    'latin': {
-      male: `[intro]
-${artistName}
-Siente el ritmo
-
-[verso]
-Bajo las estrellas del Caribe esta noche
-La música latina corriendo por mis venas
-El calor de tu mirada me tiene hypnotized
-Bailando contigo hasta que salga el sol
-
-Los tambores llamando, la clave sonando
-Every beat of the music got me celebrating
-${artistName} trayendo ese sabor tropical
-Esta noche es mágica, unforgettable
-
-[coro]
-${songTitle}, fuego en el corazón
-${songTitle}, dame tu amor
-Bailamos hasta el amanecer
-${songTitle}, contigo quiero estar
-
-[verso]
-Tu sonrisa brilla como la luna llena
-Cada movimiento tuyo me vuelve loco, nena
-La pasión latina burning in our souls
-With every step we take, we're losing control
-
-From the beaches of Puerto Rico to Miami nights
-${artistName} bringing the vibes so right
-El sabor del Caribe running through the track
-Once you feel this rhythm, there's no turning back
-
-[coro]
-${songTitle}, fuego en el corazón
-${songTitle}, dame tu amor
-Bailamos hasta el amanecer
-${songTitle}, contigo quiero estar`,
-
-      female: `[intro]
-${artistName}
-Escúchame
-
-[verso]
-Soy la llama que enciende la noche entera
-Latina de corazón, guerrera verdadera
-El ritmo me posee, me dejo llevar
-With every single beat I'm ready to fly
-
-Los colores vibrantes, la pasión intensa
-Cada canción que canto es mi recompensa
-${artistName} bringing the fire tonight
-Under the Caribbean stars so bright
-
-[coro]
-${songTitle}, soy la reina de este baile
-${songTitle}, fuego que no se cae
-Con mi sabor latino, I'll set you free
-${songTitle}, baila junto a mí
-
-[verso]
-La sangre caliente running through my veins
-La música latina washing away the pains
-From Santo Domingo to the world stage
-${artistName} rewriting every page
-
-Latina and proud, that's who I am
-Dancing to the beat, living life grand
-El corazón del Caribe in every song
-With this rhythm we can never go wrong
-
-[coro]
-${songTitle}, soy la reina de este baile
-${songTitle}, fuego que no se cae
-Con mi sabor latino, I'll set you free
-${songTitle}, baila junto a mí`
-    },
-
-    'indie': {
-      male: `[verse]
-Autumn leaves are falling past my window pane
-I'm sitting here remembering your name
-The vinyl's spinning, coffee getting cold
-Some feelings never change as we grow old
-
-${artistName} singing to the empty room
-Hoping that the melody will reach you soon
-Through static and the distance in between
-You're still the most beautiful I've seen
-
-[chorus]
-${songTitle}, written in the morning light
-${songTitle}, lonely Saturday nights
-Missing what we had before
-${songTitle}, I can't take it anymore
-
-[verse]
-Polaroid memories scattered on the floor
-Each one takes me back to something more
-Your laugh echoing in my hollow chest
-Maybe it was us who needed rest
-
-The strings are gentle, the drums are soft
-These feelings lift me up aloft
-${artistName} searching for the words to say
-Hoping you'll come back someday
-
-[chorus]
-${songTitle}, written in the morning light
-${songTitle}, lonely Saturday nights
-Missing what we had before
-${songTitle}, I can't take it anymore
-
-[outro]
-${songTitle}
-I'll be waiting here for you`,
-
-      female: `[verse]
-The fairy lights are dimming in my room
-I'm wrapped up in the silence and the gloom
-Your sweater still smells like you, bittersweet
-Every memory playing on repeat
-
-${artistName} humming melancholy tunes
-Watching shadows dancing with the moon
-The world outside is sleeping but I'm wide awake
-Wondering if this heartbreak will break
-
-[chorus]
-${songTitle}, whispered in the night
-${songTitle}, holding on so tight
-To the ghost of what we were before
-${songTitle}, I can't fight anymore
-
-[verse]
-The tea is cold, the pages of my book unread
-All the things I wish that I had said
-Your voicemails saved, I listen when I'm blue
-Finding tiny pieces of what's true
-
-The guitar's gentle, my voice is raw
-Singing about the cracks and every flaw
-${artistName} learning to let go
-Even when it hurts me so
-
-[chorus]
-${songTitle}, whispered in the night
-${songTitle}, holding on so tight
-To the ghost of what we were before
-${songTitle}, I can't fight anymore
-
-[outro]
-${songTitle}
-Maybe someday I'll be whole`
-    },
-
-    'jazz': {
-      male: `[verse]
-Smoke curling up from the piano keys tonight
-The bourbon's amber glowing in the dim spotlight
-${artistName} crooning like the legends of old
-A story of love that needed to be told
-
-The upright bass is walking, drums are brushing soft
-In this old jazz club where time is forgot
-Your eyes across the room caught mine just right
-Let me take you dancing through the night
-
-[chorus]
-${songTitle}, like a melody so sweet
-${songTitle}, makes my heart skip a beat
-Under the chandelier's golden light
-${songTitle}, everything feels right
-
-[verse]
-The saxophone is crying tears of joy and pain
-Like walking through Manhattan in the rain
-Every note I sing is meant for you, my dear
-In this moment, there's nothing left to fear
-
-${artistName} pouring out his soul on stage
-Writing our love story page by page
-The jazz is flowing like fine champagne
-With you I've got nothing to explain
-
-[chorus]
-${songTitle}, like a melody so sweet
-${songTitle}, makes my heart skip a beat
-Under the chandelier's golden light
-${songTitle}, everything feels right`,
-
-      female: `[verse]
-Velvet curtains, smoky atmosphere
-${artistName} singing what you need to hear
-The piano player knows just what I feel
-Every note I sing is oh so real
-
-In this old speakeasy, time stands still
-Your smile across the room gives me a thrill
-The double bass is humming sweet and low
-Let me take you somewhere nice and slow
-
-[chorus]
-${songTitle}, like a dream come true
-${songTitle}, I'm so lost in you
-The spotlight fades to just us two
-${songTitle}, falling into you
-
-[verse]
-Martini glasses clinking all around
-But I only hear your heartbeat's sound
-Every standard song I've ever sung
-Pales to this love, forever young
-
-${artistName} wrapped in blue velvet night
-Everything about this moment feels so right
-The jazz quartet is playing just for us
-No need to rush, no need to fuss
-
-[chorus]
-${songTitle}, like a dream come true
-${songTitle}, I'm so lost in you
-The spotlight fades to just us two
-${songTitle}, falling into you`
-    },
-
-    'country': {
-      male: `[verse]
-Down a dusty back road where I learned to drive
-The fireflies are dancing, I feel so alive
-My truck radio playing the oldies tonight
-${artistName} singing under the starlight
-
-Front porch swinging, sweet tea in my hand
-Living life the way that it was planned
-Small town dreams and a big open sky
-These are the moments that never die
-
-[chorus]
-${songTitle}, that's the country way
-${songTitle}, where I'm gonna stay
-Boots on the ground, hat on my head
-${songTitle}, till the day I'm dead
-
-[verse]
-Friday night lights at the football game
-Nothing in this little town ever stays the same
-But the people here are real as it gets
-Hard working folks who don't believe in regrets
-
-${artistName} grateful for these roots so deep
-The promises that we all keep
-From Sunday church to Saturday nights
-Living life with all its beautiful lights
-
-[chorus]
-${songTitle}, that's the country way
-${songTitle}, where I'm gonna stay
-Boots on the ground, hat on my head
-${songTitle}, till the day I'm dead
-
-[bridge]
-Raise your glass to the ones we love
-Thank the Lord and the stars above
-This is home, this is where I belong
-Singing this country song`,
-
-      female: `[verse]
-Barefoot in the summer grass tonight
-Catching fireflies in the fading light
-My mama's apple pie cooling on the sill
-${artistName} singing on the hill
-
-The willow tree where we carved our names
-Life was simple, love was never games
-Wildflower fields stretching far and wide
-Nothing left to run from, nothing left to hide
-
-[chorus]
-${songTitle}, that's my heart and soul
-${songTitle}, making me feel whole
-From the river banks to the old church steeple
-${songTitle}, songs for the simple people
-
-[verse]
-Daddy taught me how to fish and pray
-Mama taught me love finds a way
-These Tennessee hills raised me right
-${artistName} singing through the night
-
-Jeans and boots, that's my style
-Love these country roads mile after mile
-Simple pleasures, honest living
-A grateful heart forever giving
-
-[chorus]
-${songTitle}, that's my heart and soul
-${songTitle}, making me feel whole
-From the river banks to the old church steeple
-${songTitle}, songs for the simple people
-
-[bridge]
-Here's to the small towns and the real ones
-Here's to the daughters and the sons
-Living life with grace and pride
-Country music as our guide`
-    }
-  };
-
-  // Seleccionar template según género musical y género del artista
-  const genreTemplate = lyricsTemplates[genre.toLowerCase()] || lyricsTemplates['pop'];
-  return artistGender === 'female' ? genreTemplate.female : genreTemplate.male;
+${songTitle}... ${hook}
+Yeah, ${artistName}`;
 }
+
+// ============================================================
+// NOTA: La generación de letras ahora se hace con AI en:
+// server/services/ai-lyrics-generator.ts (generateHitLyrics)
+// La función generateLyricsForGenreFallback arriba es el fallback
+// ============================================================
 
 /**
  * ============================================================
@@ -1653,7 +856,7 @@ export async function generateMerchandiseImage(
       'electronic': 'futuristic, neon, cyberpunk vibes',
       'rock': 'edgy, dark, rock and roll aesthetic',
       'indie': 'vintage, artistic, bohemian style',
-      'r&b': 'elegant, smooth, soulful aesthetic',
+      'r&b': 'smooth, elegant, R&B culture',
       'jazz': 'classic, sophisticated, timeless style',
       'latin': 'vibrant, tropical, passionate colors',
       'reggaeton': 'urban latin, flashy, party vibes',
@@ -1663,17 +866,17 @@ export async function generateMerchandiseImage(
 
     // Prompts específicos para cada producto con coherencia de marca
     const productPrompts: Record<string, string> = {
-      'T-Shirt': `Professional e-commerce photo of a premium black t-shirt with "${artistName} x Boostify" printed design. ${style}. Orange and black color scheme. Front view on pure white background. Studio lighting, 4K quality, commercial product photography.`,
+      'T-Shirt': `Professional e-commerce photo of a premium black t-shirt with artist logo printed design. ${style}. Orange and black color scheme. Front view on pure white background. Studio lighting, 4K quality, commercial product photography.`,
       
-      'Hoodie': `Professional product photo of an oversized black hoodie featuring "${artistName} x Boostify" branding. ${style}. Orange accent details on sleeves. Front view, hood up, on white background. Commercial fashion photography, 4K quality.`,
+      'Hoodie': `Professional product photo of an oversized black hoodie featuring artist branding. ${style}. Orange accent details on sleeves. Front view, hood up, on white background. Commercial fashion photography, 4K quality.`,
       
-      'Cap': `Professional product photo of a black snapback cap with "${artistName} x Boostify" embroidered logo. ${style}. Orange bill accent. 3/4 angle view on white background. Sharp details, commercial photography.`,
+      'Cap': `Professional product photo of a black snapback cap with embroidered logo. ${style}. Orange bill accent. 3/4 angle view on white background. Sharp details, commercial photography.`,
       
-      'Poster': `Music poster design for "${artistName} x Boostify" collaboration. ${style}. Bold typography, orange and black color palette. Modern graphic design, concert poster aesthetic, 4K quality.`,
+      'Poster': `Music poster design for artist collaboration. ${style}. Bold typography, orange and black color palette. Modern graphic design, concert poster aesthetic, 4K quality.`,
       
-      'Sticker Pack': `Flat lay of vinyl sticker pack featuring "${artistName} x Boostify" designs. ${style}. Mix of logo stickers in orange, black, white colors. Overhead shot on white background, commercial photography.`,
+      'Sticker Pack': `Flat lay of vinyl sticker pack featuring artist designs. ${style}. Mix of logo stickers in orange, black, white colors. Overhead shot on white background, commercial photography.`,
       
-      'Vinyl': `Limited edition vinyl record "${artistName} x Boostify" with orange and black swirl disc. ${style}. Custom album artwork visible on sleeve. Record partially out, dramatic lighting on white background.`
+      'Vinyl': `Limited edition vinyl record with orange and black swirl disc. ${style}. Custom album artwork visible on sleeve. Record partially out, dramatic lighting on white background.`
     };
 
     const prompt = productPrompts[productType] || 
@@ -1715,10 +918,11 @@ export async function generateMerchandiseImage(
 
     return result;
   } catch (error: any) {
-    logger.error('[FAL] Error generando merchandise:', error.response?.data || error.message);
+    logger.log(`[FAL] ❌ Error generando merchandise: ${error.message}`);
     return {
       success: false,
-      error: error.response?.data?.detail || error.message
+      imageUrl: '',
+      error: error.message
     };
   }
 }
@@ -1958,13 +1162,50 @@ export async function generateVideoWithGrok(
   } catch (error: any) {
     logger.error('[FAL] Error generando video con Grok:', error.message);
     
-    // Fallback a Wan si Grok falla
-    logger.warn('[FAL] Intentando fallback con Wan 2.6...');
-    return generateVideoFromImageWithWan(imageUrl, prompt, {
-      resolution: options.resolution,
-      aspectRatio: options.aspectRatio === 'auto' ? '16:9' : options.aspectRatio as any,
-      duration: options.duration
-    });
+    // Fallback 1: Intentar con Wan 2.6
+    logger.warn('[FAL] 🔄 Intentando fallback con Wan 2.6...');
+    try {
+      const wanResult = await generateVideoFromImageWithWan(imageUrl, prompt, {
+        resolution: options.resolution,
+        aspectRatio: options.aspectRatio === 'auto' ? '16:9' : options.aspectRatio as any,
+        duration: options.duration
+      });
+      
+      if (wanResult.success) {
+        return wanResult;
+      }
+    } catch (wanError: any) {
+      logger.error('[FAL] ❌ Fallback Wan también falló:', wanError.message);
+    }
+    
+    // Fallback 2: Intentar con Gemini Veo 3
+    logger.warn('[FAL] 🔄 Intentando fallback con Gemini Veo 3...');
+    try {
+      const geminiService = await import('./gemini-image-service');
+      const veoResult = await geminiService.generateVideoWithGeminiVeo(imageUrl, prompt, {
+        duration: options.duration || 5,
+        aspectRatio: options.aspectRatio === 'auto' ? '16:9' : options.aspectRatio as any
+      });
+      
+      if (veoResult.success && veoResult.videoUrl) {
+        logger.log('[FAL] ✅ Fallback Gemini Veo 3 exitoso');
+        return {
+          success: true,
+          videoUrl: veoResult.videoUrl,
+          duration: options.duration || 5,
+          provider: 'gemini-veo-3-fallback'
+        };
+      }
+    } catch (veoError: any) {
+      logger.error('[FAL] ❌ Fallback Gemini Veo 3 también falló:', veoError.message);
+    }
+    
+    // Si todos fallan, retornar error
+    return {
+      success: false,
+      error: error.message,
+      provider: 'fal-grok-image-to-video'
+    };
   }
 }
 

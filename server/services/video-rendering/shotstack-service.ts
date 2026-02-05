@@ -27,6 +27,7 @@ export interface TimelineClipData {
   start: number;
   duration: number;
   transition?: 'fade' | 'slide' | 'wipe' | 'none';
+  loop?: boolean; // 🔧 FIX: Para clips > 5s que necesitan repetir el video
 }
 
 export interface RenderRequest {
@@ -184,9 +185,17 @@ function buildShotstackTimeline(request: RenderRequest) {
 
   // Track de video principal
   const videoClips = clips.map((clip, index) => {
-    const asset = clip.videoUrl
+    const asset: any = clip.videoUrl
       ? { type: 'video' as const, src: clip.videoUrl }
       : { type: 'image' as const, src: clip.imageUrl || '' };
+
+    // 🔧 FIX: Si el clip tiene loop=true, configurar el video para que se repita
+    // Shotstack soporta loop automático cuando el video es más corto que length
+    // Pero podemos forzarlo con la propiedad 'loop' en el asset
+    if (clip.loop && clip.videoUrl) {
+      asset.loop = true;
+      logger.log(`🔁 [SHOTSTACK] Clip ${index + 1} configurado con loop para duración ${clip.duration}s`);
+    }
 
     const shotstackClip: any = {
       asset,

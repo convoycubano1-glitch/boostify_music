@@ -4,13 +4,16 @@
  * Con sistema de fallback automático entre múltiples API keys y modelos
  */
 import { GoogleGenAI, Modality } from "@google/genai";
+import axios from 'axios';
 import { logger } from '../utils/logger';
 import { storage } from '../firebase';
 
 // Configurar múltiples clientes de Gemini para fallback automático
 const apiKeys = [
   process.env.GEMINI_API_KEY,
-  process.env.GEMINI_API_KEY2
+  process.env.GEMINI_API_KEY2,
+  process.env.GEMINI_IMAGE_API_KEY, // Nueva API key específica para imágenes
+  'AIzaSyBrIcAS2z2IlcyW_xLiR96eSKZI4SIl5TA' // Fallback hardcoded
 ].filter(key => key && key.length > 0);
 
 const geminiClients = apiKeys.map(key => new GoogleGenAI({ apiKey: key || "" }));
@@ -115,6 +118,31 @@ export interface CinematicScene {
   lighting: string;
   style: string;
   movement: string;
+  // 🎤 LYRICS - Campos para conectar la imagen con la letra
+  lyrics?: string;              // Fragmento de letra para esta escena
+  lyrics_segment?: string;      // Alias para lyrics
+  lyric_connection?: string;    // Conexión visual con la letra
+  narrative_context?: string;   // Contexto narrativo de la escena
+  emotion?: string;             // Emoción dominante
+  // 🎬 DIRECTOR + DP CINEMATOGRAPHY SYSTEM
+  director_name?: string;       // Nombre del director (ej: "Spike Jonze")
+  director_signature?: string;  // Firma visual del director
+  color_grading?: string;       // Color grading específico
+  // 🎥 ENHANCED CINEMATOGRAPHY (from Director+DP profiles)
+  dp_name?: string;             // Director of Photography name
+  shot_type?: string;           // Shot type from library (wide_establishing, close_up_emotional, etc.)
+  lens_mm?: string;             // Lens focal length (e.g., "35mm", "85mm")
+  aperture?: string;            // Aperture setting (e.g., "f/1.4", "f/2.8")
+  camera_height?: string;       // Camera height position
+  camera_angle?: string;        // Camera angle (eye level, low, high, dutch)
+  depth_of_field?: string;      // DOF description
+  lighting_key?: string;        // Lighting style (high key, low key, natural)
+  color_palette?: string[];     // Color palette for grading
+  film_emulation?: string;      // Film stock emulation
+  aspect_ratio?: string;        // Aspect ratio (16:9, 2.39:1, etc.)
+  framing_notes?: string;       // Framing/composition notes
+  synergy_score?: number;       // Director+DP collaboration synergy (0-100)
+  enhanced_prompt?: string;     // Pre-built enhanced prompt from cinematography service
 }
 
 export interface ImageGenerationResult {
@@ -417,14 +445,42 @@ export async function generateCinematicImage(
 /**
  * Genera imagen a partir de una escena cinematográfica completa
  * Combina todos los parámetros cinematográficos en un prompt optimizado
+ * 🎤 INCLUYE LETRAS para conectar la imagen con el contenido lírico
  */
 export async function generateImageFromCinematicScene(
   scene: CinematicScene
 ): Promise<ImageGenerationResult> {
-  // Construir prompt cinematográfico detallado
+  // 🎤 Extraer información de letras
+  const lyricsText = scene.lyrics || scene.lyrics_segment || '';
+  const lyricConnection = scene.lyric_connection || '';
+  const narrativeContext = scene.narrative_context || '';
+  const emotion = scene.emotion || '';
+  
+  // � Extraer información del director
+  const directorName = scene.director_name || '';
+  const directorSignature = scene.director_signature || '';
+  const colorGrading = scene.color_grading || '';
+  
+  // 🎤 LOG: Verificar letras
+  if (lyricsText) {
+    logger.log(`🎤 generateImageFromCinematicScene - Letra: "${lyricsText.substring(0, 50)}..."`);
+  }
+  
+  // 🎬 LOG: Verificar director
+  if (directorName) {
+    logger.log(`🎬 generateImageFromCinematicScene - Director: ${directorName}`);
+  }
+  
+  // Construir prompt cinematográfico detallado CON LETRAS Y DIRECTOR
   const cinematicPrompt = `
 Professional cinematic photography for a music video:
+${directorName ? `
+🎬 DIRECTOR VISION: ${directorName}
+${directorSignature ? `SIGNATURE STYLE: ${directorSignature}` : ''}
+${colorGrading ? `COLOR GRADING: ${colorGrading}` : ''}
 
+APPLY THIS DIRECTOR'S UNMISTAKABLE VISUAL SIGNATURE TO EVERY FRAME.
+` : ''}
 Scene: ${scene.scene}
 
 Camera Setup: ${scene.camera}
@@ -434,6 +490,13 @@ Lighting: ${scene.lighting}
 Visual Style: ${scene.style}
 
 Camera Movement: ${scene.movement}
+${lyricsText ? `
+🎤 LYRICS FOR THIS MOMENT: "${lyricsText}"
+🎬 VISUAL CONCEPT: ${lyricConnection || 'Visualize the emotion and meaning of these lyrics'}
+📖 NARRATIVE: ${narrativeContext || 'Capture the emotional essence of this moment'}
+🎭 EMOTION: ${emotion || 'Match the emotional intensity of the lyrics'}
+
+IMPORTANT: The visual must directly reflect these specific lyrics.` : ''}
 
 Create a high-quality, professional music video frame with cinematic composition, perfect lighting, and stunning visual aesthetics. The image should be production-ready for a premium music video.
   `.trim();
@@ -831,15 +894,49 @@ export async function generateBatchImagesWithMultipleFaceReferences(
   for (const scene of scenes) {
     logger.log(`🎬 Generando escena ${scene.id}/${scenes.length}...`);
     
-    // Construir prompt cinematográfico detallado
+    // 🎤 Extraer información de letras de la escena
+    const lyricsText = scene.lyrics || scene.lyrics_segment || '';
+    const lyricConnection = scene.lyric_connection || '';
+    const narrativeContext = scene.narrative_context || '';
+    const emotion = scene.emotion || '';
+    
+    // � Extraer información del director
+    const directorName = (scene as any).director_name || '';
+    const directorSignature = (scene as any).director_signature || '';
+    const colorGrading = (scene as any).color_grading || '';
+    
+    // 🎤 LOG: Verificar que las letras están llegando
+    if (lyricsText) {
+      logger.log(`🎤 Escena ${scene.id} - Letra: "${lyricsText.substring(0, 50)}..."`); 
+    }
+    
+    // 🎬 LOG: Verificar director
+    if (directorName) {
+      logger.log(`🎬 Escena ${scene.id} - Director: ${directorName}`);
+    }
+    
+    // Construir prompt cinematográfico detallado CON LETRAS Y DIRECTOR
     const cinematicPrompt = `
 Professional cinematic photography for a music video:
+${directorName ? `
+🎬 DIRECTOR VISION: ${directorName}
+${directorSignature ? `SIGNATURE STYLE: ${directorSignature}` : ''}
+${colorGrading ? `COLOR GRADING: ${colorGrading}` : ''}
 
+CRITICAL: Apply ${directorName}'s unmistakable visual signature. Every frame must feel like it was directed by ${directorName}.
+` : ''}
 Scene: ${scene.scene}
 Camera Setup: ${scene.camera}
 Lighting: ${scene.lighting}
 Visual Style: ${scene.style}
 Camera Movement: ${scene.movement}
+${lyricsText ? `
+🎤 LYRICS FOR THIS MOMENT: "${lyricsText}"
+🎬 VISUAL CONCEPT: ${lyricConnection || 'Visualize the emotion and meaning of these lyrics'}
+📖 NARRATIVE: ${narrativeContext || 'This scene captures the emotional essence of this musical moment'}
+🎭 EMOTION: ${emotion || 'Match the emotional intensity of the lyrics'}
+
+IMPORTANT: The visual must directly reflect and enhance the meaning of these specific lyrics. Create imagery that a viewer would instantly connect to these words.` : ''}
 
 Create a high-quality, professional music video frame with cinematic composition, perfect lighting, and stunning visual aesthetics.
     `.trim();
@@ -1017,6 +1114,116 @@ export async function generateImageWithFAL(
     return {
       success: false,
       error: error.response?.data?.detail || error.message || 'Error al generar imagen con FAL AI'
+    };
+  }
+}
+/**
+ * ============================================================
+ * GENERACIÓN DE VIDEO - GEMINI VEO 3 (FALLBACK PARA VIDEO)
+ * ============================================================
+ * Modelo: veo-3.0-generate-001 (Google DeepMind - Latest)
+ * Genera video de alta calidad a partir de imagen + prompt
+ * Duración: hasta 8 segundos
+ * 
+ * @param imageUrl - URL de la imagen base para el video
+ * @param prompt - Descripción del movimiento/animación
+ * @param options - Opciones de generación (duration, aspectRatio)
+ */
+export async function generateVideoWithGeminiVeo(
+  imageUrl: string,
+  prompt: string,
+  options: {
+    duration?: number; // 5-8 segundos
+    aspectRatio?: '16:9' | '9:16' | '1:1';
+  } = {}
+): Promise<{ success: boolean; videoUrl?: string; error?: string; provider?: string }> {
+  try {
+    // Usar la API key que funcione
+    const geminiKey = apiKeys[0];
+    if (!geminiKey) {
+      throw new Error('No hay API key de Gemini disponible para video');
+    }
+
+    logger.log(`[GEMINI-VEO] 🎬 Generando video con Veo 3...`);
+    logger.log(`[GEMINI-VEO] Imagen base: ${imageUrl.substring(0, 60)}...`);
+    logger.log(`[GEMINI-VEO] Prompt: ${prompt.substring(0, 100)}...`);
+
+    // Primero descargar la imagen y convertir a base64
+    const imageResponse = await axios.get(imageUrl, { 
+      responseType: 'arraybuffer',
+      timeout: 30000
+    });
+    const imageBase64 = Buffer.from(imageResponse.data).toString('base64');
+    const imageMimeType = imageResponse.headers['content-type'] || 'image/png';
+
+    // Request a Veo 3 API usando REST
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/veo-3.0-generate-001:generateVideo`,
+      {
+        instances: [
+          {
+            prompt: prompt,
+            image: {
+              bytesBase64Encoded: imageBase64,
+              mimeType: imageMimeType
+            }
+          }
+        ],
+        parameters: {
+          aspectRatio: options.aspectRatio || '16:9',
+          durationSeconds: Math.min(options.duration || 5, 8), // Max 8 segundos
+          personGeneration: 'allow_adult',
+        }
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': geminiKey
+        },
+        timeout: 300000 // 5 minutos para video
+      }
+    );
+
+    // Procesar respuesta
+    if (response.data?.predictions?.[0]?.bytesBase64Encoded) {
+      const base64Video = response.data.predictions[0].bytesBase64Encoded;
+      
+      // Subir a Firebase Storage
+      const buffer = Buffer.from(base64Video, 'base64');
+      const fileName = `gemini-veo-videos/${Date.now()}-${Math.random().toString(36).substring(7)}.mp4`;
+      const file = storage.bucket().file(fileName);
+      
+      await file.save(buffer, {
+        metadata: { contentType: 'video/mp4' }
+      });
+      
+      await file.makePublic();
+      const videoUrl = `https://storage.googleapis.com/${storage.bucket().name}/${fileName}`;
+
+      logger.log(`[GEMINI-VEO] ✅ Video generado: ${videoUrl.substring(0, 60)}...`);
+
+      return {
+        success: true,
+        videoUrl,
+        provider: 'gemini-veo-3'
+      };
+    }
+
+    // Si es operación asíncrona
+    if (response.data?.name) {
+      logger.warn(`[GEMINI-VEO] ⏳ Video en proceso asíncrono: ${response.data.name}`);
+      return {
+        success: false,
+        error: `Veo 2 operación asíncrona pendiente: ${response.data.name}`
+      };
+    }
+
+    throw new Error('No se recibió video en la respuesta de Veo 3');
+  } catch (error: any) {
+    logger.error('[GEMINI-VEO] Error generando video:', error.response?.data || error.message);
+    return {
+      success: false,
+      error: error.response?.data?.error?.message || error.message
     };
   }
 }

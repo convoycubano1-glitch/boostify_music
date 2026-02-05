@@ -2931,9 +2931,28 @@ DESIGN REQUIREMENTS:
         sceneId = match ? parseInt(match[0]) : index + 1;
       }
       
-      // Construir prompt cinematográfico completo desde todos los campos del JSON
-      const cinematicPrompt = scene.visual_description || 
-                               `${scene.shot_type || 'medium-shot'} of ${scene.description || scene.lyrics || 'scene'}, ${scene.lighting || 'dramatic lighting'}, ${scene.color_grading || 'cinematic colors'}, ${scene.mood || 'emotional'} atmosphere, ${scene.location || 'location'}, ${scene.camera_movement || 'smooth camera movement'}`;
+      // 🎤 MEJORA CRÍTICA: Construir prompt cinematográfico que SIEMPRE incluya la letra
+      // La letra es la base fundamental para la coherencia visual del video
+      const lyricsText = scene.lyrics?.trim() || '';
+      const hasLyricsForPrompt = lyricsText.length > 0;
+      
+      // Construir prompt con letra como contexto principal
+      let cinematicPrompt: string;
+      
+      if (scene.visual_description) {
+        // Si hay visual_description del backend, enriquecerla con la letra
+        cinematicPrompt = hasLyricsForPrompt
+          ? `[LYRICS CONTEXT: "${lyricsText.substring(0, 100)}"] ${scene.visual_description}`
+          : scene.visual_description;
+      } else {
+        // Fallback: construir prompt basado en la letra
+        const lyricsContext = hasLyricsForPrompt 
+          ? `Visual representation of lyrics: "${lyricsText.substring(0, 80)}". ` 
+          : 'Instrumental moment. ';
+        cinematicPrompt = `${lyricsContext}${scene.shot_type || 'medium-shot'} shot, ${scene.description || 'cinematic scene'}, ${scene.lighting || 'dramatic lighting'}, ${scene.color_grading || 'cinematic colors'}, ${scene.mood || 'emotional'} atmosphere, ${scene.location || 'performance space'}, ${scene.camera_movement || 'smooth camera movement'}`;
+      }
+      
+      logger.info(`🎤 [LYRICS→PROMPT] Scene ${index + 1}: "${lyricsText.substring(0, 40) || 'Instrumental'}..." → Prompt includes lyrics: ${hasLyricsForPrompt}`);
       
       // 🎤 Detectar si la escena necesita lipsync
       const hasLyrics = scene.lyrics && scene.lyrics.trim().length > 0;

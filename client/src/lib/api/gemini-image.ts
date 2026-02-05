@@ -10,6 +10,16 @@ export interface CinematicScene {
   lighting: string;
   style: string;
   movement: string;
+  // 🎤 LYRICS - Campos para conectar la imagen con la letra
+  lyrics?: string;              // Fragmento de letra para esta escena
+  lyrics_segment?: string;      // Alias para lyrics
+  lyric_connection?: string;    // Conexión visual con la letra
+  narrative_context?: string;   // Contexto narrativo de la escena
+  emotion?: string;             // Emoción dominante
+  // 🎬 DIRECTOR - Estilo visual del director
+  director_name?: string;       // Nombre del director (ej: "Spike Jonze")
+  director_signature?: string;  // Firma visual del director
+  color_grading?: string;       // Color grading específico
 }
 
 export interface ImageGenerationResult {

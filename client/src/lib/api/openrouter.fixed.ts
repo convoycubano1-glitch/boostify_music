@@ -12,6 +12,7 @@ import {
   type MusicVideoScript,
   type MusicVideoConcept,
   validateSceneBalance,
+  validateLyricsInScenes, // 🔧 NEW: Validación de letras
   generateVariedShotSequence
 } from "../../types/music-video-scene";
 import type { DirectorProfile } from "../../data/directors/director-schema";
@@ -1236,6 +1237,17 @@ function generarGuionFallback(
   // Validar balance 50/50
   const balance = validateSceneBalance(scenes);
   logger.info(`✅ Balance de escenas: ${balance.message}`);
+  
+  // 🔧 NEW: Validar letras en escenas
+  const lyricsValidation = validateLyricsInScenes(scenes, lyrics);
+  logger.info(`📝 Validación de letras: ${lyricsValidation.scenesWithLyrics}/${scenes.length} escenas con letras (${lyricsValidation.coveragePercent.toFixed(0)}%)`);
+  
+  if (lyricsValidation.errors.length > 0) {
+    lyricsValidation.errors.forEach(e => logger.error(e));
+  }
+  if (lyricsValidation.warnings.length > 0) {
+    lyricsValidation.warnings.forEach(w => logger.warn(w));
+  }
   
   // Crear script completo con estadísticas
   const totalDuration = audioDuration || adjustedDurations.reduce((sum, d) => sum + d, 0);

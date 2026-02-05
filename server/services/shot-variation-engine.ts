@@ -12,6 +12,9 @@
  * 
  * Cada escena base puede generar 2-6 variaciones para crear dinamismo visual
  * sincronizado con los beats de la música.
+ * 
+ * 🎬 INTEGRACIÓN Director+DP: Los edit_prompts ahora pueden venir de los
+ * perfiles cinematográficos de Director+DP para coherencia visual.
  */
 
 import { logger } from '../utils/logger';
@@ -21,6 +24,11 @@ import {
   GenreEditingProfile, 
   getEditingProfile 
 } from './genre-editing-profiles';
+import {
+  getProfileOrDefault,
+  getVariationEditPrompts,
+  type DirectorDPProfile,
+} from './cinematography-service';
 
 // ========== INTERFACES ==========
 
@@ -505,4 +513,86 @@ export function buildCustomEditPrompt(
     : base;
     
   return buildEditPrompt(fullPrompt, section, energy);
+}
+
+// ========== DIRECTOR+DP INTEGRATION ==========
+
+/**
+ * 🎬 Genera variaciones de plano usando el perfil Director+DP
+ * Los edit_prompts vienen directamente del shot_library del director
+ * para mantener coherencia visual con el estilo cinematográfico.
+ * 
+ * @param baseImageUrl URL de la imagen base
+ * @param sceneDescription Descripción de la escena original
+ * @param directorName Nombre del director (ej: "Spike Jonze")
+ * @param maxVariations Máximo de variaciones a generar
+ */
+export async function generateDirectorStyleVariations(
+  baseImageUrl: string,
+  sceneDescription: string,
+  directorName: string,
+  maxVariations: number = 4
+): Promise<GeneratedVariation[]> {
+  logger.log(`[ShotVariation] 🎬 Generando variaciones estilo ${directorName}`);
+  
+  // Obtener edit prompts del perfil Director+DP
+  const variationPrompts = getVariationEditPrompts(sceneDescription, directorName);
+  
+  if (variationPrompts.length === 0) {
+    logger.warn(`[ShotVariation] ⚠️ No hay variaciones disponibles para ${directorName}`);
+    return [];
+  }
+  
+  // Limitar a maxVariations
+  const promptsToUse = variationPrompts.slice(0, maxVariations);
+  
+  logger.log(`[ShotVariation] 📷 Generando ${promptsToUse.length} variaciones Director+DP...`);
+  
+  const variations: GeneratedVariation[] = [];
+  
+  for (const prompt of promptsToUse) {
+    try {
+      logger.log(`[ShotVariation]    → ${prompt.shot_type}: ${prompt.edit_prompt.substring(0, 50)}...`);
+      
+      const result = await generateImageWithEdit(
+        baseImageUrl,
+        prompt.edit_prompt,
+        '16:9'
+      );
+      
+      if (result.success && result.imageUrl) {
+        variations.push({
+          type: prompt.shot_type as ShotVariation['type'],
+          imageUrl: result.imageUrl,
+          duration: 2, // 2 beats default
+          durationMs: 1000, // Will be calculated by caller
+          editPrompt: prompt.edit_prompt,
+          beatStart: 0,
+          beatEnd: 2,
+          success: true,
+        });
+        
+        logger.log(`[ShotVariation] ✅ Variación ${prompt.shot_type} generada`);
+      } else {
+        logger.warn(`[ShotVariation] ⚠️ Fallo en variación ${prompt.shot_type}: ${result.error}`);
+      }
+    } catch (error: any) {
+      logger.error(`[ShotVariation] ❌ Error en variación ${prompt.shot_type}:`, error.message);
+    }
+    
+    // Pequeño delay para evitar rate limiting
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+  
+  logger.log(`[ShotVariation] ✅ ${variations.length}/${promptsToUse.length} variaciones Director+DP completadas`);
+  
+  return variations;
+}
+
+/**
+ * Obtiene los shot types disponibles del perfil Director+DP
+ */
+export function getDirectorShotTypes(directorName: string): string[] {
+  const profile = getProfileOrDefault(directorName);
+  return Object.keys(profile.shot_library);
 }

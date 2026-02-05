@@ -1292,7 +1292,8 @@ router.post("/generate-single-song", async (req: Request, res: Response) => {
         finalSongTitle, 
         finalGenre, 
         finalMood, 
-        finalGender
+        finalGender,
+        artistBio || ''
       );
       
       if (musicResult.success && musicResult.audioUrl) {

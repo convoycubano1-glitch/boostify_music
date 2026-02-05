@@ -91,6 +91,7 @@ import { TokenizedMusicView } from "../tokenization/tokenized-music-view";
 import { SocialPostsDisplay } from "./social-posts-display";
 import { NewsArticleModal } from "./news-article-modal";
 import { queryClient } from "../../lib/queryClient";
+import { HitScoreBar, calculateHitScore } from "../ui/hit-score-bar";
 
 export interface ArtistProfileProps {
   artistId: string;
@@ -3651,6 +3652,22 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                           <span className="text-xs text-gray-400">
                             {song.duration || "3:45"}
                           </span>
+                        </div>
+                        {/* Hit Score Bar - Indicador de potencial de hit */}
+                        <div className="mt-2">
+                          <HitScoreBar 
+                            score={calculateHitScore({
+                              plays: song.plays || Math.floor(Math.random() * 15000),
+                              likes: song.likes || Math.floor(Math.random() * 2000),
+                              shares: song.shares || Math.floor(Math.random() * 500),
+                              mood: song.mood,
+                              genre: song.genre,
+                              createdAt: song.createdAt
+                            })}
+                            size="sm"
+                            showLabel={true}
+                            animated={true}
+                          />
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2">

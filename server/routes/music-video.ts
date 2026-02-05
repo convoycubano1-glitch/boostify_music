@@ -11,6 +11,14 @@ import OpenAI from 'openai';
 import { generateImageWithNanoBanana } from '../services/fal-service';
 import { analyzeAudio, generateEditingRecommendations, AudioAnalysisResult } from '../services/audio-analysis-service';
 import { logger } from '../utils/logger';
+import {
+  getProfileOrDefault,
+  prepareSceneForImageGeneration,
+  recommendDirectorForGenre,
+  getAllDirectorDPProfiles,
+  DIRECTOR_DP_PAIRINGS,
+  type EnhancedCinematicScene,
+} from '../services/cinematography-service';
 
 const router = Router();
 
@@ -1035,6 +1043,74 @@ REMEMBER: Mix PERFORMANCE, B-ROLL, and STORY shots. Use artist reference creativ
             cumulativeTime += scene.duration;
             return adjustedScene;
           });
+          
+          // 🎬 INYECTAR CINEMATOGRAFÍA Director+DP EN CADA ESCENA
+          try {
+            logger.log(`[generate-script] 🎬 Inyectando cinematografía Director+DP: ${directorName}`);
+            const directorProfile = getProfileOrDefault(directorName);
+            
+            script.scenes = script.scenes.map((scene: any) => {
+              // Preparar escena con toda la info cinematográfica
+              const enhancedScene = prepareSceneForImageGeneration(
+                {
+                  id: scene.id,
+                  scene: scene.scene,
+                  camera: scene.camera,
+                  lighting: scene.lighting,
+                  style: scene.style,
+                  movement: scene.movement,
+                  lyrics: scene.lyrics || scene.lyrics_segment,
+                  lyrics_segment: scene.lyrics_segment,
+                  lyric_connection: scene.lyric_connection,
+                  narrative_context: scene.narrative_context,
+                  emotion: scene.emotion,
+                },
+                directorName,
+                undefined // subjectDescription - will be injected later with artist reference
+              );
+              
+              return {
+                ...scene,
+                // 🎬 Director + DP info
+                director_name: enhancedScene.director_name,
+                dp_name: enhancedScene.dp_name,
+                director_signature: enhancedScene.director_signature,
+                color_grading: enhancedScene.color_grading,
+                // 🎥 Technical cinematography
+                shot_type: enhancedScene.shot_type,
+                lens_mm: enhancedScene.lens_mm,
+                aperture: enhancedScene.aperture,
+                camera_height: enhancedScene.camera_height,
+                camera_angle: enhancedScene.camera_angle,
+                depth_of_field: enhancedScene.depth_of_field,
+                lighting_key: enhancedScene.lighting_key,
+                color_palette: enhancedScene.color_palette,
+                film_emulation: enhancedScene.film_emulation,
+                aspect_ratio: enhancedScene.aspect_ratio,
+                framing_notes: enhancedScene.framing_notes,
+                synergy_score: enhancedScene.synergy_score,
+                // 🎬 Enhanced prompt ready for image generation
+                enhanced_prompt: enhancedScene.enhanced_prompt,
+                edit_prompt: enhancedScene.edit_prompt,
+              };
+            });
+            
+            // Agregar metadata del director+DP al script
+            script.cinematography = {
+              director: directorProfile.director.name,
+              dp: directorProfile.cinematographer.name,
+              synergy_score: directorProfile.collaboration.synergy_score,
+              camera: directorProfile.camera.name,
+              aspect_ratio: directorProfile.framing.aspect_ratio,
+              film_emulation: directorProfile.color_grading.film_emulation,
+              primary_palette: directorProfile.color_grading.primary_palette,
+            };
+            
+            logger.log(`[generate-script] ✅ Cinematografía inyectada: ${directorProfile.director.name} + ${directorProfile.cinematographer.name} (Synergy: ${directorProfile.collaboration.synergy_score}%)`);
+          } catch (cinemaError: any) {
+            logger.warn(`[generate-script] ⚠️ Error inyectando cinematografía: ${cinemaError.message}`);
+            // Continuar sin cinematografía avanzada
+          }
           
           // Añadir metadata de audio al script
           script.audioAnalysis = {
