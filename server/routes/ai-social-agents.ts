@@ -23,6 +23,7 @@ import {
   users
 } from '../../db/schema';
 import { eq, desc, and, sql, gt, ne, count } from 'drizzle-orm';
+import { isAdminEmail } from '../../shared/constants';
 
 // Importar agentes
 import { generatePersonality, getPersonality, updateArtistMood } from '../agents/personality-agent';
@@ -591,10 +592,19 @@ router.get('/orchestrator/status', async (req: Request, res: Response) => {
 
 /**
  * POST /api/ai-social/orchestrator/start
- * Inicia el orquestador
+ * Inicia el orquestador - SOLO ADMIN
  */
 router.post('/orchestrator/start', async (req: Request, res: Response) => {
   try {
+    // Verificar que sea admin
+    const userEmail = (req as any).user?.email;
+    if (!isAdminEmail(userEmail)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Solo el administrador puede controlar el orquestador'
+      });
+    }
+
     const intervalMs = parseInt(req.body.intervalMs) || 60000; // Default: 1 minuto
     startOrchestrator(intervalMs);
 
@@ -613,10 +623,19 @@ router.post('/orchestrator/start', async (req: Request, res: Response) => {
 
 /**
  * POST /api/ai-social/orchestrator/stop
- * Detiene el orquestador
+ * Detiene el orquestador - SOLO ADMIN
  */
 router.post('/orchestrator/stop', async (req: Request, res: Response) => {
   try {
+    // Verificar que sea admin
+    const userEmail = (req as any).user?.email;
+    if (!isAdminEmail(userEmail)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Solo el administrador puede controlar el orquestador'
+      });
+    }
+
     stopOrchestrator();
 
     res.json({
