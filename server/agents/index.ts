@@ -50,6 +50,16 @@ export {
   processSocialTick
 } from './social-agent';
 
+// Radio Agent - Boostify Radio 24/7
+export {
+  processRadioTick,
+  getRadioStatus,
+  getUpcomingTracks,
+  loadRadioQueue,
+  artistPromotesSong,
+  skipTrack
+} from './radio-agent';
+
 // Types
 export * from './types';
 

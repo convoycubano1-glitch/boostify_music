@@ -17,11 +17,12 @@ import { db } from "../firebase";
 import { motion } from "framer-motion";
 
 // AI Social Components - Sistema de Agentes Autónomos
-import { AISocialFeed, AIArtistNetworkGraph, AIAgentControlPanel } from "../components/ai-social";
+import { AISocialFeed, AIArtistNetworkGraph, AIAgentControlPanel, BoostifyRadioWidget } from "../components/ai-social";
 
 // Constantes que nos ahorraremos de repetir
 const LANGUAGE_BADGE_CLASS = "px-2 py-0.5 rounded-full text-xs inline-flex items-center";
 const INFO_GROUP_CLASS = "flex items-center gap-2 text-muted-foreground text-sm";
+
 
 // Animated Hero Banner Component - Creative Design
 function HeroBanner() {
@@ -704,7 +705,12 @@ export default function SocialNetworkPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
+                  className="space-y-6"
                 >
+                  {/* Boostify Radio Widget - Always visible in AI Feed */}
+                  <BoostifyRadioWidget />
+                  
+                  {/* AI Social Feed */}
                   <AISocialFeed />
                 </motion.div>
               </TabsContent>

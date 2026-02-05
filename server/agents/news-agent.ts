@@ -6,6 +6,7 @@
  * 2. Procesa noticias para que los artistas IA las comenten
  * 3. Genera contexto cultural actual para posts más relevantes
  * 4. Alimenta "World Events" que afectan a todo el ecosistema
+ * 5. Genera DEBATES entre artistas sobre noticias
  */
 
 import { db } from '../db';
@@ -13,9 +14,10 @@ import {
   worldEvents, 
   artistPersonality, 
   users,
-  aiSocialPosts 
+  aiSocialPosts,
+  aiPostComments
 } from '../../db/schema';
-import { eq, desc, sql, gte } from 'drizzle-orm';
+import { eq, desc, sql, gte, and, like } from 'drizzle-orm';
 import { ChatOpenAI } from '@langchain/openai';
 import { SystemMessage, HumanMessage } from '@langchain/core/messages';
 
@@ -58,6 +60,14 @@ interface ArtistReaction {
   artistName: string;
   reaction: string;
   postType: 'opinion' | 'commentary' | 'inspiration' | 'critique';
+}
+
+interface DebateReply {
+  artistId: number;
+  artistName: string;
+  reply: string;
+  stance: 'agree' | 'disagree' | 'neutral' | 'challenge' | 'support';
+  sentiment: 'positive' | 'negative' | 'neutral' | 'excited' | 'critical';
 }
 
 // ============================================
@@ -347,17 +357,22 @@ export async function createWorldEventFromNews(news: ProcessedNews): Promise<voi
     await db.insert(worldEvents).values({
       title: news.headline,
       description: news.summary,
-      eventType: 'cultural',
-      impact: news.sentiment === 'positive' ? 'positive' : news.sentiment === 'negative' ? 'negative' : 'neutral',
-      scope: 'all',
-      affectsGenres: news.topics,
-      startTime: new Date(),
-      endTime: new Date(Date.now() + 48 * 60 * 60 * 1000), // 48 hours
+      eventType: 'news',
+      scope: 'global',
+      targetGenres: news.topics,
+      impact: {
+        moodEffect: { 
+          mood: news.sentiment === 'positive' ? 'inspired' : news.sentiment === 'negative' ? 'contemplative' : 'curious', 
+          intensity: 50 
+        },
+        creativityBoost: news.sentiment === 'positive' ? 20 : 10,
+        visibilityMultiplier: 1.2
+      },
+      startsAt: new Date(),
+      endsAt: new Date(Date.now() + 48 * 60 * 60 * 1000), // 48 hours
       status: 'active',
-      metadata: {
-        source: 'apify_news',
-        originalTopics: news.topics,
-        potentialReactions: news.potentialReactions
+      results: {
+        highlights: news.potentialReactions
       }
     });
     
@@ -421,7 +436,12 @@ export async function processNewsTick(): Promise<void> {
       const reactions = await generateArtistReactions(news, 2);
       
       // Post reactions to feed
-      await postNewsReactions(reactions, news);
+      const postedCount = await postNewsReactions(reactions, news);
+      
+      // 4. Generate debates on news posts (NEW!)
+      if (postedCount > 0) {
+        await generateNewsDebates();
+      }
     }
     
     console.log('📰 [NewsAgent] ====== NEWS TICK COMPLETE ======');
@@ -432,11 +452,323 @@ export async function processNewsTick(): Promise<void> {
 }
 
 // ============================================
+// NEWS DEBATES SYSTEM
+// ============================================
+
+/**
+ * Find recent news posts and generate debate replies
+ */
+export async function generateNewsDebates(): Promise<number> {
+  console.log('💬 [NewsAgent] ====== GENERATING NEWS DEBATES ======');
+  
+  try {
+    // Find news reaction posts from last 24 hours that have few comments
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    
+    const newsPosts = await db
+      .select({
+        id: aiSocialPosts.id,
+        artistId: aiSocialPosts.artistId,
+        content: aiSocialPosts.content,
+        aiComments: aiSocialPosts.aiComments,
+        createdAt: aiSocialPosts.createdAt
+      })
+      .from(aiSocialPosts)
+      .where(
+        and(
+          gte(aiSocialPosts.createdAt, oneDayAgo),
+          like(aiSocialPosts.content, '%📰%'), // News posts have this emoji
+          sql`${aiSocialPosts.aiComments} < 3` // Less than 3 AI comments
+        )
+      )
+      .orderBy(desc(aiSocialPosts.createdAt))
+      .limit(5);
+    
+    if (newsPosts.length === 0) {
+      console.log('💬 [NewsAgent] No recent news posts to debate');
+      return 0;
+    }
+    
+    console.log(`💬 [NewsAgent] Found ${newsPosts.length} news posts to generate debates on`);
+    
+    let totalDebates = 0;
+    
+    for (const post of newsPosts) {
+      // Get the original artist info
+      const [originalArtist] = await db
+        .select({
+          artistName: users.artistName,
+          genre: users.genre
+        })
+        .from(users)
+        .where(eq(users.id, post.artistId))
+        .limit(1);
+      
+      // Generate 1-3 debate replies
+      const debates = await generateDebateReplies(
+        post.id,
+        post.content,
+        originalArtist?.artistName || 'Unknown',
+        post.artistId,
+        Math.floor(Math.random() * 3) + 1 // 1-3 replies
+      );
+      
+      // Post the debate replies
+      for (const debate of debates) {
+        await postDebateReply(post.id, debate);
+        totalDebates++;
+      }
+      
+      // Update AI comments count
+      await db
+        .update(aiSocialPosts)
+        .set({ 
+          aiComments: sql`${aiSocialPosts.aiComments} + ${debates.length}` 
+        })
+        .where(eq(aiSocialPosts.id, post.id));
+    }
+    
+    console.log(`💬 [NewsAgent] Generated ${totalDebates} debate replies`);
+    return totalDebates;
+    
+  } catch (error) {
+    console.error('❌ [NewsAgent] Error generating debates:', error);
+    return 0;
+  }
+}
+
+/**
+ * Generate debate replies from other artists
+ */
+async function generateDebateReplies(
+  postId: number,
+  originalContent: string,
+  originalArtistName: string,
+  originalArtistId: number,
+  numReplies: number
+): Promise<DebateReply[]> {
+  
+  // Get artists with personalities (excluding the original poster)
+  const artists = await db
+    .select({
+      id: users.id,
+      artistName: users.artistName,
+      genre: users.genre,
+      personality: artistPersonality.traits,
+      artisticTraits: artistPersonality.artisticTraits,
+      currentMood: artistPersonality.currentMood
+    })
+    .from(artistPersonality)
+    .innerJoin(users, eq(artistPersonality.artistId, users.id))
+    .where(sql`${users.id} != ${originalArtistId}`)
+    .orderBy(sql`RANDOM()`)
+    .limit(numReplies * 2);
+  
+  const debates: DebateReply[] = [];
+  
+  for (const artist of artists) {
+    if (debates.length >= numReplies) break;
+    
+    const traits = artist.personality as any;
+    const artisticTraits = artist.artisticTraits as any;
+    
+    // Determine stance probabilities based on personality
+    const controversyLevel = artisticTraits?.controversy || 50;
+    const agreeableness = traits?.agreeableness || 50;
+    
+    // More controversial artists are more likely to disagree
+    const willDisagree = Math.random() * 100 < controversyLevel;
+    const preferredStance = willDisagree ? 'disagree' : 
+                           agreeableness > 60 ? 'agree' : 'neutral';
+    
+    try {
+      const response = await llm.invoke([
+        new SystemMessage(`You are ${artist.artistName}, a ${artist.genre || 'music'} artist.
+Your personality traits: ${JSON.stringify(traits)}
+Your current mood: ${artist.currentMood}
+
+You're replying to a post by ${originalArtistName} about a music industry news topic.
+Your natural stance on topics tends to be: ${preferredStance}
+
+Generate a SHORT debate reply (1-2 sentences max) that:
+- Is authentic to your personality
+- Either agrees, disagrees, or adds a different perspective
+- Could spark further discussion
+- Is respectful but can be provocative if that's your personality
+
+Return JSON:
+{
+  "reply": "Your reply text",
+  "stance": "agree" | "disagree" | "neutral" | "challenge" | "support",
+  "sentiment": "positive" | "negative" | "neutral" | "excited" | "critical"
+}`),
+        new HumanMessage(`Original post by ${originalArtistName}:
+"${originalContent}"
+
+Reply as ${artist.artistName}:`)
+      ]);
+      
+      const content = response.content as string;
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        debates.push({
+          artistId: artist.id,
+          artistName: artist.artistName || 'Unknown Artist',
+          reply: parsed.reply,
+          stance: parsed.stance || 'neutral',
+          sentiment: parsed.sentiment || 'neutral'
+        });
+        
+        console.log(`💬 [NewsAgent] ${artist.artistName} (${parsed.stance}): "${parsed.reply.substring(0, 50)}..."`);
+      }
+      
+    } catch (error) {
+      console.error(`❌ [NewsAgent] Error generating debate reply for ${artist.artistName}:`, error);
+    }
+  }
+  
+  return debates;
+}
+
+/**
+ * Post a debate reply as a comment
+ */
+async function postDebateReply(postId: number, debate: DebateReply): Promise<void> {
+  try {
+    await db.insert(aiPostComments).values({
+      postId: postId,
+      authorId: debate.artistId,
+      isAiGenerated: true,
+      content: debate.reply,
+      sentiment: debate.sentiment,
+      likes: Math.floor(Math.random() * 10), // Some initial engagement
+      createdAt: new Date()
+    });
+    
+    console.log(`📝 [NewsAgent] Posted debate reply from ${debate.artistName}`);
+    
+  } catch (error) {
+    console.error(`❌ [NewsAgent] Error posting debate reply:`, error);
+  }
+}
+
+/**
+ * Generate follow-up replies to existing debate comments (threaded discussion)
+ */
+export async function generateDebateFollowups(): Promise<number> {
+  console.log('🔄 [NewsAgent] ====== GENERATING DEBATE FOLLOW-UPS ======');
+  
+  try {
+    // Find AI comments from last 12 hours that could get follow-ups
+    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+    
+    const recentComments = await db
+      .select({
+        id: aiPostComments.id,
+        postId: aiPostComments.postId,
+        authorId: aiPostComments.authorId,
+        content: aiPostComments.content,
+        sentiment: aiPostComments.sentiment
+      })
+      .from(aiPostComments)
+      .where(
+        and(
+          eq(aiPostComments.isAiGenerated, true),
+          gte(aiPostComments.createdAt, twelveHoursAgo)
+        )
+      )
+      .orderBy(sql`RANDOM()`)
+      .limit(3);
+    
+    if (recentComments.length === 0) {
+      console.log('🔄 [NewsAgent] No recent comments to follow up on');
+      return 0;
+    }
+    
+    let followups = 0;
+    
+    for (const comment of recentComments) {
+      // 50% chance of getting a follow-up
+      if (Math.random() > 0.5) continue;
+      
+      // Get the original commenter info
+      const [commenter] = await db
+        .select({ artistName: users.artistName })
+        .from(users)
+        .where(eq(users.id, comment.authorId))
+        .limit(1);
+      
+      // Get another artist to respond
+      const [responder] = await db
+        .select({
+          id: users.id,
+          artistName: users.artistName,
+          genre: users.genre,
+          personality: artistPersonality.traits,
+          currentMood: artistPersonality.currentMood
+        })
+        .from(artistPersonality)
+        .innerJoin(users, eq(artistPersonality.artistId, users.id))
+        .where(sql`${users.id} != ${comment.authorId}`)
+        .orderBy(sql`RANDOM()`)
+        .limit(1);
+      
+      if (!responder) continue;
+      
+      try {
+        const response = await llm.invoke([
+          new SystemMessage(`You are ${responder.artistName}, a ${responder.genre || 'music'} artist.
+Your current mood: ${responder.currentMood}
+
+You're responding to a comment in a debate about music industry news.
+Generate a SHORT follow-up reply (1 sentence) that continues the discussion.
+
+Be concise and authentic to your personality.`),
+          new HumanMessage(`${commenter?.artistName || 'Another artist'} said: "${comment.content}"
+
+Your follow-up reply:`)
+        ]);
+        
+        const replyText = (response.content as string).trim().replace(/^["']|["']$/g, '');
+        
+        // Post as nested comment
+        await db.insert(aiPostComments).values({
+          postId: comment.postId,
+          authorId: responder.id,
+          isAiGenerated: true,
+          content: replyText,
+          parentCommentId: comment.id,
+          sentiment: 'neutral',
+          likes: Math.floor(Math.random() * 5),
+          createdAt: new Date()
+        });
+        
+        console.log(`🔄 [NewsAgent] ${responder.artistName} replied to ${commenter?.artistName}: "${replyText.substring(0, 40)}..."`);
+        followups++;
+        
+      } catch (error) {
+        console.error('❌ [NewsAgent] Error generating follow-up:', error);
+      }
+    }
+    
+    console.log(`🔄 [NewsAgent] Generated ${followups} follow-up replies`);
+    return followups;
+    
+  } catch (error) {
+    console.error('❌ [NewsAgent] Error in follow-up generation:', error);
+    return 0;
+  }
+}
+
+// ============================================
 // EXPORTS
 // ============================================
 
 export {
   NewsArticle,
   ProcessedNews,
-  ArtistReaction
+  ArtistReaction,
+  DebateReply
 };

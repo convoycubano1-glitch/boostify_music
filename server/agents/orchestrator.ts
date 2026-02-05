@@ -186,6 +186,17 @@ async function orchestratorTick(): Promise<void> {
     }
   }
 
+  // Every 30 ticks, generate debate follow-ups on news posts
+  if (state.tickCount % 30 === 0) {
+    try {
+      const { generateDebateFollowups } = await import('./news-agent');
+      const followups = await generateDebateFollowups();
+      console.log(`💬 [Orchestrator] Debate follow-ups generated: ${followups} replies`);
+    } catch (error) {
+      console.error('❌ [Orchestrator] Error in debate follow-ups:', error);
+    }
+  }
+
   // Every 120 ticks (2 hours at 1min), process outreach
   if (state.tickCount % 120 === 0) {
     try {
@@ -194,6 +205,17 @@ async function orchestratorTick(): Promise<void> {
       console.log('📧 [Orchestrator] Outreach tick processed - industry emails');
     } catch (error) {
       console.error('❌ [Orchestrator] Error in outreach tick:', error);
+    }
+  }
+
+  // Every 2 ticks, process radio - Boostify Radio 24/7
+  if (state.tickCount % 2 === 0) {
+    try {
+      const { processRadioTick } = await import('./radio-agent');
+      await processRadioTick();
+      console.log('📻 [Orchestrator] Radio tick processed - now playing updates');
+    } catch (error) {
+      console.error('❌ [Orchestrator] Error in radio tick:', error);
     }
   }
 

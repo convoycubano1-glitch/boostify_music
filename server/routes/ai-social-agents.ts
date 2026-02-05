@@ -867,4 +867,109 @@ router.get('/analytics', async (req: Request, res: Response) => {
   }
 });
 
+// ==========================================
+// RADIO ENDPOINTS - Boostify Radio 24/7
+// ==========================================
+
+import { 
+  getRadioStatus, 
+  getUpcomingTracks, 
+  skipTrack, 
+  artistPromotesSong,
+  loadRadioQueue,
+  processRadioTick
+} from '../agents/radio-agent';
+
+/**
+ * GET /api/ai-social/radio/status
+ * Get current radio status and now playing
+ */
+router.get('/radio/status', async (req: Request, res: Response) => {
+  try {
+    const status = getRadioStatus();
+    res.json({ success: true, data: status });
+  } catch (error) {
+    console.error('Error getting radio status:', error);
+    res.status(500).json({ success: false, error: 'Failed to get radio status' });
+  }
+});
+
+/**
+ * GET /api/ai-social/radio/queue
+ * Get upcoming tracks in queue
+ */
+router.get('/radio/queue', async (req: Request, res: Response) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 10;
+    const queue = getUpcomingTracks(limit);
+    res.json({ success: true, data: queue });
+  } catch (error) {
+    console.error('Error getting radio queue:', error);
+    res.status(500).json({ success: false, error: 'Failed to get radio queue' });
+  }
+});
+
+/**
+ * POST /api/ai-social/radio/skip
+ * Skip to next track
+ */
+router.post('/radio/skip', async (req: Request, res: Response) => {
+  try {
+    const nextTrack = await skipTrack();
+    res.json({ success: true, data: nextTrack });
+  } catch (error) {
+    console.error('Error skipping track:', error);
+    res.status(500).json({ success: false, error: 'Failed to skip track' });
+  }
+});
+
+/**
+ * POST /api/ai-social/radio/promote
+ * Artist promotes their song to radio
+ */
+router.post('/radio/promote', async (req: Request, res: Response) => {
+  try {
+    const { artistId, songId } = req.body;
+    
+    if (!artistId || !songId) {
+      return res.status(400).json({ success: false, error: 'artistId and songId required' });
+    }
+
+    const result = await artistPromotesSong(artistId, songId);
+    res.json({ success: result.success, data: result });
+  } catch (error) {
+    console.error('Error promoting song:', error);
+    res.status(500).json({ success: false, error: 'Failed to promote song' });
+  }
+});
+
+/**
+ * POST /api/ai-social/radio/reload
+ * Reload radio queue
+ */
+router.post('/radio/reload', async (req: Request, res: Response) => {
+  try {
+    const count = await loadRadioQueue();
+    res.json({ success: true, data: { tracksLoaded: count } });
+  } catch (error) {
+    console.error('Error reloading queue:', error);
+    res.status(500).json({ success: false, error: 'Failed to reload queue' });
+  }
+});
+
+/**
+ * POST /api/ai-social/radio/tick
+ * Manually trigger a radio tick (for testing)
+ */
+router.post('/radio/tick', async (req: Request, res: Response) => {
+  try {
+    await processRadioTick();
+    const status = getRadioStatus();
+    res.json({ success: true, data: status });
+  } catch (error) {
+    console.error('Error in radio tick:', error);
+    res.status(500).json({ success: false, error: 'Failed to process radio tick' });
+  }
+});
+
 export default router;

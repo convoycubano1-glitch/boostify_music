@@ -18,7 +18,7 @@ import {
   artistPersonality,
   tokenizedSongs
 } from '../../db/schema';
-import { eq, desc, sql, and, gte, isNull, ne } from 'drizzle-orm';
+import { eq, desc, sql, and, gte, isNull, ne, like } from 'drizzle-orm';
 import { ChatOpenAI } from '@langchain/openai';
 import { SystemMessage, HumanMessage } from '@langchain/core/messages';
 import { sendOutreachEmail } from '../services/outreach-email-service';
@@ -37,6 +37,8 @@ interface ArtistHighlight {
   artistId: number;
   artistName: string;
   genre: string;
+  profileImage: string | null;
+  slug: string | null;
   highlights: string[];
   topSong: {
     title: string;
@@ -84,20 +86,15 @@ export async function selectArtistsForOutreach(limit: number = 5): Promise<Artis
         id: users.id,
         artistName: users.artistName,
         username: users.username,
-        name: users.name,
         genre: users.genre,
-        bio: users.bio,
-        monthlyListeners: users.monthlyListeners,
         profileImage: users.profileImage,
-        slug: users.slug,
-        songCount: sql<number>`count(${songs.id})`.as('songCount')
+        slug: users.slug
       })
       .from(users)
       .innerJoin(songs, eq(songs.userId, users.id))
       .where(eq(users.isAIGenerated, true))
       .groupBy(users.id)
-      .having(sql`count(${songs.id}) > 0`)
-      .orderBy(desc(sql`count(${songs.id})`), desc(users.monthlyListeners))
+      .orderBy(desc(users.id))
       .limit(limit * 2); // Get extra to filter
     
     console.log(`📋 [OutreachAgent] Found ${artistsWithMusic.length} artists with music`);
@@ -117,29 +114,27 @@ export async function selectArtistsForOutreach(limit: number = 5): Promise<Artis
         .orderBy(desc(songs.plays))
         .limit(1);
       
-      // Get token data if exists
-      const [token] = await db
-        .select({
-          symbol: tokenizedSongs.tokenSymbol,
-          price: tokenizedSongs.tokenPrice,
-          holders: tokenizedSongs.holders
-        })
-        .from(tokenizedSongs)
-        .where(eq(tokenizedSongs.artistId, artist.id))
-        .limit(1);
+      // Skip token query for now - simplify
+      const token = null;
       
-      // Generate unique selling points
-      const usps = await generateArtistUSPs(artist, topSong);
+      // Generate unique selling points (simplified)
+      const usps = [
+        `Innovative ${artist.genre || 'music'} artist with unique sound`,
+        'Part of the first AI-native music ecosystem',
+        'Growing fanbase with high engagement rates'
+      ];
       
       // Get the best available name
-      const displayName = artist.artistName || artist.name || artist.username || 'Unknown Artist';
+      const displayName = artist.artistName || artist.username || 'Unknown Artist';
       
       highlights.push({
         artistId: artist.id,
         artistName: displayName,
         genre: artist.genre || 'Music',
+        profileImage: artist.profileImage || null,
+        slug: artist.slug || null,
         highlights: [
-          `${artist.monthlyListeners?.toLocaleString() || '0'} monthly listeners`,
+          `100% AI-generated autonomous artist`,
           topSong ? `Top track: "${topSong.title}" with ${topSong.plays?.toLocaleString() || '0'} plays` : 'New emerging artist',
           token ? `Tokenized artist with ${token.holders || 0} token holders` : 'Innovative AI artist'
         ],
@@ -181,8 +176,7 @@ Be specific, quantitative where possible, and highlight what makes this artist u
 Return as a JSON array of 3 strings.`),
       new HumanMessage(`Artist: ${artist.artistName}
 Genre: ${artist.genre || 'Unknown'}
-Bio: ${artist.bio?.substring(0, 200) || 'Emerging AI artist'}
-Monthly Listeners: ${artist.monthlyListeners || 0}
+Bio: Autonomous AI artist from Boostify ecosystem
 Top Song: ${topSong?.title || 'N/A'} (${topSong?.plays || 0} plays)`)
     ]);
     
@@ -337,19 +331,22 @@ export async function executeOutreachCampaign(
     const contacts = await db
       .select({
         id: musicIndustryContacts.id,
-        name: musicIndustryContacts.name,
+        name: musicIndustryContacts.fullName,
         email: musicIndustryContacts.email,
-        role: musicIndustryContacts.role,
-        company: musicIndustryContacts.company,
-        genres: musicIndustryContacts.genres,
-        lastContacted: musicIndustryContacts.lastContacted
+        role: musicIndustryContacts.jobTitle,
+        company: musicIndustryContacts.companyName,
+        genres: musicIndustryContacts.keywords,
+        lastContacted: musicIndustryContacts.lastContactedAt
       })
       .from(musicIndustryContacts)
       .where(
         and(
-          eq(musicIndustryContacts.status, 'active'),
+          // Accept 'new' or 'queued' status (not just 'active')
+          sql`${musicIndustryContacts.status} IN ('new', 'queued', 'contacted')`,
+          // Has valid email
+          like(musicIndustryContacts.email, '%@%.%'),
           // Not contacted in last 30 days or never contacted
-          sql`(${musicIndustryContacts.lastContacted} < ${thirtyDaysAgo} OR ${musicIndustryContacts.lastContacted} IS NULL)`
+          sql`(${musicIndustryContacts.lastContactedAt} < ${thirtyDaysAgo} OR ${musicIndustryContacts.lastContactedAt} IS NULL)`
         )
       )
       .limit(contactLimit);
@@ -399,15 +396,19 @@ export async function executeOutreachCampaign(
           to: contact.email,
           toName: contact.name,
           subject: email.subject,
-          htmlContent: formatEmailHtml(email, relevantArtist),
+          htmlContent: formatEmailHtml(email, relevantArtist, contact.name),
           tags: ['ai_outreach', 'artist_pitch', `artist_${relevantArtist.artistId}`]
         });
         
         if (result.success) {
-          // Update last contacted
+          // Update last contacted and status
           await db
             .update(musicIndustryContacts)
-            .set({ lastContacted: new Date() })
+            .set({ 
+              lastContactedAt: new Date(),
+              status: 'contacted',
+              emailsSent: sql`${musicIndustryContacts.emailsSent} + 1`
+            })
             .where(eq(musicIndustryContacts.id, contact.id));
           
           results.push({
@@ -447,202 +448,205 @@ export async function executeOutreachCampaign(
 }
 
 /**
- * Format email content as HTML with artist info
+ * Format email content as HTML with artist info and image
+ * Uses beautiful responsive template with artist photo
  */
-function formatEmailHtml(email: PersonalizedEmail, artist?: ArtistHighlight): string {
-  const artistPageUrl = artist 
-    ? `${BOOSTIFY_BASE_URL}/artist/${artist.artistId}`
+function formatEmailHtml(email: PersonalizedEmail, artist?: ArtistHighlight, recipientName?: string): string {
+  const artistName = artist?.artistName || 'Our AI Artists';
+  const artistPageUrl = artist?.slug 
+    ? `${BOOSTIFY_BASE_URL}/artist/${artist.slug}`
     : `${BOOSTIFY_BASE_URL}/discover`;
   
-  const artistName = artist?.artistName || 'Our AI Artists';
+  // Get artist image - use profile image or fallback to avatar
+  const artistImage = artist?.profileImage || 
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(artistName)}&background=7c3aed&color=fff&size=200`;
   
-  return `
-<!DOCTYPE html>
-<html>
+  const displayName = recipientName || 'Music Professional';
+  const genre = artist?.genre || 'Electronic';
+  const topSongTitle = artist?.topSong?.title || 'Untitled';
+  const topSongPlays = artist?.topSong?.plays || 0;
+  
+  return `<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
+  <title>Boostify AI Outreach</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:AllowPNG/>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
   <style>
-    body { 
-      font-family: 'Helvetica Neue', Arial, sans-serif; 
-      line-height: 1.7; 
-      color: #1a1a2e; 
-      background: #f8f9fa;
-      margin: 0;
-      padding: 0;
-    }
-    .container { 
-      max-width: 620px; 
-      margin: 0 auto; 
-      padding: 40px 30px;
-      background: white;
-    }
-    .header {
-      text-align: center;
-      margin-bottom: 30px;
-      padding-bottom: 25px;
-      border-bottom: 2px solid #6366f1;
-    }
-    .header h1 {
-      color: #6366f1;
-      font-size: 24px;
-      margin: 0 0 8px 0;
-      letter-spacing: -0.5px;
-    }
-    .header .tagline {
-      color: #888;
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-    }
-    .experimental-badge {
-      display: inline-block;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 25px;
-    }
-    .body-text {
-      font-size: 15px;
-      color: #333;
-    }
-    .body-text p {
-      margin: 0 0 16px 0;
-    }
-    .artist-card {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      border-radius: 12px;
-      padding: 25px;
-      margin: 25px 0;
-      color: white;
-    }
-    .artist-card h3 {
-      margin: 0 0 12px 0;
-      font-size: 20px;
-      color: #a78bfa;
-    }
-    .artist-card .genre {
-      display: inline-block;
-      background: rgba(167, 139, 250, 0.2);
-      color: #c4b5fd;
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 12px;
-      margin-bottom: 15px;
-    }
-    .artist-card .highlights {
-      font-size: 14px;
-      line-height: 1.6;
-      color: #e2e8f0;
-    }
-    .cta-container {
-      text-align: center;
-      margin: 30px 0;
-    }
-    .cta { 
-      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-      color: white; 
-      padding: 14px 32px; 
-      text-decoration: none; 
-      border-radius: 8px; 
-      display: inline-block;
-      font-weight: 600;
-      font-size: 14px;
-      letter-spacing: 0.5px;
-      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
-    }
-    .cta:hover {
-      background: linear-gradient(135deg, #5558e3 0%, #7c4fe0 100%);
-    }
-    .ai-notice {
-      background: #fef3c7;
-      border-left: 4px solid #f59e0b;
-      padding: 15px 20px;
-      margin: 25px 0;
-      border-radius: 0 8px 8px 0;
-      font-size: 13px;
-      color: #92400e;
-    }
-    .ai-notice strong {
-      display: block;
-      margin-bottom: 5px;
-      color: #78350f;
-    }
-    .footer { 
-      margin-top: 40px; 
-      padding-top: 25px; 
-      border-top: 1px solid #e5e7eb; 
-      font-size: 12px; 
-      color: #6b7280;
-      text-align: center;
-    }
-    .footer a {
-      color: #6366f1;
-      text-decoration: none;
-    }
-    .unsubscribe {
-      margin-top: 15px;
-      padding: 12px;
-      background: #f9fafb;
-      border-radius: 6px;
-      font-size: 11px;
-      color: #9ca3af;
+    * { box-sizing: border-box; }
+    body, table, td, p, a, li { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    @media only screen and (max-width: 620px) {
+      .main-container { width: 100% !important; padding: 20px 10px !important; }
+      .artist-image-large { width: 90px !important; height: 90px !important; }
+      .main-title { font-size: 22px !important; }
+      .stats-cell { padding: 8px 3px !important; }
+      .stats-value { font-size: 13px !important; }
+      .stats-label { font-size: 9px !important; }
+      .cta-button { padding: 12px 25px !important; font-size: 14px !important; }
+      .content-box { padding: 15px !important; }
+      .artist-card { padding: 18px !important; }
+      .small-text { font-size: 12px !important; }
     }
   </style>
 </head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>🎵 BOOSTIFY MUSIC</h1>
-      <div class="tagline">The World's First 100% AI-Powered Record Label</div>
-    </div>
+<body style="margin: 0; padding: 0; background-color: #0a0a0a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; mso-line-height-rule: exactly; width: 100% !important;">
+  <!-- Wrapper table for full width background -->
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #0a0a0a;">
+    <tr>
+      <td align="center" style="padding: 20px 0;">
+        <!-- Main container -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
+          <tr>
+            <td class="main-container" style="background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%); padding: 40px 20px; border-radius: 8px;">
     
-    <div style="text-align: center;">
-      <span class="experimental-badge">🧪 Experimental Project</span>
-    </div>
-    
-    <div class="body-text">
-      ${email.body.split('\n').filter(p => p.trim()).map(p => `<p>${p}</p>`).join('')}
-    </div>
-    
-    <div class="artist-card">
-      <h3>🎤 ${artistName}</h3>
-      ${artist?.genre ? `<span class="genre">${artist.genre}</span>` : ''}
-      <div class="highlights">
-        ${email.artistHighlights}
+    <!-- Header Badge -->
+    <div style="text-align: center; margin-bottom: 30px;">
+      <div style="display: inline-block; padding: 8px 20px; background: linear-gradient(90deg, #7c3aed, #ec4899); border-radius: 20px;">
+        <span style="color: white; font-size: 12px; font-weight: 600; letter-spacing: 2px;">🧪 EXPERIMENTAL PROJECT</span>
       </div>
     </div>
-    
-    <div class="cta-container">
-      <a href="${artistPageUrl}" class="cta">🚀 Meet ${artistName}</a>
+
+    <!-- Artist Image -->
+    <div style="text-align: center; margin-bottom: 20px;">
+      <img class="artist-image-large" src="${artistImage}" alt="${artistName}" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid rgba(124, 58, 237, 0.6); box-shadow: 0 0 30px rgba(124, 58, 237, 0.4);" />
     </div>
+
+    <!-- Main Title -->
+    <h1 class="main-title" style="color: #ffffff; text-align: center; font-size: 28px; margin-bottom: 10px; font-weight: 700;">
+      Hello, ${displayName}
+    </h1>
     
-    <p style="text-align: center; color: #6b7280; font-size: 14px;">
-      <strong>${email.callToAction}</strong>
+    <p style="color: #a855f7; text-align: center; font-size: 14px; margin-bottom: 30px; font-style: italic;">
+      This message was autonomously generated and sent by an AI system
     </p>
-    
-    <div class="ai-notice">
-      <strong>🤖 Full Transparency:</strong>
-      This email was autonomously composed and sent by AI agents. No human reviewed or approved this message. 
-      We're exploring what happens when AI runs an entire record label - from artist development to industry outreach.
-    </div>
-    
-    <div class="footer">
-      <p>
-        <strong>Boostify Music</strong> — An Experimental AI-Native Music Ecosystem<br>
-        <a href="${BOOSTIFY_BASE_URL}">boostifymusic.com</a>
+
+    <!-- What Is This Box -->
+    <div style="background: rgba(124, 58, 237, 0.1); border: 1px solid rgba(124, 58, 237, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 30px;">
+      <h3 style="color: #c4b5fd; margin: 0 0 10px 0; font-size: 14px;">⚡ WHAT IS THIS?</h3>
+      <p style="color: #d1d5db; margin: 0; font-size: 14px; line-height: 1.6;">
+        <strong style="color: #f472b6;">Boostify</strong> is the world's first experimental record label 
+        powered <strong style="color: #f472b6;">100% by AI agents</strong> — with zero human intervention. 
+        Our AI artists create music, build relationships, trade tokens, and even reach out to industry 
+        professionals like you... completely autonomously.
       </p>
-      <div class="unsubscribe">
-        If this email caused any inconvenience, we sincerely apologize. This is an experimental project in development.<br>
-        Simply reply with "unsubscribe" and our AI agents will ensure you're never contacted again.
-      </div>
     </div>
-  </div>
+
+    <!-- Artist Card -->
+    <div style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(236, 72, 153, 0.2)); border-radius: 16px; padding: 25px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1);">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td width="70" style="vertical-align: top;">
+            <img src="${artistImage}" alt="${artistName}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(124, 58, 237, 0.5);" />
+          </td>
+          <td style="vertical-align: top; padding-left: 15px;">
+            <h2 style="color: #ffffff; margin: 0 0 5px 0; font-size: 22px;">${artistName}</h2>
+            <p style="color: #a855f7; margin: 0; font-size: 14px;">AI Artist • ${genre}</p>
+          </td>
+        </tr>
+      </table>
+      
+      <p style="color: #d1d5db; font-size: 14px; line-height: 1.7; margin: 20px 0 15px 0;">
+        ${email.artistHighlights || `An experimental AI artist exploring the boundaries of ${genre} music. Every track, every decision, every interaction is powered by autonomous AI agents.`}
+      </p>
+
+      <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+        <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+          <strong style="color: #f472b6;">Key Highlights:</strong> ${artist?.highlights?.join(' • ') || '100% AI-generated • Autonomous decisions • Blockchain-integrated'}
+        </p>
+      </div>
+
+      <!-- Stats Row -->
+      <table width="100%" cellpadding="0" cellspacing="4" style="table-layout: fixed;">
+        <tr>
+          <td class="stats-cell" style="text-align: center; background: rgba(0,0,0,0.2); padding: 10px 5px; border-radius: 8px;">
+            <div class="stats-value" style="color: #f472b6; font-size: 16px; font-weight: bold;">${topSongPlays.toLocaleString()}</div>
+            <div class="stats-label" style="color: #9ca3af; font-size: 10px;">PLAYS</div>
+          </td>
+          <td class="stats-cell" style="text-align: center; background: rgba(0,0,0,0.2); padding: 10px 5px; border-radius: 8px;">
+            <div class="stats-value" style="color: #a855f7; font-size: 16px; font-weight: bold;">100%</div>
+            <div class="stats-label" style="color: #9ca3af; font-size: 10px;">AI</div>
+          </td>
+          <td class="stats-cell" style="text-align: center; background: rgba(0,0,0,0.2); padding: 10px 5px; border-radius: 8px;">
+            <div class="stats-value" style="color: #22d3ee; font-size: 16px; font-weight: bold;">BTF</div>
+            <div class="stats-label" style="color: #9ca3af; font-size: 10px;">TOKEN</div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Top Song -->
+    <div style="background: rgba(236, 72, 153, 0.1); border-radius: 12px; padding: 15px 20px; margin-bottom: 25px; border-left: 3px solid #ec4899;">
+      <p style="color: #f9a8d4; margin: 0 0 5px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">🔥 Top Track</p>
+      <p style="color: #ffffff; margin: 0; font-size: 18px; font-weight: 600;">"${topSongTitle}"</p>
+    </div>
+
+    <!-- CTA Button -->
+    <div style="text-align: center; margin: 30px 0;">
+      <a class="cta-button" href="${artistPageUrl}" style="display: inline-block; background: linear-gradient(90deg, #7c3aed, #ec4899); color: white; padding: 16px 35px; border-radius: 30px; text-decoration: none; font-weight: 600; font-size: 15px;">
+        Meet ${artistName} →
+      </a>
+    </div>
+
+    <!-- Why This Matters -->
+    <div style="background: rgba(34, 211, 238, 0.1); border-radius: 12px; padding: 20px; margin-bottom: 25px; border: 1px solid rgba(34, 211, 238, 0.2);">
+      <h3 style="color: #22d3ee; margin: 0 0 15px 0; font-size: 16px;">🚀 Why This Matters</h3>
+      <ul style="color: #d1d5db; margin: 0; padding-left: 20px; line-height: 1.8; font-size: 14px;">
+        <li><strong style="color: #f472b6;">49 autonomous AI artists</strong> operating 24/7</li>
+        <li>Each with unique <strong style="color: #a855f7;">personality, memory & relationships</strong></li>
+        <li><strong style="color: #22d3ee;">Blockchain-integrated</strong> artist tokens (BTF-2300)</li>
+        <li>AI-powered <strong style="color: #f472b6;">collaborations, beef, and trends</strong></li>
+        <li>This outreach? <strong style="color: #22d3ee;">Decided autonomously by the system</strong></li>
+      </ul>
+    </div>
+
+    <!-- Autonomous Notice -->
+    <div style="background: linear-gradient(90deg, rgba(236, 72, 153, 0.15), rgba(124, 58, 237, 0.15)); border-radius: 12px; padding: 20px; margin-bottom: 25px; text-align: center;">
+      <p style="color: #f9a8d4; margin: 0; font-size: 13px; line-height: 1.6;">
+        🤖 <strong>AUTONOMOUS DECISION</strong><br>
+        <span style="color: #d1d5db;">This email was not written or sent by a human. Our AI orchestrator 
+        analyzed your profile and decided to reach out based on potential synergies 
+        with our experimental music ecosystem.</span>
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 30px; padding-top: 30px;">
+      <tr>
+        <td align="center">
+          <p style="color: #6b7280; font-size: 12px; margin: 0 0 15px 0;">
+            🧪 <strong>Boostify</strong> — The World's First AI-Native Record Label
+          </p>
+          <p style="color: #6b7280; font-size: 12px; margin: 0 0 20px 0;">
+            A project in active development exploring the future of autonomous music creation
+          </p>
+          <p style="color: #9ca3af; font-size: 11px; margin: 0;">
+            If this email caused any inconvenience, simply reply with "unsubscribe" and you'll never hear from us again.
+          </p>
+        </td>
+      </tr>
+    </table>
+
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>`;
 }
@@ -752,7 +756,7 @@ export async function sendTestEmail(
       to: testEmail,
       toName: testName,
       subject: `[TEST] ${email.subject}`,
-      htmlContent: formatEmailHtml(email, relevantArtist),
+      htmlContent: formatEmailHtml(email, relevantArtist, testName),
       tags: ['test_email', 'ai_outreach_test']
     });
     
