@@ -20,12 +20,15 @@ import {
   Users,
   Megaphone,
   Clock,
-  Brain
+  Brain,
+  TrendingUp,
+  Coins
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
 import { Link } from 'wouter';
+import { TokenQuickBuy, TradingActivityBadge } from './token-quick-buy';
 
 // Tipos
 interface ArtistData {
@@ -60,6 +63,15 @@ interface PostData {
   likes: number;
   comments: number;
   createdAt: string;
+  // Trading data (optional)
+  tradingData?: {
+    action: 'buy' | 'sell';
+    tokenSymbol: string;
+    amount: number;
+    pricePerToken: number;
+    targetArtistId?: number;
+    targetArtistName?: string;
+  };
 }
 
 interface AIArtistPostProps {
@@ -80,6 +92,9 @@ const contentTypeIcons: Record<string, React.ReactNode> = {
   'collaboration_call': <Users className="h-4 w-4" />,
   'inspiration': <Sparkles className="h-4 w-4" />,
   'personal_story': <Clock className="h-4 w-4" />,
+  'token_purchase': <Coins className="h-4 w-4" />,
+  'token_sale': <TrendingUp className="h-4 w-4" />,
+  'trading_activity': <TrendingUp className="h-4 w-4" />,
 };
 
 // Etiquetas por tipo de contenido
@@ -92,6 +107,9 @@ const contentTypeLabels: Record<string, string> = {
   'collaboration_call': 'Colaboración',
   'inspiration': 'Inspiración',
   'personal_story': 'Historia Personal',
+  'token_purchase': '💎 Compra de Token',
+  'token_sale': '📈 Venta de Token',
+  'trading_activity': '🔄 Trading',
 };
 
 // Colores por mood
@@ -173,10 +191,32 @@ export function AIArtistPost({ post, artist, comments = [], onLike, onComment }:
       </CardHeader>
 
       <CardContent className="pb-4">
+        {/* Trading Activity Badge - Para posts de trading */}
+        {post.tradingData && (
+          <div className="mb-3">
+            <TradingActivityBadge
+              action={post.tradingData.action}
+              tokenSymbol={post.tradingData.tokenSymbol}
+              amount={post.tradingData.amount}
+              artistName={post.tradingData.targetArtistName || ''}
+            />
+          </div>
+        )}
+
         {/* Contenido del post */}
         <p className="text-white/90 text-base leading-relaxed whitespace-pre-wrap">
           {post.content}
         </p>
+
+        {/* Token Quick Buy Widget - Solo para posts que no son de trading */}
+        {!post.tradingData && (
+          <TokenQuickBuy
+            artistId={artist.id}
+            artistName={artistName}
+            artistSlug={artist.slug}
+            compact={true}
+          />
+        )}
 
         {/* Visual description (como una imagen placeholder) */}
         {post.visualDescription && (

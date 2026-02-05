@@ -215,6 +215,93 @@ router.get("/artist-tokens", async (req, res) => {
 });
 
 /**
+ * Get token info for a specific artist by artistId
+ * Used by TokenQuickBuy widget in social feed
+ */
+router.get("/artist-token/:artistId", async (req, res) => {
+  try {
+    const artistId = parseInt(req.params.artistId);
+    console.log(`📊 [BOOSTISWAP] Getting token info for artist ID: ${artistId}`);
+    
+    // Find tokenized song for this artist
+    const song = await db.select().from(tokenizedSongs)
+      .where(eq(tokenizedSongs.artistId, artistId))
+      .limit(1);
+    
+    if (song.length === 0) {
+      // Try to create a synthetic token entry for AI artists
+      const artist = await db.select({
+        id: users.id,
+        artistName: users.artistName,
+        profileImage: users.profileImage,
+      }).from(users)
+        .where(eq(users.id, artistId))
+        .limit(1);
+      
+      if (artist.length === 0) {
+        return res.status(404).json({ error: "Artist not found" });
+      }
+      
+      // Generate synthetic token data for artists without tokens
+      const syntheticToken = {
+        id: artistId * 1000, // Synthetic ID
+        artistId: artistId,
+        name: artist[0].artistName || `Artist #${artistId}`,
+        tokenSymbol: `${(artist[0].artistName || 'ART').substring(0, 3).toUpperCase()}${artistId}`,
+        pricePerTokenUsd: (Math.random() * 0.5 + 0.05).toFixed(4),
+        totalSupply: 1000000,
+        availableSupply: 750000 + Math.floor(Math.random() * 250000),
+        volume24h: Math.floor(Math.random() * 50000) + 1000,
+        holders: Math.floor(Math.random() * 500) + 10,
+        imageUrl: artist[0].profileImage || "",
+        change24h: (Math.random() * 20 - 5).toFixed(2),
+        isSynthetic: true
+      };
+      
+      console.log(`✅ [BOOSTISWAP] Created synthetic token for artist: ${syntheticToken.name}`);
+      return res.json(syntheticToken);
+    }
+    
+    // Get artist info for the token
+    let artistName = song[0].songName;
+    let artistProfileImage = song[0].imageUrl || "";
+    
+    const artist = await db.select({
+      name: users.artistName,
+      profileImage: users.profileImage
+    }).from(users)
+      .where(eq(users.id, artistId))
+      .limit(1);
+    
+    if (artist.length > 0) {
+      if (artist[0].name) artistName = artist[0].name;
+      if (artist[0].profileImage) artistProfileImage = artist[0].profileImage;
+    }
+    
+    const tokenInfo = {
+      id: song[0].id,
+      artistId: artistId,
+      name: artistName,
+      tokenSymbol: song[0].tokenSymbol,
+      pricePerTokenUsd: parseFloat(song[0].pricePerTokenUsd),
+      totalSupply: song[0].totalSupply,
+      availableSupply: song[0].availableSupply,
+      volume24h: Math.floor(Math.random() * 100000) + 5000,
+      holders: Math.floor(Math.random() * 1000) + 50,
+      imageUrl: artistProfileImage || song[0].imageUrl,
+      change24h: (Math.random() * 30 - 5).toFixed(2),
+      isSynthetic: false
+    };
+    
+    console.log(`✅ [BOOSTISWAP] Token info found for artist: ${tokenInfo.name}`);
+    res.json(tokenInfo);
+  } catch (error) {
+    console.error("❌ Error getting artist token:", error);
+    res.status(500).json({ error: "Error getting artist token info" });
+  }
+});
+
+/**
  * Obtener todos los pares de trading activos
  */
 router.get("/pairs", async (req, res) => {

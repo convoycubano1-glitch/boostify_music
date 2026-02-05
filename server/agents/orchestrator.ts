@@ -164,6 +164,17 @@ async function orchestratorTick(): Promise<void> {
     }
   }
 
+  // Every 7 ticks, process blockchain/trading activity
+  if (state.tickCount % 7 === 0) {
+    try {
+      const { blockchainAgentTick } = await import('./blockchain-agent');
+      await blockchainAgentTick();
+      console.log('⛓️ [Orchestrator] Blockchain tick processed - trading activity');
+    } catch (error) {
+      console.error('❌ [Orchestrator] Error in blockchain tick:', error);
+    }
+  }
+
   // Every 10 ticks, do maintenance
   if (state.tickCount % 10 === 0) {
     await performMaintenance();
