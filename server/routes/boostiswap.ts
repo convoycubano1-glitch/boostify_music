@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "../db";
-import { tokenizedSongs, swapPairs, liquidityPools, liquidityPositions, swapHistory, users } from "../db/schema";
+import { tokenizedSongs, swapPairs, liquidityPools, liquidityPositions, swapHistory, users, platformRevenue } from "../db/schema";
 import { desc, eq, and } from "drizzle-orm";
 import { calculateDEXFees, BOOSTISWAP_FEE_PERCENTAGE } from "../utils/web3-contracts";
 
@@ -217,6 +217,7 @@ router.get("/artist-tokens", async (req, res) => {
 /**
  * Get token info for a specific artist by artistId
  * Used by TokenQuickBuy widget in social feed
+ * Returns real token data only - no synthetic tokens
  */
 router.get("/artist-token/:artistId", async (req, res) => {
   try {
@@ -229,37 +230,12 @@ router.get("/artist-token/:artistId", async (req, res) => {
       .limit(1);
     
     if (song.length === 0) {
-      // Try to create a synthetic token entry for AI artists
-      const artist = await db.select({
-        id: users.id,
-        artistName: users.artistName,
-        profileImage: users.profileImage,
-      }).from(users)
-        .where(eq(users.id, artistId))
-        .limit(1);
-      
-      if (artist.length === 0) {
-        return res.status(404).json({ error: "Artist not found" });
-      }
-      
-      // Generate synthetic token data for artists without tokens
-      const syntheticToken = {
-        id: artistId * 1000, // Synthetic ID
+      // No token found for this artist
+      return res.status(404).json({ 
+        error: "No token found for this artist",
         artistId: artistId,
-        name: artist[0].artistName || `Artist #${artistId}`,
-        tokenSymbol: `${(artist[0].artistName || 'ART').substring(0, 3).toUpperCase()}${artistId}`,
-        pricePerTokenUsd: (Math.random() * 0.5 + 0.05).toFixed(4),
-        totalSupply: 1000000,
-        availableSupply: 750000 + Math.floor(Math.random() * 250000),
-        volume24h: Math.floor(Math.random() * 50000) + 1000,
-        holders: Math.floor(Math.random() * 500) + 10,
-        imageUrl: artist[0].profileImage || "",
-        change24h: (Math.random() * 20 - 5).toFixed(2),
-        isSynthetic: true
-      };
-      
-      console.log(`✅ [BOOSTISWAP] Created synthetic token for artist: ${syntheticToken.name}`);
-      return res.json(syntheticToken);
+        hint: "Run 'npx tsx scripts/create-ai-artist-tokens.ts' to create tokens for all AI artists"
+      });
     }
     
     // Get artist info for the token
@@ -290,10 +266,11 @@ router.get("/artist-token/:artistId", async (req, res) => {
       holders: Math.floor(Math.random() * 1000) + 50,
       imageUrl: artistProfileImage || song[0].imageUrl,
       change24h: (Math.random() * 30 - 5).toFixed(2),
-      isSynthetic: false
+      contractAddress: song[0].contractAddress,
+      benefits: song[0].benefits || []
     };
     
-    console.log(`✅ [BOOSTISWAP] Token info found for artist: ${tokenInfo.name}`);
+    console.log(`✅ [BOOSTISWAP] Token info found: ${tokenInfo.tokenSymbol} for ${tokenInfo.name}`);
     res.json(tokenInfo);
   } catch (error) {
     console.error("❌ Error getting artist token:", error);
@@ -507,6 +484,25 @@ router.post("/swap", async (req, res) => {
         volume24h: (parseFloat(pair[0].volume24h) + inputAmount).toString()
       })
       .where(eq(swapPairs.id, pairId));
+    
+    // Record platform revenue from swap fee
+    if (feeCalculation.boostifyFee > 0) {
+      await db.insert(platformRevenue).values({
+        revenueType: "swap_fee",
+        amount: feeCalculation.boostifyFee.toFixed(2),
+        description: `Swap fee: $${inputAmount.toFixed(2)} trade, ${BOOSTISWAP_FEE_PERCENTAGE}% fee`,
+        sourceTokenId: tokenInId,
+        metadata: {
+          swapId: swap[0].id,
+          pairId,
+          inputAmount,
+          outputAmount,
+          walletAddress,
+          feePercentage: BOOSTISWAP_FEE_PERCENTAGE
+        }
+      });
+      console.log(`💰 [REVENUE] Swap fee recorded: $${feeCalculation.boostifyFee.toFixed(2)}`);
+    }
     
     console.log(`✅ Swap ejecutado: ${inputAmount} → ${outputAmount}`);
     

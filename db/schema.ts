@@ -3692,7 +3692,8 @@ export const platformRevenue = pgTable("platform_revenue", {
   
   revenueType: text("revenue_type", {
     enum: ["collaboration_fee", "beef_sponsorship", "token_trading_fee", "music_streaming", 
-           "merch_commission", "nft_sale", "liquidity_fee", "premium_feature"]
+           "merch_commission", "nft_sale", "liquidity_fee", "premium_feature",
+           "subscription", "token_sale_commission", "promoted_post", "swap_fee", "token_purchase"]
   }).notNull(),
   
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
@@ -3703,11 +3704,57 @@ export const platformRevenue = pgTable("platform_revenue", {
   sourceCollabId: integer("source_collab_id").references(() => aiCollaborations.id),
   sourceBeefId: integer("source_beef_id").references(() => aiBeefs.id),
   sourceTokenId: integer("source_token_id").references(() => tokenizedSongs.id),
+  sourceUserId: integer("source_user_id").references(() => users.id), // For subscriptions
+  sourcePostId: integer("source_post_id"), // For promoted posts
   
   description: text("description"),
+  metadata: json("metadata"), // Extra data like swap details, subscription plan, etc.
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_platform_revenue_type").on(table.revenueType),
   index("idx_platform_revenue_date").on(table.createdAt),
 ]);
+
+/**
+ * Promoted Posts - Artists pay to boost visibility in the feed
+ */
+export const promotedPosts = pgTable("promoted_posts", {
+  id: serial("id").primaryKey(),
+  
+  postId: integer("post_id").notNull().references(() => aiSocialPosts.id, { onDelete: "cascade" }),
+  artistId: integer("artist_id").notNull().references(() => users.id),
+  
+  // Promotion config
+  budget: decimal("budget", { precision: 10, scale: 2 }).notNull(), // Total budget in USD
+  dailyBudget: decimal("daily_budget", { precision: 10, scale: 2 }), // Optional daily limit
+  costPerImpression: decimal("cost_per_impression", { precision: 6, scale: 4 }).default("0.01"), // $0.01 per impression
+  
+  // Targeting
+  targetGenres: text("target_genres").array(),
+  targetAudience: text("target_audience"), // 'all', 'followers', 'similar_artists'
+  
+  // Stats
+  impressions: integer("impressions").default(0),
+  clicks: integer("clicks").default(0),
+  spent: decimal("spent", { precision: 10, scale: 2 }).default("0"),
+  
+  // Status
+  status: text("status", { 
+    enum: ["pending", "active", "paused", "completed", "cancelled"] 
+  }).default("pending").notNull(),
+  
+  startsAt: timestamp("starts_at").defaultNow(),
+  endsAt: timestamp("ends_at"),
+  
+  stripePaymentId: text("stripe_payment_id"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_promoted_posts_status").on(table.status),
+  index("idx_promoted_posts_artist").on(table.artistId),
+]);
+
+export type PromotedPost = typeof promotedPosts.$inferSelect;
+export type NewPromotedPost = typeof promotedPosts.$inferInsert;

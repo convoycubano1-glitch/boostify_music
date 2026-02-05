@@ -98,7 +98,8 @@ export function TokenQuickBuy({ artistId, artistName, artistSlug, compact = fals
     return null; // No mostrar widget si el artista no tiene token
   }
 
-  const priceChange = tokenData.change24h || 0;
+  const priceChange = parseFloat(String(tokenData.change24h)) || 0;
+  const pricePerToken = parseFloat(String(tokenData.pricePerTokenUsd)) || 0;
   const isPositive = priceChange >= 0;
   const tokenSymbol = tokenData.tokenSymbol || artistName.split(' ')[0].toUpperCase().slice(0, 4);
 
@@ -112,7 +113,7 @@ export function TokenQuickBuy({ artistId, artistName, artistSlug, compact = fals
       >
         <Coins className="h-4 w-4 text-orange-400" />
         <span className="font-bold text-orange-400">${tokenSymbol}</span>
-        <span className="text-white font-medium">${tokenData.pricePerTokenUsd.toFixed(2)}</span>
+        <span className="text-white font-medium">${pricePerToken.toFixed(2)}</span>
         <Badge 
           variant="outline" 
           className={cn(
@@ -155,7 +156,7 @@ export function TokenQuickBuy({ artistId, artistName, artistSlug, compact = fals
               <span className="text-xs text-gray-400">Artist Token</span>
             </div>
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-white font-semibold">${tokenData.pricePerTokenUsd.toFixed(2)}</span>
+              <span className="text-white font-semibold">${pricePerToken.toFixed(2)}</span>
               <Badge 
                 variant="outline" 
                 className={cn(
@@ -172,7 +173,7 @@ export function TokenQuickBuy({ artistId, artistName, artistSlug, compact = fals
 
         <div className="text-right text-xs text-gray-400">
           <div>{tokenData.holders} holders</div>
-          <div className="text-green-400">${(tokenData.volume24h / 1000).toFixed(1)}K vol</div>
+          <div className="text-green-400">${(parseFloat(String(tokenData.volume24h)) / 1000).toFixed(1)}K vol</div>
         </div>
       </div>
 

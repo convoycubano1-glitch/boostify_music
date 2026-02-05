@@ -13,7 +13,7 @@
 import { Router, Request, Response } from 'express';
 import Stripe from 'stripe';
 import { db } from '../db';
-import { subscriptions, users, notifications } from '../db/schema';
+import { subscriptions, users, notifications, platformRevenue } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { PRICE_ID_TO_PLAN, isAdminEmail } from '../../shared/constants';
 
@@ -344,6 +344,28 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   
   console.log(`✅ Subscription created for user ${user.email}`);
   
+  // 💰 Registrar ingreso por suscripción en platformRevenue
+  const subscriptionAmount = (subscription.items.data[0]?.price.unit_amount || 0) / 100;
+  if (subscriptionAmount > 0) {
+    try {
+      await db.insert(platformRevenue).values({
+        revenueType: 'subscription',
+        amount: subscriptionAmount.toString(),
+        currency: subscription.currency.toUpperCase(),
+        sourceUserId: user.id,
+        metadata: {
+          stripeSubscriptionId: subscription.id,
+          plan: planTier,
+          interval: interval,
+          priceId: priceId
+        }
+      });
+      console.log(`💰 [REVENUE] Subscription revenue recorded: $${subscriptionAmount} for plan ${planTier}`);
+    } catch (revError) {
+      console.error('❌ Error recording subscription revenue:', revError);
+    }
+  }
+  
   // Enviar a Make para email
   await sendToMake('subscription_created_webhook', {
     userEmail: user.email,
@@ -447,11 +469,38 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   
   console.log(`✅ Payment succeeded for subscription: ${invoice.subscription}`);
   
+  // 💰 Registrar ingreso por pago de suscripción (renovaciones)
+  const paymentAmount = (invoice.amount_paid || 0) / 100;
+  if (paymentAmount > 0) {
+    // Obtener la suscripción para el userId
+    const subs = await db.select().from(subscriptions).where(eq(subscriptions.stripeSubscriptionId, invoice.subscription as string)).limit(1);
+    if (subs.length > 0) {
+      try {
+        await db.insert(platformRevenue).values({
+          revenueType: 'subscription',
+          amount: paymentAmount.toString(),
+          currency: invoice.currency.toUpperCase(),
+          sourceUserId: subs[0].userId,
+          metadata: {
+            stripeSubscriptionId: invoice.subscription,
+            invoiceId: invoice.id,
+            plan: subs[0].plan,
+            interval: subs[0].interval,
+            isRenewal: true
+          }
+        });
+        console.log(`💰 [REVENUE] Subscription renewal recorded: $${paymentAmount}`);
+      } catch (revError) {
+        console.error('❌ Error recording subscription revenue:', revError);
+      }
+    }
+  }
+  
   // Enviar notificación de pago exitoso
-  const subs = await db.select().from(subscriptions).where(eq(subscriptions.stripeSubscriptionId, invoice.subscription as string)).limit(1);
-  if (subs.length > 0) {
+  const subs_notification = await db.select().from(subscriptions).where(eq(subscriptions.stripeSubscriptionId, invoice.subscription as string)).limit(1);
+  if (subs_notification.length > 0) {
     await db.insert(notifications).values({
-      userId: subs[0].userId,
+      userId: subs_notification[0].userId,
       type: 'payment_succeeded',
       title: '💰 Payment Received',
       message: `Thank you! Your payment of $${(invoice.amount_paid || 0) / 100} has been processed successfully.`,
@@ -460,7 +509,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     }).catch(err => console.error('Error creating notification:', err));
 
     // Enviar a Make para email
-    const user_result = await db.select().from(users).where(eq(users.id, subs[0].userId)).limit(1);
+    const user_result = await db.select().from(users).where(eq(users.id, subs_notification[0].userId)).limit(1);
     if (user_result.length > 0) {
       await sendToMake('payment_succeeded', {
         userEmail: user_result[0].email,

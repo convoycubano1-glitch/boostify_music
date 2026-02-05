@@ -120,6 +120,7 @@ import { seedTokenizedSongs } from './seed-tokenized-songs'; // Import seed func
 import educationGeminiRouter from './routes/education-gemini'; // Import Education Gemini AI router for course generation
 import renderQueueRouter from './routes/render-queue'; // Import Render Queue for video pipeline processing
 import voiceAiRouter from './routes/voice-ai'; // Import Voice AI router for voice cloning and transformation
+import monetizationRouter from './routes/monetization'; // Import Monetization router for revenue tracking
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -1265,6 +1266,10 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   // Register BoostiSwap Marketplace router
   app.use('/api/boostiswap', boostiswapRouter);
   console.log('✅ Router de BoostiSwap Marketplace registrado');
+
+  // Register Monetization router (Revenue tracking, fees, promotions)
+  app.use('/api/monetization', monetizationRouter);
+  console.log('✅ Router de Monetización registrado');
 
   // Social Media Content Generator routes
   app.use('/api/social-media', socialMediaRouter);
