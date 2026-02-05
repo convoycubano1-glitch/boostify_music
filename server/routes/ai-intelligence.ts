@@ -31,11 +31,12 @@ import {
   selectArtistsForOutreach,
   generatePersonalizedEmail,
   executeOutreachCampaign,
-  processOutreachTick
+  processOutreachTick,
+  sendTestEmail
 } from '../agents/outreach-agent';
 
 import { db } from '../db';
-import { outreachEmails } from '../../db/schema';
+import { outreachEmailLog } from '../../db/schema';
 import { sql, gte } from 'drizzle-orm';
 
 const router = Router();
@@ -289,8 +290,8 @@ router.get('/outreach/daily-limit', async (req: Request, res: Response) => {
     
     const result = await db
       .select({ count: sql<number>`count(*)` })
-      .from(outreachEmails)
-      .where(gte(outreachEmails.sentAt, today));
+      .from(outreachEmailLog)
+      .where(gte(outreachEmailLog.sentAt, today));
     
     const sentToday = result[0]?.count || 0;
     const maxPerDay = 10; // MAX_EMAILS_PER_DAY constant
@@ -399,6 +400,44 @@ router.post('/outreach/campaign', async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error executing campaign:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/ai-intelligence/outreach/test-email
+ * Send a test email to verify the system (admin only)
+ */
+router.post('/outreach/test-email', async (req: Request, res: Response) => {
+  try {
+    const userEmail = (req as any).user?.email;
+    if (!isAdminEmail(userEmail)) {
+      return res.status(403).json({ error: 'Admin only' });
+    }
+    
+    const { email, name } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email address required' });
+    }
+    
+    const result = await sendTestEmail(email, name || 'Test Recipient');
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        message: `Test email sent to ${email}`,
+        messageId: result.messageId,
+        emailContent: result.emailContent
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: result.error
+      });
+    }
+  } catch (error: any) {
+    console.error('Error sending test email:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

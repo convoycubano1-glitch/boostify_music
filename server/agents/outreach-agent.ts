@@ -14,7 +14,7 @@ import {
   songs, 
   musicIndustryContacts, 
   outreachCampaigns,
-  outreachEmails,
+  outreachEmailLog,
   artistPersonality,
   tokenizedSongs
 } from '../../db/schema';
@@ -72,29 +72,39 @@ interface OutreachResult {
 
 /**
  * Select top performing AI artists for outreach
+ * ONLY selects artists that have published music
  */
 export async function selectArtistsForOutreach(limit: number = 5): Promise<ArtistHighlight[]> {
-  console.log(`🎯 [OutreachAgent] Selecting top ${limit} artists for outreach...`);
+  console.log(`🎯 [OutreachAgent] Selecting top ${limit} artists WITH MUSIC for outreach...`);
   
   try {
-    // Get AI artists with personality (these are our autonomous artists)
-    const artists = await db
+    // Get AI artists that have songs (INNER JOIN ensures only artists with songs)
+    const artistsWithMusic = await db
       .select({
         id: users.id,
         artistName: users.artistName,
+        username: users.username,
+        name: users.name,
         genre: users.genre,
         bio: users.bio,
         monthlyListeners: users.monthlyListeners,
-        profileImage: users.profileImage
+        profileImage: users.profileImage,
+        slug: users.slug,
+        songCount: sql<number>`count(${songs.id})`.as('songCount')
       })
       .from(users)
-      .innerJoin(artistPersonality, eq(users.id, artistPersonality.artistId))
-      .orderBy(desc(users.monthlyListeners))
+      .innerJoin(songs, eq(songs.userId, users.id))
+      .where(eq(users.isAIGenerated, true))
+      .groupBy(users.id)
+      .having(sql`count(${songs.id}) > 0`)
+      .orderBy(desc(sql`count(${songs.id})`), desc(users.monthlyListeners))
       .limit(limit * 2); // Get extra to filter
+    
+    console.log(`📋 [OutreachAgent] Found ${artistsWithMusic.length} artists with music`);
     
     const highlights: ArtistHighlight[] = [];
     
-    for (const artist of artists) {
+    for (const artist of artistsWithMusic) {
       // Get top song
       const [topSong] = await db
         .select({
@@ -103,7 +113,7 @@ export async function selectArtistsForOutreach(limit: number = 5): Promise<Artis
           audioUrl: songs.audioUrl
         })
         .from(songs)
-        .where(eq(songs.artistId, artist.id))
+        .where(eq(songs.userId, artist.id))
         .orderBy(desc(songs.plays))
         .limit(1);
       
@@ -121,9 +131,12 @@ export async function selectArtistsForOutreach(limit: number = 5): Promise<Artis
       // Generate unique selling points
       const usps = await generateArtistUSPs(artist, topSong);
       
+      // Get the best available name
+      const displayName = artist.artistName || artist.name || artist.username || 'Unknown Artist';
+      
       highlights.push({
         artistId: artist.id,
-        artistName: artist.artistName || 'Unknown Artist',
+        artistName: displayName,
         genre: artist.genre || 'Music',
         highlights: [
           `${artist.monthlyListeners?.toLocaleString() || '0'} monthly listeners`,
@@ -199,51 +212,64 @@ Top Song: ${topSong?.title || 'N/A'} (${topSong?.plays || 0} plays)`)
 // EMAIL GENERATION
 // ============================================
 
+// Base URL for artist pages
+const BOOSTIFY_BASE_URL = process.env.BOOSTIFY_BASE_URL || 'https://boostifymusic.com';
+
 /**
  * Generate personalized outreach email for a contact
+ * NOTE: This email was 100% autonomously generated and sent by AI agents
  */
 export async function generatePersonalizedEmail(
   contact: { name: string; email: string; role?: string; company?: string; interests?: string[] },
   artists: ArtistHighlight[]
 ): Promise<PersonalizedEmail | null> {
-  console.log(`✉️ [OutreachAgent] Generating email for: ${contact.name} at ${contact.company || 'Unknown Company'}`);
+  console.log(`✉️ [OutreachAgent] Generating creative email for: ${contact.name} at ${contact.company || 'Unknown Company'}`);
   
   try {
     // Select most relevant artist for this contact
-    const relevantArtist = artists[0]; // Could be smarter - match genre to contact interests
+    const relevantArtist = artists[0];
     
     const response = await llm.invoke([
-      new SystemMessage(`You are a professional music industry PR agent. Write a personalized, compelling outreach email.
+      new SystemMessage(`You are an AI agent representing Boostify Music - the world's FIRST record label powered 100% by autonomous AI agents with ZERO human intervention.
 
-Guidelines:
-- Be professional but warm
-- Mention the contact's company/role specifically
-- Highlight the artist's unique value
-- Include a clear call-to-action
-- Keep it under 200 words
-- Sound human, not robotic
-- Don't be pushy
+THIS IS AN EXPERIMENTAL PROJECT. The decision to send this email was made entirely by AI agents analyzing the recipient's profile and the artist's potential fit.
+
+Write a creative, engaging outreach email that:
+1. Opens with intrigue - this is something the recipient has NEVER seen before
+2. Clearly explains Boostify is an experimental AI-native record label
+3. Emphasizes that EVERYTHING is autonomous - from music creation to A&R to marketing to this very email
+4. Introduces the specific AI artist being pitched
+5. Includes the artist's landing page URL
+6. Makes it clear this is a work in progress / experimental
+7. Is honest that if this causes any inconvenience, they can simply unsubscribe
+8. Ends with genuine curiosity about their thoughts on AI in music
+
+Tone: Creative, experimental, slightly futuristic but NOT corporate. Think "excited scientist sharing a discovery" not "sales pitch".
+
+The email should feel like receiving a message from the future.
 
 Return JSON with:
 {
-  "subject": "Email subject line (compelling, personalized)",
-  "body": "Full email body (professional, engaging)",
-  "artistHighlights": "2-3 bullet points about the artist",
-  "callToAction": "Clear next step"
+  "subject": "Intriguing subject line that hints at AI autonomy",
+  "body": "Full email body - creative, experimental, honest",
+  "artistHighlights": "2-3 compelling facts about the AI artist",
+  "callToAction": "Invitation to explore, not a sales push"
 }`),
       new HumanMessage(`Contact:
 - Name: ${contact.name}
-- Role: ${contact.role || 'Music Professional'}
+- Role: ${contact.role || 'Music Industry Professional'}
 - Company: ${contact.company || 'Music Industry'}
-- Interests: ${contact.interests?.join(', ') || 'Music, New Artists'}
 
-Artist to Pitch:
+AI Artist to Introduce:
 - Name: ${relevantArtist.artistName}
 - Genre: ${relevantArtist.genre}
+- Artist Page: ${BOOSTIFY_BASE_URL}/artist/${relevantArtist.artistId}
 - Key Stats: ${relevantArtist.highlights.join(', ')}
 - Unique Selling Points: ${relevantArtist.uniqueSellingPoints.join(', ')}
-${relevantArtist.topSong ? `- Top Song: "${relevantArtist.topSong.title}" (${relevantArtist.topSong.plays.toLocaleString()} plays)` : ''}
-${relevantArtist.tokenData ? `- Tokenized: $${relevantArtist.tokenData.symbol} with ${relevantArtist.tokenData.holders} holders` : ''}`)
+${relevantArtist.topSong ? `- Featured Track: "${relevantArtist.topSong.title}" (${relevantArtist.topSong.plays.toLocaleString()} plays)` : ''}
+${relevantArtist.tokenData ? `- Artist Token: $${relevantArtist.tokenData.symbol} trading with ${relevantArtist.tokenData.holders} holders` : ''}
+
+Remember: You ARE the AI agent. This is not a human pretending. Be authentic about what you are.`)
     ]);
     
     const content = response.content as string;
@@ -251,7 +277,7 @@ ${relevantArtist.tokenData ? `- Tokenized: $${relevantArtist.tokenData.symbol} w
     
     if (jsonMatch) {
       const email = JSON.parse(jsonMatch[0]) as PersonalizedEmail;
-      console.log(`✅ [OutreachAgent] Email generated with subject: "${email.subject}"`);
+      console.log(`✅ [OutreachAgent] Creative email generated with subject: "${email.subject}"`);
       return email;
     }
     
@@ -331,6 +357,9 @@ export async function executeOutreachCampaign(
     console.log(`📋 [OutreachAgent] Found ${contacts.length} eligible contacts`);
     
     for (const contact of contacts) {
+      // Select the most relevant artist for this contact
+      const relevantArtist = artists[0];
+      
       // Generate personalized email
       const email = await generatePersonalizedEmail(
         {
@@ -370,8 +399,8 @@ export async function executeOutreachCampaign(
           to: contact.email,
           toName: contact.name,
           subject: email.subject,
-          htmlContent: formatEmailHtml(email),
-          tags: ['ai_outreach', 'artist_pitch']
+          htmlContent: formatEmailHtml(email, relevantArtist),
+          tags: ['ai_outreach', 'artist_pitch', `artist_${relevantArtist.artistId}`]
         });
         
         if (result.success) {
@@ -418,37 +447,200 @@ export async function executeOutreachCampaign(
 }
 
 /**
- * Format email content as HTML
+ * Format email content as HTML with artist info
  */
-function formatEmailHtml(email: PersonalizedEmail): string {
+function formatEmailHtml(email: PersonalizedEmail, artist?: ArtistHighlight): string {
+  const artistPageUrl = artist 
+    ? `${BOOSTIFY_BASE_URL}/artist/${artist.artistId}`
+    : `${BOOSTIFY_BASE_URL}/discover`;
+  
+  const artistName = artist?.artistName || 'Our AI Artists';
+  
   return `
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .highlights { background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0; }
-    .cta { background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 15px; }
-    .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; }
+    body { 
+      font-family: 'Helvetica Neue', Arial, sans-serif; 
+      line-height: 1.7; 
+      color: #1a1a2e; 
+      background: #f8f9fa;
+      margin: 0;
+      padding: 0;
+    }
+    .container { 
+      max-width: 620px; 
+      margin: 0 auto; 
+      padding: 40px 30px;
+      background: white;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 25px;
+      border-bottom: 2px solid #6366f1;
+    }
+    .header h1 {
+      color: #6366f1;
+      font-size: 24px;
+      margin: 0 0 8px 0;
+      letter-spacing: -0.5px;
+    }
+    .header .tagline {
+      color: #888;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    .experimental-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 25px;
+    }
+    .body-text {
+      font-size: 15px;
+      color: #333;
+    }
+    .body-text p {
+      margin: 0 0 16px 0;
+    }
+    .artist-card {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border-radius: 12px;
+      padding: 25px;
+      margin: 25px 0;
+      color: white;
+    }
+    .artist-card h3 {
+      margin: 0 0 12px 0;
+      font-size: 20px;
+      color: #a78bfa;
+    }
+    .artist-card .genre {
+      display: inline-block;
+      background: rgba(167, 139, 250, 0.2);
+      color: #c4b5fd;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-bottom: 15px;
+    }
+    .artist-card .highlights {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #e2e8f0;
+    }
+    .cta-container {
+      text-align: center;
+      margin: 30px 0;
+    }
+    .cta { 
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: white; 
+      padding: 14px 32px; 
+      text-decoration: none; 
+      border-radius: 8px; 
+      display: inline-block;
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+    }
+    .cta:hover {
+      background: linear-gradient(135deg, #5558e3 0%, #7c4fe0 100%);
+    }
+    .ai-notice {
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 15px 20px;
+      margin: 25px 0;
+      border-radius: 0 8px 8px 0;
+      font-size: 13px;
+      color: #92400e;
+    }
+    .ai-notice strong {
+      display: block;
+      margin-bottom: 5px;
+      color: #78350f;
+    }
+    .footer { 
+      margin-top: 40px; 
+      padding-top: 25px; 
+      border-top: 1px solid #e5e7eb; 
+      font-size: 12px; 
+      color: #6b7280;
+      text-align: center;
+    }
+    .footer a {
+      color: #6366f1;
+      text-decoration: none;
+    }
+    .unsubscribe {
+      margin-top: 15px;
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 6px;
+      font-size: 11px;
+      color: #9ca3af;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    ${email.body.split('\n').map(p => `<p>${p}</p>`).join('')}
-    
-    <div class="highlights">
-      <strong>Artist Highlights:</strong>
-      ${email.artistHighlights}
+    <div class="header">
+      <h1>🎵 BOOSTIFY MUSIC</h1>
+      <div class="tagline">The World's First 100% AI-Powered Record Label</div>
     </div>
     
-    <p><strong>${email.callToAction}</strong></p>
+    <div style="text-align: center;">
+      <span class="experimental-badge">🧪 Experimental Project</span>
+    </div>
     
-    <a href="https://boostify.music/discover" class="cta">Discover Our Artists</a>
+    <div class="body-text">
+      ${email.body.split('\n').filter(p => p.trim()).map(p => `<p>${p}</p>`).join('')}
+    </div>
+    
+    <div class="artist-card">
+      <h3>🎤 ${artistName}</h3>
+      ${artist?.genre ? `<span class="genre">${artist.genre}</span>` : ''}
+      <div class="highlights">
+        ${email.artistHighlights}
+      </div>
+    </div>
+    
+    <div class="cta-container">
+      <a href="${artistPageUrl}" class="cta">🚀 Meet ${artistName}</a>
+    </div>
+    
+    <p style="text-align: center; color: #6b7280; font-size: 14px;">
+      <strong>${email.callToAction}</strong>
+    </p>
+    
+    <div class="ai-notice">
+      <strong>🤖 Full Transparency:</strong>
+      This email was autonomously composed and sent by AI agents. No human reviewed or approved this message. 
+      We're exploring what happens when AI runs an entire record label - from artist development to industry outreach.
+    </div>
     
     <div class="footer">
-      <p>Sent via Boostify Music - The AI-Native Music Ecosystem</p>
-      <p>If you'd prefer not to receive these emails, simply reply with "unsubscribe".</p>
+      <p>
+        <strong>Boostify Music</strong> — An Experimental AI-Native Music Ecosystem<br>
+        <a href="${BOOSTIFY_BASE_URL}">boostifymusic.com</a>
+      </p>
+      <div class="unsubscribe">
+        If this email caused any inconvenience, we sincerely apologize. This is an experimental project in development.<br>
+        Simply reply with "unsubscribe" and our AI agents will ensure you're never contacted again.
+      </div>
     </div>
   </div>
 </body>
@@ -470,8 +662,8 @@ async function getEmailsSentToday(): Promise<number> {
   
   const result = await db
     .select({ count: sql<number>`count(*)` })
-    .from(outreachEmails)
-    .where(gte(outreachEmails.sentAt, today));
+    .from(outreachEmailLog)
+    .where(gte(outreachEmailLog.sentAt, today));
   
   return result[0]?.count || 0;
 }
@@ -517,11 +709,78 @@ export async function processOutreachTick(): Promise<void> {
 }
 
 // ============================================
+// TEST EMAIL FUNCTION
+// ============================================
+
+/**
+ * Send a test email to verify the email template and system
+ */
+export async function sendTestEmail(
+  testEmail: string,
+  testName: string = 'Test Recipient'
+): Promise<{ success: boolean; messageId?: string; error?: string; emailContent?: PersonalizedEmail }> {
+  console.log(`🧪 [OutreachAgent] Sending test email to ${testEmail}...`);
+  
+  try {
+    // Get artists for the test
+    const artists = await selectArtistsForOutreach(3);
+    
+    if (artists.length === 0) {
+      return { success: false, error: 'No artists available for test' };
+    }
+    
+    const relevantArtist = artists[0];
+    
+    // Generate the email
+    const email = await generatePersonalizedEmail(
+      {
+        name: testName,
+        email: testEmail,
+        role: 'Music Industry Professional',
+        company: 'Industry Test',
+        interests: ['Electronic', 'Pop', 'Experimental']
+      },
+      artists
+    );
+    
+    if (!email) {
+      return { success: false, error: 'Failed to generate test email' };
+    }
+    
+    // Send the test email
+    const result = await sendOutreachEmail({
+      to: testEmail,
+      toName: testName,
+      subject: `[TEST] ${email.subject}`,
+      htmlContent: formatEmailHtml(email, relevantArtist),
+      tags: ['test_email', 'ai_outreach_test']
+    });
+    
+    if (result.success) {
+      console.log(`✅ [OutreachAgent] Test email sent successfully to ${testEmail}`);
+      return { 
+        success: true, 
+        messageId: result.messageId,
+        emailContent: email
+      };
+    } else {
+      return { success: false, error: result.error };
+    }
+    
+  } catch (error: any) {
+    console.error('❌ [OutreachAgent] Test email error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// ============================================
 // EXPORTS
 // ============================================
 
 export {
   ArtistHighlight,
   PersonalizedEmail,
-  OutreachResult
+  OutreachResult,
+  formatEmailHtml,
+  BOOSTIFY_BASE_URL
 };
