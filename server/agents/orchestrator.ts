@@ -175,6 +175,28 @@ async function orchestratorTick(): Promise<void> {
     }
   }
 
+  // Every 15 ticks, process news and generate reactions
+  if (state.tickCount % 15 === 0) {
+    try {
+      const { processNewsTick } = await import('./news-agent');
+      await processNewsTick();
+      console.log('📰 [Orchestrator] News tick processed - artists reacting to world events');
+    } catch (error) {
+      console.error('❌ [Orchestrator] Error in news tick:', error);
+    }
+  }
+
+  // Every 120 ticks (2 hours at 1min), process outreach
+  if (state.tickCount % 120 === 0) {
+    try {
+      const { processOutreachTick } = await import('./outreach-agent');
+      await processOutreachTick();
+      console.log('📧 [Orchestrator] Outreach tick processed - industry emails');
+    } catch (error) {
+      console.error('❌ [Orchestrator] Error in outreach tick:', error);
+    }
+  }
+
   // Every 10 ticks, do maintenance
   if (state.tickCount % 10 === 0) {
     await performMaintenance();

@@ -121,6 +121,7 @@ import educationGeminiRouter from './routes/education-gemini'; // Import Educati
 import renderQueueRouter from './routes/render-queue'; // Import Render Queue for video pipeline processing
 import voiceAiRouter from './routes/voice-ai'; // Import Voice AI router for voice cloning and transformation
 import monetizationRouter from './routes/monetization'; // Import Monetization router for revenue tracking
+import aiIntelligenceRouter from './routes/ai-intelligence'; // Import AI Intelligence (News, Whisper, Outreach)
 
 
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -1274,6 +1275,10 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   // Social Media Content Generator routes
   app.use('/api/social-media', socialMediaRouter);
   console.log('✅ Router de Social Media Content Generator registrado');
+
+  // AI Intelligence routes (News Agent, Whisper Agent, Outreach Agent)
+  app.use('/api/ai-intelligence', aiIntelligenceRouter);
+  console.log('✅ Router de AI Intelligence registrado (News, Whisper, Outreach)');
   
   // Seed tokenized songs on startup (non-blocking)
   seedTokenizedSongs().catch(error => {
