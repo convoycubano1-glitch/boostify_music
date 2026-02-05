@@ -953,9 +953,3 @@ export const DIRECTOR_DP_PROFILES_PART2: Record<string, DirectorDPProfile> = {
   'denis-villeneuve-deakins': DENIS_VILLENEUVE_DEAKINS,
   'Denis Villeneuve': DENIS_VILLENEUVE_DEAKINS,
 };
-
-export {
-  MICHEL_GONDRY_DELBONNEL,
-  EDGAR_WRIGHT_POPE,
-  DENIS_VILLENEUVE_DEAKINS,
-};
