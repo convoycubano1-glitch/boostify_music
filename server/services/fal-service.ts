@@ -273,6 +273,81 @@ export async function generateImageWithNanoBanana(
 
 /**
  * ============================================================
+ * FAST POSTER GENERATION - FAL AI FLUX SCHNELL
+ * ============================================================
+ * Model: fal-ai/flux/schnell (1-2 seconds per image!)
+ * Price: ~$0.003 per image (25x cheaper than nano-banana-pro)
+ * 
+ * Optimized for concept poster generation where speed > ultra-quality.
+ * Generates all 3 posters in ~3-4 seconds total via Promise.all.
+ */
+export async function generateFastPoster(
+  prompt: string,
+  options: {
+    imageSize?: 'portrait_4_3' | 'portrait_16_9' | 'square' | 'landscape_4_3' | 'landscape_16_9';
+    numImages?: number;
+  } = {}
+): Promise<FalImageResult> {
+  try {
+    if (!FAL_API_KEY) {
+      throw new Error('FAL_API_KEY no configurada');
+    }
+
+    logger.log(`[FAL] ⚡ Generando póster RÁPIDO con Flux Schnell...`);
+
+    const requestBody = {
+      prompt: prompt,
+      image_size: options.imageSize || 'portrait_4_3',
+      num_inference_steps: 4, // Schnell is optimized for 4 steps
+      num_images: options.numImages || 1,
+      enable_safety_checker: false,
+    };
+
+    const response = await axios.post(
+      `${FAL_BASE_URL}/${FAL_MODELS.FLUX_SCHNELL}`,
+      requestBody,
+      {
+        headers: {
+          'Authorization': `Key ${FAL_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000 // 30s timeout (flux schnell is very fast)
+      }
+    );
+
+    if (response.data?.images?.[0]?.url) {
+      const tempUrl = response.data.images[0].url;
+      logger.log(`[FAL] ⚡ ¡Póster generado en ~1-2s con Flux Schnell!`);
+
+      // Download and upload to Firebase Storage for permanence
+      const downloaded = await downloadImageAsBase64(tempUrl);
+      if (downloaded) {
+        const permanentUrl = await uploadBase64ToStorage(
+          downloaded.base64,
+          downloaded.mimeType,
+          'concept-posters'
+        );
+
+        return {
+          success: true,
+          imageUrl: permanentUrl,
+          imageBase64: downloaded.base64,
+          provider: 'fal-flux-schnell'
+        };
+      }
+    }
+
+    // Fallback to nano-banana if flux schnell fails
+    logger.log('[FAL] 🔄 Flux Schnell no devolvió imagen, fallback a nano-banana...');
+    return generateImageWithNanoBanana(prompt, { aspectRatio: '3:4' });
+  } catch (error: any) {
+    logger.error('[FAL] Error con Flux Schnell, fallback a nano-banana:', error.message);
+    return generateImageWithNanoBanana(prompt, { aspectRatio: '3:4' });
+  }
+}
+
+/**
+ * ============================================================
  * EDICIÓN DE IMÁGENES - FAL AI NANO BANANA EDIT (Image-to-Image)
  * ============================================================
  * Modelo: fal-ai/nano-banana/edit

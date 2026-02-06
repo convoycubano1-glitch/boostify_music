@@ -28,6 +28,7 @@ const createQueueSchema = z.object({
   songName: z.string().min(1),
   profileSlug: z.string().min(1),
   notifyByEmail: z.boolean().optional().default(true),
+  performanceVideoUrl: z.string().url().optional(),
 });
 
 /**
@@ -87,7 +88,8 @@ router.post('/create', async (req, res) => {
       audioDuration: project.audioDuration ? parseFloat(project.audioDuration) : 30,
       thumbnailUrl,
       aspectRatio: project.aspectRatio || '16:9',
-      totalClips: Array.isArray(timelineData) ? timelineData.length : 10
+      totalClips: Array.isArray(timelineData) ? timelineData.length : 10,
+      performanceVideoUrl: validatedData.performanceVideoUrl,
     });
 
     if (!result.success) {

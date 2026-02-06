@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Music, Camera, Sparkles, X, Check, Image as ImageIcon, Video, Zap, User } from "lucide-react";
+import { Upload, Music, Camera, Sparkles, X, Check, Image as ImageIcon, Video, Zap, User, SkipForward } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { PerformanceRecorder } from "./performance-recorder";
 
 // Example photos - imported as Vite assets for production compatibility
 import frontalImg from "../../assets/example_photos/frontal.png";
@@ -36,7 +37,8 @@ interface CreativeOnboardingModalProps {
     songName: string,
     aspectRatio: string,
     videoStyle: string,
-    conceptBrief?: string
+    conceptBrief?: string,
+    performanceVideoBlob?: Blob
   ) => void;
   onClose?: () => void;
   // Pre-filled data from artist profile
@@ -71,7 +73,8 @@ export function CreativeOnboardingModal({
     return params;
   }, []);
   
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [performanceVideoBlob, setPerformanceVideoBlob] = useState<Blob | null>(null);
   const [selectedImages, setSelectedImages] = useState<string[]>(() => {
     // Initialize from URL params or props
     if (urlParams.images) {
@@ -303,7 +306,7 @@ export function CreativeOnboardingModal({
         return;
       }
       setStep(2);
-    } else {
+    } else if (step === 2) {
       if (!selectedAudioFile) {
         toast({
           title: "Audio Required",
@@ -312,8 +315,23 @@ export function CreativeOnboardingModal({
         });
         return;
       }
-      onComplete(selectedAudioFile, selectedImages, artistName, songName, aspectRatio, videoStyle, conceptBrief || undefined);
+      // Go to Step 3 (optional performance recording)
+      setStep(3);
+    } else if (step === 3) {
+      // Complete with or without performance video
+      onComplete(selectedAudioFile!, selectedImages, artistName, songName, aspectRatio, videoStyle, conceptBrief || undefined, performanceVideoBlob || undefined);
     }
+  };
+
+  const handleSkipPerformance = () => {
+    // Skip recording and complete without performance video
+    onComplete(selectedAudioFile!, selectedImages, artistName, songName, aspectRatio, videoStyle, conceptBrief || undefined);
+  };
+
+  const handlePerformanceRecorded = (blob: Blob) => {
+    setPerformanceVideoBlob(blob);
+    // Auto-complete after recording
+    onComplete(selectedAudioFile!, selectedImages, artistName, songName, aspectRatio, videoStyle, conceptBrief || undefined, blob);
   };
 
   return (
@@ -338,19 +356,26 @@ export function CreativeOnboardingModal({
 
         <div className="mt-6">
           {/* Progress Indicator */}
-          <div className="flex items-center justify-center gap-4 mb-8">
+          <div className="flex items-center justify-center gap-3 mb-8">
             <div className={`flex items-center gap-2 ${step === 1 ? 'text-orange-500' : 'text-green-500'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${step === 1 ? 'border-orange-500 bg-orange-500/20' : 'border-green-500 bg-green-500/20'}`}>
                 {step > 1 ? <Check className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
               </div>
-              <span className="font-semibold">Artist Photos</span>
+              <span className="font-semibold text-sm">Photos</span>
             </div>
-            <div className="w-16 h-0.5 bg-muted" />
-            <div className={`flex items-center gap-2 ${step === 2 ? 'text-orange-500' : 'text-muted-foreground'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${step === 2 ? 'border-orange-500 bg-orange-500/20' : 'border-muted'}`}>
-                <Music className="h-5 w-5" />
+            <div className="w-10 h-0.5 bg-muted" />
+            <div className={`flex items-center gap-2 ${step === 2 ? 'text-orange-500' : step > 2 ? 'text-green-500' : 'text-muted-foreground'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${step === 2 ? 'border-orange-500 bg-orange-500/20' : step > 2 ? 'border-green-500 bg-green-500/20' : 'border-muted'}`}>
+                {step > 2 ? <Check className="h-5 w-5" /> : <Music className="h-5 w-5" />}
               </div>
-              <span className="font-semibold">Your Song</span>
+              <span className="font-semibold text-sm">Song</span>
+            </div>
+            <div className="w-10 h-0.5 bg-muted" />
+            <div className={`flex items-center gap-2 ${step === 3 ? 'text-red-500' : 'text-muted-foreground'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${step === 3 ? 'border-red-500 bg-red-500/20' : 'border-muted'}`}>
+                <Video className="h-5 w-5" />
+              </div>
+              <span className="font-semibold text-sm">Performance</span>
             </div>
           </div>
 
@@ -657,7 +682,7 @@ export function CreativeOnboardingModal({
                   </Button>
                 </div>
               </motion.div>
-            ) : (
+            ) : step === 2 ? (
               <motion.div
                 key="step2"
                 initial={{ opacity: 0, x: 20 }}
@@ -842,11 +867,49 @@ export function CreativeOnboardingModal({
                     data-testid="button-start-creation"
                   >
                     <Sparkles className="mr-2 h-4 w-4" />
-                    {isLoadingAudio ? 'Loading...' : 'Create Music Video'}
+                    {isLoadingAudio ? 'Loading...' : 'Continue'}
                   </Button>
                 </div>
               </motion.div>
-            )}
+            ) : step === 3 ? (
+              <motion.div
+                key="step3"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-6"
+              >
+                {/* Performance Recorder */}
+                {selectedAudioFile && (
+                  <PerformanceRecorder
+                    audioFile={selectedAudioFile}
+                    artistName={artistName}
+                    songName={songName}
+                    onRecordingComplete={handlePerformanceRecorded}
+                    onSkip={handleSkipPerformance}
+                  />
+                )}
+
+                <div className="flex justify-between items-center pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setStep(2)}
+                    data-testid="button-back-step3"
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    onClick={handleSkipPerformance}
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-foreground"
+                    data-testid="button-skip-performance"
+                  >
+                    <SkipForward className="mr-2 h-4 w-4" />
+                    Skip & Create Video
+                  </Button>
+                </div>
+              </motion.div>
+            ) : null}
           </AnimatePresence>
         </div>
       </DialogContent>

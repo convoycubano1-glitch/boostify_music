@@ -255,6 +255,53 @@ export const FAL_VIDEO_MODELS = {
     type: "image-to-video",
     maxDuration: 10,
     pricing: "$0.0333/seg"
+  },
+
+  // ========== KLING O3 - LATEST GENERATION ==========
+  KLING_O3_PRO_REF2V: {
+    id: "fal-ai/kling-video/o3/pro/reference-to-video",
+    name: "KLING O3 Pro Reference-to-Video ⭐⭐",
+    description: "Última generación - TRUE face embedding via elements[], máxima consistencia de identidad",
+    type: "reference-to-video",
+    maxDuration: 10,
+    pricing: "Premium"
+  },
+
+  // ========== MOTION TRANSFER & LIPSYNC MODELS ==========
+  DREAMACTOR_V2: {
+    id: "fal-ai/bytedance/dreamactor/v2",
+    name: "DreamActor v2 (Motion Transfer) 🎭",
+    description: "Transfiere movimiento, expresiones y lip-sync de video de referencia a imagen del artista",
+    type: "motion-transfer",
+    maxDuration: 30,
+    pricing: "Premium"
+  },
+
+  OMNIHUMAN_V1_5: {
+    id: "fal-ai/bytedance/omnihuman/v1.5",
+    name: "OmniHuman v1.5 (Lipsync + Body) 🎤",
+    description: "Genera video con lip-sync y movimiento corporal natural desde imagen + audio",
+    type: "lipsync",
+    maxDuration: 60,
+    pricing: "Premium"
+  },
+
+  CREATIFY_AURORA: {
+    id: "fal-ai/creatify/aurora",
+    name: "Creatify Aurora (Singing) 🎵",
+    description: "Genera video de artista cantando directamente desde imagen + audio - estudio quality",
+    type: "lipsync",
+    maxDuration: 30,
+    pricing: "Premium"
+  },
+
+  SYNC_LIPSYNC_V2: {
+    id: "fal-ai/sync-lipsync/v2",
+    name: "Sync Lipsync v2 (Post-process) 💋",
+    description: "Aplica lip-sync post-proceso a video existente - rápido y preciso",
+    type: "video-to-video",
+    maxDuration: 30,
+    pricing: "Medio"
   }
 };
 

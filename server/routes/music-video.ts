@@ -8,7 +8,7 @@
  */
 import { Router, Request, Response } from 'express';
 import OpenAI from 'openai';
-import { generateImageWithNanoBanana } from '../services/fal-service';
+import { generateImageWithNanoBanana, generateFastPoster } from '../services/fal-service';
 import { analyzeAudio, generateEditingRecommendations, AudioAnalysisResult } from '../services/audio-analysis-service';
 import { logger } from '../utils/logger';
 import {
@@ -19,6 +19,9 @@ import {
   DIRECTOR_DP_PAIRINGS,
   type EnhancedCinematicScene,
 } from '../services/cinematography-service';
+import { db } from '../../db';
+import { musicVideoConcepts } from '../../db/schema';
+import { eq, and } from 'drizzle-orm';
 
 const router = Router();
 
@@ -369,7 +372,7 @@ async function generateConceptImage(
   options?: { concept?: any; directorName?: string; songInfo?: { artist?: string; title?: string }; artistGender?: string }
 ): Promise<{ success: boolean; imageUrl?: string; error?: string; provider?: string }> {
   try {
-    console.log(`🎨 [Concept #${conceptIndex + 1}] Generando póster PREMIUM con FAL nano-banana...`);
+    console.log(`⚡ [Concept #${conceptIndex + 1}] Generando póster RÁPIDO con Flux Schnell...`);
     
     // Use premium prompt if concept data is available
     let enhancedPrompt = prompt;
@@ -382,18 +385,18 @@ async function generateConceptImage(
       );
     }
     
-    const result = await generateImageWithNanoBanana(enhancedPrompt, {
-      aspectRatio: '3:4', // Portrait para pósters
-      numImages: 1,
-      outputFormat: 'png'
+    // ⚡ FAST: Use Flux Schnell for rapid poster generation (~1-2s per image)
+    // All 3 posters generate via Promise.all in ~3-4 seconds total
+    const result = await generateFastPoster(enhancedPrompt, {
+      imageSize: 'portrait_4_3', // 3:4 portrait for posters
     });
 
     if (result.success && result.imageUrl) {
-      console.log(`✅ [Concept #${conceptIndex + 1}] ¡Póster PREMIUM generado con FAL nano-banana!`);
+      console.log(`⚡ [Concept #${conceptIndex + 1}] ¡Póster generado en ~1-2s con Flux Schnell!`);
       return {
         success: true,
         imageUrl: result.imageUrl,
-        provider: 'fal-nano-banana'
+        provider: result.provider || 'fal-flux-schnell'
       };
     }
 
@@ -638,6 +641,48 @@ Return ONLY valid JSON with this structure:
     const successCount = conceptsWithImages.filter(c => c.coverImage).length;
     console.log(`✅ Generadas ${successCount}/${conceptsWithImages.length} imágenes de póster`);
 
+    // 💾 AUTO-SAVE: Persist all 3 concepts to DB for reuse/modification
+    const { projectId, userEmail } = req.body;
+    if (projectId && userEmail) {
+      try {
+        console.log(`💾 Guardando ${conceptsWithImages.length} conceptos en DB para proyecto ${projectId}...`);
+        
+        // Delete old concepts for this project first
+        await db.delete(musicVideoConcepts).where(eq(musicVideoConcepts.projectId, projectId));
+        
+        // Insert all concepts with full details
+        for (let i = 0; i < conceptsWithImages.length; i++) {
+          const concept = conceptsWithImages[i];
+          await db.insert(musicVideoConcepts).values({
+            projectId: projectId,
+            userEmail: userEmail,
+            conceptType: concept.concept_type || ['narrative', 'abstract', 'performance'][i],
+            conceptIndex: i,
+            title: concept.title || `Concept ${i + 1}`,
+            storyConcept: concept.story_concept || '',
+            visualTheme: concept.visual_theme || '',
+            mood: concept.mood || '',
+            colorPalette: concept.color_palette || null,
+            wardrobe: concept.wardrobe || null,
+            locations: concept.locations || null,
+            iconicMoments: concept.iconic_moments || null,
+            keyScenes: concept.key_scenes || null,
+            directorTechniques: concept.director_techniques_used || null,
+            musicVideoReferences: concept.music_video_references || null,
+            directorName: directorName || null,
+            coverImageUrl: concept.coverImage || null,
+            imageProvider: concept.imageProvider || null,
+            musicGenre: musicGenre?.genre || null,
+            emotionalArc: emotions?.arc || null,
+            isSelected: false,
+          });
+        }
+        console.log(`✅ ${conceptsWithImages.length} conceptos guardados en DB`);
+      } catch (dbError) {
+        console.warn('⚠️ Error guardando conceptos en DB (no-blocking):', dbError);
+      }
+    }
+
     res.status(200).json({
       success: true,
       concepts: conceptsWithImages
@@ -803,28 +848,36 @@ EDITING STYLE: ${editingStyle?.name || 'Dynamic'}
 
 🎯 CRITICAL CREATIVE REQUIREMENTS:
 
-1. **LYRICS-FIRST APPROACH**: 
+1. **THREE-ACT STRUCTURE** (MOST IMPORTANT):
+   - ACT 1 (First 25% of scenes): SETUP — Establish the world, introduce the protagonist, set the emotional baseline. Opening should be CAPTIVATING and immediately draw the viewer in.
+   - ACT 2 (Middle 50% of scenes): DEVELOPMENT — Build tension, develop the story/emotion, introduce conflict or transformation. The journey that makes the audience invest emotionally.
+   - ACT 3 (Final 25% of scenes): CLIMAX & RESOLUTION — Peak emotional/visual moment, catharsis, resolution or powerful ending. The MOST visually striking and emotionally impactful scenes.
+   - Each scene MUST include an "act" field: "ACT_1", "ACT_2", or "ACT_3"
+
+2. **LYRICS-FIRST APPROACH**: 
    - DIVIDE the lyrics evenly across all ${targetScenes} scenes
    - Each scene's "lyrics" field MUST contain the actual lyrics for that moment
    - The "lyric_connection" field MUST explain how the visual interprets those specific lyrics
    - The "narrative_context" MUST connect the scene to the overall story inspired by the lyrics
 
-2. **NARRATIVE COHERENCE**: Create a complete story arc with beginning, middle, and end. Every scene should connect logically to tell ONE cohesive story based on the concept and lyrics.
+3. **NARRATIVE COHERENCE**: Create a complete story arc with beginning, middle, and end. Every scene should connect logically to tell ONE cohesive story based on the concept and lyrics. Include recurring visual motifs that tie the narrative together.
 
-3. **SHOT VARIETY** (MUST FOLLOW THIS DISTRIBUTION):
+4. **SHOT VARIETY** (MUST FOLLOW THIS DISTRIBUTION):
    - 30% PERFORMANCE shots: Artist singing/performing (use "shot_category": "PERFORMANCE")
    - 40% B-ROLL shots: Cinematic visuals that tell the story WITHOUT the artist (use "shot_category": "B-ROLL")
    - 30% STORY shots: Narrative scenes with characters/elements from the story (use "shot_category": "STORY")
 
-4. **VISUAL PROGRESSION**: Scenes should progress naturally:
-   - Opening: Establish the world and main character
-   - Rising: Develop the conflict or emotional journey
-   - Climax: Peak emotional or visual moment
-   - Resolution: Closure or final statement
+5. **VISUAL PROGRESSION**: Scenes should progress naturally through the acts:
+   - ACT 1: Establish the world, main character, and emotional state. Wider shots, cooler/muted tones.
+   - ACT 2: Develop conflict/journey. Tighter shots, building intensity, warmer/more saturated colors.
+   - ACT 3: Peak emotion/climax. Most dynamic camera work, boldest visual choices, strongest colors/contrast.
 
 Create exactly ${targetScenes} scenes. FIRST 10 SCENES ARE CRITICAL - they set the entire tone and narrative.
 
 Each scene MUST include ALL these fields:
+
+STRUCTURAL (NEW - CRITICAL):
+- act: "ACT_1" | "ACT_2" | "ACT_3" (which act this scene belongs to)
 
 TECHNICAL:
 - scene_number: Sequential number
@@ -861,13 +914,22 @@ SCENE DETAILS:
 Return ONLY this JSON structure (no markdown, no explanation):
 {
   "title": "Video title",
-  "narrative_summary": "One paragraph summary of the complete story/concept",
+  "narrative_summary": "Detailed 3-paragraph summary: ACT 1 setup, ACT 2 conflict/development, ACT 3 resolution/climax",
+  "story_arc": {
+    "act_1_setup": "Description of the opening: world, characters, emotional state (first 25% of video)",
+    "act_2_development": "The journey, conflict, or transformation (middle 50% of video)",
+    "act_3_climax_resolution": "Peak emotional moment and resolution (final 25% of video)",
+    "central_theme": "The core message or feeling the video communicates",
+    "character_arc": "How the protagonist transforms from beginning to end",
+    "visual_motifs": ["Recurring visual element 1", "Recurring visual element 2", "Recurring visual element 3"]
+  },
   "total_duration": ${audioDuration || 180},
   "scenes": [
     {
       "scene_number": 1,
       "start_time": 0,
       "duration": 3.5,
+      "act": "ACT_1",
       "lyrics": "...",
       "shot_type": "wide-shot",
       "shot_category": "STORY",
@@ -902,9 +964,11 @@ This creates MAXIMUM REALISM and VISUAL VARIETY - the artist appears in multiple
 
 REMEMBER: Mix PERFORMANCE, B-ROLL, and STORY shots. Use artist reference creatively for detail shots and angles, not just full performance. Tell a COMPLETE STORY with visual variety!`;
 
+    // 🚀 UPGRADED: Use GPT-4o full model for richer, better-structured scripts
     const textContent = await generateTextWithOpenAI(prompt, {
-      temperature: 0.8,
-      maxTokens: 8192
+      temperature: 0.85,
+      maxTokens: 16384, // Doubled token limit for more detailed scripts
+      useFullModel: true // GPT-4o for superior narrative quality
     });
     
     let cleanedContent = textContent.trim();
@@ -1223,3 +1287,109 @@ Return ONLY the enhanced prompt text, no JSON, no extra formatting.`;
 });
 
 export default router;
+
+/**
+ * GET /api/music-video/concepts/:projectId
+ * Retrieves saved concepts for a project from the DB
+ */
+router.get("/concepts/:projectId", async (req: Request, res: Response) => {
+  try {
+    const projectId = parseInt(req.params.projectId);
+    if (!projectId) return res.status(400).json({ error: 'Invalid projectId' });
+
+    const concepts = await db.select().from(musicVideoConcepts)
+      .where(eq(musicVideoConcepts.projectId, projectId))
+      .orderBy(musicVideoConcepts.conceptIndex);
+
+    res.status(200).json({
+      success: true,
+      concepts: concepts.map(c => ({
+        id: c.id,
+        concept_type: c.conceptType,
+        title: c.title,
+        story_concept: c.storyConcept,
+        visual_theme: c.visualTheme,
+        mood: c.mood,
+        color_palette: c.colorPalette,
+        wardrobe: c.wardrobe,
+        locations: c.locations,
+        iconic_moments: c.iconicMoments,
+        key_scenes: c.keyScenes,
+        director_techniques_used: c.directorTechniques,
+        music_video_references: c.musicVideoReferences,
+        directorName: c.directorName,
+        coverImage: c.coverImageUrl,
+        imageProvider: c.imageProvider,
+        musicGenre: c.musicGenre,
+        emotionalArc: c.emotionalArc,
+        isSelected: c.isSelected,
+        createdAt: c.createdAt,
+      }))
+    });
+  } catch (error) {
+    console.error('❌ Error retrieving concepts:', error);
+    res.status(500).json({ error: 'Error retrieving concepts' });
+  }
+});
+
+/**
+ * PUT /api/music-video/concepts/:conceptId
+ * Updates a single concept (for modification/editing)
+ */
+router.put("/concepts/:conceptId", async (req: Request, res: Response) => {
+  try {
+    const conceptId = parseInt(req.params.conceptId);
+    if (!conceptId) return res.status(400).json({ error: 'Invalid conceptId' });
+
+    const updates = req.body;
+    
+    await db.update(musicVideoConcepts)
+      .set({
+        title: updates.title,
+        storyConcept: updates.story_concept,
+        visualTheme: updates.visual_theme,
+        mood: updates.mood,
+        colorPalette: updates.color_palette,
+        wardrobe: updates.wardrobe,
+        locations: updates.locations,
+        iconicMoments: updates.iconic_moments,
+        keyScenes: updates.key_scenes,
+        directorTechniques: updates.director_techniques_used,
+        musicVideoReferences: updates.music_video_references,
+        isSelected: updates.isSelected,
+        updatedAt: new Date(),
+      })
+      .where(eq(musicVideoConcepts.id, conceptId));
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('❌ Error updating concept:', error);
+    res.status(500).json({ error: 'Error updating concept' });
+  }
+});
+
+/**
+ * PUT /api/music-video/concepts/:projectId/select/:conceptId
+ * Marks a concept as selected (and deselects others in the project)
+ */
+router.put("/concepts/:projectId/select/:conceptId", async (req: Request, res: Response) => {
+  try {
+    const projectId = parseInt(req.params.projectId);
+    const conceptId = parseInt(req.params.conceptId);
+    
+    // Deselect all concepts in this project
+    await db.update(musicVideoConcepts)
+      .set({ isSelected: false })
+      .where(eq(musicVideoConcepts.projectId, projectId));
+
+    // Select the chosen concept
+    await db.update(musicVideoConcepts)
+      .set({ isSelected: true, updatedAt: new Date() })
+      .where(eq(musicVideoConcepts.id, conceptId));
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('❌ Error selecting concept:', error);
+    res.status(500).json({ error: 'Error selecting concept' });
+  }
+});

@@ -183,6 +183,13 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   const [selectedGalleryImage, setSelectedGalleryImage] = useState<GeneratedImage | null>(null);
   const [layerLabelWidth, setLayerLabelWidth] = useState(getLayerLabelWidth);
   
+  // 🔧 FIXED: effectiveDuration = max(prop duration, actual clip extent)
+  // Ensures timeline always extends to show ALL clips, not just the prop value
+  const effectiveDuration = useMemo(() => {
+    const clipExtent = clips.reduce((max, clip) => Math.max(max, clip.start + clip.duration), 0);
+    return Math.max(duration, clipExtent + 5); // +5s buffer
+  }, [duration, clips]);
+
   // Estados para paneles redimensionables
   const [viewerHeight, setViewerHeight] = useState(55); // Altura del visor en % - Por defecto abierto
   const [galleryWidth, setGalleryWidth] = useState(180); // Ancho de la galer�a en px
@@ -1537,8 +1544,11 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   const handleMoveClip = useCallback((id: number, newStart: number, newLayerId?: number) => {
     if (readOnly) return;
     const newClips = engine.moveClip(id, newStart, clipsRef.current, newLayerId);
-    setClips(newClips);
-  }, [readOnly, engine.moveClip]);
+    // FIXED: Use pushHistory to properly record undo state
+    // The beginOperation/endOperation pattern had a race condition where
+    // clipsRef.current was stale when endOperation ran in the same event handler
+    pushHistory(newClips, 'move');
+  }, [readOnly, engine.moveClip, pushHistory]);
 
   const handleSplitClip = useCallback((id: number, timeAtClip: number) => {
     if (readOnly) return;
@@ -1552,8 +1562,9 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     if (readOnly) return;
     const resizeEdge = (edge === 'start' || edge === 'end') ? edge : 'end';
     const newClips = engine.resizeClip(id, newStart, newDuration, resizeEdge, clipsRef.current);
-    setClips(newClips);
-  }, [readOnly, engine.resizeClip]);
+    // FIXED: Use pushHistory to properly record undo state
+    pushHistory(newClips, `resize-${resizeEdge}`);
+  }, [readOnly, engine.resizeClip, pushHistory]);
 
   const handleRazorClick = useCallback((clipId: number, timeAtClipGlobal: number) => {
     handleSplitClip(clipId, timeAtClipGlobal);
@@ -1621,14 +1632,14 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   /** Fit entire duration into visible timeline width */
   const zoomToFit = useCallback(() => {
     const el = timelineScrollRef.current;
-    if (!el || duration <= 0) return;
+    if (!el || effectiveDuration <= 0) return;
     const availableWidth = el.clientWidth - layerPanelWidth - 40;
-    const fitZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, availableWidth / duration));
+    const fitZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, availableWidth / effectiveDuration));
     setZoom(fitZoom);
     requestAnimationFrame(() => {
       if (timelineScrollRef.current) timelineScrollRef.current.scrollLeft = 0;
     });
-  }, [duration, layerPanelWidth]);
+  }, [effectiveDuration, layerPanelWidth]);
 
   /** Ctrl+MouseWheel zoom handler for the timeline scroll area */
   const handleTimelineWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
@@ -4102,7 +4113,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
             
             <Ruler 
               zoom={zoom} 
-              duration={duration} 
+              duration={effectiveDuration} 
               labelWidth={layerPanelWidth} 
               onRulerClick={handleTimelineClick}
               framerate={framerate}
@@ -4121,7 +4132,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
           <TimelineLayers
             clips={clips}
             currentTime={currentTime}
-            duration={duration}
+            duration={effectiveDuration}
             zoom={zoom}
             tool={tool}
             snapEnabled={snapEnabled}

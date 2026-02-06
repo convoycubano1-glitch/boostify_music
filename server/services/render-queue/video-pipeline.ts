@@ -13,6 +13,7 @@ import {
 import { startVideoRender, checkRenderStatus } from '../video-rendering/shotstack-service';
 import { uploadVideoToFirebaseStorage } from '../video-upload-firebase';
 import { cutAudioSegmentFromUrl, uploadAudioSegmentToFirebase } from '../audio-segment-service';
+import { generateMotionTransferVideo, generateOmniHumanVideo } from '../video-segment-service';
 import { db } from '../../db';
 import { renderQueue, musicVideoProjects } from '../../db/schema';
 import { eq } from 'drizzle-orm';
@@ -35,6 +36,7 @@ interface TimelineClip {
   hasLipsync?: boolean;
   audioSegmentUrl?: string; // URL del segmento de audio cortado para lipsync
   lipsyncVideoUrl?: string; // URL del video con lipsync ya aplicado
+  motionVideoUrl?: string; // 🎭 URL del video con motion transfer (DreamActor v2)
 }
 
 interface PipelineResult {
@@ -188,6 +190,36 @@ export async function processQueueItem(queueId: number): Promise<PipelineResult>
           if (clip.lipsyncVideoUrl) {
             videoUrl = clip.lipsyncVideoUrl;
             logger.log(`✅ [PIPELINE] Clip ${clipIndex} ya tiene lipsync: ${videoUrl.substring(0, 60)}...`);
+          } else if (clip.motionVideoUrl) {
+            // 🎭 Ya tiene motion transfer aplicado
+            videoUrl = clip.motionVideoUrl;
+            logger.log(`✅ [PIPELINE] Clip ${clipIndex} ya tiene motion transfer: ${videoUrl.substring(0, 60)}...`);
+          } else if (queueItem.performanceVideoUrl && clip.imageUrl) {
+            // 🎭 MOTION TRANSFER: Usar DreamActor v2 con el video de performance del artista
+            logger.log(`🎭 [PIPELINE] Clip ${clipIndex} PERFORMANCE - usando DreamActor v2 motion transfer`);
+            const motionResult = await generateMotionTransferVideo(
+              clip.imageUrl,
+              queueItem.performanceVideoUrl,
+              { trimFirstSecond: true }
+            );
+            if (motionResult.success && motionResult.videoUrl) {
+              videoUrl = motionResult.videoUrl;
+              logger.log(`✅ [PIPELINE] Motion transfer completado para clip ${clipIndex}`);
+            } else {
+              // Fallback: intentar OmniHuman con audio
+              logger.warn(`⚠️ [PIPELINE] DreamActor falló para clip ${clipIndex}, fallback a lipsync...`);
+              if (clip.audioSegmentUrl) {
+                const omniResult = await generateOmniHumanVideo(
+                  clip.imageUrl,
+                  clip.audioSegmentUrl,
+                  { prompt: queueItem.artistName ? `${queueItem.artistName} singing performance` : undefined }
+                );
+                if (omniResult.success && omniResult.videoUrl) {
+                  videoUrl = omniResult.videoUrl;
+                  logger.log(`✅ [PIPELINE] OmniHuman fallback exitoso para clip ${clipIndex}`);
+                }
+              }
+            }
           } else if (clip.audioSegmentUrl) {
             // Generar lipsync con el segmento de audio específico de este clip
             logger.log(`🎤 [PIPELINE] Clip ${clipIndex} PERFORMANCE - usando audioSegmentUrl`);

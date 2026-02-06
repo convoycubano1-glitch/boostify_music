@@ -849,6 +849,73 @@ export const musicVideoProjects = pgTable("music_video_projects", {
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 
+// 🎬 MUSIC VIDEO CONCEPTS — Stores all 3 director concepts with full details for reuse/modification
+export const musicVideoConcepts = pgTable("music_video_concepts", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => musicVideoProjects.id, { onDelete: "cascade" }).notNull(),
+  userEmail: text("user_email").notNull(),
+  
+  // Concept identity
+  conceptType: text("concept_type", { 
+    enum: ["narrative", "abstract", "performance"] 
+  }).notNull(),
+  conceptIndex: integer("concept_index").notNull(), // 0, 1, 2
+  title: text("title").notNull(),
+  
+  // Creative content (full details)
+  storyConcept: text("story_concept"), // 200+ word description
+  visualTheme: text("visual_theme"),
+  mood: text("mood"),
+  
+  // Structured data stored as JSON for flexibility
+  colorPalette: json("color_palette").$type<{
+    primary_colors: string[];
+    accent_colors: string[];
+    mood_colors: string;
+  }>(),
+  wardrobe: json("wardrobe").$type<{
+    main_outfit: string;
+    alternative_looks: string[];
+    style_notes: string;
+  }>(),
+  locations: json("locations").$type<{
+    name: string;
+    description: string;
+    mood: string;
+  }[]>(),
+  iconicMoments: json("iconic_moments").$type<{
+    timestamp: string;
+    description: string;
+    why_iconic: string;
+  }[]>(),
+  keyScenes: json("key_scenes").$type<{
+    timestamp: string;
+    description: string;
+    visual_style: string;
+    camera_movement: string;
+  }[]>(),
+  directorTechniques: json("director_techniques").$type<string[]>(),
+  musicVideoReferences: json("music_video_references").$type<string[]>(),
+  
+  // Director context
+  directorName: text("director_name"),
+  
+  // Generated poster
+  coverImageUrl: text("cover_image_url"),
+  imageProvider: text("image_provider"),
+  
+  // Music metadata at time of generation
+  musicGenre: text("music_genre"),
+  emotionalArc: text("emotional_arc"),
+  
+  // Selection state
+  isSelected: boolean("is_selected").default(false).notNull(),
+  
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
 export const artistProfileImages = pgTable("artist_profile_images", {
   id: serial("id").primaryKey(),
   artistProfileId: integer("artist_profile_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
@@ -2483,6 +2550,7 @@ export const renderQueue = pgTable("render_queue", {
   audioDuration: decimal("audio_duration", { precision: 10, scale: 2 }),
   thumbnailUrl: text("thumbnail_url"),
   aspectRatio: text("aspect_ratio").default("16:9"),
+  performanceVideoUrl: text("performance_video_url"), // 🎭 Video grabado por el artista para motion transfer (DreamActor v2)
   
   // Resultado
   finalVideoUrl: text("final_video_url"),

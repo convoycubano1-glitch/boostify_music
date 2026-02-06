@@ -98,6 +98,7 @@ export interface TimelineItem {
  */
 export class TimelineClipUnified implements TimelineClip {
   id: number;
+  layerId: number;
   start: number;
   duration: number;
   type: 'video' | 'image' | 'transition' | 'audio' | 'effect' | 'text';
@@ -147,6 +148,7 @@ export class TimelineClipUnified implements TimelineClip {
       this.duration = data.duration || (data.end_time - data.start_time);
       this.type = this.determineType(data);
       this.layer = this.determineLayer(data);
+      this.layerId = this.layer;
       this.title = data.title || `Clip ${data.id}`;
       this.thumbnail = data.thumbnail;
       this.imageUrl = data.imageUrl;
@@ -165,6 +167,7 @@ export class TimelineClipUnified implements TimelineClip {
       this.duration = data.duration || 0;
       this.type = data.type || 'image';
       this.layer = data.layer || 0;
+      this.layerId = (data as any).layerId || this.layer || (this.type === 'audio' ? 2 : 1);
       this.title = data.title || `Clip ${this.id}`;
       this.thumbnail = data.thumbnail;
       this.description = data.description;

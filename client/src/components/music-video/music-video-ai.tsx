@@ -695,6 +695,9 @@ export function MusicVideoAI({
   const [lipSyncProgress, setLipSyncProgress] = useState({ current: 0, total: 0, message: '' });
   const [performanceSegments, setPerformanceSegments] = useState<Map<number, any>>(new Map());
   
+  // 🎤 Performance Recording: URL del video grabado por el artista para motion transfer (DreamActor v2)
+  const [performanceVideoUrl, setPerformanceVideoUrl] = useState<string | null>(null);
+  
   // Estados para templates rápidos
   const [showQuickStartTemplates, setShowQuickStartTemplates] = useState(false);
   
@@ -1893,7 +1896,8 @@ export function MusicVideoAI({
     songName: string,
     aspectRatio: string,
     videoStyle: string,
-    conceptBrief?: string
+    conceptBrief?: string,
+    performanceVideoBlob?: Blob
   ) => {
     logger.info('🎉 Onboarding completed:', {
       audio: audioFile.name,
@@ -1902,7 +1906,8 @@ export function MusicVideoAI({
       songName,
       aspectRatio,
       videoStyle,
-      conceptBrief: conceptBrief || 'No concept provided'
+      conceptBrief: conceptBrief || 'No concept provided',
+      hasPerformanceVideo: !!performanceVideoBlob
     });
     
     // Set artist name, song name, reference images, and audio file
@@ -1957,6 +1962,24 @@ export function MusicVideoAI({
       }
     };
     uploadOnboardingAudio();
+    
+    // 🎤 Upload performance video to Firebase if provided (for DreamActor v2 motion transfer)
+    if (performanceVideoBlob) {
+      const uploadPerformanceVideo = async () => {
+        try {
+          const storage = getStorage();
+          const timestamp = Date.now();
+          const videoRef = ref(storage, `music-videos/performance/${user?.uid || 'anonymous'}/${timestamp}_performance.webm`);
+          const snapshot = await uploadBytes(videoRef, performanceVideoBlob);
+          const firebaseVideoUrl = await getDownloadURL(snapshot.ref);
+          setPerformanceVideoUrl(firebaseVideoUrl);
+          logger.info('✅ [ONBOARDING] Performance video subido a Firebase:', firebaseVideoUrl.substring(0, 80));
+        } catch (uploadErr) {
+          logger.warn('⚠️ [ONBOARDING] Performance video upload failed:', uploadErr);
+        }
+      };
+      uploadPerformanceVideo();
+    }
     
     // Cerrar el modal de onboarding y mostrar el modal de selección de director
     setShowOnboarding(false);
@@ -5543,7 +5566,8 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
           audioDuration: estimatedDuration / 1000,
           thumbnailUrl: timelineItems[0]?.firebaseUrl || timelineItems[0]?.generatedImage,
           aspectRatio: videoAspectRatio,
-          totalClips: timelineItems.length
+          totalClips: timelineItems.length,
+          performanceVideoUrl: performanceVideoUrl || undefined
         })
       });
       
@@ -5747,8 +5771,8 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       // Si es una imagen generada por IA (tiene generatedImage)
       else if (item.generatedImage) {
         clipType = 'image';
-        clipLayer = 7; // Colocar imágenes generadas en la capa 7
-        logger.info(`🎨 Imagen generada detectada: ${item.id} - Asignando a capa 7`);
+        clipLayer = 1; // Capa 1 = Video/Imágenes (misma capa visual)
+        logger.info(`🎨 Imagen generada detectada: ${item.id} - Asignando a capa 1`);
       }
       
       // URL del recurso: priorizar video, luego imagen

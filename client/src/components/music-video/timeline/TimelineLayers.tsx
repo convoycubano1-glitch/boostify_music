@@ -149,10 +149,11 @@ export const TimelineLayers: React.FC<TimelineLayersProps> = ({
       className="timeline-layers"
       style={{
         position: 'relative',
-        width: '100%',
+        minWidth: '100%',
         height: '100%',
-        overflowX: 'visible',
-        overflowY: 'auto',
+        // FIXED: Removed overflowX/overflowY — parent timelineScrollRef handles horizontal scroll.
+        // CSS spec quirk: if one axis is auto/scroll/hidden, the other can't be 'visible' and becomes 'auto'.
+        // This was creating a nested scroll container that prevented full timeline scrolling.
         background: 'linear-gradient(180deg, #0d0d0d 0%, #111111 50%, #0a0a0a 100%)',
         cursor: 'pointer',
         borderRadius: '6px',

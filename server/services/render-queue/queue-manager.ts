@@ -22,6 +22,7 @@ export interface CreateQueueItemParams {
   thumbnailUrl?: string;
   aspectRatio?: string;
   totalClips?: number;
+  performanceVideoUrl?: string;
 }
 
 export interface QueueStatus {
@@ -64,6 +65,7 @@ export async function createQueueItem(params: CreateQueueItemParams): Promise<{ 
       audioDuration: String(params.audioDuration),
       thumbnailUrl: params.thumbnailUrl,
       aspectRatio: params.aspectRatio || '16:9',
+      performanceVideoUrl: params.performanceVideoUrl || null,
       pendingWebhookSent: false,
       completedWebhookSent: false,
       retryCount: 0,
