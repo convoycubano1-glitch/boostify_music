@@ -195,7 +195,8 @@ export async function processQueueItem(queueId: number): Promise<PipelineResult>
               clip.imageUrl,
               clip.audioSegmentUrl, // ✅ CORRECTO: usar segmento, no audio completo
               clip.start_time,
-              clip.duration || CLIP_DURATION
+              clip.duration || CLIP_DURATION,
+              queueItem.artistName // 🎭 FACE CONSISTENCY: Pass artist name for enriched Kling prompt
             );
             if (lipsyncResult) {
               videoUrl = lipsyncResult.videoUrl;
@@ -358,7 +359,8 @@ async function generateLipsyncVideo(
   imageUrl: string,
   audioUrl: string,
   startTime: number,
-  duration: number
+  duration: number,
+  artistDescription?: string
 ): Promise<{ videoUrl: string; requiresLoop: boolean; actualDuration: number } | null> {
   const FAL_API_KEY = process.env.FAL_API_KEY;
   
@@ -390,7 +392,9 @@ async function generateLipsyncVideo(
       },
       body: JSON.stringify({
         image_url: imageUrl,
-        prompt: "Person singing with natural mouth movement, subtle head motion, professional music video style",
+        prompt: artistDescription 
+          ? `${artistDescription} singing with natural mouth movement, subtle head motion, maintaining exact facial identity and features, professional music video style`
+          : "Artist singing with natural mouth movement, subtle head motion, maintaining exact facial identity and features from the image, professional music video style",
         duration: klingDuration, // 🔧 Usar la duración calculada
         aspect_ratio: "16:9"
       })

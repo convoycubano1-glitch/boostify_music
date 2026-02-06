@@ -354,8 +354,27 @@ export async function editImageWithNanoBanana(
   } catch (error: any) {
     logger.error('[FAL] Error editando imagen con nano-banana/edit:', error.response?.data || error.message);
     
-    // Fallback: generar imagen desde cero con nano-banana
-    logger.warn('[FAL] Intentando fallback con nano-banana (generación)...');
+    // 🎭 CONSISTENCY FIX: Retry with single reference before falling back without any reference
+    const imageUrlsArray = Array.isArray(imageUrls) ? imageUrls : [imageUrls];
+    if (imageUrlsArray.length > 1) {
+      logger.warn('[FAL] 🔄 Retrying with single reference image (first only)...');
+      try {
+        const retryResult = await editImageWithNanoBanana(
+          [imageUrlsArray[0]], // Use only the first/frontal reference
+          editPrompt,
+          options
+        );
+        if (retryResult.success) {
+          logger.log('[FAL] ✅ Retry with single reference succeeded');
+          return retryResult;
+        }
+      } catch (retryError: any) {
+        logger.warn('[FAL] ❌ Single reference retry also failed:', retryError.message);
+      }
+    }
+    
+    // Final fallback: generate without reference (LOGS WARNING for tracking)
+    logger.warn('[FAL] ⚠️ FALLBACK: Generating WITHOUT face reference - consistency may be lost');
     return generateImageWithNanoBanana(editPrompt, { 
       aspectRatio: options.aspectRatio || '1:1' 
     });

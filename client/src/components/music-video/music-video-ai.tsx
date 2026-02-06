@@ -613,6 +613,8 @@ export function MusicVideoAI({
   } | null>(null);
   const audioContext = useRef<AudioContext | null>(null);
   const audioSource = useRef<AudioBufferSourceNode | null>(null);
+  // 🎭 FACE CONSISTENCY: Store Master Character promise so image generation can await it
+  const masterCharacterPromiseRef = useRef<Promise<any> | null>(null);
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [seed, setSeed] = useState<number>(Math.floor(Math.random() * 1000000));
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
@@ -1279,6 +1281,19 @@ export function MusicVideoAI({
       // Decidir qué endpoint usar basado en si hay imágenes de referencia
       const hasReferenceImages = artistReferenceImages && artistReferenceImages.length > 0;
       
+      // 🎭 FACE CONSISTENCY: Wait for Master Character before generating images
+      if (masterCharacterPromiseRef.current && !masterCharacter) {
+        logger.info('⏳ [IMG] Esperando Master Character antes de generar imágenes...');
+        setProgressMessage('🎭 Preparing face consistency references...');
+        const mcResult = await masterCharacterPromiseRef.current;
+        masterCharacterPromiseRef.current = null; // Clear ref after awaiting
+        if (mcResult) {
+          logger.info('✅ [IMG] Master Character listo, procediendo con consistencia facial');
+        } else {
+          logger.warn('⚠️ [IMG] Master Character no disponible, usando referencias raw del artista');
+        }
+      }
+      
       logger.info(`📸 [IMG] Generación SECUENCIAL iniciada. Total escenas: ${totalScenes}`);
       logger.info(`📸 [IMG] Referencias faciales: ${hasReferenceImages ? artistReferenceImages.length : 0}`);
       logger.info(`📸 [IMG] Master Character: ${masterCharacter ? 'Sí' : 'No'}`);
@@ -1347,9 +1362,17 @@ export function MusicVideoAI({
           logger.info(`📝 [IMG ${sceneIndex}] Shot Category: ${shotCategory}, Emotion: ${emotion}`);
           
           // Detectar si debe usar referencia del artista usando los nuevos campos
-          const useArtistReference = originalScene.use_artist_reference !== false; // Default true for backward compatibility
-          const referenceUsage = originalScene.reference_usage || 
-                                (shotCategory === 'PERFORMANCE' ? 'full_performance' : 'none');
+          // 🎭 CONSISTENCY FIX: Force B-ROLL to NEVER use artist reference (prevents unwanted face artifacts)
+          const rawUseArtistReference = originalScene.use_artist_reference !== false;
+          const useArtistReference = shotCategory === 'B-ROLL' ? false : rawUseArtistReference;
+          const referenceUsage = shotCategory === 'B-ROLL' 
+            ? 'none' 
+            : (originalScene.reference_usage || 
+               (shotCategory === 'PERFORMANCE' ? 'full_performance' : 'none'));
+          
+          if (shotCategory === 'B-ROLL' && rawUseArtistReference) {
+            logger.info(`🚫 [SCENE ${sceneIndex}] B-ROLL override: LLM set use_artist_reference=true, forcing to false`);
+          }
           
           // Determinar si usar la imagen de referencia basado en la lógica avanzada
           const shouldUseReference = useArtistReference && 
@@ -2144,11 +2167,17 @@ export function MusicVideoAI({
         // Generar conceptos en paralelo con Master Character (si hay imágenes)
         const conceptsPromise = handleGenerateConcepts(transcriptionText, director);
         
-        // Generar Master Character en BACKGROUND (no bloquea conceptos)
+        // 🎭 FACE CONSISTENCY: Store MC promise for awaiting before image generation
+        // Concepts generate in parallel (fast), but images MUST wait for MC
         if (artistReferenceImages.length > 0) {
-          logger.info('🎭 Generando Master Character en PARALELO (background)...');
-          handleGenerateMasterCharacter().catch(err => {
-            logger.warn('⚠️ Master Character falló (no crítico):', err);
+          logger.info('🎭 Generando Master Character en PARALELO (se esperará antes de generar imágenes)...');
+          masterCharacterPromiseRef.current = handleGenerateMasterCharacter().catch(err => {
+            logger.warn('⚠️ Master Character falló, reintentando una vez...', err);
+            // Retry once on failure
+            return handleGenerateMasterCharacter().catch(retryErr => {
+              logger.error('❌ Master Character falló en reintento:', retryErr);
+              return null;
+            });
           });
         }
         
@@ -5061,12 +5090,20 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
             const segmentDuration = (clip.duration || 3500) / 1000;
             
             // STEP 1: Generate video from image using Kling (for consistent character)
-            logger.info(`🎬 [PERF ${clip.id}] Step 1: Generating video from image...`);
+            // 🎭 CONSISTENCY FIX: Always pass artist reference images for face identity preservation
+            const isReferenceModel = selectedVideoModel.includes('reference-to-video');
+            const characterRefs = masterCharacter?.mainCharacter?.angles
+              ?.filter((a: any) => a.imageUrl)
+              ?.map((a: any) => a.imageUrl) || artistReferenceImages;
+            
+            logger.info(`🎬 [PERF ${clip.id}] Step 1: Generating video from image (refs: ${characterRefs.length})...`);
             const videoResult = await generateVideoWithFAL(selectedVideoModel, {
               imageUrl: imageUrl,
-              prompt: `${clip.imagePrompt || clip.visualDescription || 'Artist performing'}, singing, emotional performance`,
+              prompt: `${clip.imagePrompt || clip.visualDescription || 'Artist performing'}, singing, emotional performance, maintain exact facial identity`,
               aspectRatio: videoAspectRatio,
-              duration: segmentDuration
+              duration: segmentDuration,
+              // 🎭 Pass artist references for O1 reference-to-video consistency
+              referenceImages: isReferenceModel && characterRefs.length > 0 ? characterRefs : undefined
             });
             
             if (!videoResult.success || !videoResult.videoUrl) {
@@ -5159,17 +5196,27 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
       }
       
       // Process B-ROLL and STORY clips with Kling video generation (no lipsync needed)
+      const isRefModel = selectedVideoModel.includes('reference-to-video');
+      const storyCharRefs = masterCharacter?.mainCharacter?.angles
+        ?.filter((a: any) => a.imageUrl)
+        ?.map((a: any) => a.imageUrl) || artistReferenceImages;
+      
       for (const clip of brollAndStoryClips) {
         try {
           const imageUrl = clip.generatedImage || clip.firebaseUrl || clip.imageUrl;
           if (!imageUrl) continue;
+          
+          // 🎭 STORY scenes with artist get references; pure B-ROLL does not
+          const clipUsesArtist = clip.shotCategory === 'STORY' && clip.usesMasterCharacter;
           
           // Generate video from image using Kling
           const videoResult = await generateVideoWithFAL(selectedVideoModel, {
             imageUrl: imageUrl,
             prompt: clip.imagePrompt || clip.visualDescription || 'Cinematic video with subtle movement',
             aspectRatio: videoAspectRatio,
-            duration: (clip.duration || 3500) / 1000
+            duration: (clip.duration || 3500) / 1000,
+            // 🎭 Pass references for STORY clips with artist, skip for pure B-ROLL
+            referenceImages: isRefModel && clipUsesArtist && storyCharRefs.length > 0 ? storyCharRefs : undefined
           });
           
           if (videoResult.success && videoResult.videoUrl) {
