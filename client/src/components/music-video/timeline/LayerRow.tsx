@@ -1,8 +1,10 @@
 /**
- * Componente LayerRow - Represents an individual timeline layer row
+ * Componente LayerRow - Professional Timeline Layer Row
  * 
- * Professional timeline layer with expandable height, mute controls,
- * and convert to video functionality.
+ * NLE-grade layer with RAF-optimized drag/resize, magnetic snap,
+ * overlap prevention, and visual snap indicators.
+ * 
+ * BOOSTIFY 2025 - Premiere/DaVinci Level
  */
 import React, { useState } from 'react';
 import { 
@@ -14,13 +16,16 @@ import {
 import { 
   LAYER_HEADER_WIDTH, 
   DEFAULT_LAYER_HEIGHT,
-  MAX_CLIP_DURATION
+  MAX_CLIP_DURATION,
+  MIN_CLIP_DURATION,
+  SNAP_THRESHOLD_PX
 } from '../../../constants/timeline-constants';
 import { ClipItem } from './ClipItem';
 import { 
   Volume2, VolumeX, Film, ChevronDown, ChevronUp, 
   Lock, Unlock, Eye, EyeOff, GripVertical 
 } from 'lucide-react';
+import type { SnapResult } from '../../../hooks/useTimelineEngine';
 
 type Tool = 'select' | 'razor' | 'trim' | 'hand';
 
@@ -43,7 +48,7 @@ interface LayerRowProps extends ClipActionHandlers {
   onSelectClip: (clipId: number | null) => void;
   selectedClipId: number | null;
   onMoveClip?: (clipId: number, newStart: number, newLayerId: number) => void;
-  onResizeClip?: (clipId: number, newStart: number, newDuration: number) => void;
+  onResizeClip?: (clipId: number, newStart: number, newDuration: number, edge?: 'start' | 'end') => void;
   onRazorClick?: (clipId: number, time: number) => void;
   onDragStart?: () => void;
   onDragEnd?: () => void;
@@ -52,6 +57,11 @@ interface LayerRowProps extends ClipActionHandlers {
   layerLabelWidth?: number;
   onMuteLayer?: (layerId: number, muted: boolean) => void;
   onConvertAllToVideo?: (layerId: number) => void;
+  onUpdateImageFit?: (clipId: number, fit: string) => void;
+  /** Snap function from useTimelineEngine for real-time snap indicators */
+  onSnapQuery?: (time: number, excludeClipId?: number) => SnapResult;
+  /** Active snap indicator for visual feedback */
+  activeSnap?: SnapResult | null;
 }
 
 /**
@@ -82,6 +92,9 @@ export const LayerRow: React.FC<LayerRowProps> = ({
   onGenerateVideo,
   onMuteLayer,
   onConvertAllToVideo,
+  onUpdateImageFit,
+  onSnapQuery,
+  activeSnap,
 }) => {
   // Filtrar clips que pertenecen a esta capa
   const layerClips = clips.filter(clip => clip.layerId === layer.id);
@@ -107,7 +120,9 @@ export const LayerRow: React.FC<LayerRowProps> = ({
     originalStart: 0,
     currentDeltaX: 0, // Para tracking del delta actual
     clipElement: null as HTMLElement | null, // Referencia al elemento DOM
-    rafId: null as number | null // Para requestAnimationFrame
+    rafId: null as number | null, // Para requestAnimationFrame
+    lastClientX: 0, // Para detectar layer destino (cross-layer drag)
+    lastClientY: 0,
   });
   
   const resizeStateRef = React.useRef({
@@ -123,6 +138,22 @@ export const LayerRow: React.FC<LayerRowProps> = ({
   // Referencia al contenedor para calcular posiciones
   const containerRef = React.useRef<HTMLDivElement>(null);
   
+  // Ref para clips actuales — evita stale closures en document event listeners
+  const clipsRef = React.useRef(clips);
+  clipsRef.current = clips;
+  
+  // Refs que siempre apuntan a los handlers más recientes
+  const latestDragMoveRef = React.useRef<(e: MouseEvent) => void>(() => {});
+  const latestDragEndRef = React.useRef<() => void>(() => {});
+  const latestResizeMoveRef = React.useRef<(e: MouseEvent) => void>(() => {});
+  const latestResizeEndRef = React.useRef<() => void>(() => {});
+  
+  // Wrappers estables — identidad fija, delegan al handler más reciente vía ref
+  const stableDragMove = React.useCallback((e: MouseEvent) => latestDragMoveRef.current(e), []);
+  const stableDragEnd = React.useCallback(() => latestDragEndRef.current(), []);
+  const stableResizeMove = React.useCallback((e: MouseEvent) => latestResizeMoveRef.current(e), []);
+  const stableResizeEnd = React.useCallback(() => latestResizeEndRef.current(), []);
+  
   // Validaciones específicas para esta capa
   const validateClipPlacement = (clip: TimelineClip, newStart: number, newDuration?: number): boolean => {
     // Comprobar si es una imagen generada por IA (solo permitida en capa 7)
@@ -130,9 +161,10 @@ export const LayerRow: React.FC<LayerRowProps> = ({
       return false;
     }
     
-    // Comprobar duración máxima (5 segundos)
+    // Comprobar duración máxima (audio clips are exempt — songs can be minutes long)
     const clipDuration = newDuration || clip.duration;
-    if (clipDuration > MAX_CLIP_DURATION) {
+    const clipIsAudio = clip.type === ClipType.AUDIO || clip.layerId === 2;
+    if (!clipIsAudio && clipDuration > MAX_CLIP_DURATION) {
       return false;
     }
     
@@ -149,15 +181,17 @@ export const LayerRow: React.FC<LayerRowProps> = ({
     return true;
   };
   
-  // ====== ARRASTRAR CLIPS (OPTIMIZADO CON RAF) ======
+  // ====== ARRASTRAR CLIPS (OPTIMIZADO CON RAF + SNAP ENGINE) ======
   const handleDragMove = React.useCallback((e: MouseEvent) => {
     const state = dragStateRef.current;
     if (!state.clipId) {
       return;
     }
     
-    // Guardar el delta actual
+    // Guardar el delta actual y posición del mouse para cross-layer
     state.currentDeltaX = e.clientX - state.startX;
+    state.lastClientX = e.clientX;
+    state.lastClientY = e.clientY;
     
     // Usar requestAnimationFrame para rendimiento fluido
     if (state.rafId) {
@@ -170,12 +204,25 @@ export const LayerRow: React.FC<LayerRowProps> = ({
         return;
       }
       
-      // Aplicar transform CSS directamente (sin re-render React)
-      clipElement.style.transform = `translateX(${state.currentDeltaX}px)`;
+      // Calculate snap-aware position for visual feedback
+      if (onSnapQuery && state.clipId) {
+        const rawNewStart = state.originalStart + (state.currentDeltaX / zoom);
+        const snapResult = onSnapQuery(rawNewStart, state.clipId);
+        // If snapped, adjust the visual offset to match
+        if (snapResult.didSnap) {
+          const snappedDeltaX = (snapResult.time - state.originalStart) * zoom;
+          clipElement.style.transform = `translateX(${snappedDeltaX}px)`;
+        } else {
+          clipElement.style.transform = `translateX(${state.currentDeltaX}px)`;
+        }
+      } else {
+        // Aplicar transform CSS directamente (sin re-render React)
+        clipElement.style.transform = `translateX(${state.currentDeltaX}px)`;
+      }
       clipElement.style.transition = 'none';
       clipElement.style.zIndex = '100';
     });
-  }, []);
+  }, [zoom, onSnapQuery]);
   
   const handleDragEnd = React.useCallback(() => {
     const state = dragStateRef.current;
@@ -199,8 +246,27 @@ export const LayerRow: React.FC<LayerRowProps> = ({
     // Calcular posición final y actualizar estado React UNA sola vez
     if (clipId && deltaX !== 0) {
       const deltaTime = deltaX / zoom;
-      const newStart = Math.max(0, Math.min(duration - (clips.find(c => c.id === clipId)?.duration || 0), originalStart + deltaTime));
-      onMoveClip?.(clipId, newStart, layer.id);
+      const clip = clipsRef.current.find(c => c.id === clipId);
+      const clipDur = clip?.duration || 0;
+      const isAudio = clip?.type === ClipType.AUDIO || clip?.layerId === 2;
+      
+      // Audio clips: only clamp start >= 0 (can extend past timeline end)
+      // Video/image clips: must fit within timeline bounds
+      const newStart = isAudio
+        ? Math.max(0, originalStart + deltaTime)
+        : Math.max(0, Math.min(duration - clipDur, originalStart + deltaTime));
+      
+      // Detect target layer via DOM (cross-layer drag & drop)
+      let targetLayerId = layer.id;
+      const elements = document.elementsFromPoint(state.lastClientX, state.lastClientY);
+      const layerContentEl = elements.find(el =>
+        el instanceof HTMLElement && el.dataset.layerId
+      ) as HTMLElement | undefined;
+      if (layerContentEl?.dataset.layerId) {
+        targetLayerId = parseInt(layerContentEl.dataset.layerId) || layer.id;
+      }
+      
+      onMoveClip?.(clipId, newStart, targetLayerId);
     }
     
     // Limpiar estado
@@ -210,16 +276,18 @@ export const LayerRow: React.FC<LayerRowProps> = ({
       originalStart: 0, 
       currentDeltaX: 0, 
       clipElement: null, 
-      rafId: null 
+      rafId: null,
+      lastClientX: 0,
+      lastClientY: 0,
     };
     setDraggedClipId(null);
-    document.removeEventListener('mousemove', handleDragMove);
-    document.removeEventListener('mouseup', handleDragEnd);
+    document.removeEventListener('mousemove', stableDragMove);
+    document.removeEventListener('mouseup', stableDragEnd);
     document.body.style.cursor = '';
     
     // Notificar al editor que terminó el drag para guardar en historial
     onDragEndCallback?.();
-  }, [clips, zoom, duration, layer.id, onMoveClip, handleDragMove, onDragEndCallback]);
+  }, [zoom, duration, layer.id, onMoveClip, stableDragMove, stableDragEnd, onDragEndCallback]);
   
   const handleDragStart = React.useCallback((clipId: number, e: React.MouseEvent) => {
     if (isLocked && !isAudioLayer) {
@@ -228,7 +296,7 @@ export const LayerRow: React.FC<LayerRowProps> = ({
     e.preventDefault();
     e.stopPropagation();
     
-    const clip = clips.find(c => c.id === clipId);
+    const clip = clipsRef.current.find(c => c.id === clipId);
     if (!clip) {
       return;
     }
@@ -251,17 +319,19 @@ export const LayerRow: React.FC<LayerRowProps> = ({
       originalStart: clip.start,
       currentDeltaX: 0,
       clipElement: clipElement,
-      rafId: null
+      rafId: null,
+      lastClientX: e.clientX,
+      lastClientY: e.clientY,
     };
     setDraggedClipId(clipId);
     
-    // Añadir listeners globales
-    document.addEventListener('mousemove', handleDragMove);
-    document.addEventListener('mouseup', handleDragEnd);
+    // Añadir listeners globales (stable wrappers — nunca cambian de identidad)
+    document.addEventListener('mousemove', stableDragMove);
+    document.addEventListener('mouseup', stableDragEnd);
     document.body.style.cursor = 'grabbing';
-  }, [clips, isLocked, isAudioLayer, handleDragMove, handleDragEnd, onDragStartCallback]);
+  }, [isLocked, isAudioLayer, stableDragMove, stableDragEnd, onDragStartCallback]);
   
-  // ====== REDIMENSIONAR CLIPS (OPTIMIZADO CON RAF) ======
+  // ====== REDIMENSIONAR CLIPS (OPTIMIZADO CON RAF + SNAP ENGINE) ======
   const handleResizeMove = React.useCallback((e: MouseEvent) => {
     const state = resizeStateRef.current;
     if (!state.clipId || !state.originalData || !state.direction) return;
@@ -282,22 +352,58 @@ export const LayerRow: React.FC<LayerRowProps> = ({
       
       const originalWidthPx = state.originalData.duration * zoom;
       
+      // Calculate snap-aware resize for visual feedback
+      let visualDelta = deltaX;
+      if (onSnapQuery && state.clipId) {
+        if (state.direction === 'start') {
+          const rawNewStart = state.originalData.start + (deltaX / zoom);
+          const snapResult = onSnapQuery(rawNewStart, state.clipId);
+          if (snapResult.didSnap) {
+            visualDelta = (snapResult.time - state.originalData.start) * zoom;
+          }
+        } else {
+          const rawNewEnd = state.originalData.start + state.originalData.duration + (deltaX / zoom);
+          const snapResult = onSnapQuery(rawNewEnd, state.clipId);
+          if (snapResult.didSnap) {
+            visualDelta = (snapResult.time - (state.originalData.start + state.originalData.duration)) * zoom;
+          }
+        }
+      }
+      
+      // Determine if this is an audio clip (no max duration limit)
+      const resizingClipData = clipsRef.current.find(c => c.id === state.clipId);
+      const resizingIsAudio = resizingClipData?.type === ClipType.AUDIO || resizingClipData?.layerId === 2;
+
       if (state.direction === 'start') {
         // Redimensionar desde el inicio: mover y cambiar ancho
-        let clampedDelta = deltaX;
-        const minWidthPx = 0.5 * zoom;
+        let clampedDelta = visualDelta;
+        const minWidthPx = (MIN_CLIP_DURATION || 0.1) * zoom;
+        const maxWidthPx = resizingIsAudio 
+          ? (duration * zoom) // Audio: allow full timeline width
+          : (MAX_CLIP_DURATION * zoom);
         const maxDeltaX = originalWidthPx - minWidthPx;
         const minDeltaX = -(state.originalData.start * zoom);
         
-        clampedDelta = Math.max(minDeltaX, Math.min(maxDeltaX, deltaX));
+        clampedDelta = Math.max(minDeltaX, Math.min(maxDeltaX, clampedDelta));
+        
+        // Enforce max clip duration (skip for audio)
+        const newWidth = originalWidthPx - clampedDelta;
+        if (!resizingIsAudio && newWidth > maxWidthPx) {
+          clampedDelta = originalWidthPx - maxWidthPx;
+        }
         
         clipElement.style.transform = `translateX(${clampedDelta}px)`;
-        clipElement.style.width = `${originalWidthPx - clampedDelta}px`;
+        clipElement.style.width = `${Math.max(minWidthPx, originalWidthPx - clampedDelta)}px`;
       } else {
         // Redimensionar desde el final: solo cambiar ancho
-        let newWidth = originalWidthPx + deltaX;
-        const minWidthPx = 0.5 * zoom;
-        const maxWidthPx = (duration - state.originalData.start) * zoom;
+        let newWidth = originalWidthPx + visualDelta;
+        const minWidthPx = (MIN_CLIP_DURATION || 0.1) * zoom;
+        const maxWidthPx = resizingIsAudio
+          ? ((duration - state.originalData.start) * zoom) // Audio: only limited by timeline end
+          : Math.min(
+              (duration - state.originalData.start) * zoom,
+              MAX_CLIP_DURATION * zoom
+            );
         
         newWidth = Math.max(minWidthPx, Math.min(maxWidthPx, newWidth));
         
@@ -307,7 +413,7 @@ export const LayerRow: React.FC<LayerRowProps> = ({
       clipElement.style.transition = 'none';
       clipElement.style.zIndex = '100';
     });
-  }, [zoom, duration]);
+  }, [zoom, duration, onSnapQuery]);
   
   const handleResizeEnd = React.useCallback(() => {
     const state = resizeStateRef.current;
@@ -333,6 +439,8 @@ export const LayerRow: React.FC<LayerRowProps> = ({
     // Calcular valores finales y actualizar estado React UNA sola vez
     if (clipId && originalData && currentDeltaX !== 0) {
       const deltaTime = currentDeltaX / zoom;
+      const resizedClip = clipsRef.current.find(c => c.id === clipId);
+      const resizedIsAudio = resizedClip?.type === ClipType.AUDIO || resizedClip?.layerId === 2;
       
       let newStart = originalData.start;
       let newDuration = originalData.duration;
@@ -345,17 +453,24 @@ export const LayerRow: React.FC<LayerRowProps> = ({
           newStart = 0;
           newDuration = originalData.start + originalData.duration;
         }
-        if (newDuration < 0.5) {
-          newDuration = 0.5;
-          newStart = originalData.start + originalData.duration - 0.5;
+        if (newDuration < (MIN_CLIP_DURATION || 0.1)) {
+          newDuration = MIN_CLIP_DURATION || 0.1;
+          newStart = originalData.start + originalData.duration - newDuration;
+        }
+        // Enforce max clip duration (skip for audio — songs can be minutes long)
+        if (!resizedIsAudio && newDuration > MAX_CLIP_DURATION) {
+          newStart = originalData.start + originalData.duration - MAX_CLIP_DURATION;
+          newDuration = MAX_CLIP_DURATION;
         }
       } else {
         newDuration = originalData.duration + deltaTime;
-        if (newDuration < 0.5) newDuration = 0.5;
+        if (newDuration < (MIN_CLIP_DURATION || 0.1)) newDuration = MIN_CLIP_DURATION || 0.1;
+        if (!resizedIsAudio && newDuration > MAX_CLIP_DURATION) newDuration = MAX_CLIP_DURATION;
         if (newStart + newDuration > duration) newDuration = duration - newStart;
       }
       
-      onResizeClip?.(clipId, newStart, newDuration);
+      // Pass edge direction to parent for engine-level snap/overlap handling
+      onResizeClip?.(clipId, newStart, newDuration, direction as 'start' | 'end');
     }
     
     // Limpiar estado
@@ -369,18 +484,18 @@ export const LayerRow: React.FC<LayerRowProps> = ({
       currentDeltaX: 0
     };
     setResizingClipId(null);
-    document.removeEventListener('mousemove', handleResizeMove);
-    document.removeEventListener('mouseup', handleResizeEnd);
+    document.removeEventListener('mousemove', stableResizeMove);
+    document.removeEventListener('mouseup', stableResizeEnd);
     document.body.style.cursor = '';
     onResizeEndCallback?.();
-  }, [zoom, duration, onResizeClip, handleResizeMove, onResizeEndCallback]);
+  }, [zoom, duration, onResizeClip, stableResizeMove, stableResizeEnd, onResizeEndCallback]);
   
   const handleResizeStart = React.useCallback((clipId: number, direction: 'start' | 'end', e: React.MouseEvent) => {
     if (isLocked && !isAudioLayer) return;
     e.preventDefault();
     e.stopPropagation();
     
-    const clip = clips.find(c => c.id === clipId);
+    const clip = clipsRef.current.find(c => c.id === clipId);
     if (!clip) return;
     
     // Notificar al editor que empieza un resize para guardar estado inicial
@@ -401,19 +516,18 @@ export const LayerRow: React.FC<LayerRowProps> = ({
     };
     setResizingClipId(clipId);
     
-    document.addEventListener('mousemove', handleResizeMove);
-    document.addEventListener('mouseup', handleResizeEnd);
+    document.addEventListener('mousemove', stableResizeMove);
+    document.addEventListener('mouseup', stableResizeEnd);
     document.body.style.cursor = 'ew-resize';
-  }, [clips, isLocked, isAudioLayer, handleResizeMove, handleResizeEnd, onResizeStartCallback]);
+  }, [isLocked, isAudioLayer, stableResizeMove, stableResizeEnd, onResizeStartCallback]);
   
-  // Cleanup en unmount
+  // Cleanup en unmount — usa wrappers estables, solo se ejecuta al desmontar
   React.useEffect(() => {
     return () => {
-      document.removeEventListener('mousemove', handleDragMove);
-      document.removeEventListener('mouseup', handleDragEnd);
-      document.removeEventListener('mousemove', handleResizeMove);
-      document.removeEventListener('mouseup', handleResizeEnd);
-      // Cancelar cualquier RAF pendiente
+      document.removeEventListener('mousemove', stableDragMove);
+      document.removeEventListener('mouseup', stableDragEnd);
+      document.removeEventListener('mousemove', stableResizeMove);
+      document.removeEventListener('mouseup', stableResizeEnd);
       if (dragStateRef.current.rafId) {
         cancelAnimationFrame(dragStateRef.current.rafId);
       }
@@ -421,9 +535,16 @@ export const LayerRow: React.FC<LayerRowProps> = ({
         cancelAnimationFrame(resizeStateRef.current.rafId);
       }
     };
-  }, [handleDragMove, handleDragEnd, handleResizeMove, handleResizeEnd]);
+  }, [stableDragMove, stableDragEnd, stableResizeMove, stableResizeEnd]);
   
-  // Estilo para la línea de tiempo actual
+  // Mantener refs sincronizados con handlers más recientes (cada render)
+  latestDragMoveRef.current = handleDragMove;
+  latestDragEndRef.current = handleDragEnd;
+  latestResizeMoveRef.current = handleResizeMove;
+  latestResizeEndRef.current = handleResizeEnd;
+  
+  // Estilo para la línea de tiempo actual (playhead needle)
+  // z-index 25 ensures it renders ABOVE clips (z:1-10) but below overlays (z:30)
   const currentTimeIndicatorStyle = {
     left: `${currentTime * zoom}px`,
     height: '100%',
@@ -431,8 +552,8 @@ export const LayerRow: React.FC<LayerRowProps> = ({
     top: 0,
     width: '2px',
     backgroundColor: '#f97316', // orange-500
-    zIndex: 10,
-    boxShadow: '0 0 4px rgba(249, 115, 22, 0.5)',
+    zIndex: 25,
+    boxShadow: '0 0 6px rgba(249, 115, 22, 0.7)',
     pointerEvents: 'none' as const, // No bloquear eventos de mouse
   };
 
@@ -638,7 +759,8 @@ export const LayerRow: React.FC<LayerRowProps> = ({
       
         {/* Layer Content (clips) */}
         <div 
-          className={`layer-content relative flex-1 overflow-hidden transition-all ${isLocked && !isAudioLayer ? 'pointer-events-none' : ''}`}
+          className={`layer-content relative flex-1 overflow-visible transition-all ${isLocked && !isAudioLayer ? 'pointer-events-none' : ''}`}
+          data-layer-id={layer.id}
           style={{
             height: '100%',
             backgroundColor: contentBgColor,
@@ -682,6 +804,29 @@ export const LayerRow: React.FC<LayerRowProps> = ({
 
           {/* Current time indicator */}
           <div style={currentTimeIndicatorStyle} />
+
+          {/* Snap indicator line - shows magnetic snap targets */}
+          {activeSnap?.didSnap && (
+            <div
+              className="absolute top-0 bottom-0 pointer-events-none z-30"
+              style={{
+                left: `${activeSnap.time * zoom}px`,
+                width: '2px',
+                background: activeSnap.targetType === 'beat' 
+                  ? '#a855f7'  // purple for beats
+                  : activeSnap.targetType === 'clip-start' || activeSnap.targetType === 'clip-end'
+                  ? '#22c55e'  // green for clip edges
+                  : activeSnap.targetType === 'playhead'
+                  ? '#f97316'  // orange for playhead
+                  : '#3b82f6', // blue for others
+                boxShadow: `0 0 6px ${
+                  activeSnap.targetType === 'beat' ? 'rgba(168,85,247,0.6)' :
+                  activeSnap.targetType === 'clip-start' || activeSnap.targetType === 'clip-end' ? 'rgba(34,197,94,0.6)' :
+                  'rgba(59,130,246,0.6)'
+                }`,
+              }}
+            />
+          )}
         
           {/* Render clips */}
           {layerClips.map(clip => (
@@ -701,6 +846,7 @@ export const LayerRow: React.FC<LayerRowProps> = ({
                 if (!isLocked || isAudioLayer) handleResizeStart(id, direction, e);
               }}
               onRazorClick={onRazorClick}
+              onUpdateImageFit={onUpdateImageFit}
               isDragging={draggedClipId === clip.id}
               isResizing={resizingClipId === clip.id}
               onEditImage={onEditImage}

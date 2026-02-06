@@ -85,6 +85,7 @@ const createProfileSchema = z.object({
   projectId: z.number(),
   userEmail: z.string().email(),
   creatorUserId: z.number().optional(),
+  existingArtistId: z.number().optional(), // ID del artista existente (para no crear duplicados)
   artistName: z.string().min(1),
   songName: z.string().optional(),
   selectedConcept: z.any().optional(),
@@ -110,7 +111,7 @@ router.post("/create-from-video", async (req: Request, res: Response) => {
       .limit(1);
 
     if (existingProject?.artistProfileId) {
-      console.log('✅ [CREATE ARTIST PROFILE] Perfil ya existe:', existingProject.artistProfileId);
+      console.log('✅ [CREATE ARTIST PROFILE] Perfil ya existe por proyecto:', existingProject.artistProfileId);
       const [existingProfile] = await db
         .select()
         .from(users)
@@ -123,6 +124,76 @@ router.post("/create-from-video", async (req: Request, res: Response) => {
         isNew: false 
       });
     }
+
+    // 🔍 CHECK 1: Si se proporcionó un existingArtistId, usar ese artista directamente
+    if (data.existingArtistId) {
+      console.log('🔗 [CREATE ARTIST PROFILE] Usando artista existente ID:', data.existingArtistId);
+      const [existingArtist] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, data.existingArtistId))
+        .limit(1);
+      
+      if (existingArtist) {
+        // Vincular proyecto con el artista existente
+        await db
+          .update(musicVideoProjects)
+          .set({ artistProfileId: existingArtist.id })
+          .where(eq(musicVideoProjects.id, data.projectId));
+        
+        console.log('✅ [CREATE ARTIST PROFILE] Proyecto vinculado a artista existente:', existingArtist.artistName);
+        return res.json({
+          success: true,
+          profile: existingArtist,
+          isNew: false
+        });
+      }
+    }
+
+    // 🔍 CHECK 2: Buscar artista existente por nombre + creador (para evitar duplicados)
+    if (data.creatorUserId) {
+      const { or } = await import('drizzle-orm');
+      
+      // Buscar artista con mismo nombre que pertenezca al usuario
+      const existingByName = await db
+        .select()
+        .from(users)
+        .where(
+          or(
+            // Artista generado por IA con mismo nombre
+            and(
+              eq(users.artistName, data.artistName),
+              eq(users.generatedBy, data.creatorUserId)
+            ),
+            // El propio usuario con mismo nombre de artista
+            and(
+              eq(users.id, data.creatorUserId),
+              eq(users.artistName, data.artistName)
+            )
+          )
+        )
+        .limit(1);
+      
+      if (existingByName.length > 0) {
+        const existingArtist = existingByName[0];
+        console.log('🔗 [CREATE ARTIST PROFILE] Artista existente encontrado por nombre:', existingArtist.artistName, 'ID:', existingArtist.id);
+        
+        // Vincular proyecto con el artista existente
+        await db
+          .update(musicVideoProjects)
+          .set({ artistProfileId: existingArtist.id })
+          .where(eq(musicVideoProjects.id, data.projectId));
+        
+        return res.json({
+          success: true,
+          profile: existingArtist,
+          isNew: false
+        });
+      }
+    }
+
+    // Si no existe, crear uno nuevo
+    console.log('🆕 [CREATE ARTIST PROFILE] No se encontró artista existente, creando nuevo...');
 
     // Generar slug único
     let slug = generateSlug(data.artistName);

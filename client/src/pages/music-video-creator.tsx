@@ -17,6 +17,7 @@ import { isAdminEmail } from "../../../shared/constants";
 // Interface for pre-filled data from artist profile
 interface PreFilledData {
   artistName?: string;
+  artistId?: number; // PostgreSQL ID del artista existente
   songName?: string;
   songId?: string;
   audioUrl?: string;
@@ -35,8 +36,10 @@ export default function MusicVideoCreator() {
   const preFilledData = useMemo<PreFilledData>(() => {
     console.log('🔍 [URL] Raw search string:', searchString);
     const params = new URLSearchParams(searchString);
+    const artistIdRaw = params.get('artistId');
     const data = {
       artistName: params.get('artist') || undefined,
+      artistId: artistIdRaw ? parseInt(artistIdRaw) : undefined,
       songName: params.get('song') || undefined,
       songId: params.get('songId') || undefined,
       audioUrl: params.get('audioUrl') || undefined,
@@ -234,6 +237,7 @@ const ContentSection = ({ activeTab, setActiveTab, selectedDirector, onDirectorS
           <MusicVideoAI 
             preSelectedDirector={selectedDirector}
             preFilledArtistName={preFilledData?.artistName}
+            preFilledArtistId={preFilledData?.artistId}
             preFilledSongName={preFilledData?.songName}
             preFilledAudioUrl={preFilledData?.audioUrl}
             preFilledCoverArt={preFilledData?.coverArt}

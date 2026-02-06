@@ -354,6 +354,7 @@ const FULL_VIDEO_PRICE = 199; // Price in USD for full video generation
 interface MusicVideoAIProps {
   preSelectedDirector?: DirectorProfile | null;
   preFilledArtistName?: string;
+  preFilledArtistId?: number; // PostgreSQL ID del artista existente (para no crear duplicados)
   preFilledSongName?: string;
   preFilledAudioUrl?: string;
   preFilledCoverArt?: string;
@@ -363,6 +364,7 @@ interface MusicVideoAIProps {
 export function MusicVideoAI({ 
   preSelectedDirector,
   preFilledArtistName,
+  preFilledArtistId,
   preFilledSongName,
   preFilledAudioUrl,
   preFilledCoverArt,
@@ -479,27 +481,80 @@ export function MusicVideoAI({
       // Using proxy endpoint to avoid CORS issues with Firebase Storage
       if (preFilledAudioUrl && !selectedFile) {
         logger.info('🎵 [PREFILL] Downloading audio from URL:', preFilledAudioUrl);
-        const proxyUrl = `/api/proxy/firebase-file?url=${encodeURIComponent(preFilledAudioUrl)}`;
-        fetch(proxyUrl)
-          .then(response => {
+        
+        // Determinar si es URL de Firebase Storage (necesita proxy) o URL directa
+        const isFirebaseUrl = preFilledAudioUrl.includes('storage.googleapis.com') || 
+                              preFilledAudioUrl.includes('firebasestorage.googleapis.com');
+        const fetchUrl = isFirebaseUrl 
+          ? `/api/proxy/firebase-file?url=${encodeURIComponent(preFilledAudioUrl)}`
+          : preFilledAudioUrl; // Intentar directamente si no es Firebase
+        
+        logger.info(`🎵 [PREFILL] Using ${isFirebaseUrl ? 'proxy' : 'direct'} fetch for audio`);
+        
+        const fetchAudio = async () => {
+          try {
+            // Intento 1: usar proxy si es Firebase, o directo si no
+            let response = await fetch(fetchUrl);
+            
+            // Si falla y no era Firebase, intentar con proxy genérico
+            if (!response.ok && !isFirebaseUrl) {
+              logger.warn('⚠️ [PREFILL] Direct fetch failed, trying proxy...');
+              response = await fetch(`/api/proxy/firebase-file?url=${encodeURIComponent(preFilledAudioUrl)}`);
+            }
+            
             if (!response.ok) {
               throw new Error(`HTTP error! status: ${response.status}`);
             }
-            return response.blob();
-          })
-          .then(blob => {
+            
+            const blob = await response.blob();
+            if (blob.size < 1000) {
+              throw new Error(`Audio file too small (${blob.size} bytes), may be invalid`);
+            }
+            
             const fileName = preFilledSongName ? `${preFilledSongName}.mp3` : 'song.mp3';
             const audioFile = new File([blob], fileName, { type: blob.type || 'audio/mpeg' });
             setSelectedFile(audioFile);
-            logger.info('✅ [PREFILL] Audio file loaded:', fileName);
+            
+            // 🔧 FIX: También establecer audioUrl para que el TimelineEditor reciba el audio
+            // Usar la URL original si es HTTP, o crear blob URL
+            if (preFilledAudioUrl.startsWith('http')) {
+              setAudioUrl(preFilledAudioUrl);
+              logger.info('🔗 [PREFILL] audioUrl set to prefilled URL');
+            } else {
+              const blobUrl = URL.createObjectURL(blob);
+              setAudioUrl(blobUrl);
+              logger.info('🔗 [PREFILL] audioUrl set to blob URL');
+            }
+            
+            // 🔧 FIX: Decodificar AudioBuffer para que esté disponible inmediatamente
+            try {
+              const arrayBuffer = await blob.arrayBuffer();
+              if (!audioContext.current) {
+                audioContext.current = new AudioContext();
+              }
+              const buffer = await audioContext.current.decodeAudioData(arrayBuffer);
+              setAudioBuffer(buffer);
+              logger.info(`🎵 [PREFILL] AudioBuffer decoded: ${buffer.duration.toFixed(1)}s`);
+            } catch (decodeErr) {
+              logger.warn('⚠️ [PREFILL] Could not decode audio buffer:', decodeErr);
+            }
+            
+            logger.info('✅ [PREFILL] Audio file loaded:', fileName, `(${(blob.size / 1024 / 1024).toFixed(2)} MB)`);
             toast({
-              title: "Audio loaded",
-              description: `"${preFilledSongName || 'Song'}" ready for video creation`,
+              title: "🎵 Audio cargado",
+              description: `"${preFilledSongName || 'Song'}" listo para crear video`,
             });
-          })
-          .catch(error => {
+          } catch (error) {
             logger.error('❌ [PREFILL] Failed to download audio:', error);
-          });
+            toast({
+              title: "⚠️ Error cargando audio",
+              description: "No se pudo cargar el audio automáticamente. Puedes subirlo manualmente.",
+              variant: "destructive",
+            });
+          }
+        };
+        
+        fetchAudio();
       }
       
       // Show toast that data is pre-filled (onboarding modal will show with pre-filled data)
@@ -899,18 +954,35 @@ export function MusicVideoAI({
       await new Promise(resolve => setTimeout(resolve, 1000));
       logger.info('✅ [SYNC] Timeline sincronizado exitosamente');
       
-      // 🚀 CONTINUAR AUTOMÁTICAMENTE CON GENERACIÓN DE IMÁGENES
-      // El estilo y director ya están en el JSON del script, no necesita selección manual
-      logger.info('🚀 [FLUJO AUTOMÁTICO] Disparando generación de imágenes automáticamente...');
+      // 🚀 PROGRESIVO: Abrir timeline INMEDIATAMENTE con placeholders
+      // Las imágenes se generan en background y actualizan el timeline en tiempo real
+      logger.info('🚀 [FLUJO PROGRESIVO] Abriendo timeline con placeholders, generación en background...');
+      
+      setCurrentStep(5); // Abrir timeline AHORA
+      setShowProgress(false);
+      
+      // 📍 SCROLL AUTOMÁTICO AL TIMELINE
+      setTimeout(() => {
+        timelineRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center',
+          inline: 'nearest'
+        });
+      }, 800);
+      
       toast({
-        title: "Timeline sincronizado",
-        description: "Generando imágenes automáticamente con los datos del guion...",
+        title: "Timeline listo",
+        description: "Generando imágenes en paralelo (4 a la vez)... se actualizan en tiempo real.",
       });
       
-      // Llamar a executeImageGeneration pasando el script
-      await executeImageGeneration(script);
+      // 🔥 Lanzar generación en background (NO await)
+      executeImageGeneration(script).then(() => {
+        logger.info('✅ [FLUJO PROGRESIVO] Generación de imágenes completada en background');
+      }).catch((err) => {
+        logger.error('❌ [FLUJO PROGRESIVO] Error en generación background:', err);
+      });
       
-      logger.info('✅ [FLUJO AUTOMÁTICO] Script → Timeline → Imágenes completado');
+      logger.info('✅ [FLUJO PROGRESIVO] Script → Timeline abierto → Imágenes generando en background');
       
     } catch (error) {
       logger.error("❌ [SYNC] Error in sync and image generation:", error);
@@ -1231,14 +1303,22 @@ export function MusicVideoAI({
         status: 'Preparando generación de imágenes...'
       });
       
-      // Usar generación SECUENCIAL - una imagen a la vez
+      // 🚀 GENERACIÓN PARALELA POR LOTES DE 4
       // 🎬 CRITICAL: Siempre usar FAL nano-banana con soporte de referencias faciales
       const endpoint = '/api/fal/nano-banana/generate-with-face';
       
       let generatedCount = 0;
       
-      // Generar imágenes desde startFrom hasta endAt
-      for (let i = startFrom - 1; i < endAt; i++) {
+      // 🔥 Marcar todos los clips como 'generating' al iniciar
+      setTimelineItems(prevItems => prevItems.map((item, idx) => {
+        if (idx >= startFrom - 1 && idx < endAt) {
+          return { ...item, generationStatus: 'generating' as const };
+        }
+        return item;
+      }));
+      
+      // Helper: generar UNA imagen para una escena individual
+      const generateSingleImage = async (i: number): Promise<void> => {
         const scene = geminiScenes[i];
         const sceneIndex = i + 1;
         
@@ -1426,6 +1506,7 @@ export function MusicVideoAI({
                     thumbnail: permanentImageUrl,
                     url: permanentImageUrl,
                     generatedImage: permanentImageUrl,
+                    generationStatus: 'done' as const,
                     metadata: {
                       ...item.metadata,
                       isGeneratedImage: true,
@@ -1449,43 +1530,8 @@ export function MusicVideoAI({
               masterImageUrls.set(scene.scene_id || `scene-${sceneIndex}`, permanentImageUrl);
             }
             
-            // 🎯 PREVIEW: Mostrar modal después de 10 imágenes (solo primera vez)
-            if (sceneIndex === 10 && startFrom === 1 && !isAdmin && totalScenes > 10) {
-              logger.info('🎯 [PREVIEW] 10 imágenes completadas, mostrando modal de preview...');
-              
-              // 🆕 GENERAR MASTER SCENE VARIATIONS
-              if (masterImageUrls.size > 0) {
-                logger.info(`🎬 [VARIATIONS] Generando variaciones para ${masterImageUrls.size} escenas maestro...`);
-                try {
-                  scenesWithVariations = await batchGenerateMasterVariations(
-                    scenes,
-                    masterImageUrls,
-                    (current, total, msg) => {
-                      logger.info(`🎬 [VARIATIONS] ${current}/${total}: ${msg}`);
-                      setProgressPercentage(100 - (current / total) * 10);
-                    }
-                  );
-                  logger.info(`✅ [VARIATIONS] ${scenesWithVariations.size} escenas con variaciones`);
-                  
-                  // 🆕 MEZCLAR MAESTROS CON VARIACIONES
-                  if (scenesWithVariations.size > 0) {
-                    scenes = blendMasterAndVariations(scenes, scenesWithVariations);
-                    logger.info('✅ [BLEND] Escenas maestro + variaciones mezcladas');
-                  }
-                } catch (variationError) {
-                  logger.warn('⚠️ [VARIATIONS] Error generando variaciones, continuando sin ellas:', variationError);
-                }
-              }
-              
-              setPreviewImages(generationProgress.generatedImages.filter((_, idx) => idx < 10));
-              setShowPreviewModal(true);
-              setIsGeneratingImages(false);
-              setIsGeneratingShots(false);
-              return; // Detener generación hasta que usuario apruebe
-            }
-            
             // Actualizar progreso general
-            const progress = 30 + ((sceneIndex / totalScenes) * 60);
+            const progress = 30 + ((generatedCount / totalScenes) * 60);
             setProgressPercentage(Math.round(progress));
             
             // 💾 AUTO-SAVE: Guardar progreso cada 5 imágenes generadas para evitar pérdida de trabajo
@@ -1503,11 +1549,34 @@ export function MusicVideoAI({
           
         } catch (error) {
           logger.error(`❌ [IMG ${sceneIndex}] Error en generación:`, error);
-          continue;
+          // Marcar como error en el timeline
+          setTimelineItems(prevItems => prevItems.map(item => {
+            const match = item.id.toString().match(/(\d+)$/);
+            if (match && parseInt(match[1]) === sceneIndex) {
+              return { ...item, generationStatus: 'error' as const };
+            }
+            return item;
+          }));
         }
+      };
+      
+      // 🚀 EJECUTAR POR LOTES DE 4 EN PARALELO
+      const BATCH_SIZE = 4;
+      const allIndices = [];
+      for (let i = startFrom - 1; i < endAt; i++) {
+        allIndices.push(i);
+      }
+      
+      logger.info(`🚀 [IMG] Generación PARALELA por lotes de ${BATCH_SIZE}. Total: ${allIndices.length} escenas`);
+      
+      for (let batchStart = 0; batchStart < allIndices.length; batchStart += BATCH_SIZE) {
+        const batch = allIndices.slice(batchStart, batchStart + BATCH_SIZE);
+        logger.info(`🎬 [BATCH ${Math.floor(batchStart / BATCH_SIZE) + 1}/${Math.ceil(allIndices.length / BATCH_SIZE)}] Procesando escenas: ${batch.map(i => i + 1).join(', ')}`);
         
-        // No payment gate during image generation - let users generate all images
-        // Payment gate will be shown when they want to render the final video
+        // Ejecutar batch en paralelo
+        await Promise.all(batch.map(i => generateSingleImage(i)));
+        
+        logger.info(`✅ [BATCH] Lote completado. Total generadas: ${generatedCount}/${totalScenes}`);
       }
       
       logger.info(`✅ [IMG] Generación completada: ${generatedCount} imágenes generadas`);
@@ -1571,7 +1640,7 @@ export function MusicVideoAI({
 
       logger.info('✅ [IMG] Imágenes generadas exitosamente');
       
-      setCurrentStep(5);
+      // Timeline ya abierto en executeSyncAndImageGeneration — solo limpiar estados
       setIsGeneratingImages(false);
       setIsGeneratingShots(false); // Cerrar modal de galería en tiempo real
       setShowProgress(false);
@@ -1818,6 +1887,14 @@ export function MusicVideoAI({
     setArtistReferenceImages(referenceImages);
     setSelectedFile(audioFile);
     
+    // 🔧 FIX: Crear blob URL inmediatamente para que el TimelineEditor tenga audio
+    // Sin esto, audioUrl queda null y el timeline nunca muestra el audio
+    if (!audioUrl) {
+      const immediateUrl = URL.createObjectURL(audioFile);
+      setAudioUrl(immediateUrl);
+      logger.info('🔗 [ONBOARDING] audioUrl set to immediate blob URL');
+    }
+    
     // 🎬 STORE VIDEO FORMAT: Save aspect ratio for all generators
     setVideoAspectRatio(aspectRatio as '16:9' | '9:16' | '1:1');
     setVideoStylePreset(videoStyle);
@@ -1841,12 +1918,29 @@ export function MusicVideoAI({
     };
     reader.readAsArrayBuffer(audioFile);
     
+    // 🔧 FIX: Subir audio a Firebase en background para reemplazar blob URL con URL permanente
+    const uploadOnboardingAudio = async () => {
+      try {
+        const storage = getStorage();
+        const timestamp = Date.now();
+        const sanitizedFileName = audioFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const audioRef = ref(storage, `music-videos/audio/${user?.uid || 'anonymous'}/${timestamp}_${sanitizedFileName}`);
+        const snapshot = await uploadBytes(audioRef, audioFile);
+        const firebaseAudioUrl = await getDownloadURL(snapshot.ref);
+        setAudioUrl(firebaseAudioUrl);
+        logger.info('✅ [ONBOARDING] Audio subido a Firebase:', firebaseAudioUrl.substring(0, 80));
+      } catch (uploadErr) {
+        logger.warn('⚠️ [ONBOARDING] Firebase upload failed, keeping blob URL:', uploadErr);
+      }
+    };
+    uploadOnboardingAudio();
+    
     // Cerrar el modal de onboarding y mostrar el modal de selección de director
     setShowOnboarding(false);
     setShowDirectorSelection(true);
     
     logger.info('✅ [ONBOARDING COMPLETADO] Mostrando modal de selección de director');
-  }, []);
+  }, [audioUrl, user?.uid, toast]);
 
   // Handler para cuando se selecciona director y estilo
   /**
@@ -2409,6 +2503,7 @@ DESIGN REQUIREMENTS:
                 projectId: savedProject.project.id,
                 userEmail: user.email!,
                 creatorUserId: user.id,
+                existingArtistId: preFilledArtistId || undefined, // Usar artista existente si viene de su perfil
                 artistName: projectName || 'AI Generated Artist',
                 songName: selectedFile?.name?.replace(/\.[^/.]+$/, '') || undefined,
                 selectedConcept: concept,
@@ -2418,10 +2513,13 @@ DESIGN REQUIREMENTS:
               });
               
               if (profileResult.success) {
-                logger.info('✅ [BG] Perfil de artista creado:', profileResult.profile?.artistName);
+                const isExisting = profileResult.isNew === false;
+                logger.info(`✅ [BG] Perfil de artista ${isExisting ? 'vinculado' : 'creado'}:`, profileResult.profile?.artistName);
                 toast({
-                  title: "✨ Perfil de Artista Creado",
-                  description: `Se ha creado automáticamente el perfil para "${profileResult.profile?.artistName}"`,
+                  title: isExisting ? "🔗 Artista Vinculado" : "✨ Perfil de Artista Creado",
+                  description: isExisting 
+                    ? `Video vinculado al perfil existente de "${profileResult.profile?.artistName}"`
+                    : `Se ha creado automáticamente el perfil para "${profileResult.profile?.artistName}"`,
                 });
               } else {
                 logger.warn('⚠️ [BG] No se pudo crear el perfil automático, continuando');
@@ -2458,7 +2556,7 @@ DESIGN REQUIREMENTS:
       setShowProgress(false);
     });
     
-  }, [executeScriptGeneration, user, projectName, selectedFile, audioBuffer, transcription, timelineItems, videoStyle, artistReferenceImages, conceptProposals, toast]);
+  }, [executeScriptGeneration, user, projectName, selectedFile, audioBuffer, transcription, timelineItems, videoStyle, artistReferenceImages, conceptProposals, toast, preFilledArtistId]);
 
   const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -2984,6 +3082,7 @@ DESIGN REQUIREMENTS:
         imagePrompt: cinematicPrompt, // ✅ CORREGIDO: Usa visual_description del backend
         thumbnail: '', // Will be assigned when image is generated
         imageUrl: '', // Will be assigned when image is generated
+        generationStatus: 'pending' as const, // Progressive generation: pending until image arrives
         
         // 🎤 LIPSYNC: Marcar escenas que necesitan sincronización de labios
         needsLipsync: needsLipsync,
@@ -6664,6 +6763,7 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
               initialClips={timelineItems}
               duration={audioDuration || 180}
               audioPreviewUrl={audioUrl || undefined}
+              audioBuffer={audioBuffer}
               generatedImages={generationProgress.generatedImages}
               onChange={(clips) => setTimelineItems(clips)}
               projectContext={{
@@ -6672,6 +6772,28 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                 videoStyle: videoStyle,
                 artistReferenceImages: artistReferenceImages,
                 masterCharacter: masterCharacter || undefined,
+              }}
+              onExportComplete={async (videoUrl) => {
+                // 🎬 Guardar video en el perfil del artista cuando se exporta
+                try {
+                  logger.info('📤 [EXPORT] Video exportado, guardando en perfil del artista...');
+                  const { saveVideoToProfile } = await import('@/lib/auto-profile-service');
+                  const result = await saveVideoToProfile({
+                    title: `${songName || projectName || 'Music Video'} - Video Musical`,
+                    videoUrl: videoUrl,
+                    thumbnailUrl: timelineItems.find(t => t.imageUrl)?.imageUrl || '',
+                    description: `Video musical generado con Boostify AI para "${songName || projectName}"`,
+                  });
+                  if (result.success) {
+                    logger.info('✅ [EXPORT] Video guardado en perfil del artista');
+                    toast({
+                      title: "🎬 Video guardado",
+                      description: "El video se ha añadido a tu perfil de artista",
+                    });
+                  }
+                } catch (error) {
+                  logger.error('❌ [EXPORT] Error guardando video en perfil:', error);
+                }
               }}
             />
           )}
@@ -8593,6 +8715,7 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                       initialClips={clips || []}
                       duration={totalDuration || 0}
                       audioPreviewUrl={audioUrl || undefined}
+                      audioBuffer={audioBuffer}
                       generatedImages={generationProgress.generatedImages}
                       onChange={handleClipUpdate || (() => {})}
                       projectContext={{
@@ -8601,6 +8724,26 @@ Professional music video frame, ${shotCategory === 'PERFORMANCE' ? 'featuring th
                         videoStyle: videoStyle,
                         artistReferenceImages: artistReferenceImages,
                         masterCharacter: masterCharacter || undefined,
+                      }}
+                      onExportComplete={async (videoUrl) => {
+                        try {
+                          logger.info('📤 [EXPORT] Video exportado, guardando en perfil del artista...');
+                          const { saveVideoToProfile } = await import('@/lib/auto-profile-service');
+                          const result = await saveVideoToProfile({
+                            title: `${songName || projectName || 'Music Video'} - Video Musical`,
+                            videoUrl: videoUrl,
+                            thumbnailUrl: timelineItems.find(t => t.imageUrl)?.imageUrl || '',
+                            description: `Video musical generado con Boostify AI para "${songName || projectName}"`,
+                          });
+                          if (result.success) {
+                            toast({
+                              title: "🎬 Video guardado",
+                              description: "El video se ha añadido a tu perfil de artista",
+                            });
+                          }
+                        } catch (error) {
+                          logger.error('❌ [EXPORT] Error guardando video en perfil:', error);
+                        }
                       }}
                     />
                   </div>

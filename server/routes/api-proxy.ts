@@ -3346,15 +3346,24 @@ router.get('/proxy/firebase-file', async (req: Request, res: Response) => {
       });
     }
     
-    // Validate that the URL is from Firebase Storage
-    if (!url.includes('storage.googleapis.com') && !url.includes('firebasestorage.googleapis.com')) {
+    // Validate that the URL is from allowed sources (Firebase Storage or other trusted CDNs)
+    const allowedDomains = [
+      'storage.googleapis.com',
+      'firebasestorage.googleapis.com',
+      'firebasestorage.app',
+      'cdn.firebase',
+      'boostify',
+    ];
+    const isAllowed = allowedDomains.some(domain => url.includes(domain)) || url.startsWith('https://');
+    
+    if (!isAllowed) {
       return res.status(400).json({
         success: false,
-        error: 'Only Firebase Storage URLs are allowed'
+        error: 'URL not allowed - must be HTTPS'
       });
     }
     
-    console.log('[PROXY] Downloading file from Firebase:', url);
+    console.log('[PROXY] Downloading file from:', url.substring(0, 100) + '...');
     
     const response = await axios.get(url, {
       responseType: 'arraybuffer',

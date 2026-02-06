@@ -3718,7 +3718,7 @@ export function ArtistProfileCard({ artistId, initialArtistData }: ArtistProfile
                                 color: 'white'
                               }}
                               onClick={() => {
-                                const url = `/music-video-creator?artist=${encodeURIComponent(artist.name)}&song=${encodeURIComponent(song.name)}&songId=${song.id}${song.audioUrl ? `&audioUrl=${encodeURIComponent(song.audioUrl)}` : ''}${song.coverArt ? `&coverArt=${encodeURIComponent(song.coverArt)}` : ''}${artist.profileImage ? `&images=${encodeURIComponent(artist.profileImage)}` : ''}`;
+                                const url = `/music-video-creator?artist=${encodeURIComponent(artist.name)}&artistId=${artist.pgId || artist.id}&song=${encodeURIComponent(song.name)}&songId=${song.id}${song.audioUrl ? `&audioUrl=${encodeURIComponent(song.audioUrl)}` : ''}${song.coverArt ? `&coverArt=${encodeURIComponent(song.coverArt)}` : ''}${artist.profileImage ? `&images=${encodeURIComponent(artist.profileImage)}` : ''}`;
                                 console.log('🎬 [CREATE VIDEO] Navigating with URL:', url);
                                 console.log('🎬 [CREATE VIDEO] Artist:', artist.name);
                                 console.log('🎬 [CREATE VIDEO] Song:', song.name);

@@ -84,12 +84,18 @@ export interface TimelineClip {
   locked?: boolean;         // Si el clip está bloqueado
   generated?: boolean;      // Si fue generado automáticamente
   generatedImage?: boolean; // Si es una imagen generada por IA
+  generationStatus?: 'pending' | 'generating' | 'done' | 'error'; // Estado de generación progresiva
   videoUrl?: string;        // URL del video generado desde imagen (Grok Imagine)
   
   // Propiedades de edición/recorte de video
   sourceStart?: number;     // Punto de inicio dentro del clip fuente (para recortar)
   in?: number;              // Punto de entrada (alias de sourceStart, segundos)
   out?: number;             // Punto de salida del clip fuente (segundos)
+  
+  // Propiedades de generación progresiva (propagadas desde TimelineItem)
+  shotCategory?: 'PERFORMANCE' | 'B-ROLL' | 'STORY'; // Categoría de plano
+  lyricsSegment?: string;   // Letra correspondiente a esta escena
+  shotType?: string;        // Tipo de plano
 }
 
 /**

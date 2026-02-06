@@ -7,6 +7,7 @@ export interface CreateArtistProfileRequest {
   projectId: number;
   userEmail: string;
   creatorUserId?: number;
+  existingArtistId?: number; // ID del artista existente (para no crear duplicados)
   artistName: string;
   songName?: string;
   selectedConcept?: any;

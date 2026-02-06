@@ -88,6 +88,8 @@ export interface TimelineItem {
   lyricsSegment?: string;
   // Ubicación de la escena
   location?: string;
+  // Estado de generación progresiva
+  generationStatus?: 'pending' | 'generating' | 'done' | 'error';
 }
 
 /**

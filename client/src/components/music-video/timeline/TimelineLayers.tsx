@@ -13,6 +13,8 @@ import {
   LAYER_COLORS 
 } from '../../../constants/timeline-constants';
 
+import type { SnapResult } from '../../../hooks/useTimelineEngine';
+
 // Props de acciones para clips
 interface ClipActionHandlers {
   onEditImage?: (clip: TimelineClip) => void;
@@ -47,6 +49,11 @@ interface TimelineLayersProps extends ClipActionHandlers {
   layerLabelWidth?: number;
   onMuteLayer?: (layerId: number, muted: boolean) => void;
   onConvertAllToVideo?: (layerId: number) => void;
+  onUpdateImageFit?: (clipId: number, fit: string) => void;
+  /** Snap query for visual indicators during drag/resize */
+  onSnapQuery?: (time: number, excludeClipId?: number) => SnapResult;
+  /** Active snap indicator */
+  activeSnap?: SnapResult | null;
 }
 
 /**
@@ -75,6 +82,10 @@ export const TimelineLayers: React.FC<TimelineLayersProps> = ({
   layerLabelWidth = 100,
   onMuteLayer,
   onConvertAllToVideo,
+  onUpdateImageFit,
+  // Snap engine
+  onSnapQuery,
+  activeSnap,
   // Acciones de clip
   onEditImage,
   onAddMusician,
@@ -140,7 +151,8 @@ export const TimelineLayers: React.FC<TimelineLayersProps> = ({
         position: 'relative',
         width: '100%',
         height: '100%',
-        overflow: 'auto',
+        overflowX: 'visible',
+        overflowY: 'auto',
         background: 'linear-gradient(180deg, #0d0d0d 0%, #111111 50%, #0a0a0a 100%)',
         cursor: 'pointer',
         borderRadius: '6px',
@@ -180,7 +192,7 @@ export const TimelineLayers: React.FC<TimelineLayersProps> = ({
       )}
       
       {/* Render timeline layers */}
-      <div className="layers-container" style={{ minHeight: '100%' }}>
+      <div className="layers-container" style={{ minHeight: '100%', minWidth: `${layerLabelWidth + duration * zoom + 40}px` }}>
         {layers.map(layer => (
           <LayerRow 
             key={layer.id}
@@ -202,6 +214,10 @@ export const TimelineLayers: React.FC<TimelineLayersProps> = ({
             layerLabelWidth={layerLabelWidth}
             onMuteLayer={onMuteLayer}
             onConvertAllToVideo={onConvertAllToVideo}
+            onUpdateImageFit={onUpdateImageFit}
+            // Snap engine
+            onSnapQuery={onSnapQuery}
+            activeSnap={activeSnap}
             // Clip actions
             onEditImage={onEditImage}
             onAddMusician={onAddMusician}

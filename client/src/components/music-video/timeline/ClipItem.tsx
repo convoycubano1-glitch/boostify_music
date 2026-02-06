@@ -13,8 +13,10 @@ import React, { MouseEvent, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { TimelineClip } from '../../../interfaces/timeline';
 import { CLIP_COLORS } from '../../../constants/timeline-constants';
+import { extractWaveformPeaks } from '../../../lib/audio-waveform';
 import { 
-  Pencil, Guitar, Camera, RefreshCw, Video as VideoIcon, Sparkles, X
+  Pencil, Guitar, Camera, RefreshCw, Video as VideoIcon, Sparkles, X,
+  Maximize, Minimize2, RectangleHorizontal
 } from 'lucide-react';
 
 // Props para acciones sobre el clip
@@ -37,8 +39,11 @@ interface ClipItemProps extends ClipActionProps {
   onMoveStart: (clipId: number, e: MouseEvent) => void;
   onResizeStart: (clipId: number, direction: 'start' | 'end', e: MouseEvent) => void;
   onRazorClick?: (clipId: number, time: number) => void;
+  onUpdateImageFit?: (clipId: number, fit: string) => void;
   isDragging: boolean;
   isResizing: boolean;
+  /** Real waveform peaks (0-1 normalized) extracted from audio — renders accurate visualization */
+  waveformPeaks?: number[];
 }
 
 /**
@@ -62,8 +67,10 @@ const ClipItem: React.FC<ClipItemProps> = ({
   onMoveStart,
   onResizeStart,
   onRazorClick,
+  onUpdateImageFit,
   isDragging,
   isResizing,
+  waveformPeaks,
   // Acciones
   onEditImage,
   onAddMusician,
@@ -82,8 +89,90 @@ const ClipItem: React.FC<ClipItemProps> = ({
   // Detectar tipo de clip
   const isAudioClip = clip.type === 'AUDIO' || clip.layerId === 2;
   
+  // 🔊 Auto-extract real waveform peaks from audio URL
+  const [extractedPeaks, setExtractedPeaks] = useState<number[] | null>(null);
+  useEffect(() => {
+    if (!isAudioClip || !clip.url) return;
+    let cancelled = false;
+    extractWaveformPeaks(clip.url, 200).then(peaks => {
+      if (!cancelled) setExtractedPeaks(peaks);
+    });
+    return () => { cancelled = true; };
+  }, [isAudioClip, clip.url]);
+  
+  // Use passed peaks or self-extracted
+  const resolvedPeaks = waveformPeaks || extractedPeaks;
+  
+  // 🎬 Extract filmstrip thumbnails from imported video clips
+  // Generates multiple frames for professional NLE filmstrip view
+  const [videoThumbnails, setVideoThumbnails] = useState<string[]>([]);
+  const [videoThumbnail, setVideoThumbnail] = useState<string | null>(null);
+  const isVideoClip = clip.type === 'VIDEO';
+  useEffect(() => {
+    if (!isVideoClip || !clip.url) return;
+    // Already have a dedicated thumbnailUrl or imageUrl — skip extraction
+    if (clip.thumbnailUrl || clip.imageUrl) return;
+    let cancelled = false;
+    const video = document.createElement('video');
+    video.crossOrigin = 'anonymous';
+    video.muted = true;
+    video.preload = 'metadata';
+    
+    const frames: string[] = [];
+    const MAX_FRAMES = 12; // Up to 12 filmstrip frames
+    let totalDur = 0;
+    let seekIdx = 0;
+    
+    video.onloadedmetadata = () => {
+      totalDur = video.duration || 6;
+      const numFrames = Math.min(MAX_FRAMES, Math.max(1, Math.ceil(totalDur / 1))); // 1 frame per second max
+      seekIdx = 0;
+      // Seek to first frame
+      video.currentTime = Math.min(0.1, totalDur * 0.05);
+    };
+    
+    video.onseeked = () => {
+      if (cancelled) return;
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 160;
+        canvas.height = 90;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          frames.push(dataUrl);
+          
+          // Set first frame as single thumbnail immediately
+          if (frames.length === 1) {
+            setVideoThumbnail(dataUrl);
+          }
+          
+          // Seek to next frame
+          seekIdx++;
+          const numFrames = Math.min(MAX_FRAMES, Math.max(1, Math.ceil(totalDur / 1)));
+          if (seekIdx < numFrames && !cancelled) {
+            const nextTime = (seekIdx / numFrames) * totalDur;
+            video.currentTime = Math.min(nextTime, totalDur - 0.01);
+          } else {
+            // All frames extracted
+            if (!cancelled) setVideoThumbnails([...frames]);
+          }
+        }
+      } catch { 
+        // CORS or other error — stop extraction
+        if (frames.length > 0 && !cancelled) setVideoThumbnails([...frames]);
+      }
+    };
+    video.onerror = () => {};
+    video.src = clip.url;
+    return () => { cancelled = true; };
+  }, [isVideoClip, clip.url, clip.thumbnailUrl, clip.imageUrl]);
+
   // Obtener URL de imagen si existe
-  const imageUrl = getClipImageUrl(clip);
+  const rawImageUrl = getClipImageUrl(clip);
+  // For video clips, prefer extracted thumbnail over blob video URL
+  const imageUrl = isVideoClip ? (videoThumbnail || clip.thumbnailUrl || clip.imageUrl || null) : rawImageUrl;
   // hasImage: verificar todos los tipos que pueden tener imagen
   const hasImage = !isAudioClip && !!imageUrl && (
     clip.type === 'IMAGE' || 
@@ -168,19 +257,24 @@ const ClipItem: React.FC<ClipItemProps> = ({
   };
 
   // Calcula el estilo del clip basado en su posición y duración
+  // For video clips with filmstrip, don't use backgroundImage (filmstrip div handles it)
+  const hasFilmstrip = isVideoClip && videoThumbnails.length > 0;
   const clipStyle: React.CSSProperties = {
     left: `${clip.start * timeScale}px`,
     width: `${clipWidth}px`,
     backgroundColor: isAudioClip 
       ? audioClipColor 
-      : hasImage 
-        ? 'transparent' 
-        : (clip.color || CLIP_COLORS[clip.type] || CLIP_COLORS.default),
+      : hasFilmstrip
+        ? '#1a1a2e' // Dark bg behind filmstrip
+        : hasImage 
+          ? 'transparent' 
+          : (clip.color || CLIP_COLORS[clip.type] || CLIP_COLORS.default),
     opacity: clip.opacity !== undefined ? clip.opacity : 1,
     cursor: getCursor(),
-    backgroundImage: hasImage ? `url(${imageUrl})` : 'none',
-    backgroundSize: 'cover',
+    backgroundImage: (hasImage && !hasFilmstrip) ? `url(${imageUrl})` : 'none',
+    backgroundSize: (clip.metadata?.imageFit as string) || 'cover',
     backgroundPosition: 'center',
+    transition: 'background-image 0.4s ease-in-out, background-color 0.3s ease',
   };
 
   // Ref para el clip container
@@ -279,37 +373,228 @@ const ClipItem: React.FC<ClipItemProps> = ({
       onClick={handleClipClick}
     >
       {/* Overlay oscuro para legibilidad del texto sobre imagen */}
-      {hasImage && (
+      {hasImage && !isVideoClip && (
         <div className="clip-image-overlay" />
       )}
       
-      {/* Waveform visual para clips de audio - z-index bajo para no interferir con drag-zone */}
+      {/* 🎬 PLACEHOLDER: Visual para clips sin imagen generada aún */}
+      {!hasImage && !isAudioClip && clip.layerId === 1 && (
+        <div 
+          className="absolute inset-0 overflow-hidden pointer-events-none z-0"
+          style={{
+            background: clip.shotCategory === 'PERFORMANCE' 
+              ? 'linear-gradient(135deg, rgba(249,115,22,0.35), rgba(234,88,12,0.2))'
+              : clip.shotCategory === 'B-ROLL'
+                ? 'linear-gradient(135deg, rgba(59,130,246,0.35), rgba(37,99,235,0.2))'
+                : 'linear-gradient(135deg, rgba(34,197,94,0.35), rgba(22,163,74,0.2))',
+            borderLeft: clip.shotCategory === 'PERFORMANCE' 
+              ? '3px solid rgba(249,115,22,0.7)' 
+              : clip.shotCategory === 'B-ROLL'
+                ? '3px solid rgba(59,130,246,0.7)'
+                : '3px solid rgba(34,197,94,0.7)',
+          }}
+        >
+          {/* Animated border for generating state */}
+          {clip.generationStatus === 'generating' && (
+            <div 
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                border: '2px solid transparent',
+                borderImage: 'linear-gradient(90deg, rgba(168,85,247,0.8), rgba(59,130,246,0.8), rgba(168,85,247,0.8)) 1',
+                animation: 'pulse 1.5s ease-in-out infinite',
+              }}
+            />
+          )}
+          
+          {/* Error state indicator */}
+          {clip.generationStatus === 'error' && (
+            <div className="absolute top-0 right-0 w-3 h-3 rounded-full bg-red-500 m-1" 
+              style={{ zIndex: 2 }} 
+            />
+          )}
+          
+          {/* Scene info text */}
+          <div className="flex flex-col items-center justify-center h-full px-1 gap-0.5">
+            <span style={{ 
+              fontSize: '8px', 
+              fontWeight: 700, 
+              color: 'rgba(255,255,255,0.9)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              lineHeight: 1,
+            }}>
+              {clip.shotCategory === 'PERFORMANCE' ? '🎤' : clip.shotCategory === 'B-ROLL' ? '🎬' : '📖'}{' '}
+              {clip.title || `Scene ${clip.id}`}
+            </span>
+            {clip.lyricsSegment && clipWidth > 60 && (
+              <span style={{ 
+                fontSize: '7px', 
+                color: 'rgba(255,255,255,0.6)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '90%',
+                lineHeight: 1,
+              }}>
+                "{clip.lyricsSegment.substring(0, 40)}"
+              </span>
+            )}
+            {clip.generationStatus === 'generating' && (
+              <span style={{ 
+                fontSize: '7px', 
+                color: 'rgba(168,85,247,0.9)',
+                lineHeight: 1,
+              }}>
+                ⏳ generando...
+              </span>
+            )}
+            {clip.generationStatus === 'error' && (
+              <span style={{ 
+                fontSize: '7px', 
+                color: 'rgba(239,68,68,0.9)',
+                lineHeight: 1,
+              }}>
+                ❌ error
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+      
+      {/* 🎬 Video Filmstrip — professional NLE style with multiple frame thumbnails */}
+      {isVideoClip && videoThumbnails.length > 0 && (
+        <div 
+          className="absolute inset-0 overflow-hidden pointer-events-none z-0"
+          style={{ display: 'flex', flexDirection: 'row' }}
+        >
+          {(() => {
+            // Calculate how many thumbnail slots fit at current zoom
+            const thumbAspect = 16 / 9;
+            const clipH = 45; // DEFAULT_LAYER_HEIGHT approx
+            const thumbW = clipH * thumbAspect; // Each thumbnail visual width
+            const numSlots = Math.max(1, Math.ceil(clipWidth / thumbW));
+            const slots: React.ReactNode[] = [];
+            
+            for (let i = 0; i < numSlots; i++) {
+              // Pick the most appropriate frame from extracted thumbnails
+              const frameIdx = Math.min(
+                videoThumbnails.length - 1,
+                Math.round((i / Math.max(1, numSlots - 1)) * (videoThumbnails.length - 1))
+              );
+              const slotWidth = i < numSlots - 1 
+                ? thumbW 
+                : clipWidth - (numSlots - 1) * thumbW; // Last slot gets remaining width
+              
+              slots.push(
+                <div
+                  key={i}
+                  style={{
+                    width: `${Math.max(1, slotWidth)}px`,
+                    height: '100%',
+                    flexShrink: 0,
+                    backgroundImage: `url(${videoThumbnails[frameIdx]})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    borderRight: i < numSlots - 1 ? '1px solid rgba(0,0,0,0.3)' : 'none',
+                  }}
+                />
+              );
+            }
+            return slots;
+          })()}
+          {/* Dark overlay for text legibility */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
+        </div>
+      )}
+      
+      {/* Waveform visual para clips de audio — SVG path scales perfectly with zoom */}
       {isAudioClip && (
         <div className="audio-waveform" style={{
           position: 'absolute',
           inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '1px',
-          padding: '0 4px',
           overflow: 'hidden',
           pointerEvents: 'none',
-          zIndex: 1, // Bajo para que la drag-zone (z-index: 15) esté encima
+          zIndex: 1,
         }}>
-          {/* Barras de waveform simuladas */}
-          {Array.from({ length: Math.min(100, Math.floor(clipWidth / 3)) }).map((_, i) => (
-            <div
-              key={i}
-              style={{
-                width: '2px',
-                height: `${15 + Math.sin(i * 0.3) * 10 + Math.random() * 15}px`,
-                backgroundColor: 'rgba(255,255,255,0.6)',
-                borderRadius: '1px',
-                flexShrink: 0,
-              }}
-            />
-          ))}
+          {(() => {
+            const peaks = resolvedPeaks;
+            const hasPeaks = peaks && peaks.length > 0;
+            // SVG viewBox uses 1000 virtual units wide, maps to 100% of clip
+            const vW = 1000;
+            const vH = 100;
+            const padding = 6; // top/bottom padding in viewBox units
+            const minAmp = 0.05; // minimum amplitude so silent parts still show a line
+
+            // Build array of amplitudes (200 points for smooth curve)
+            const numPoints = 200;
+            const amps: number[] = [];
+            for (let i = 0; i < numPoints; i++) {
+              if (hasPeaks) {
+                const peakIdx = (i / numPoints) * peaks.length;
+                const low = Math.floor(peakIdx);
+                const high = Math.min(low + 1, peaks.length - 1);
+                const frac = peakIdx - low;
+                amps.push(peaks[low] * (1 - frac) + peaks[high] * frac);
+              } else {
+                const pseudo = Math.abs(Math.sin(i * 12.9898 + 0.5) * 43758.5453) % 1;
+                amps.push(0.15 + pseudo * 0.6);
+              }
+            }
+
+            // Build mirrored waveform path (top half + bottom half)
+            const midY = vH / 2;
+            const maxAmpH = midY - padding;
+            
+            // Top edge (left to right)
+            let topPath = '';
+            for (let i = 0; i < numPoints; i++) {
+              const x = (i / (numPoints - 1)) * vW;
+              const a = Math.max(minAmp, amps[i]);
+              const y = midY - a * maxAmpH;
+              topPath += (i === 0 ? `M ${x},${y}` : ` L ${x},${y}`);
+            }
+            // Bottom edge (right to left, mirrored)
+            let bottomPath = '';
+            for (let i = numPoints - 1; i >= 0; i--) {
+              const x = (i / (numPoints - 1)) * vW;
+              const a = Math.max(minAmp, amps[i]);
+              const y = midY + a * maxAmpH;
+              bottomPath += ` L ${x},${y}`;
+            }
+            const fullPath = topPath + bottomPath + ' Z';
+
+            // Center line
+            const centerLine = `M 0,${midY} L ${vW},${midY}`;
+
+            return (
+              <svg
+                viewBox={`0 0 ${vW} ${vH}`}
+                preserveAspectRatio="none"
+                style={{ width: '100%', height: '100%', display: 'block' }}
+              >
+                <defs>
+                  <linearGradient id={`waveGrad-${clip.id}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={hasPeaks ? 'rgba(251,146,60,0.9)' : 'rgba(255,255,255,0.5)'} />
+                    <stop offset="50%" stopColor={hasPeaks ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.35)'} />
+                    <stop offset="100%" stopColor={hasPeaks ? 'rgba(251,146,60,0.9)' : 'rgba(255,255,255,0.5)'} />
+                  </linearGradient>
+                </defs>
+                {/* Filled waveform shape */}
+                <path
+                  d={fullPath}
+                  fill={`url(#waveGrad-${clip.id})`}
+                  stroke="none"
+                />
+                {/* Center line */}
+                <path
+                  d={centerLine}
+                  fill="none"
+                  stroke={hasPeaks ? 'rgba(251,146,60,0.4)' : 'rgba(255,255,255,0.2)'}
+                  strokeWidth="0.5"
+                />
+              </svg>
+            );
+          })()}
         </div>
       )}
       
@@ -369,9 +654,9 @@ const ClipItem: React.FC<ClipItemProps> = ({
           </div>
         )}
         
-        {/* Indicador de video generado */}
-        {(clip.videoUrl || clip.metadata?.videoUrl || clip.metadata?.hasVideo) && (
-          <div className="clip-video-badge" title="Video generado">
+        {/* Indicador de video */}
+        {(clip.type === 'VIDEO' || clip.videoUrl || clip.metadata?.videoUrl || clip.metadata?.hasVideo) && (
+          <div className="clip-video-badge" title={clip.type === 'VIDEO' ? 'Video importado' : 'Video generado'}>
             <VideoIcon size={8} /> Video
           </div>
         )}
@@ -458,6 +743,36 @@ const ClipItem: React.FC<ClipItemProps> = ({
                 <span>Generar Video</span>
                 <span className="shortcut">5s</span>
               </button>
+            )}
+            
+            {/* Ajustar Imagen (Image Fit) */}
+            {onUpdateImageFit && hasImage && (
+              <>
+                <div className="context-menu-divider" />
+                <div style={{ padding: '4px 12px 2px', fontSize: '10px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  📐 Ajustar Imagen
+                </div>
+                {[
+                  { value: 'cover', label: 'Cubrir', icon: <Maximize size={13} />, desc: 'Recorta para llenar' },
+                  { value: 'contain', label: 'Contener', icon: <Minimize2 size={13} />, desc: 'Muestra completa' },
+                  { value: '100% 100%', label: 'Estirar', icon: <RectangleHorizontal size={13} />, desc: 'Rellena todo' },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    className={`context-menu-item ${(clip.metadata?.imageFit || 'cover') === opt.value ? 'active-fit' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUpdateImageFit(clip.id, opt.value);
+                      closeContextMenu();
+                    }}
+                    style={(clip.metadata?.imageFit || 'cover') === opt.value ? { background: 'rgba(251,146,60,0.15)', borderLeft: '2px solid rgba(251,146,60,0.8)' } : {}}
+                  >
+                    {opt.icon}
+                    <span>{opt.label}</span>
+                    <span className="shortcut" style={{ fontSize: '9px', opacity: 0.5 }}>{opt.desc}</span>
+                  </button>
+                ))}
+              </>
             )}
           </div>
           

@@ -23,9 +23,14 @@ export const LAYER_HEADER_WIDTH = 140;
 export const DEFAULT_LAYER_HEIGHT = 45;
 
 /**
- * Duración máxima en segundos para los clips (restricción de 5 segundos)
+ * Duración máxima en segundos para los clips (Grok Imagine Video = 6s)
  */
-export const MAX_CLIP_DURATION = 5.0;
+export const MAX_CLIP_DURATION = 6.0;
+
+/**
+ * Duración mínima en segundos para los clips
+ */
+export const MIN_CLIP_DURATION = 0.1;
 
 /**
  * Factor de zoom por defecto (píxeles por segundo)
@@ -40,7 +45,12 @@ export const MIN_ZOOM_FACTOR = 20;
 /**
  * Máximo factor de zoom permitido
  */
-export const MAX_ZOOM_FACTOR = 300;
+export const MAX_ZOOM_FACTOR = 800;
+
+/**
+ * Snap threshold in pixels - distance at which snap activates
+ */
+export const SNAP_THRESHOLD_PX = 8;
 
 /**
  * Altura mínima permitida para capas
@@ -53,18 +63,32 @@ export const MIN_LAYER_HEIGHT = 30;
 export const MAX_LAYER_HEIGHT = 200;
 
 /**
+ * Framerate por defecto
+ */
+export const DEFAULT_FRAMERATE = 30;
+
+/**
  * Operaciones disponibles sobre clips
  */
 export enum ClipOperation {
-  MOVE = 'MOVE',         // Mover un clip
-  RESIZE = 'RESIZE',     // Redimensionar un clip
-  SPLIT = 'SPLIT',       // Dividir un clip
-  JOIN = 'JOIN',         // Unir dos clips
-  DUPLICATE = 'DUPLICATE', // Duplicar un clip
-  DELETE = 'DELETE',     // Eliminar un clip
-  CREATE = 'CREATE',     // Crear un nuevo clip
-  UPDATE = 'UPDATE',     // Actualizar propiedades de un clip
-  ADD = 'ADD'            // Añadir un clip
+  MOVE = 'MOVE',                   // Mover un clip
+  RESIZE = 'RESIZE',               // Redimensionar (genérico)
+  RESIZE_START = 'RESIZE_START',   // Redimensionar desde el inicio
+  RESIZE_END = 'RESIZE_END',       // Redimensionar desde el final
+  SPLIT = 'SPLIT',                 // Dividir un clip
+  RAZOR_ALL = 'RAZOR_ALL',         // Razor a través de todas las capas
+  JOIN = 'JOIN',                   // Unir dos clips
+  DUPLICATE = 'DUPLICATE',         // Duplicar un clip
+  DELETE = 'DELETE',               // Eliminar un clip
+  RIPPLE_DELETE = 'RIPPLE_DELETE', // Eliminar y desplazar clips posteriores
+  CREATE = 'CREATE',               // Crear un nuevo clip
+  UPDATE = 'UPDATE',               // Actualizar propiedades de un clip
+  ADD = 'ADD',                     // Añadir un clip
+  ROLL_TRIM = 'ROLL_TRIM',        // Roll trim entre clips adyacentes
+  SLIP = 'SLIP',                   // Slip edit (mover fuente sin cambiar posición)
+  SLIDE = 'SLIDE',                 // Slide edit (mover clip entre vecinos)
+  MULTI_MOVE = 'MULTI_MOVE',       // Mover múltiples clips
+  MULTI_DELETE = 'MULTI_DELETE',   // Eliminar múltiples clips
 }
 
 /**

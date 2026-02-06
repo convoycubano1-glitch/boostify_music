@@ -12,11 +12,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TimelineLayers } from './TimelineLayers';
 import { EditorAgentPanel } from '../editor-agent-panel';
+import type { TimelineEditPlan } from '@/lib/api/timeline-editor-agent';
 import { MotionControlPanel } from '../motion-control-panel';
 import { VideoPreviewModal } from '../video-preview-modal';
 import { MusicianModal } from '../MusicianModal';
 import CameraAnglesModal from '../CameraAnglesModal';
 import { ImageEditorModal } from '../ImageEditorModal';
+import { ExportPanel, ASPECT_RATIOS } from './ExportPanel';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -24,6 +26,14 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useAudioAnalysis } from '@/hooks/useAudioAnalysis';
+import { useTimelineEngine } from '@/hooks/useTimelineEngine';
+import type { EditMode } from '@/hooks/useTimelineEngine';
+import { 
+  MAX_CLIP_DURATION,
+  MIN_CLIP_DURATION,
+  SNAP_THRESHOLD_PX,
+  DEFAULT_LAYER_HEIGHT,
+} from '@/constants/timeline-constants';
 import { 
   createProjectWithImages,
   getUserProjects,
@@ -43,7 +53,8 @@ import {
   SkipBack, SkipForward, Rewind, FastForward,
   Copy, ClipboardPaste, Split, Layers, Lock, Unlock, Eye, EyeOff, MoreHorizontal,
   Download, RefreshCw, Film, Pencil, Music, Camera, Sparkles, Loader2,
-  HelpCircle, Upload, FileAudio, FileVideo, ImagePlus
+  HelpCircle, Upload, FileAudio, FileVideo, ImagePlus,
+  Monitor, Check, Move, RotateCcw, Maximize2
 } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import type { MusicVideoScene } from '@/types/music-video-scene';
@@ -71,6 +82,15 @@ interface GeneratedImage {
   prompt?: string;
   timestamp?: number;
   sceneId?: string;
+}
+
+interface ImportedMediaItem {
+  id: string;
+  url: string;
+  name: string;
+  type: 'image' | 'audio' | 'video';
+  mimeType: string;
+  addedAt: number;
 }
 
 // Interface para proyectos guardados
@@ -122,8 +142,10 @@ interface TimelineEditorProps {
   genreHint?: string;
   generatedImages?: GeneratedImage[];
   onAddImageToTimeline?: (image: GeneratedImage) => void;
-  // ?? Contexto del proyecto para regeneraci�n coherente
+  // 🎬 Contexto del proyecto para regeneración coherente
   projectContext?: ProjectContext;
+  // 📤 Callback cuando el video se exporta exitosamente
+  onExportComplete?: (videoUrl: string) => void;
 }
 
 export const TimelineEditor: React.FC<TimelineEditorProps> = ({
@@ -140,6 +162,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   generatedImages = [],
   onAddImageToTimeline,
   projectContext,
+  onExportComplete,
 }) => {
   const [clips, setClips] = useState<TimelineClip[]>(() => normalizeClips(initialClips));
   const [zoom, setZoom] = useState(initialZoom);
@@ -171,6 +194,10 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   const [isDraggingLayers, setIsDraggingLayers] = useState(false); // Divisor vertical (labels/tracks)
   
   const containerRef = useRef<HTMLDivElement>(null);
+  const timelineScrollRef = useRef<HTMLDivElement>(null);
+  const dragCounterRef = useRef(0);
+  const [isDraggingFileOver, setIsDraggingFileOver] = useState(false);
+  const [dropIndicator, setDropIndicator] = useState<{time: number, layerId: number} | null>(null);
   const { toast } = useToast();
   
   //  Audio Analysis para sincronizaci�n con beats
@@ -195,11 +222,30 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   const [showImageEditorModal, setShowImageEditorModal] = useState(false);
   const [imageEditorModalClip, setImageEditorModalClip] = useState<TimelineClip | null>(null);
   
+  // 🎬 Export panel & Aspect Ratio
+  const [showExportPanel, setShowExportPanel] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState<string>('16:9');
+  const [showAspectMenu, setShowAspectMenu] = useState(false);
+  
+  // 🎯 CapCut-style media transform editing (scale/position within frame)
+  const [isTransformMode, setIsTransformMode] = useState(false);
+  const [transformDragging, setTransformDragging] = useState(false);
+  const transformStartRef = useRef<{ x: number; y: number; origX: number; origY: number } | null>(null);
+  const viewerContainerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-disable transform mode when clip is deselected
+  useEffect(() => {
+    if (!selectedClipId) setIsTransformMode(false);
+  }, [selectedClipId]);
+  
   // 📥 Importacion de archivos multimedia
   const [showImportMenu, setShowImportMenu] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importType, setImportType] = useState<'image' | 'audio' | 'video' | 'all'>('all');
+  
+  // 📂 Imported media files — shown in gallery panel alongside generated images
+  const [importedMedia, setImportedMedia] = useState<ImportedMediaItem[]>([]);
   
   // 📂 Menu contextual de la galeria (click derecho para importar)
   const [galleryContextMenu, setGalleryContextMenu] = useState<{
@@ -288,11 +334,12 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
       
       // Si los nuevos clips tienen im�genes que los actuales no tienen, actualizar
       if (newHasImages || normalizedClips.length !== clips.length) {
-        logger.info(`?? [SYNC] Actualizando clips internos: ${normalizedClips.length} clips, im�genes: ${newHasImages}`);
+        logger.info(`🔄 [SYNC] Actualizando clips internos: ${normalizedClips.length} clips, imágenes: ${newHasImages}`);
         
         // Preservar las im�genes existentes y actualizar con las nuevas
+        // CRITICAL: También preservar clips importados por el usuario que no estén en initialClips
         setClips(prevClips => {
-          return normalizedClips.map(newClip => {
+          const mergedClips = normalizedClips.map(newClip => {
             const existingClip = prevClips.find(c => c.id === newClip.id);
             if (existingClip) {
               // Merge: priorizar im�genes nuevas, pero mantener datos existentes
@@ -307,6 +354,17 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
             }
             return newClip;
           });
+          
+          // 🔒 Preserve user-imported clips that don't exist in initialClips
+          const importedClips = prevClips.filter(c => 
+            c.metadata?.isImported && !mergedClips.find(mc => mc.id === c.id)
+          );
+          
+          if (importedClips.length > 0) {
+            logger.info(`📂 [SYNC] Preservando ${importedClips.length} clip(s) importados por el usuario`);
+          }
+          
+          return [...mergedClips, ...importedClips];
         });
       }
     }
@@ -427,7 +485,8 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         return newClips.length !== prevClips.length ? newClips : prevClips;
       });
     }
-  }, [audioPreviewUrl, duration, clips]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audioPreviewUrl, duration]);
   
   // ?? AUTO-ANALYZE: Analizar audio para obtener beats cuando se carga
   useEffect(() => {
@@ -437,6 +496,34 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
       });
     }
   }, [audioPreviewUrl, audioAnalysis, isAnalyzingAudio, analyzeAudio]);
+
+  // 🔊 ACTIVE AUDIO SOURCE: Primary audio for playback (supports imported audio files)
+  const activeAudioSource = useMemo(() => {
+    // Find audio clips (excluding lipsync segments)
+    const audioClips = clips.filter(c => 
+      c.type === ClipType.AUDIO && c.url && !c.metadata?.isLipsyncSegment
+    );
+    
+    if (audioClips.length > 0) {
+      // Priority: main audio clip > layer 2 clip > any audio clip
+      const mainAudio = audioClips.find(c => c.metadata?.isMainAudio) 
+        || audioClips.find(c => c.layerId === 2) 
+        || audioClips[0];
+      return {
+        url: mainAudio.url!,
+        clipStart: mainAudio.start,
+        clipIn: mainAudio.in ?? mainAudio.sourceStart ?? 0,
+        clipDuration: mainAudio.duration,
+      };
+    }
+    
+    // Fallback to audioPreviewUrl prop directly
+    if (audioPreviewUrl) {
+      return { url: audioPreviewUrl, clipStart: 0, clipIn: 0, clipDuration: duration };
+    }
+    
+    return null;
+  }, [clips, audioPreviewUrl, duration]);
   
   // Generar marcadores de beat para el timeline
   const beatGuides = useMemo(() => {
@@ -448,15 +535,15 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     return beatsToUse.slice(0, 200); // Limitar para performance
   }, [audioAnalysis]);
   
-  // ?? CRITICAL: Constante de duraci�n m�xima de clip (Grok Imagine = 6s)
-  const MAX_CLIP_DURATION = 6;
+  // 🔊 CRITICAL: Constante de duración máxima de clip (Grok Imagine = 6s)
+  const MAX_CLIP_DURATION_EDITOR = MAX_CLIP_DURATION;
   
   // ?? CRITICAL: Calcular clip activo basado en currentTime para sincronizaci�n exacta
   const activeClip = useMemo(() => {
-    // Buscar clip de imagen (layerId 1) que est� en el tiempo actual
-    const imageClips = clips.filter(c => c.layerId === 1 || c.type === ClipType.IMAGE || c.type === ClipType.GENERATED_IMAGE);
+    // Buscar clip visual (imagen o video, layerId 1) que esté en el tiempo actual
+    const visualClips = clips.filter(c => c.layerId === 1 || c.type === ClipType.IMAGE || c.type === ClipType.GENERATED_IMAGE || c.type === ClipType.VIDEO);
     
-    for (const clip of imageClips) {
+    for (const clip of visualClips) {
       const clipEnd = clip.start + clip.duration;
       // currentTime debe estar >= start y < end para estar "dentro" del clip
       if (currentTime >= clip.start && currentTime < clipEnd) {
@@ -482,13 +569,18 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   // ?? URL de video activo para el visor (si se gener� video desde imagen)
   const activeClipVideoUrl = useMemo(() => {
     if (!activeClip) return null;
-    // Prioridad: lipsyncVideoUrl > videoUrl en metadata > videoUrl directo
+    // Prioridad: lipsyncVideoUrl > videoUrl en metadata > videoUrl directo > url (si es clip de video importado)
     return activeClip.metadata?.lipsyncVideoUrl || 
            activeClip.metadata?.videoUrl || 
            activeClip.videoUrl || 
+           (activeClip.type === ClipType.VIDEO ? activeClip.url : null) ||
            null;
   }, [activeClip]);
   
+  // ?? Framerate para timecode (declarado antes de los efectos que lo usan)
+  const [framerate, setFramerate] = useState<24 | 30 | 60>(30);
+  const frameInterval = 1 / framerate;
+
   // ?? Ref para el video del clip activo
   const activeVideoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -497,24 +589,43 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     const video = activeVideoRef.current;
     if (!video || !activeClip || !activeClipVideoUrl) return;
     
-    // Calcular tiempo local dentro del clip
-    const clipLocalTime = currentTime - activeClip.start;
+    // Calcular tiempo local dentro del clip + offset de sourceStart (para clips cortados)
+    // sourceStart = offset en el archivo fuente donde empieza este clip
+    const mediaOffset = activeClip.sourceStart || activeClip.in || 0;
+    const clipLocalTime = (currentTime - activeClip.start) + mediaOffset;
+    const videoDur = video.duration || 6;
     
-    // Solo actualizar si el tiempo es v�lido
-    if (clipLocalTime >= 0 && clipLocalTime < (video.duration || 6)) {
-      // Evitar actualizaciones constantes - solo si diferencia > 0.1s
-      if (Math.abs(video.currentTime - clipLocalTime) > 0.1) {
-        video.currentTime = clipLocalTime;
+    // Solo actualizar si el tiempo es válido
+    if (clipLocalTime >= 0 && clipLocalTime < videoDur) {
+      // Frame-accurate sync: tolerancia de 1 frame
+      const frameTolerance = 1 / framerate;
+      const drift = Math.abs(video.currentTime - clipLocalTime);
+      
+      if (isPlaying) {
+        // During playback: correct drift only if > 2 frames
+        if (drift > frameTolerance * 2) {
+          video.currentTime = clipLocalTime;
+        }
+      } else {
+        // When paused: precise scrubbing — always sync if > half frame
+        if (drift > frameTolerance * 0.5) {
+          video.currentTime = clipLocalTime;
+        }
       }
+    }
+    
+    // Sync playback rate
+    if (video.playbackRate !== Math.abs(playbackRate)) {
+      video.playbackRate = Math.abs(playbackRate);
     }
     
     // Controlar play/pause
     if (isPlaying && video.paused) {
-      video.play().catch(() => {}); // Ignorar errores de autoplay
+      video.play().catch(() => {});
     } else if (!isPlaying && !video.paused) {
       video.pause();
     }
-  }, [isPlaying, currentTime, activeClip, activeClipVideoUrl]);
+  }, [isPlaying, currentTime, activeClip, activeClipVideoUrl, framerate, playbackRate]);
   
   // ??? Men� Contextual (click derecho)
   const [contextMenu, setContextMenu] = useState<{
@@ -525,10 +636,6 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     time: number;
   }>({ visible: false, x: 0, y: 0, clipId: null, time: 0 });
   const [clipboardClip, setClipboardClip] = useState<TimelineClip | null>(null);
-
-  // ?? Framerate para timecode
-  const [framerate, setFramerate] = useState<24 | 30 | 60>(30);
-  const frameInterval = 1 / framerate; // Duraci�n de un frame en segundos
 
   // Funci�n para formatear timecode seg�n framerate (HH:MM:SS:FF)
   const formatTimecode = useCallback((seconds: number): string => {
@@ -673,107 +780,172 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     setGalleryContextMenu({ visible: true, x, y });
   }, []);
 
-  // Undo/redo
-  const [history, setHistory] = useState<{ past: TimelineClip[][]; future: TimelineClip[][] }>({
-    past: [],
-    future: [],
+  // Undo/redo - Now powered by useTimelineEngine
+  const [editMode, setEditMode] = useState<EditMode>('normal');
+
+  // Section guides from markers (must be defined before engine init)
+  const sectionGuides = useMemo(() => markers.filter(m => m.type === 'section').map(m => m.time), [markers]);
+  
+  // 🎯 Timeline Engine - Professional NLE operations
+  const engine = useTimelineEngine({
+    zoom,
+    duration,
+    snapThresholdPx: SNAP_THRESHOLD_PX,
+    snapEnabled,
+    editMode,
+    maxClipDuration: MAX_CLIP_DURATION,
+    minClipDuration: MIN_CLIP_DURATION,
+    framerate,
+    beatGuides: beatGuides,
+    sectionGuides: sectionGuides,
+    markerPositions: [],
+    currentTime,
+    preventOverlap: true,
   });
+
+  // Keep engine config in sync with editor state
+  useEffect(() => {
+    engine.updateConfig({
+      zoom,
+      duration,
+      snapEnabled,
+      editMode,
+      framerate,
+      beatGuides,
+      sectionGuides,
+      currentTime,
+    });
+  }, [zoom, duration, snapEnabled, editMode, framerate, beatGuides, sectionGuides, currentTime, engine]);
+
+  // Legacy compatibility: history object for UI (undo/redo button states)
+  const history = engine.history;
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const playingRaf = useRef<number | null>(null);
   const lastFrameTime = useRef<number>(0);
+  
+  // 🔊 Ref estable para activeAudioSource — evita que el play effect se re-ejecute
+  const activeAudioSourceRef = useRef(activeAudioSource);
+  activeAudioSourceRef.current = activeAudioSource;
+  
+  // Flag para evitar hammering de .play() en cada tick
+  const audioStartedRef = useRef(false);
 
-  // Beats como array simple - ahora usa audioAnalysis si est� disponible, sino markers
-  // (beatGuides ya est� definido arriba con audioAnalysis)
-  const sectionGuides = useMemo(() => markers.filter(m => m.type === 'section').map(m => m.time), [markers]);
-
-  // ?? Play loop con tiempo real, framerate exacto y soporte J/K/L (playbackRate)
+  // 🎯 Play loop — usa performance.now() como reloj maestro, audio se sincroniza
   useEffect(() => {
     if (!isPlaying) {
       if (videoRef.current) videoRef.current.pause();
       if (audioRef.current) audioRef.current.pause();
       if (playingRaf.current) cancelAnimationFrame(playingRaf.current);
       lastFrameTime.current = 0;
+      audioStartedRef.current = false;
       return;
     }
     
-    // ?? CRITICAL: Usar el audio como fuente de tiempo real para sincronizaci�n exacta
+    // 🎯 Reloj maestro: performance.now() SIEMPRE es la fuente de tiempo
     const startPlaybackTime = performance.now();
     const startCurrentTime = currentTime;
+    audioStartedRef.current = false;
     
     const tick = () => {
-      // M�todo 1: Si hay audio Y playbackRate es 1x positivo, usar audio como referencia
-      if (audioRef.current && !audioRef.current.paused && playbackRate === 1) {
-        const audioTime = audioRef.current.currentTime;
-        const snappedTime = Math.round(audioTime * framerate) / framerate;
-        
-        if (snappedTime >= duration || snappedTime < 0) {
-          setIsPlaying(false);
-          setCurrentTime(snappedTime >= duration ? 0 : 0);
-          setPlaybackRate(1);
-          return;
-        }
-        
-        setCurrentTime(snappedTime);
-      } else {
-        // M�todo 2: Sin audio o con playbackRate != 1 (J/K/L control)
-        const elapsedMs = performance.now() - startPlaybackTime;
-        const elapsedSeconds = (elapsedMs / 1000) * playbackRate; // Aplicar velocidad
-        let newTime = startCurrentTime + elapsedSeconds;
-        
-        // Snap al frame exacto
-        newTime = Math.round(newTime * framerate) / framerate;
-        
-        // Limites
-        if (newTime >= duration) {
-          setIsPlaying(false);
-          setCurrentTime(0);
-          setPlaybackRate(1);
-          return;
-        }
-        if (newTime < 0) {
-          setIsPlaying(false);
-          setCurrentTime(0);
-          setPlaybackRate(1);
-          return;
-        }
-        
-        setCurrentTime(newTime);
+      const elapsedMs = performance.now() - startPlaybackTime;
+      const elapsedSeconds = (elapsedMs / 1000) * playbackRate;
+      let newTime = startCurrentTime + elapsedSeconds;
+      
+      // Snap al frame exacto
+      newTime = Math.round(newTime * framerate) / framerate;
+      
+      // Limites
+      if (newTime >= duration) {
+        setIsPlaying(false);
+        setCurrentTime(0);
+        setPlaybackRate(1);
+        if (audioRef.current) audioRef.current.pause();
+        audioStartedRef.current = false;
+        return;
+      }
+      if (newTime < 0) {
+        setIsPlaying(false);
+        setCurrentTime(0);
+        setPlaybackRate(1);
+        if (audioRef.current) audioRef.current.pause();
+        audioStartedRef.current = false;
+        return;
       }
       
+      // 🔊 Sincronizar audio con el reloj maestro (NO al revés)
+      const src = activeAudioSourceRef.current;
+      if (audioRef.current && src && playbackRate === 1) {
+        const isWithinClip = newTime >= src.clipStart && 
+                              newTime < src.clipStart + src.clipDuration;
+        if (isWithinClip) {
+          const expectedAudioTime = newTime - src.clipStart + src.clipIn;
+          
+          if (!audioStartedRef.current) {
+            // Primer tick: iniciar audio una sola vez
+            audioRef.current.currentTime = expectedAudioTime;
+            audioRef.current.play().then(() => {
+              audioStartedRef.current = true;
+            }).catch(() => {
+              audioStartedRef.current = true; // No reintentar
+            });
+          } else if (!audioRef.current.paused) {
+            // Corregir drift si audio se desincroniza > 150ms
+            const drift = Math.abs(audioRef.current.currentTime - expectedAudioTime);
+            if (drift > 0.15) {
+              audioRef.current.currentTime = expectedAudioTime;
+            }
+          }
+        } else {
+          // Fuera del rango del clip — pausar audio
+          if (!audioRef.current.paused) {
+            audioRef.current.pause();
+            audioStartedRef.current = false;
+          }
+        }
+      }
+      
+      setCurrentTime(newTime);
       playingRaf.current = requestAnimationFrame(tick);
     };
     
     playingRaf.current = requestAnimationFrame(tick);
     
-    // Sincronizar media con el tiempo actual al iniciar
+    // Sincronizar video con el tiempo actual al iniciar
     if (videoRef.current) {
       videoRef.current.currentTime = currentTime;
-      videoRef.current.playbackRate = Math.abs(playbackRate); // Video no soporta negativo
+      videoRef.current.playbackRate = Math.abs(playbackRate);
       if (playbackRate > 0) {
         videoRef.current.play().catch((err) => {
           console.warn('🎬 [Video] Error al reproducir:', err.message);
         });
       } else {
-        videoRef.current.pause(); // Pausar si vamos hacia atrás
+        videoRef.current.pause();
       }
     }
-    if (audioRef.current) {
-      // 🔊 Aplicar volumen antes de reproducir
+    
+    // 🔊 Iniciar audio inmediatamente (si hay fuente y estamos en rango)
+    const src = activeAudioSourceRef.current;
+    if (audioRef.current && src) {
+      const audioSeekTime = currentTime - src.clipStart + src.clipIn;
+      const isWithinClip = currentTime >= src.clipStart && 
+                            currentTime < src.clipStart + src.clipDuration;
+      
       audioRef.current.volume = isMuted ? 0 : volume;
-      audioRef.current.currentTime = currentTime;
-      // Audio solo soporta rates positivos normales
-      if (playbackRate === 1) {
+      
+      if (isWithinClip && audioSeekTime >= 0 && playbackRate === 1) {
+        audioRef.current.currentTime = audioSeekTime;
         audioRef.current.playbackRate = 1;
         audioRef.current.play()
           .then(() => {
             setAudioReady(true);
             setAudioError(null);
+            audioStartedRef.current = true;
           })
           .catch((err) => {
             console.warn('🔊 [Audio] Error al reproducir:', err.message);
-            // Si es error de autoplay, mostrar mensaje útil
+            audioStartedRef.current = true; // No reintentar en loop
             if (err.name === 'NotAllowedError') {
               setAudioError('Haz clic para activar audio');
             } else {
@@ -781,28 +953,43 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
             }
           });
       } else {
-        audioRef.current.pause(); // Silenciar en velocidades especiales
+        audioRef.current.pause();
       }
     }
     
     return () => {
       if (playingRaf.current) cancelAnimationFrame(playingRaf.current);
     };
+  // 🔒 NO incluir activeAudioSource — usar ref para evitar restart del loop
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying, duration, framerate, playbackRate, volume, isMuted]);
 
-  // 🔊 Sincronizar volumen con el elemento de audio
+  // 🔊 Sincronizar volumen en tiempo real (sin reiniciar playback)
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = isMuted ? 0 : volume;
       audioRef.current.muted = isMuted;
     }
-  }, [volume, isMuted]);
+    // 🔊 Sync imported video clip audio volume
+    if (activeVideoRef.current && activeClip?.type === ClipType.VIDEO) {
+      activeVideoRef.current.volume = isMuted ? 0 : volume;
+      activeVideoRef.current.muted = isMuted;
+    }
+  }, [volume, isMuted, activeClip?.type]);
 
-  // Sync media time on currentTime change if paused
+  // Sync media time on currentTime change if paused (con offset del clip)
   useEffect(() => {
     if (!isPlaying) {
       if (videoRef.current) videoRef.current.currentTime = currentTime;
-      if (audioRef.current) audioRef.current.currentTime = currentTime;
+      if (audioRef.current && activeAudioSourceRef.current) {
+        const src = activeAudioSourceRef.current;
+        const seekTime = currentTime - src.clipStart + src.clipIn;
+        const isWithinClip = currentTime >= src.clipStart && 
+                              currentTime < src.clipStart + src.clipDuration;
+        if (isWithinClip && seekTime >= 0) {
+          audioRef.current.currentTime = seekTime;
+        }
+      }
     }
   }, [currentTime, isPlaying]);
 
@@ -811,15 +998,58 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     onChange?.(clips);
   }, [clips, onChange]);
 
-  const pushHistory = useCallback((newClips: TimelineClip[]) => {
-    setHistory(h => ({
-      past: [...h.past, clips],
-      future: [],
-    }));
+  const pushHistory = useCallback((newClips: TimelineClip[], operation: string = 'edit') => {
+    engine.pushHistory(clips, newClips, operation as any, operation);
     setClips(newClips);
-  }, [clips]);
+  }, [clips, engine]);
 
-  // ?? Funciones de Proyectos Guardados (despu�s de pushHistory)
+  // 🤖 Aplicar sugerencias del AI Editor Agent
+  const handleApplyAgentSuggestions = useCallback((plan: TimelineEditPlan) => {
+    if (!plan.suggestions.length) return;
+
+    const newClips = clips.map(clip => {
+      const suggestion = plan.suggestions.find(s => s.scene_id === String(clip.id));
+      if (!suggestion) return clip;
+
+      const updatedClip = { ...clip };
+
+      // Aplicar duración sugerida
+      if (suggestion.suggested_duration > 0 && suggestion.suggested_duration !== clip.duration) {
+        updatedClip.duration = Math.round(suggestion.suggested_duration * 100) / 100;
+      }
+
+      // Aplicar posición sugerida
+      if (suggestion.suggested_start_time >= 0 && suggestion.suggested_start_time !== clip.start) {
+        updatedClip.start = Math.round(suggestion.suggested_start_time * 100) / 100;
+      }
+
+      // Aplicar micro-edits como efectos
+      if (suggestion.micro_edits.length > 0) {
+        const existingEffects = updatedClip.effects || [];
+        const newEffects = suggestion.micro_edits.map((edit, idx) => ({
+          id: `ai-${clip.id}-${idx}`,
+          type: edit.type,
+          params: edit.parameters,
+          start: 0,
+          end: 1,
+          intensity: edit.parameters?.intensity ?? 0.8,
+        }));
+        updatedClip.effects = [...existingEffects, ...newEffects];
+      }
+
+      return updatedClip;
+    });
+
+    pushHistory(newClips, 'ai-agent-edit');
+
+    toast({
+      title: '✨ AI Editor Agent',
+      description: `${plan.suggestions.length} sugerencias aplicadas (estilo ${plan.editor.name})`,
+    });
+
+    logger.info(`✅ [AI-AGENT] Aplicadas ${plan.suggestions.length} sugerencias al timeline`);
+  }, [clips, pushHistory, toast]);
+
   const handleSaveProject = useCallback(async () => {
     // Verificar usuario autenticado
     if (!user?.id) {
@@ -1142,7 +1372,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         id: Math.max(0, ...clips.map(c => c.id)) + 1,
         start: currentTime,
       };
-      pushHistory([...clips, newClip]);
+      pushHistory([...clips, newClip], 'paste');
       logger.info('?? Clip pegado en:', currentTime);
     }
     closeContextMenu();
@@ -1157,7 +1387,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
           id: Math.max(0, ...clips.map(c => c.id)) + 1,
           start: clip.start + clip.duration + 0.1,
         };
-        pushHistory([...clips, newClip]);
+        pushHistory([...clips, newClip], 'duplicate');
         logger.info('?? Clip duplicado:', clip.id);
       }
     }
@@ -1167,7 +1397,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   const handleDeleteClipContext = useCallback(() => {
     if (contextMenu.clipId) {
       const newClips = clips.filter(c => c.id !== contextMenu.clipId);
-      pushHistory(newClips);
+      pushHistory(newClips, 'delete');
       setSelectedClipId(null);
       logger.info('??? Clip eliminado:', contextMenu.clipId);
     }
@@ -1189,7 +1419,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
         const updatedClips = clips.map(c =>
           c.id === contextMenu.clipId ? { ...c, duration: splitTime } : c
         );
-        pushHistory([...updatedClips, newClip]);
+        pushHistory([...updatedClips, newClip], 'split');
         logger.info('?? Clip dividido en:', currentTime);
       }
     }
@@ -1217,28 +1447,18 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   }, [clips]);
 
   const doUndo = useCallback(() => {
-    setHistory(h => {
-      if (h.past.length === 0) return h;
-      const currentClips = clipsRef.current;
-      const newPast = h.past.slice(0, -1);
-      const newFuture = [currentClips, ...h.future];
-      const restored = h.past[h.past.length - 1];
+    const restored = engine.undo(clipsRef.current);
+    if (restored) {
       setClips(restored);
-      return { past: newPast, future: newFuture };
-    });
-  }, []);
+    }
+  }, [engine]);
 
   const doRedo = useCallback(() => {
-    setHistory(h => {
-      if (h.future.length === 0) return h;
-      const currentClips = clipsRef.current;
-      const newPast = [...h.past, currentClips];
-      const newFuture = h.future.slice(1);
-      const restored = h.future[0];
+    const restored = engine.redo(clipsRef.current);
+    if (restored) {
       setClips(restored);
-      return { past: newPast, future: newFuture };
-    });
-  }, []);
+    }
+  }, [engine]);
 
   // ??? Selecci�n de clips con soporte para multi-select (Shift+Click, Ctrl+Click)
   const handleSelectClip = useCallback((id: number | null, event?: React.MouseEvent) => {
@@ -1284,142 +1504,75 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
 
   const handleDeleteClip = useCallback((id: number) => {
     if (readOnly) return;
-    const newClips = clips.filter(c => c.id !== id);
-    if (rippleEnabled) {
-      const deletedClip = clips.find(c => c.id === id);
-      if (deletedClip) {
-        const shiftAmount = deletedClip.duration;
-        const shifted = newClips.map(c => {
-          if (c.start > deletedClip.start) {
-            return { ...c, start: c.start - shiftAmount };
-          }
-          return c;
-        });
-        pushHistory(shifted);
-        return;
-      }
-    }
-    pushHistory(newClips);
+    // Use engine for ripple-aware deletion
+    const newClips = engine.deleteClip(id, clipsRef.current);
+    pushHistory(newClips, rippleEnabled ? 'ripple-delete' : 'delete');
     setSelectedClipId(null);
     setSelectedClipIds(prev => {
       const newSet = new Set(prev);
       newSet.delete(id);
       return newSet;
     });
-  }, [clips, pushHistory, readOnly, rippleEnabled]);
+  }, [pushHistory, readOnly, rippleEnabled, engine.deleteClip]);
 
-  // Ref para guardar el estado antes de empezar a mover/redimensionar
-  const operationStartClipsRef = useRef<TimelineClip[] | null>(null);
-
-  // Al comenzar un drag o resize, guardamos el estado inicial
+  // Al comenzar un drag o resize, guardamos el estado inicial via engine
   const handleDragStart = useCallback(() => {
-    if (!operationStartClipsRef.current) {
-      operationStartClipsRef.current = [...clipsRef.current];
-    }
-  }, []);
+    engine.beginOperation(clipsRef.current);
+  }, [engine.beginOperation]);
 
   const handleResizeStart = useCallback(() => {
-    if (!operationStartClipsRef.current) {
-      operationStartClipsRef.current = [...clipsRef.current];
-    }
-  }, []);
+    engine.beginOperation(clipsRef.current);
+  }, [engine.beginOperation]);
 
-  // Al terminar un drag, guardamos en el historial
+  // Al terminar un drag, guardamos en el historial via engine
   const handleDragEnd = useCallback(() => {
-    if (operationStartClipsRef.current) {
-      // Solo guardar si hubo cambios
-      const startClips = operationStartClipsRef.current;
-      const currentClips = clipsRef.current;
-      const hasChanges = JSON.stringify(startClips) !== JSON.stringify(currentClips);
-      if (hasChanges) {
-        setHistory(h => ({
-          past: [...h.past, startClips],
-          future: [],
-        }));
-      }
-      operationStartClipsRef.current = null;
-    }
-  }, []);
+    engine.endOperation(clipsRef.current, 'move', 'Move clip');
+  }, [engine.endOperation]);
 
-  // Al terminar un resize, guardamos en el historial
+  // Al terminar un resize, guardamos en el historial via engine
   const handleResizeEnd = useCallback(() => {
-    if (operationStartClipsRef.current) {
-      const startClips = operationStartClipsRef.current;
-      const currentClips = clipsRef.current;
-      const hasChanges = JSON.stringify(startClips) !== JSON.stringify(currentClips);
-      if (hasChanges) {
-        setHistory(h => ({
-          past: [...h.past, startClips],
-          future: [],
-        }));
-      }
-      operationStartClipsRef.current = null;
-    }
-  }, []);
+    engine.endOperation(clipsRef.current, 'resize-end', 'Resize clip');
+  }, [engine.endOperation]);
 
-  const handleMoveClip = useCallback((id: number, newStart: number) => {
+  const handleMoveClip = useCallback((id: number, newStart: number, newLayerId?: number) => {
     if (readOnly) return;
-    const currentClips = clipsRef.current;
-    const snap = (t: number) => {
-      if (!snapEnabled) return t;
-      const snapDist = 5 / zoom; // 5px
-      const allGuides = [...beatGuides, ...sectionGuides, 0, duration];
-      for (const guide of allGuides) {
-        if (Math.abs(t - guide) < snapDist) return guide;
-      }
-      for (const clip of currentClips) {
-        if (clip.id === id) continue;
-        if (Math.abs(t - clip.start) < snapDist) return clip.start;
-        if (Math.abs(t - (clip.start + clip.duration)) < snapDist) return clip.start + clip.duration;
-      }
-      return t;
-    };
-    const snappedStart = snap(newStart);
-    const newClips = currentClips.map(c => c.id === id ? { ...c, start: Math.max(0, snappedStart) } : c);
+    const newClips = engine.moveClip(id, newStart, clipsRef.current, newLayerId);
     setClips(newClips);
-  }, [readOnly, snapEnabled, beatGuides, sectionGuides, duration, zoom]);
+  }, [readOnly, engine.moveClip]);
 
   const handleSplitClip = useCallback((id: number, timeAtClip: number) => {
     if (readOnly) return;
-    const clip = clips.find(c => c.id === id);
-    if (!clip) return;
-    const relativeTime = timeAtClip - clip.start;
-    if (relativeTime <= 0 || relativeTime >= clip.duration) return;
-    const newClip: TimelineClip = {
-      ...clip,
-      id: Math.max(0, ...clips.map(c => c.id)) + 1,
-      start: clip.start + relativeTime,
-      duration: clip.duration - relativeTime,
-      sourceStart: (clip.sourceStart || 0) + relativeTime,
-    };
-    const updated = clips.map(c =>
-      c.id === id ? { ...c, duration: relativeTime } : c
-    );
-    pushHistory([...updated, newClip]);
-  }, [clips, readOnly, pushHistory]);
+    const result = engine.splitClip(id, timeAtClip, clipsRef.current);
+    if (result) {
+      pushHistory(result.clips, 'split');
+    }
+  }, [readOnly, pushHistory, engine.splitClip]);
 
   const handleResizeClip = useCallback((id: number, newStart: number, newDuration: number, edge?: string) => {
     if (readOnly) return;
-    const currentClips = clipsRef.current;
-    const clip = currentClips.find(c => c.id === id);
-    if (!clip) return;
-    // Permitir redimensionar hasta duraci�n m�nima de 0.1s
-    const newClips = currentClips.map(c => {
-      if (c.id === id) {
-        return {
-          ...c,
-          start: Math.max(0, newStart),
-          duration: Math.max(0.1, newDuration),
-        };
-      }
-      return c;
-    });
+    const resizeEdge = (edge === 'start' || edge === 'end') ? edge : 'end';
+    const newClips = engine.resizeClip(id, newStart, newDuration, resizeEdge, clipsRef.current);
     setClips(newClips);
-  }, [readOnly]);
+  }, [readOnly, engine.resizeClip]);
 
   const handleRazorClick = useCallback((clipId: number, timeAtClipGlobal: number) => {
     handleSplitClip(clipId, timeAtClipGlobal);
   }, [handleSplitClip]);
+
+  // 🔪 Razor through ALL tracks at playhead (Premiere's Ctrl+Shift+K)
+  const handleRazorAllTracks = useCallback(() => {
+    if (readOnly) return;
+    const currentClips = clipsRef.current;
+    const newClips = engine.razorAllTracks(currentTime, currentClips);
+    if (newClips.length !== currentClips.length) {
+      pushHistory(newClips, 'razor-all');
+    }
+  }, [readOnly, currentTime, engine.razorAllTracks, pushHistory]);
+
+  // 🧲 Snap query callback for LayerRow visual snap indicators
+  const handleSnapQuery = useCallback((time: number, excludeClipId?: number) => {
+    return engine.snap(time, clipsRef.current, excludeClipId);
+  }, [engine.snap]);
 
   // Click en timeline/ruler: posiciona el cursor en el frame m�s cercano
   const handleTimelineClick = (timeGlobal: number) => {
@@ -1429,8 +1582,74 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     setCurrentTime(snappedTime);
   };
 
-  const zoomIn = () => setZoom(z => Math.min(z * 1.2, 800));
-  const zoomOut = () => setZoom(z => Math.max(z / 1.2, 20));
+  // ═══════════════════════════════════════════════════════════
+  // PROFESSIONAL NLE ZOOM — centered on playhead or cursor
+  // Adjusts scroll so the focus-point stays in place on screen
+  // ═══════════════════════════════════════════════════════════
+  const MIN_ZOOM = 10;
+  const MAX_ZOOM = 1200;
+  const ZOOM_FACTOR = 1.2;
+
+  /**
+   * Smart zoom that keeps a given time anchored at a given screen-X offset.
+   * @param direction 'in' | 'out'
+   * @param anchorTime  the timeline-time to keep fixed (seconds)
+   * @param anchorScreenX  pixel offset inside the scroll viewport where anchorTime currently sits
+   */
+  const smartZoom = useCallback((direction: 'in' | 'out', anchorTime?: number, anchorScreenX?: number) => {
+    setZoom(prevZoom => {
+      const newZoom = direction === 'in'
+        ? Math.min(prevZoom * ZOOM_FACTOR, MAX_ZOOM)
+        : Math.max(prevZoom / ZOOM_FACTOR, MIN_ZOOM);
+
+      // Adjust scroll to keep anchor point in place
+      requestAnimationFrame(() => {
+        const el = timelineScrollRef.current;
+        if (!el) return;
+        const time = anchorTime ?? currentTime;
+        const screenX = anchorScreenX ?? (el.clientWidth / 2); // default: center of viewport
+        const newScrollLeft = (time * newZoom + layerPanelWidth) - screenX;
+        el.scrollLeft = Math.max(0, newScrollLeft);
+      });
+      return newZoom;
+    });
+  }, [currentTime, layerPanelWidth]);
+
+  const zoomIn = useCallback(() => smartZoom('in'), [smartZoom]);
+  const zoomOut = useCallback(() => smartZoom('out'), [smartZoom]);
+
+  /** Fit entire duration into visible timeline width */
+  const zoomToFit = useCallback(() => {
+    const el = timelineScrollRef.current;
+    if (!el || duration <= 0) return;
+    const availableWidth = el.clientWidth - layerPanelWidth - 40;
+    const fitZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, availableWidth / duration));
+    setZoom(fitZoom);
+    requestAnimationFrame(() => {
+      if (timelineScrollRef.current) timelineScrollRef.current.scrollLeft = 0;
+    });
+  }, [duration, layerPanelWidth]);
+
+  /** Ctrl+MouseWheel zoom handler for the timeline scroll area */
+  const handleTimelineWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    // Only zoom on Ctrl/Meta + wheel; let normal scroll pass through
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const el = timelineScrollRef.current;
+    if (!el) return;
+
+    // Calculate the time under the cursor
+    const rect = el.getBoundingClientRect();
+    const cursorScreenX = e.clientX - rect.left;
+    const cursorTimelineX = el.scrollLeft + cursorScreenX - layerPanelWidth;
+    const cursorTime = Math.max(0, cursorTimelineX / zoom);
+
+    // Zoom centered on cursor position
+    const direction = e.deltaY < 0 ? 'in' : 'out';
+    smartZoom(direction, cursorTime, cursorScreenX);
+  }, [zoom, layerPanelWidth, smartZoom]);
 
   // ?? Shortcuts Profesionales (J/K/L, Ctrl+Z, Multi-select, etc)
   useEffect(() => {
@@ -1498,19 +1717,40 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
       if (e.code === 'KeyT') setTool('trim');
       if (e.code === 'KeyH') setTool('hand');
       
-      // Delete selected clips
+      // Delete selected clips - engine-powered with multi-select support
       if (e.code === 'Delete' || e.code === 'Backspace') {
         e.preventDefault();
         if (selectedClipIds.size > 0) {
-          const newClips = clips.filter(c => !selectedClipIds.has(c.id));
-          pushHistory(newClips);
+          const newClips = engine.deleteMultipleClips(selectedClipIds, clips);
+          pushHistory(newClips, 'multi-delete');
           setSelectedClipIds(new Set());
           setSelectedClipId(null);
         } else if (selectedClipId !== null) {
-          const newClips = clips.filter(c => c.id !== selectedClipId);
-          pushHistory(newClips);
+          const newClips = engine.deleteClip(selectedClipId, clips);
+          pushHistory(newClips, rippleEnabled ? 'ripple-delete' : 'delete');
           setSelectedClipId(null);
         }
+      }
+
+      // 🔪 Razor through all tracks (Ctrl+Shift+K like Premiere)
+      if (e.code === 'KeyK' && (e.ctrlKey || e.metaKey) && e.shiftKey) {
+        e.preventDefault();
+        handleRazorAllTracks();
+      }
+
+      // 🔄 Cycle edit mode: N=normal, B=ripple, G=roll, S=slip (when not in input)
+      if (e.code === 'KeyN' && !e.ctrlKey && !e.metaKey) {
+        setEditMode('normal');
+        engine.updateConfig({ editMode: 'normal' });
+      }
+      if (e.code === 'KeyB' && !e.ctrlKey && !e.metaKey) {
+        setEditMode('ripple');
+        setRippleEnabled(true);
+        engine.updateConfig({ editMode: 'ripple' });
+      }
+      if (e.code === 'KeyG' && !e.ctrlKey && !e.metaKey) {
+        setEditMode('roll');
+        engine.updateConfig({ editMode: 'roll' });
       }
       
       // Zoom
@@ -1521,6 +1761,11 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
       if (e.code === 'Minus') {
         e.preventDefault();
         zoomOut();
+      }
+      // Shift+Z = Fit to Window (como Premiere Pro)
+      if (e.code === 'KeyZ' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        zoomToFit();
       }
       
       // Navigation
@@ -1564,7 +1809,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [duration, framerate, clips, selectedClipId, selectedClipIds, isPlaying, doUndo, doRedo, pushHistory]);
+  }, [duration, framerate, clips, selectedClipId, selectedClipIds, isPlaying, doUndo, doRedo, pushHistory, zoomIn, zoomOut, zoomToFit]);
 
   // ===== HANDLERS PARA ACCIONES SOBRE CLIPS =====
 
@@ -1673,7 +1918,9 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
               : fileType === 'audio' ? ClipType.AUDIO 
               : ClipType.VIDEO,
           start: currentTime > 0 ? currentTime : lastClipEnd, // Insertar en playhead o al final
-          duration: Math.min(fileDuration, Math.max(0.5, duration - (currentTime > 0 ? currentTime : lastClipEnd))),
+          duration: fileType === 'audio'
+            ? fileDuration  // Audio: full file duration — user can trim/move freely
+            : Math.min(fileDuration, Math.max(0.5, duration - (currentTime > 0 ? currentTime : lastClipEnd))),
           url: objectUrl,
           imageUrl: fileType === 'image' ? objectUrl : undefined,
           title: file.name,
@@ -1695,8 +1942,19 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
       }
 
       if (newClips.length > 0) {
-        pushHistory(clips);
-        setClips(prev => [...prev, ...newClips]);
+        const allClips = [...clips, ...newClips];
+        pushHistory(allClips, 'import');
+        
+        // 📂 Add imported files to gallery panel
+        const newMediaItems: ImportedMediaItem[] = newClips.map(c => ({
+          id: `imported-${c.id}-${Date.now()}`,
+          url: c.url || '',
+          name: c.title || 'Imported',
+          type: (c.type === 'AUDIO' ? 'audio' : c.type === 'VIDEO' ? 'video' : 'image') as 'image' | 'audio' | 'video',
+          mimeType: c.metadata?.mimeType || '',
+          addedAt: Date.now(),
+        }));
+        setImportedMedia(prev => [...prev, ...newMediaItems]);
         
         toast({
           title: "? Archivos importados",
@@ -1720,26 +1978,170 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     }
   }, [clips, currentTime, duration, detectFileType, pushHistory, toast]);
 
-  // Drag & Drop handler para el timeline completo
-  const handleTimelineDrop = useCallback(async (event: React.DragEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    const files = event.dataTransfer.files;
-    if (!files || files.length === 0) return;
+  // ==========================================
+  // 🎬 PREMIERE-STYLE DRAG & DROP SYSTEM
+  // ==========================================
+  const RULER_HEIGHT = 48;
+  const TOTAL_LAYERS = 3;
 
-    // Simular el evento de input
-    const fakeEvent = {
-      target: { files }
-    } as React.ChangeEvent<HTMLInputElement>;
-    
-    await handleFileImport(fakeEvent);
-  }, [handleFileImport]);
+  /** Calculate drop position (time + layer) from mouse coordinates */
+  const calcDropPosition = useCallback((clientX: number, clientY: number) => {
+    const scrollEl = timelineScrollRef.current;
+    if (!scrollEl) return null;
+    const rect = scrollEl.getBoundingClientRect();
+    const scrollLeft = scrollEl.scrollLeft;
+
+    // Time from X position
+    const relX = clientX - rect.left - layerPanelWidth + scrollLeft;
+    const time = Math.max(0, relX / zoom);
+
+    // Layer from Y position (skip ruler)
+    const relY = clientY - rect.top - RULER_HEIGHT;
+    const layerIndex = Math.floor(relY / DEFAULT_LAYER_HEIGHT);
+    const layerId = Math.max(1, Math.min(TOTAL_LAYERS, layerIndex + 1));
+
+    return { time, layerId };
+  }, [layerPanelWidth, zoom]);
 
   const handleTimelineDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.stopPropagation();
+    // Set the drop effect to "copy" for a nice cursor icon
+    event.dataTransfer.dropEffect = 'copy';
+    // Update the drop indicator position
+    const pos = calcDropPosition(event.clientX, event.clientY);
+    if (pos) setDropIndicator(pos);
+  }, [calcDropPosition]);
+
+  const handleTimelineDragEnter = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    dragCounterRef.current++;
+    if (dragCounterRef.current === 1) {
+      setIsDraggingFileOver(true);
+    }
   }, []);
+
+  const handleTimelineDragLeave = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current <= 0) {
+      dragCounterRef.current = 0;
+      setIsDraggingFileOver(false);
+      setDropIndicator(null);
+    }
+  }, []);
+
+  /** Position-aware drop: places clips exactly where the user drops them */
+  const handleTimelineDrop = useCallback(async (event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Reset drag visual state
+    dragCounterRef.current = 0;
+    setIsDraggingFileOver(false);
+    setDropIndicator(null);
+
+    const files = event.dataTransfer.files;
+    if (!files || files.length === 0) return;
+
+    // Calculate exact drop position from cursor
+    const pos = calcDropPosition(event.clientX, event.clientY);
+    const dropTime = pos ? pos.time : (currentTime > 0 ? currentTime : 0);
+    const dropLayerId = pos ? pos.layerId : 1;
+
+    setIsImporting(true);
+    logger.info(`🎬 [Drop] Procesando ${files.length} archivo(s) en t=${dropTime.toFixed(2)}s, capa=${dropLayerId}`);
+
+    try {
+      const newClips: TimelineClip[] = [];
+      const maxClipId = clips.reduce((max, c) => Math.max(max, typeof c.id === 'number' ? c.id : 0), 0);
+      let clipIdCounter = maxClipId + 1000;
+      let nextStart = dropTime; // Stack multiple files one after another from drop point
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileType = detectFileType(file);
+        if (!fileType) {
+          toast({ title: 'Tipo no soportado', description: `"${file.name}" no es compatible`, variant: 'destructive' });
+          continue;
+        }
+
+        const objectUrl = URL.createObjectURL(file);
+
+        // Determine target layer: use drop position, but override for audio if dropped on video layer
+        let targetLayerId = dropLayerId;
+        if (fileType === 'audio' && dropLayerId === 1) targetLayerId = 2; // Audio always goes to audio layer
+        if ((fileType === 'image' || fileType === 'video') && dropLayerId === 2) targetLayerId = 1; // Visual always to video layer
+
+        // Get duration for audio/video
+        let fileDuration = 3;
+        if (fileType === 'audio' || fileType === 'video') {
+          fileDuration = await new Promise<number>((resolve) => {
+            const media = fileType === 'audio' ? new Audio() : document.createElement('video');
+            media.onloadedmetadata = () => resolve(media.duration || 3);
+            media.onerror = () => resolve(3);
+            media.src = objectUrl;
+          });
+        }
+
+        const clipDuration = fileType === 'audio'
+          ? fileDuration
+          : Math.min(fileDuration, Math.max(0.5, duration - nextStart));
+
+        const newClip: TimelineClip = {
+          id: clipIdCounter++,
+          layerId: targetLayerId,
+          type: fileType === 'image' ? ClipType.IMAGE : fileType === 'audio' ? ClipType.AUDIO : ClipType.VIDEO,
+          start: nextStart,
+          duration: clipDuration,
+          url: objectUrl,
+          imageUrl: fileType === 'image' ? objectUrl : undefined,
+          title: file.name,
+          in: 0,
+          out: fileDuration,
+          sourceStart: 0,
+          metadata: {
+            isImported: true,
+            originalFileName: file.name,
+            fileSize: file.size,
+            mimeType: file.type,
+            importedAt: new Date().toISOString()
+          }
+        };
+
+        newClips.push(newClip);
+        nextStart += clipDuration; // Stack sequentially from drop point
+        logger.info(`📎 [Drop] Clip: ${file.name} → layer ${targetLayerId} @ ${newClip.start.toFixed(2)}s`);
+      }
+
+      if (newClips.length > 0) {
+        const allClips = [...clips, ...newClips];
+        pushHistory(allClips, 'import');
+
+        const newMediaItems: ImportedMediaItem[] = newClips.map(c => ({
+          id: `imported-${c.id}-${Date.now()}`,
+          url: c.url || '',
+          name: c.title || 'Imported',
+          type: (c.type === 'AUDIO' ? 'audio' : c.type === 'VIDEO' ? 'video' : 'image') as 'image' | 'audio' | 'video',
+          mimeType: c.metadata?.mimeType || '',
+          addedAt: Date.now(),
+        }));
+        setImportedMedia(prev => [...prev, ...newMediaItems]);
+
+        toast({
+          title: '🎬 Archivos importados',
+          description: `${newClips.length} archivo(s) añadido(s) en ${dropTime.toFixed(1)}s`,
+        });
+      }
+    } catch (error) {
+      logger.error('❌ [Drop] Error:', error);
+      toast({ title: 'Error de importación', description: 'No se pudieron importar los archivos', variant: 'destructive' });
+    } finally {
+      setIsImporting(false);
+    }
+  }, [clips, currentTime, duration, detectFileType, pushHistory, toast, calcDropPosition]);
 
   // ?? Editar Imagen con Nano Banana AI
   const handleEditImage = useCallback((clip: TimelineClip) => {
@@ -1903,11 +2305,11 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
         ? { 
             prompt: enrichedPrompt,
             referenceImages: referenceImages,
-            aspectRatio: '16:9'
+            aspectRatio: aspectRatio
           }
         : { 
             prompt: enrichedPrompt,
-            aspectRatio: '16:9'
+            aspectRatio: aspectRatio
           };
       
       logger.info(`?? [Timeline] Usando endpoint: ${endpoint}, con referencia: ${shouldUseReference}`);
@@ -1959,7 +2361,144 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
     }
   }, [toast, updateClip, projectContext, clips]);
 
-  // ?? Generar Video desde Imagen - Usando GROK IMAGINE VIDEO (xAI)
+  // ?? Actualizar imageFit de un clip (cover/contain/fill)
+  const handleUpdateImageFit = useCallback((clipId: number, fit: string) => {
+    updateClip(clipId, {
+      metadata: {
+        ...clips.find(c => c.id === clipId)?.metadata,
+        imageFit: fit,
+      }
+    });
+    toast({
+      title: '?? Ajuste aplicado',
+      description: `Modo: ${fit === 'cover' ? 'Cubrir' : fit === 'contain' ? 'Contener' : 'Estirar'}`,
+    });
+  }, [clips, updateClip, toast]);
+
+  // 🎯 CapCut-style media transform handlers (scale/position within aspect ratio frame)
+  // Uses functional setClips to avoid stale closure issues during rapid updates
+  const transformClipIdRef = useRef<number | null>(null);
+  
+  const getClipTransform = useCallback((clip: TimelineClip | null) => {
+    if (!clip) return { scale: 1, x: 0, y: 0 };
+    const t = clip.metadata?.transform;
+    return {
+      scale: t?.scale ?? 1,
+      x: t?.x ?? 0,
+      y: t?.y ?? 0,
+    };
+  }, []);
+
+  // CRITICAL: Uses functional setClips to always read latest state (no stale closures)
+  const handleUpdateClipTransform = useCallback((clipId: number, transform: { scale?: number; x?: number; y?: number }) => {
+    setClips(prevClips => prevClips.map(c => {
+      if (c.id !== clipId) return c;
+      const currentTransform = {
+        scale: c.metadata?.transform?.scale ?? 1,
+        x: c.metadata?.transform?.x ?? 0,
+        y: c.metadata?.transform?.y ?? 0,
+      };
+      return {
+        ...c,
+        metadata: {
+          ...c.metadata,
+          transform: { ...currentTransform, ...transform },
+        }
+      };
+    }));
+  }, []);
+
+  const handleResetTransform = useCallback(() => {
+    if (!activeClip) return;
+    handleUpdateClipTransform(activeClip.id, { scale: 1, x: 0, y: 0 });
+    toast({ title: '↩️ Transform reseteado', description: 'Posición y escala por defecto' });
+  }, [activeClip, handleUpdateClipTransform, toast]);
+
+  const handleFillFrame = useCallback(() => {
+    if (!activeClip) return;
+    handleUpdateClipTransform(activeClip.id, { scale: 1.5, x: 0, y: 0 });
+    toast({ title: '📐 Fill Frame', description: 'Imagen escalada para llenar el frame' });
+  }, [activeClip, handleUpdateClipTransform, toast]);
+
+  // Transform drag — mousedown sets refs, useEffect attaches document listeners
+  const handleTransformMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!isTransformMode || !activeClip) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const t = getClipTransform(activeClip);
+    transformStartRef.current = { x: e.clientX, y: e.clientY, origX: t.x, origY: t.y };
+    transformClipIdRef.current = activeClip.id;
+    setTransformDragging(true);
+  }, [isTransformMode, activeClip, getClipTransform]);
+
+  // CRITICAL: Document-level drag listeners — handles fast drags that leave the container
+  useEffect(() => {
+    if (!transformDragging) return;
+    
+    const handleDocMouseMove = (e: MouseEvent) => {
+      const container = viewerContainerRef.current;
+      const start = transformStartRef.current;
+      const clipId = transformClipIdRef.current;
+      if (!container || !start || clipId == null) return;
+      
+      const rect = container.getBoundingClientRect();
+      const dx = ((e.clientX - start.x) / rect.width) * 100;
+      const dy = ((e.clientY - start.y) / rect.height) * 100;
+      
+      // Functional setClips — always reads latest state
+      setClips(prev => prev.map(c => {
+        if (c.id !== clipId) return c;
+        return {
+          ...c,
+          metadata: {
+            ...c.metadata,
+            transform: {
+              scale: c.metadata?.transform?.scale ?? 1,
+              x: start.origX + dx,
+              y: start.origY + dy,
+            }
+          }
+        };
+      }));
+    };
+    
+    const handleDocMouseUp = () => {
+      setTransformDragging(false);
+      transformStartRef.current = null;
+      transformClipIdRef.current = null;
+    };
+    
+    document.addEventListener('mousemove', handleDocMouseMove);
+    document.addEventListener('mouseup', handleDocMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleDocMouseMove);
+      document.removeEventListener('mouseup', handleDocMouseUp);
+    };
+  }, [transformDragging]);
+
+  // Wheel-to-scale — uses functional setClips to avoid stale scale values
+  const handleTransformWheel = useCallback((e: React.WheelEvent) => {
+    if (!isTransformMode || !activeClip) return;
+    e.stopPropagation();
+    const delta = e.deltaY > 0 ? -0.08 : 0.08;
+    const clipId = activeClip.id;
+    setClips(prev => prev.map(c => {
+      if (c.id !== clipId) return c;
+      const currentScale = c.metadata?.transform?.scale ?? 1;
+      const newScale = Math.max(0.1, Math.min(5, currentScale + delta));
+      return {
+        ...c,
+        metadata: {
+          ...c.metadata,
+          transform: {
+            scale: newScale,
+            x: c.metadata?.transform?.x ?? 0,
+            y: c.metadata?.transform?.y ?? 0,
+          }
+        }
+      };
+    }));
+  }, [isTransformMode, activeClip]);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState<number | null>(null);
   
   const handleGenerateVideo = useCallback(async (clip: TimelineClip) => {
@@ -2010,7 +2549,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
           prompt: enhancedPrompt,
           duration: videoDuration,
           resolution: '720p',
-          aspectRatio: '16:9',
+          aspectRatio: aspectRatio,
         }),
       });
 
@@ -2286,8 +2825,6 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
         ref={containerRef} 
         className="flex flex-col bg-neutral-900 text-white rounded-md overflow-hidden h-full select-none"
         onContextMenu={(e) => handleContextMenu(e)}
-        onDrop={handleTimelineDrop}
-        onDragOver={handleTimelineDragOver}
       >
         {/* Toolbar Principal - Compact & Professional */}
         <div className="flex flex-wrap items-center justify-between px-1.5 sm:px-2 py-1 border-b border-white/10 bg-neutral-950 gap-1 flex-shrink-0">
@@ -2336,25 +2873,40 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
 
             <div className="mx-0.5 h-4 w-px bg-white/10" />
 
-            {/* Snap/Ripple */}
+            {/* Snap / Edit Mode */}
             <div className="flex items-center gap-px">
               <Button 
                 size="sm" 
                 variant="ghost" 
                 onClick={() => setSnapEnabled(s => !s)} 
                 className={`p-1 h-6 w-6 ${snapEnabled ? 'bg-orange-500/20 text-orange-400' : ''}`}
-                title="Snap"
+                title="Magnetic Snap (toggle)"
               >
                 <MagnetIcon size={12} />
               </Button>
               <Button 
                 size="sm" 
                 variant="ghost" 
-                onClick={() => setRippleEnabled(r => !r)} 
-                className={`p-1 h-6 w-6 ${rippleEnabled ? 'bg-red-500/20 text-red-400' : ''}`}
-                title="Ripple"
+                onClick={() => {
+                  const modes: EditMode[] = ['normal', 'ripple', 'roll'];
+                  const currentIdx = modes.indexOf(editMode);
+                  const nextMode = modes[(currentIdx + 1) % modes.length];
+                  setEditMode(nextMode);
+                  setRippleEnabled(nextMode === 'ripple');
+                  engine.updateConfig({ editMode: nextMode });
+                }} 
+                className={`p-1 h-6 px-1.5 text-[9px] font-bold ${
+                  editMode === 'ripple' ? 'bg-red-500/20 text-red-400' : 
+                  editMode === 'roll' ? 'bg-blue-500/20 text-blue-400' :
+                  editMode === 'slip' ? 'bg-green-500/20 text-green-400' :
+                  ''
+                }`}
+                title={`Edit Mode: ${editMode.toUpperCase()} (N=Normal, B=Ripple, G=Roll)`}
               >
-                <TrashIcon size={12} />
+                {editMode === 'normal' ? 'NRM' : 
+                 editMode === 'ripple' ? 'RPL' : 
+                 editMode === 'roll' ? 'ROL' : 
+                 editMode === 'slip' ? 'SLP' : 'NRM'}
               </Button>
             </div>
 
@@ -2545,14 +3097,49 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
 
             <div className="mx-0.5 h-4 w-px bg-white/10" />
 
-            {/* Zoom */}
+            {/* Zoom — con slider, botones, y Fit */}
             <div className="flex items-center gap-px">
-              <Button size="sm" variant="ghost" onClick={zoomOut} className="p-0.5 h-5 w-5" title="-">
+              <Button size="sm" variant="ghost" onClick={zoomOut} className="p-0.5 h-5 w-5" title="Zoom Out (-)">
                 <ZoomOutIcon size={10}/>
               </Button>
-              <span className="font-mono text-[8px] text-white/50 w-6 text-center">{Math.round(zoom)}</span>
-              <Button size="sm" variant="ghost" onClick={zoomIn} className="p-0.5 h-5 w-5" title="+">
+              <input
+                type="range"
+                min={MIN_ZOOM}
+                max={MAX_ZOOM}
+                step={1}
+                value={zoom}
+                onChange={(e) => {
+                  const newZ = Number(e.target.value);
+                  // Adjust scroll to keep playhead centered
+                  const el = timelineScrollRef.current;
+                  if (el) {
+                    const centerX = el.clientWidth / 2;
+                    requestAnimationFrame(() => {
+                      if (timelineScrollRef.current) {
+                        timelineScrollRef.current.scrollLeft = Math.max(0, currentTime * newZ + layerPanelWidth - centerX);
+                      }
+                    });
+                  }
+                  setZoom(newZ);
+                }}
+                className="w-16 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                style={{
+                  background: `linear-gradient(to right, #f97316 0%, #f97316 ${((zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100}%, rgba(255,255,255,0.2) ${((zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100}%, rgba(255,255,255,0.2) 100%)`
+                }}
+                title={`Zoom: ${Math.round(zoom)} px/s`}
+              />
+              <Button size="sm" variant="ghost" onClick={zoomIn} className="p-0.5 h-5 w-5" title="Zoom In (+)">
                 <ZoomInIcon size={10}/>
+              </Button>
+              <span className="font-mono text-[8px] text-white/50 w-8 text-center">{Math.round(zoom)}px</span>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={zoomToFit} 
+                className="p-0.5 h-5 text-[7px] font-mono text-orange-400/80 hover:text-orange-300" 
+                title="Fit to Window (Shift+Z)"
+              >
+                FIT
               </Button>
             </div>
           </div>
@@ -2622,12 +3209,48 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
               <Button 
                 size="sm" 
                 variant="ghost" 
-                onClick={handleExportVideo}
+                onClick={() => setShowExportPanel(true)}
                 className="p-1 h-6 w-6 bg-orange-500/10 hover:bg-orange-500/20"
-                title="Export"
+                title="Exportar Video"
               >
                 <Download size={11} className="text-orange-400" />
               </Button>
+              
+              {/* 📐 Aspect Ratio Selector */}
+              <div className="relative">
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={() => setShowAspectMenu(!showAspectMenu)}
+                  className="p-1 h-6 px-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-[9px] font-bold text-cyan-400 gap-0.5"
+                  title="Aspect Ratio"
+                >
+                  <Monitor size={9} className="text-cyan-400" />
+                  {aspectRatio}
+                </Button>
+                {showAspectMenu && (
+                  <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowAspectMenu(false)} />
+                  <div className="absolute top-full right-0 mt-1 z-50 min-w-[160px] rounded-lg border border-white/15 bg-neutral-900/98 backdrop-blur-xl shadow-2xl py-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                    {ASPECT_RATIOS.map(ar => (
+                      <button
+                        key={ar.id}
+                        onClick={() => { setAspectRatio(ar.id); setShowAspectMenu(false); }}
+                        className={`w-full flex items-center gap-2 px-3 py-1.5 text-[11px] transition-colors ${
+                          aspectRatio === ar.id
+                            ? 'bg-orange-500/15 text-orange-400'
+                            : 'text-white/60 hover:bg-white/8 hover:text-white'
+                        }`}
+                      >
+                        <span className="font-bold w-8">{ar.label}</span>
+                        <span className="text-white/30 text-[9px]">{ar.desc}</span>
+                        {aspectRatio === ar.id && <Check size={10} className="ml-auto text-orange-400" />}
+                      </button>
+                    ))}
+                  </div>
+                  </>
+                )}
+              </div>
               
               {/* ?? Bot�n de Shortcuts */}
               <TooltipProvider delayDuration={100}>
@@ -2664,23 +3287,51 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                 </Tooltip>
               </TooltipProvider>
 
-              <div className="hidden md:block">
-                <EditorAgentPanel 
-                  timeline={clips.map((c, i) => ({
-                    id: String(c.id),
-                    group: c.layerId || 0,
-                    label: `Clip ${i + 1}`,
-                    start_time: c.start,
-                    end_time: c.start + c.duration,
-                    duration: c.duration,
-                  }))}
-                  audioBuffer={audioBuffer}
-                  genreHint={genreHint}
-                />
-              </div>
+              <EditorAgentPanel 
+                timeline={clips.map((c, i) => ({
+                  id: String(c.id),
+                  group: c.layerId || 0,
+                  label: `Clip ${i + 1}`,
+                  start_time: c.start,
+                  end_time: c.start + c.duration,
+                  duration: c.duration,
+                }))}
+                audioBuffer={audioBuffer}
+                genreHint={genreHint}
+                onApplySuggestions={handleApplyAgentSuggestions}
+              />
             </div>
           </div>
         </div>
+
+        {/* 🎨 Barra de progreso de generación progresiva */}
+        {(() => {
+          const totalLayer1 = clips.filter(c => c.layerId === 1).length;
+          const doneLayer1 = clips.filter(c => c.layerId === 1 && c.imageUrl && c.imageUrl.length > 0).length;
+          const isGenerating = totalLayer1 > 0 && doneLayer1 < totalLayer1;
+          if (!isGenerating) return null;
+          const pct = Math.round((doneLayer1 / totalLayer1) * 100);
+          return (
+            <div className="flex items-center gap-2 px-2 py-1 bg-neutral-950 border-b border-white/10 flex-shrink-0">
+              <Loader2 size={12} className="text-purple-400 animate-spin" />
+              <span className="text-[10px] text-white/70 whitespace-nowrap">
+                Generando: {doneLayer1}/{totalLayer1} imágenes
+              </span>
+              <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div 
+                  className="h-full rounded-full transition-all duration-500 ease-out"
+                  style={{ 
+                    width: `${pct}%`,
+                    background: 'linear-gradient(90deg, #a855f7, #3b82f6, #a855f7)',
+                    backgroundSize: '200% 100%',
+                    animation: 'shimmer 2s linear infinite',
+                  }}
+                />
+              </div>
+              <span className="text-[10px] text-purple-400 font-mono">{pct}%</span>
+            </div>
+          );
+        })()}
 
         {/* Panel de Proyectos Guardados */}
         {showProjectsPanel && (
@@ -2920,6 +3571,23 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                 >
                   <XIcon size={11} className="text-white/60" />
                 </Button>
+
+                {/* Transform Mode — CapCut-style */}
+                <div className="w-px h-4 bg-white/10 mx-0.5" />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setIsTransformMode(!isTransformMode)}
+                  className={`p-1 h-6 px-1.5 text-[9px] font-medium ${
+                    isTransformMode 
+                      ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50' 
+                      : 'bg-white/5 hover:bg-white/10 text-white/50'
+                  }`}
+                  title="Transformar — mover y escalar en el frame"
+                >
+                  <Move size={10} className="mr-0.5" />
+                  Ajustar
+                </Button>
               </div>
             </div>
           </div>
@@ -2931,7 +3599,75 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
           style={{ height: `${viewerHeight}%`, minHeight: '100px', maxHeight: '70%' }}
         >
           {/* Visor Principal */}
-          <div className="relative flex-1 min-w-0 bg-black/70 rounded-md overflow-hidden border border-white/5">
+          <div className="relative flex-1 min-w-0 bg-black/70 rounded-md overflow-hidden border border-white/5 flex items-center justify-center">
+            {/* Transform Controls Toolbar — shown when clip is selected */}
+            {activeClip && !selectedGalleryImage && (
+              <div className="absolute top-1 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 bg-black/70 backdrop-blur-sm rounded-md px-2 py-1 border border-white/10">
+                <button
+                  onClick={() => setIsTransformMode(!isTransformMode)}
+                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium transition-all ${
+                    isTransformMode 
+                      ? 'bg-orange-500 text-white' 
+                      : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
+                  }`}
+                  title="Modo transformar — mover y escalar media en el frame (doble-clic)"
+                >
+                  <Move size={10} />
+                  Transform
+                </button>
+                {isTransformMode && (
+                  <>
+                    <div className="w-px h-4 bg-white/20" />
+                    <button
+                      onClick={handleResetTransform}
+                      className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] text-white/60 hover:bg-white/20 hover:text-white transition-all"
+                      title="Resetear posición y escala"
+                    >
+                      <RotateCcw size={9} />
+                      Reset
+                    </button>
+                    <button
+                      onClick={handleFillFrame}
+                      className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] text-white/60 hover:bg-white/20 hover:text-white transition-all"
+                      title="Escalar para llenar el frame"
+                    >
+                      <Maximize2 size={9} />
+                      Fill
+                    </button>
+                    <div className="w-px h-4 bg-white/20" />
+                    <span className="text-[8px] text-orange-400/80 font-mono">
+                      {Math.round(getClipTransform(activeClip).scale * 100)}%
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
+            
+            {/* Aspect Ratio Container */}
+            <div 
+              ref={viewerContainerRef}
+              className="relative overflow-hidden"
+              style={{
+                width: '100%',
+                height: '100%',
+                maxWidth: (() => {
+                  const ar = ASPECT_RATIOS.find(a => a.id === aspectRatio);
+                  if (!ar) return '100%';
+                  return `calc(100% * min(1, (${ar.w}/${ar.h}) / (16/9)))`;
+                })(),
+                aspectRatio: (() => {
+                  const ar = ASPECT_RATIOS.find(a => a.id === aspectRatio);
+                  return ar ? `${ar.w}/${ar.h}` : '16/9';
+                })(),
+                maxHeight: '100%',
+                cursor: isTransformMode ? (transformDragging ? 'grabbing' : 'grab') : 'default',
+              }}
+              onMouseDown={isTransformMode ? handleTransformMouseDown : undefined}
+              onWheel={isTransformMode ? handleTransformWheel : undefined}
+              onDoubleClick={() => {
+                if (activeClip) setIsTransformMode(prev => !prev);
+              }}
+            >
             {selectedGalleryImage ? (
               // Mostrar imagen seleccionada de la galer�a
               <div className="relative w-full h-full">
@@ -2954,23 +3690,39 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                 )}
               </div>
             ) : activeClipVideoUrl ? (
-              // ?? CRITICAL: Mostrar VIDEO del clip activo (prioridad sobre imagen)
-              <div className="relative w-full h-full">
+              // 🎬 CRITICAL: Mostrar VIDEO del clip activo (prioridad sobre imagen)
+              <div className="relative w-full h-full overflow-hidden" style={{ pointerEvents: isTransformMode ? 'none' : 'auto' }}>
                 <video
                   ref={activeVideoRef}
                   src={activeClipVideoUrl}
-                  className="w-full h-full object-contain"
+                  className="w-full h-full"
+                  style={{
+                    objectFit: activeClip?.metadata?.imageFit || 'contain',
+                    transform: (() => {
+                      const t = getClipTransform(activeClip || null);
+                      return `translate(${t.x}%, ${t.y}%) scale(${t.scale})`;
+                    })(),
+                    transformOrigin: 'center center',
+                    transition: transformDragging ? 'none' : 'transform 0.1s ease-out',
+                  }}
                   playsInline
-                  muted
-                  loop
+                  muted={activeClip?.type !== ClipType.VIDEO}
+                  loop={!(activeClip?.sourceStart || activeClip?.in)}
                   autoPlay={isPlaying}
                   key={`video-${activeClip?.id}-${activeClipVideoUrl}`}
                   onLoadedMetadata={() => {
-                    // Sincronizar video con currentTime del clip
-                    if (activeVideoRef.current && activeClip) {
-                      const clipLocalTime = currentTime - activeClip.start;
-                      if (clipLocalTime >= 0 && clipLocalTime < (activeVideoRef.current.duration || 6)) {
-                        activeVideoRef.current.currentTime = clipLocalTime;
+                    const vid = activeVideoRef.current;
+                    if (vid && activeClip) {
+                      // Sync time — account for sourceStart (cut clips start from offset)
+                      const mediaOffset = activeClip.sourceStart || activeClip.in || 0;
+                      const clipLocalTime = (currentTime - activeClip.start) + mediaOffset;
+                      if (clipLocalTime >= 0 && clipLocalTime < (vid.duration || 6)) {
+                        vid.currentTime = clipLocalTime;
+                      }
+                      // Set volume for imported video clips (their audio IS the source)
+                      if (activeClip.type === ClipType.VIDEO) {
+                        vid.volume = isMuted ? 0 : volume;
+                        vid.muted = false;
                       }
                     }
                   }}
@@ -2986,13 +3738,24 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                 </div>
               </div>
             ) : activeClipImageUrl ? (
-              // ??? Mostrar IMAGEN del clip activo (fallback cuando no hay video)
-              <div className="relative w-full h-full">
+              // 🖼️ Mostrar IMAGEN del clip activo (fallback cuando no hay video)
+              <div className="relative w-full h-full overflow-hidden" style={{ pointerEvents: isTransformMode ? 'none' : 'auto' }}>
                 <img 
                   src={activeClipImageUrl} 
                   alt={activeClip?.title || 'Preview'} 
-                  className="w-full h-full object-contain transition-opacity duration-75"
-                  key={activeClip?.id} // Forzar re-render cuando cambia el clip
+                  className="w-full h-full transition-opacity duration-75"
+                  style={{
+                    objectFit: (activeClip?.metadata?.imageFit as any) || 'contain',
+                    transform: (() => {
+                      const t = getClipTransform(activeClip || null);
+                      return `translate(${t.x}%, ${t.y}%) scale(${t.scale})`;
+                    })(),
+                    transformOrigin: 'center center',
+                    transition: transformDragging ? 'none' : 'transform 0.15s ease-out',
+                    pointerEvents: isTransformMode ? 'none' : 'auto',
+                  }}
+                  key={activeClip?.id}
+                  draggable={false}
                 />
                 {/* Indicador de clip activo */}
                 <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 rounded text-[9px] text-white/80 flex items-center gap-1">
@@ -3020,12 +3783,34 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                 <span className="text-[10px] sm:text-xs">Vista previa del video</span>
               </div>
             )}
+            {/* 🎯 Transform mode overlay — rule-of-thirds grid + border */}
+            {isTransformMode && activeClip && (
+              <div className="absolute inset-0 pointer-events-none z-20" style={{ border: '2px solid rgba(249, 115, 22, 0.8)' }}>
+                {/* Rule of thirds grid */}
+                <div className="absolute inset-0" style={{
+                  backgroundImage: `
+                    linear-gradient(to right, rgba(255,255,255,0.15) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255,255,255,0.15) 1px, transparent 1px)
+                  `,
+                  backgroundSize: '33.333% 33.333%',
+                  backgroundPosition: '33.333% 33.333%',
+                }} />
+                {/* Center crosshair */}
+                <div className="absolute top-1/2 left-0 right-0 h-px bg-orange-500/30" />
+                <div className="absolute left-1/2 top-0 bottom-0 w-px bg-orange-500/30" />
+                {/* Instructions */}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-black/70 rounded text-[8px] text-orange-400/80 whitespace-nowrap pointer-events-none">
+                  Arrastra para mover · Scroll para escalar · Doble-clic para salir
+                </div>
+              </div>
+            )}
             {/* Barra de progreso */}
             {!selectedGalleryImage && (
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10 z-10">
                 <div className="h-full bg-gradient-to-r from-orange-500 to-orange-400 transition-all duration-100" style={{ width: `${(currentTime/duration)*100}%` }}/>
               </div>
             )}
+            </div>{/* End Aspect Ratio Container */}
           </div>
 
           {/* Divisor Vertical - Entre Visor y Galer�a */}
@@ -3039,7 +3824,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
             <div className="h-8 w-0.5 bg-white/20 rounded-full" />
           </div>
 
-          {/* Galeria de Imagenes Generadas */}
+          {/* Galeria de Archivos — Generados + Importados */}
           <div 
             className="hidden sm:flex flex-col flex-shrink-0 bg-neutral-900/50 rounded-md border border-white/5 overflow-hidden"
             style={{ width: `${galleryWidth}px`, minWidth: '80px', maxWidth: '350px' }}
@@ -3048,75 +3833,144 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
             <div className="flex items-center justify-between px-2 py-1 border-b border-white/10 bg-neutral-900">
               <div className="flex items-center gap-1">
                 <ImageIcon size={10} className="text-orange-400" />
-                <span className="text-[9px] sm:text-[10px] font-medium text-white/80">Imagenes</span>
+                <span className="text-[9px] sm:text-[10px] font-medium text-white/80">Archivos</span>
               </div>
               <div className="flex items-center gap-1">
                 {/* Boton de importar rapido */}
                 <button
-                  onClick={() => handleOpenFilePicker('image')}
+                  onClick={() => handleOpenFilePicker('all')}
                   className="p-0.5 hover:bg-white/10 rounded transition-colors"
-                  title="Importar imagenes"
+                  title="Importar archivos"
                 >
                   <Upload size={10} className="text-cyan-400" />
                 </button>
                 <Badge variant="outline" className="text-[8px] px-1 py-0 bg-orange-500/10 border-orange-500/30 text-orange-400">
-                  {generatedImages.length}
+                  {generatedImages.length + importedMedia.length}
                 </Badge>
               </div>
             </div>
             
-            {/* Grid de imagenes */}
+            {/* Grid de archivos — generados + importados */}
             <div className="p-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 flex-1">
-              {generatedImages.length > 0 ? (
-                <div className="grid grid-cols-2 gap-1">
-                  {generatedImages.map((img) => (
-                    <div 
-                      key={img.id}
-                      className={`relative aspect-square rounded overflow-hidden cursor-pointer group border-2 transition-all ${
-                        selectedGalleryImage?.id === img.id 
-                          ? 'border-orange-500 ring-1 ring-orange-500/50' 
-                          : 'border-transparent hover:border-white/30'
-                      }`}
-                      onClick={() => setSelectedGalleryImage(img)}
-                    >
-                      <img
-                        src={img.url} 
-                        alt={img.prompt || 'Generated'} 
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                      {/* Overlay con bot�n de agregar */}
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                        {onAddImageToTimeline && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onAddImageToTimeline(img);
-                            }}
-                            className="p-1 bg-orange-500 hover:bg-orange-600 rounded-full transition-colors"
-                            title="Agregar al timeline"
+              {(generatedImages.length > 0 || importedMedia.length > 0) ? (
+                <div className="flex flex-col gap-1.5">
+                  {/* Sección: Imágenes Generadas */}
+                  {generatedImages.length > 0 && (
+                    <>
+                      <div className="text-[8px] text-orange-400/70 font-medium px-0.5 uppercase tracking-wider">Generadas ({generatedImages.length})</div>
+                      <div className="grid grid-cols-2 gap-1">
+                        {generatedImages.map((img) => (
+                          <div 
+                            key={img.id}
+                            className={`relative aspect-square rounded overflow-hidden cursor-pointer group border-2 transition-all ${
+                              selectedGalleryImage?.id === img.id 
+                                ? 'border-orange-500 ring-1 ring-orange-500/50' 
+                                : 'border-transparent hover:border-white/30'
+                            }`}
+                            onClick={() => setSelectedGalleryImage(img)}
                           >
-                            <PlusIcon size={12} className="text-white" />
-                          </button>
-                        )}
+                            <img
+                              src={img.url} 
+                              alt={img.prompt || 'Generated'} 
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                            {/* Overlay con botón de agregar */}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                              {onAddImageToTimeline && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAddImageToTimeline(img);
+                                  }}
+                                  className="p-1 bg-orange-500 hover:bg-orange-600 rounded-full transition-colors"
+                                  title="Agregar al timeline"
+                                >
+                                  <PlusIcon size={12} className="text-white" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                  ))}
+                    </>
+                  )}
+                  
+                  {/* Sección: Archivos Importados */}
+                  {importedMedia.length > 0 && (
+                    <>
+                      <div className="text-[8px] text-cyan-400/70 font-medium px-0.5 uppercase tracking-wider mt-1">Importados ({importedMedia.length})</div>
+                      <div className="grid grid-cols-2 gap-1">
+                        {importedMedia.map((media) => (
+                          <div 
+                            key={media.id}
+                            className="relative aspect-square rounded overflow-hidden cursor-pointer group border-2 border-transparent hover:border-cyan-400/50 transition-all bg-neutral-800"
+                            onClick={() => {
+                              if (media.type === 'image') {
+                                setSelectedGalleryImage({ id: media.id, url: media.url, prompt: media.name });
+                              }
+                            }}
+                          >
+                            {media.type === 'image' ? (
+                              <img
+                                src={media.url} 
+                                alt={media.name} 
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : media.type === 'video' ? (
+                              <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-purple-900/40 to-neutral-900">
+                                <VideoIcon size={16} className="text-purple-400" />
+                                <span className="text-[7px] text-purple-300/80 text-center px-1 truncate w-full">{media.name}</span>
+                              </div>
+                            ) : (
+                              <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-cyan-900/40 to-neutral-900">
+                                <VolumeIcon size={16} className="text-cyan-400" />
+                                <span className="text-[7px] text-cyan-300/80 text-center px-1 truncate w-full">{media.name}</span>
+                                {/* Mini waveform preview */}
+                                <div className="flex items-end gap-px h-3 px-1">
+                                  {Array.from({ length: 12 }).map((_, j) => (
+                                    <div key={j} className="w-0.5 bg-cyan-400/50 rounded-t" style={{ 
+                                      height: `${3 + Math.abs(Math.sin(j * 1.2)) * 9}px` 
+                                    }} />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {/* Type badge */}
+                            <div className={`absolute top-0.5 right-0.5 px-1 py-0 rounded text-[6px] font-bold uppercase ${
+                              media.type === 'audio' ? 'bg-cyan-500/80 text-white' :
+                              media.type === 'video' ? 'bg-purple-500/80 text-white' :
+                              'bg-orange-500/80 text-white'
+                            }`}>
+                              {media.type === 'audio' ? '♪' : media.type === 'video' ? '▶' : '🖼'}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-2 text-white/30 gap-1">
+                <div className="flex flex-col items-center justify-center py-4 text-white/30 gap-2">
                   <ImageIcon size={16} />
-                  <span className="text-[8px] text-center">Sin imágenes</span>
+                  <span className="text-[8px] text-center">Sin archivos</span>
+                  <button 
+                    onClick={() => handleOpenFilePicker('all')}
+                    className="text-[8px] text-cyan-400 hover:text-cyan-300 transition-colors"
+                  >
+                    + Importar
+                  </button>
                 </div>
               )}
             </div>
           </div>
           
           {/* 🔊 Audio Element - Mejorado con manejo de eventos */}
-          {audioPreviewUrl && (
+          {activeAudioSource && (
             <audio 
               ref={audioRef} 
-              src={audioPreviewUrl} 
+              src={activeAudioSource.url} 
               preload="auto"
               onCanPlayThrough={() => {
                 setAudioReady(true);
@@ -3131,8 +3985,9 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
               onPlay={() => {}}
               onPause={() => {}}
               onEnded={() => {
-                setIsPlaying(false);
-                setCurrentTime(0);
+                // Audio file reached its end — just mark as not started
+                // The performance.now() clock keeps running, timeline continues
+                audioStartedRef.current = false;
               }}
             />
           )}
@@ -3149,8 +4004,60 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
           <div className="w-12 h-1 bg-white/20 rounded-full" />
         </div>
 
-        {/* Timeline con Capas - Ocupa el resto del espacio */}
-        <div className="relative flex-1 overflow-hidden min-h-[120px]">
+        {/* Timeline con Capas - Ocupa el resto del espacio — DROP ZONE */}
+        <div
+          ref={timelineScrollRef}
+          className="relative flex-1 overflow-x-auto overflow-y-hidden min-h-[120px]"
+          style={{ scrollbarWidth: 'thin', scrollbarColor: '#3f3f46 #18181b' }}
+          onWheel={handleTimelineWheel}
+          onDrop={handleTimelineDrop}
+          onDragOver={handleTimelineDragOver}
+          onDragEnter={handleTimelineDragEnter}
+          onDragLeave={handleTimelineDragLeave}
+        >
+          {/* 🎬 Drop zone overlay — visible while dragging files over timeline */}
+          {isDraggingFileOver && (
+            <div
+              className="absolute inset-0 z-30 pointer-events-none"
+              style={{ background: 'rgba(249, 115, 22, 0.06)', border: '2px dashed rgba(249, 115, 22, 0.5)', borderRadius: 6 }}
+            >
+              {/* Drop position vertical line */}
+              {dropIndicator && (
+                <div
+                  className="absolute top-0 bottom-0 pointer-events-none"
+                  style={{ left: layerPanelWidth + dropIndicator.time * zoom, width: 2, background: '#f97316', zIndex: 35 }}
+                >
+                  {/* Top triangle */}
+                  <div className="absolute -top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[5px] border-r-[5px] border-t-[7px] border-l-transparent border-r-transparent border-t-orange-500" />
+                </div>
+              )}
+
+              {/* Highlighted target layer band */}
+              {dropIndicator && (
+                <div
+                  className="absolute pointer-events-none"
+                  style={{
+                    left: layerPanelWidth,
+                    right: 0,
+                    top: RULER_HEIGHT + (dropIndicator.layerId - 1) * DEFAULT_LAYER_HEIGHT,
+                    height: DEFAULT_LAYER_HEIGHT,
+                    background: 'rgba(249, 115, 22, 0.12)',
+                    borderTop: '1px solid rgba(249, 115, 22, 0.4)',
+                    borderBottom: '1px solid rgba(249, 115, 22, 0.4)',
+                    zIndex: 31,
+                  }}
+                />
+              )}
+
+              {/* "Drop here" label */}
+              <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 32 }}>
+                <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-black/70 border border-orange-500/50 shadow-lg">
+                  <Upload size={16} className="text-orange-400" />
+                  <span className="text-sm font-medium text-orange-300">Suelta aquí para importar</span>
+                </div>
+              </div>
+            </div>
+          )}
           {/* Divisor para ajustar ancho del panel de capas */}
           <div 
             className={`absolute top-0 bottom-0 w-2 cursor-col-resize z-20 flex items-center justify-center transition-colors ${
@@ -3164,11 +4071,11 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
           </div>
 
           {/* Regla superior con timecode y playhead */}
-          <div className="relative border-b border-white/10 bg-gradient-to-b from-neutral-800 to-neutral-900" style={{ height: 48 }}>
+          <div className="relative border-b border-white/10 bg-gradient-to-b from-neutral-800 to-neutral-900" style={{ height: 48, minWidth: `${layerPanelWidth + duration * zoom + 40}px` }}>
             {/* Panel de Timecode y Framerate - siempre visible */}
             <div 
-              className="absolute left-0 top-0 bottom-0 flex flex-col items-center justify-center bg-gradient-to-r from-neutral-800 to-neutral-700 z-20 shadow-lg border-r border-white/10"
-              style={{ width: layerPanelWidth }}
+              className="flex flex-col items-center justify-center bg-gradient-to-r from-neutral-800 to-neutral-700 z-20 shadow-lg border-r border-white/10"
+              style={{ width: layerPanelWidth, position: 'sticky', left: 0, top: 0, bottom: 0, height: 48 }}
             >
               {/* Timecode principal */}
               <div className="text-[9px] sm:text-[11px] md:text-xs font-mono font-bold text-orange-400 tracking-wider" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
@@ -3237,6 +4144,9 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
             onCameraAngles={handleCameraAngles}
             onRegenerateImage={handleRegenerateImage}
             onGenerateVideo={handleGenerateVideo}
+            onUpdateImageFit={handleUpdateImageFit}
+            onSnapQuery={handleSnapQuery}
+            activeSnap={engine.activeSnap}
           />
         </div>
 
@@ -3271,11 +4181,8 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
       <MotionControlPanel
         open={motionPanelOpen}
         onClose={() => setMotionPanelOpen(false)}
-        scenes={[]}
-        onApplyMotion={(scenes) => {
-          logger.info(`? [Timeline] Motion aplicado a ${scenes.length} escenas`);
-          setMotionPanelOpen(false);
-        }}
+        clips={clips}
+        onUpdateClip={updateClip}
       />
 
       {/* Video Preview Modal */}
@@ -3338,6 +4245,18 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
           onImageEdited={handleImageEdited}
         />
       )}
+
+      {/* ?? Export Panel */}
+      <ExportPanel
+        open={showExportPanel}
+        onClose={() => setShowExportPanel(false)}
+        clips={clips}
+        duration={duration}
+        audioUrl={audioPreviewUrl}
+        projectName={projectName || 'boostify-export'}
+        aspectRatio={aspectRatio}
+        onExportComplete={onExportComplete}
+      />
 
       {/* ??? Men� Contextual (Click Derecho) */}
       {contextMenu.visible && (
@@ -3572,11 +4491,8 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
 };
 
 /** ---------- Helpers ---------- */
-// ?? CRITICAL: M�xima duraci�n de clip (Grok Imagine Video = 6 segundos)
-const MAX_CLIP_DURATION_SECONDS = 6;
-
 // Función que acepta clips en cualquier formato (TimelineClip o TimelineItem) y los normaliza
-// También segmenta clips mayores de 6 segundos para compatibilidad con generación de video
+// También segmenta clips mayores de MAX_CLIP_DURATION para compatibilidad con generación de video
 function normalizeClips(clips: any[]): TimelineClip[] {
   if (!clips || !Array.isArray(clips)) return [];
   
@@ -3630,15 +4546,16 @@ function normalizeClips(clips: any[]): TimelineClip[] {
       durationSeconds = typeof c.duration === 'number' ? c.duration : 3;
     }
     
-    // ?? CRITICAL: Segmentar clips mayores de MAX_CLIP_DURATION_SECONDS
-    // Las generaciones de video solo soportan hasta 5 segundos
-    if (durationSeconds > MAX_CLIP_DURATION_SECONDS && normalizedType !== ClipType.AUDIO) {
-      const segmentCount = Math.ceil(durationSeconds / MAX_CLIP_DURATION_SECONDS);
+    // ?? CRITICAL: Segmentar clips mayores de MAX_CLIP_DURATION
+    // Las generaciones de video solo soportan hasta 6 segundos
+    // NOTA: NO segmentar clips de VIDEO importados — solo IMAGE/GENERATED_IMAGE para AI generation
+    if (durationSeconds > MAX_CLIP_DURATION && normalizedType !== ClipType.AUDIO && normalizedType !== ClipType.VIDEO) {
+      const segmentCount = Math.ceil(durationSeconds / MAX_CLIP_DURATION);
       
       for (let i = 0; i < segmentCount; i++) {
-        const segmentStart = startSeconds + (i * MAX_CLIP_DURATION_SECONDS);
-        const remainingDuration = durationSeconds - (i * MAX_CLIP_DURATION_SECONDS);
-        const segmentDuration = Math.min(MAX_CLIP_DURATION_SECONDS, remainingDuration);
+        const segmentStart = startSeconds + (i * MAX_CLIP_DURATION);
+        const remainingDuration = durationSeconds - (i * MAX_CLIP_DURATION);
+        const segmentDuration = Math.min(MAX_CLIP_DURATION, remainingDuration);
         
         normalizedClips.push({
           ...c,
@@ -3694,16 +4611,7 @@ function formatTime(sec: number) {
 }
 
 const Ruler: React.FC<{ zoom: number; duration: number; labelWidth: number; onRulerClick?: (time: number) => void; framerate?: number }> = ({ zoom, duration, labelWidth, onRulerClick, framerate = 30 }) => {
-  const ticks = Math.ceil(duration);
-  
-  // Determinar niveles de detalle seg�n zoom
-  const zoomLevel = zoom < 40 ? 'low' : zoom < 80 ? 'medium' : zoom < 150 ? 'high' : 'ultra';
-  
-  // Mostrar marcas principales cada X segundos
-  const majorEvery = zoomLevel === 'low' ? 10 : zoomLevel === 'medium' ? 5 : 1;
-  const minorEvery = zoomLevel === 'low' ? 5 : 1;
-  const showFrameMarks = zoomLevel === 'ultra' || (zoomLevel === 'high' && zoom >= 120);
-  
+
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!onRulerClick) return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -3713,137 +4621,179 @@ const Ruler: React.FC<{ zoom: number; duration: number; labelWidth: number; onRu
     onRulerClick(Math.max(0, Math.min(duration, snappedTime)));
   };
 
-  // Formatear timecode MM:SS:FF
-  const formatTimecode = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds) % 60;
-    const frames = Math.floor((seconds % 1) * framerate);
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}:${String(frames).padStart(2, '0')}`;
+  // ═══════════════════════════════════════════════════════════
+  // PROFESSIONAL NLE RULER — Premiere Pro / DaVinci Resolve style
+  // Dynamically selects major/minor intervals based on px/s zoom
+  // Always shows SMPTE timecode (HH:MM:SS:FF)
+  // ═══════════════════════════════════════════════════════════
+
+  const frameTime = 1 / framerate;
+
+  // Formatear timecode SMPTE: MM:SS:FF (o HH:MM:SS:FF si > 1h)
+  const fmtTC = (seconds: number): string => {
+    const totalFrames = Math.round(seconds * framerate);
+    const ff = totalFrames % framerate;
+    const totalSec = Math.floor(totalFrames / framerate);
+    const ss = totalSec % 60;
+    const mm = Math.floor(totalSec / 60) % 60;
+    const hh = Math.floor(totalSec / 3600);
+    if (hh > 0) return `${String(hh)}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}:${String(ff).padStart(2,'0')}`;
+    return `${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}:${String(ff).padStart(2,'0')}`;
   };
 
-  // Formato corto para zoom bajo
-  const formatShort = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    if (mins > 0) return `${mins}:${String(secs).padStart(2, '0')}`;
-    return `${secs}s`;
+  // Short format for when labels need to be compact
+  const fmtShort = (seconds: number): string => {
+    const totalSec = Math.floor(seconds);
+    const mm = Math.floor(totalSec / 60);
+    const ss = totalSec % 60;
+    if (mm > 0) return `${mm}:${String(ss).padStart(2,'0')}`;
+    return `${ss}s`;
   };
 
-  // Generar marcas de frames entre segundos
-  const frameMarks = [];
-  if (showFrameMarks) {
-    for (let sec = 0; sec <= ticks; sec++) {
-      for (let f = 1; f < framerate; f++) {
-        const time = sec + f / framerate;
-        if (time > duration) break;
-        const x = time * zoom;
-        // Subdivisiones: cada 5 frames m�s visible, cada 10 a�n m�s
-        const isMidFrame = f === Math.floor(framerate / 2);
-        const isQuarterFrame = f % Math.floor(framerate / 4) === 0;
-        const height = isMidFrame ? 40 : isQuarterFrame ? 28 : 16;
-        const opacity = isMidFrame ? 0.4 : isQuarterFrame ? 0.25 : 0.12;
-        
-        frameMarks.push(
-          <div 
-            key={`f-${sec}-${f}`} 
-            className="absolute bottom-0 pointer-events-none"
-            style={{ 
-              left: x, 
-              width: 1, 
-              height: `${height}%`,
-              background: `rgba(255,255,255,${opacity})`
-            }}
-          />
-        );
-      }
+  // ── Determine intervals based on zoom (px per second) ──
+  // The goal: major labels should be spaced ~80-200px apart
+  // We pick the smallest interval whose px width >= minLabelSpacing
+  const minLabelSpacing = 70;
+  
+  // Candidate intervals in seconds, from finest to coarsest
+  // Each: [majorInterval, minorSubdivisions, labelStyle]
+  type IntervalDef = { major: number; minorCount: number; mode: 'frames' | 'time' };
+  const candidates: IntervalDef[] = [
+    { major: frameTime,       minorCount: 1, mode: 'frames' },  // 1 frame
+    { major: frameTime * 2,   minorCount: 2, mode: 'frames' },  // 2 frames
+    { major: frameTime * 5,   minorCount: 5, mode: 'frames' },  // 5 frames
+    { major: frameTime * 10,  minorCount: 5, mode: 'frames' },  // 10 frames
+    { major: 0.5,             minorCount: 5, mode: 'time' },    // half second
+    { major: 1,               minorCount: framerate <= 30 ? 5 : 6, mode: 'time' },  // 1s
+    { major: 2,               minorCount: 4, mode: 'time' },     // 2s
+    { major: 5,               minorCount: 5, mode: 'time' },     // 5s
+    { major: 10,              minorCount: 5, mode: 'time' },     // 10s
+    { major: 15,              minorCount: 3, mode: 'time' },     // 15s
+    { major: 30,              minorCount: 6, mode: 'time' },     // 30s
+    { major: 60,              minorCount: 6, mode: 'time' },     // 1min
+    { major: 120,             minorCount: 4, mode: 'time' },     // 2min
+    { major: 300,             minorCount: 5, mode: 'time' },     // 5min
+    { major: 600,             minorCount: 5, mode: 'time' },     // 10min
+  ];
+
+  // Pick the finest interval that still gives enough label spacing
+  let chosen = candidates[candidates.length - 1];
+  for (const c of candidates) {
+    if (c.major * zoom >= minLabelSpacing) {
+      chosen = c;
+      break;
     }
+  }
+
+  const majorInterval = chosen.major;
+  const minorInterval = majorInterval / chosen.minorCount;
+  const showFrameNumbers = chosen.mode === 'frames';
+
+  // ── Generate all ticks ──
+  const ticks: React.ReactNode[] = [];
+  const totalTicks = Math.ceil(duration / minorInterval) + 1;
+  
+  // Limit total tick count for performance
+  const maxTicks = 3000;
+  const step = totalTicks > maxTicks ? Math.ceil(totalTicks / maxTicks) : 1;
+
+  for (let i = 0; i <= totalTicks; i += step) {
+    const time = i * minorInterval;
+    if (time > duration + minorInterval) break;
+    
+    const x = time * zoom;
+    
+    // Determine tick rank
+    const isMajor = Math.abs(time % majorInterval) < frameTime * 0.5 || 
+                     Math.abs(time % majorInterval - majorInterval) < frameTime * 0.5;
+    const halfInterval = majorInterval / 2;
+    const isMid = !isMajor && (
+      Math.abs(time % halfInterval) < frameTime * 0.5 || 
+      Math.abs(time % halfInterval - halfInterval) < frameTime * 0.5
+    );
+    
+    // Visual properties by rank
+    let height: number, width: number, opacity: number;
+    if (isMajor) {
+      height = 65; width = 1.5; opacity = 1;
+    } else if (isMid) {
+      height = 42; width = 1; opacity = 0.45;
+    } else {
+      height = 22; width = 1; opacity = 0.18;
+    }
+
+    ticks.push(
+      <div key={`t-${i}`} className="absolute h-full pointer-events-none" style={{ left: x }}>
+        {/* Tick line */}
+        <div 
+          className="absolute bottom-0"
+          style={{ 
+            width, 
+            height: `${height}%`,
+            background: isMajor 
+              ? 'rgba(249,115,22,0.9)' 
+              : isMid 
+                ? 'rgba(255,255,255,0.35)' 
+                : `rgba(255,255,255,${opacity})`,
+            boxShadow: isMajor ? '0 0 4px rgba(249,115,22,0.3)' : 'none',
+          }}
+        />
+        
+        {/* Label — only on major ticks */}
+        {isMajor && (
+          <div className="absolute top-[2px] -translate-x-1/2" style={{ left: 0 }}>
+            <span 
+              className="font-mono font-semibold text-white whitespace-nowrap px-1 py-0.5 rounded-sm leading-none"
+              style={{ 
+                fontSize: showFrameNumbers ? '9px' : majorInterval >= 60 ? '10px' : '9.5px',
+                background: 'rgba(0,0,0,0.65)',
+                textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+                border: '1px solid rgba(249,115,22,0.2)',
+                letterSpacing: '0.02em',
+              }}
+            >
+              {showFrameNumbers ? fmtTC(time) : majorInterval < 1 ? fmtTC(time) : fmtTC(time)}
+            </span>
+            {/* Frame number below label at high zoom */}
+            {showFrameNumbers && (
+              <div className="text-center mt-0.5">
+                <span className="font-mono text-orange-300/50 leading-none" style={{ fontSize: '7px' }}>
+                  f{Math.round(time * framerate)}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
   }
   
   return (
     <div 
-      className="absolute inset-0 select-none overflow-hidden cursor-pointer" 
+      className="absolute inset-0 select-none overflow-visible cursor-pointer" 
       style={{ marginLeft: labelWidth }}
       onClick={handleClick}
     >
-      {/* Fondo degradado profesional */}
+      {/* Professional dark gradient background */}
       <div className="absolute inset-0 bg-gradient-to-b from-neutral-800/80 via-neutral-900/90 to-black" />
       
-      {/* L�nea base inferior */}
-      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-orange-500/50 via-orange-400/30 to-orange-500/50" />
+      {/* Bottom baseline */}
+      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-orange-500/40 via-orange-400/25 to-orange-500/40" />
       
-      {/* Marcas de frames */}
-      {frameMarks}
+      {/* All ticks */}
+      {ticks}
       
-      {/* Marcas de segundos */}
-      {[...Array(ticks + 1)].map((_, sec) => {
-        const x = sec * zoom;
-        const isMajor = sec % majorEvery === 0;
-        const isMinor = sec % minorEvery === 0;
-        if (!isMinor) return null;
-        
-        const height = isMajor ? 65 : 35;
-        const width = isMajor ? 2 : 1;
-        const color = isMajor ? 'bg-orange-400' : 'bg-white/30';
-        
-        return (
-          <div key={`s-${sec}`} className="absolute h-full pointer-events-none" style={{ left: x }}>
-            {/* L�nea vertical */}
-            <div 
-              className={`absolute bottom-0 ${color} ${isMajor ? 'shadow-sm shadow-orange-500/50' : ''}`}
-              style={{ width, height: `${height}%` }}
-            />
-            
-            {/* N�mero de timecode */}
-            {isMajor && (
-              <div className="absolute top-[3px] -translate-x-1/2" style={{ left: 0 }}>
-                <div className="flex flex-col items-center">
-                  {/* Timecode principal */}
-                  <span 
-                    className="font-mono font-bold text-white px-1.5 py-0.5 rounded-sm leading-none"
-                    style={{ 
-                      fontSize: zoomLevel === 'low' ? '9px' : '11px',
-                      background: 'linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 100%)',
-                      textShadow: '0 1px 2px rgba(0,0,0,1), 0 0 8px rgba(249,115,22,0.3)',
-                      border: '1px solid rgba(249,115,22,0.2)'
-                    }}
-                  >
-                    {zoomLevel === 'ultra' ? formatTimecode(sec) : formatShort(sec)}
-                  </span>
-                  
-                  {/* N�mero de frame peque�o (solo en zoom ultra) */}
-                  {zoomLevel === 'ultra' && (
-                    <span 
-                      className="font-mono text-orange-300/60 mt-0.5 leading-none"
-                      style={{ fontSize: '7px' }}
-                    >
-                      f{sec * framerate}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })}
-      
-      {/* Indicador de framerate */}
+      {/* FPS badge — sticky right */}
       <div 
         className="absolute top-1 right-2 font-mono font-bold text-orange-400/80 px-1.5 py-0.5 rounded"
         style={{ 
-          fontSize: '9px',
-          background: 'rgba(0,0,0,0.5)',
-          border: '1px solid rgba(249,115,22,0.3)'
+          fontSize: '8px',
+          background: 'rgba(0,0,0,0.55)',
+          border: '1px solid rgba(249,115,22,0.3)',
+          letterSpacing: '0.04em',
         }}
       >
-        {framerate} FPS
-      </div>
-      
-      {/* Indicador de zoom level */}
-      <div 
-        className="absolute bottom-1 right-2 font-mono text-white/30"
-        style={{ fontSize: '7px' }}
-      >
-        {Math.round(zoom)}px/s
+        {framerate}fps · {majorInterval >= 1 ? `${majorInterval}s` : `${Math.round(majorInterval * framerate)}f`}
       </div>
     </div>
   );
