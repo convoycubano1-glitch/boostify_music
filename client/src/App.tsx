@@ -604,7 +604,7 @@ const App = () => {
                   <Web3Wrapper>
                     <Router />
                   </Web3Wrapper>
-                  <Toaster />
+                  {/* Toaster hidden by request — notifications disabled */}
                 </EditorProvider>
               </GlobalAuthGuard>
             </SubscriptionProvider>

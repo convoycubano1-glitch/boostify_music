@@ -112,7 +112,7 @@ export function Header() {
 
             {user ? (
               <div className="flex items-center space-x-2">
-                <NotificationBell />
+                {/* NotificationBell hidden by request */}
                 <Link href="/affiliates">
                   <Button variant="default" size="sm" className="gap-1 text-xs bg-primary hover:bg-primary/90">
                     <span className="hidden xl:inline">🎯 Affiliate Dashboard</span>

@@ -261,14 +261,17 @@ export function VideoBudgetModal({
           description: `Presupuesto registrado: ${formatPrice(budget.displayPrice)} (interno: $${budget.internalCost.toFixed(2)})`,
         });
         onBudgetApproved(response.budgetId);
+        return;
       }
     } catch (error: any) {
-      logger.error('[VideoBudget] Admin bypass error:', error);
+      logger.warn('[VideoBudget] Admin bypass API failed, using client-side bypass:', error.message);
+      // Fallback: approve without DB record if API is unavailable
       toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
+        title: '👑 Admin Bypass (Local)',
+        description: `Presupuesto: ${formatPrice(budget.displayPrice)} — registro pendiente`,
       });
+      onBudgetApproved(-1); // -1 = no DB record
+      return;
     }
   }, [budgetConfig, userEmail, userId, songTitle, projectId, budget, toast, onBudgetApproved]);
 
@@ -611,23 +614,11 @@ export function VideoBudgetModal({
                 </Button>
               )}
               <Button
-                onClick={isAdmin ? handleAdminBypass : handleProceedToContract}
-                className={`flex-1 h-12 text-lg font-bold ${
-                  isAdmin 
-                    ? 'hidden' 
-                    : 'bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700'
-                }`}
+                onClick={isAdmin ? handleProceedToContract : handleProceedToContract}
+                className="flex-1 h-12 text-lg font-bold bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
               >
-                Continuar <ArrowRight className="w-5 h-5 ml-2" />
+                {isAdmin ? 'Ver Contrato' : 'Continuar'} <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
-              {!isAdmin && (
-                <Button
-                  onClick={handleProceedToContract}
-                  className="flex-1 h-12 text-lg font-bold bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700"
-                >
-                  Continuar <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              )}
             </div>
           </div>
         )}
@@ -744,23 +735,33 @@ export function VideoBudgetModal({
               >
                 ← Volver
               </Button>
-              <Button
-                onClick={handleProceedToPayment}
-                disabled={!contractAccepted || !termsAccepted || !signature.trim() || isCreatingPayment}
-                className="flex-1 h-11 text-lg font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-50"
-              >
-                {isCreatingPayment ? (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                    Preparando...
-                  </div>
-                ) : (
-                  <>
-                    <CreditCard className="w-5 h-5 mr-2" />
-                    Proceder al Pago
-                  </>
-                )}
-              </Button>
+              {isAdmin ? (
+                <Button
+                  onClick={handleAdminBypass}
+                  className="flex-1 h-11 text-lg font-bold bg-gradient-to-r from-yellow-500 to-amber-500 text-black hover:from-yellow-600 hover:to-amber-600"
+                >
+                  <Crown className="w-5 h-5 mr-2" />
+                  Aprobar como Admin
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleProceedToPayment}
+                  disabled={!contractAccepted || !termsAccepted || !signature.trim() || isCreatingPayment}
+                  className="flex-1 h-11 text-lg font-bold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-50"
+                >
+                  {isCreatingPayment ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                      Preparando...
+                    </div>
+                  ) : (
+                    <>
+                      <CreditCard className="w-5 h-5 mr-2" />
+                      Proceder al Pago
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </div>
         )}

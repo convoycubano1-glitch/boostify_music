@@ -37,10 +37,12 @@ import {
 interface MicroCutsPanelProps {
   config: MicroCutConfig;
   onConfigChange: (config: MicroCutConfig) => void;
+  onApplyMicroCuts?: () => void;      // Aplicar microcortes: cortar clips en el timeline
   plans?: Map<number | string, MicroCutPlan>;  // Planes actuales
   genre?: string;
   bpm?: number;
   totalClips?: number;
+  isApplying?: boolean;               // Estado de procesamiento
   className?: string;
 }
 
@@ -51,10 +53,12 @@ interface MicroCutsPanelProps {
 export function MicroCutsPanel({
   config,
   onConfigChange,
+  onApplyMicroCuts,
   plans,
   genre,
   bpm,
   totalClips = 0,
+  isApplying = false,
   className = '',
 }: MicroCutsPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -462,6 +466,44 @@ export function MicroCutsPanel({
             </div>
           )}
 
+          {/* ⚡ APPLY MICROCUTS BUTTON - Cortar clips en el timeline */}
+          {onApplyMicroCuts && totalClips > 0 && (
+            <button
+              onClick={onApplyMicroCuts}
+              disabled={isApplying || !config.enabled}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                fontSize: '12px',
+                fontWeight: 700,
+                borderRadius: '8px',
+                border: '1px solid rgba(168, 85, 247, 0.5)',
+                background: isApplying 
+                  ? 'rgba(168, 85, 247, 0.1)' 
+                  : 'linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(139, 92, 246, 0.3))',
+                color: isApplying ? '#888' : '#e2e8f0',
+                cursor: isApplying ? 'wait' : 'pointer',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                letterSpacing: '0.5px',
+              }}
+            >
+              {isApplying ? (
+                <>
+                  <span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>⏳</span>
+                  Aplicando microcortes...
+                </>
+              ) : (
+                <>
+                  ⚡ Aplicar Microcortes al Timeline ({totalClips} clips)
+                </>
+              )}
+            </button>
+          )}
+
           {/* Info Footer */}
           <div style={{ 
             display: 'flex', 
@@ -474,8 +516,8 @@ export function MicroCutsPanel({
           }}>
             <Info size={12} style={{ color: '#60a5fa', flexShrink: 0, marginTop: '1px' }} />
             <span style={{ fontSize: '9px', color: '#94a3b8', lineHeight: '1.4' }}>
-              Los microcortes se inyectan como instrucciones de movimiento en el prompt de Kling. 
-              Cada clip recibe efectos según su sección musical, energía y categoría.
+              Los microcortes dividen cada clip en segmentos con efectos cinematográficos únicos. 
+              Pulsa "Aplicar" para cortar los clips según la intensidad y efectos seleccionados.
             </span>
           </div>
         </div>

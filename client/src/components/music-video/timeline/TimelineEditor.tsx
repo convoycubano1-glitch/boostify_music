@@ -252,6 +252,7 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   );
   const [microCutPlans, setMicroCutPlans] = useState<Map<number | string, MicroCutPlan>>(new Map());
   const [showMicroCutsPanel, setShowMicroCutsPanel] = useState(false);
+  const [isApplyingMicroCuts, setIsApplyingMicroCuts] = useState(false);
 
   // 🎯 CapCut-style media transform editing (scale/position within frame)
   const [isTransformMode, setIsTransformMode] = useState(false);
@@ -387,16 +388,23 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
             return newClip;
           });
           
-          // 🔒 Preserve user-imported clips that don't exist in initialClips
-          const importedClips = prevClips.filter(c => 
-            c.metadata?.isImported && !mergedClips.find(mc => mc.id === c.id)
+          // 🔒 Preserve clips that don't exist in initialClips:
+          // - User-imported clips
+          // - Auto-added audio clips (main audio, lipsync segments)
+          const preservedClips = prevClips.filter(c => 
+            !mergedClips.find(mc => mc.id === c.id) && (
+              c.metadata?.isImported || 
+              c.metadata?.isMainAudio || 
+              c.metadata?.isLipsyncSegment ||
+              c.type === ClipType.AUDIO
+            )
           );
           
-          if (importedClips.length > 0) {
-            logger.info(`📂 [SYNC] Preservando ${importedClips.length} clip(s) importados por el usuario`);
+          if (preservedClips.length > 0) {
+            logger.info(`📂 [SYNC] Preservando ${preservedClips.length} clip(s) (audio/importados)`);
           }
           
-          return [...mergedClips, ...importedClips];
+          return [...mergedClips, ...preservedClips];
         });
       }
     }
@@ -1605,6 +1613,151 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
     }
   }, [readOnly, currentTime, engine.razorAllTracks, pushHistory]);
 
+  // ⚡ APPLY MICROCUTS: Split layer-1 clips into sub-segments with cinematographic effects
+  const handleApplyMicroCuts = useCallback(() => {
+    if (readOnly || isApplyingMicroCuts) return;
+    
+    const currentClips = clipsRef.current;
+    const layer1Clips = currentClips.filter(c => c.layerId === 1);
+    
+    if (layer1Clips.length === 0) {
+      toast({
+        title: "Sin clips",
+        description: "No hay clips de imagen en el timeline para aplicar microcortes",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsApplyingMicroCuts(true);
+
+    try {
+      // Determine number of cuts per clip based on intensity
+      const cutsPerClip: Record<string, number> = {
+        subtle: 2,
+        medium: 3,
+        aggressive: 4,
+        extreme: 6,
+      };
+      const numCuts = cutsPerClip[microCutConfig.intensity] || 3;
+
+      // Build ClipContexts for the engine
+      const clipContexts: ClipContext[] = layer1Clips.map((clip, idx) => ({
+        id: clip.id,
+        shotCategory: (clip.shotCategory as 'PERFORMANCE' | 'B-ROLL' | 'STORY') || 'B-ROLL',
+        musicSection: mapToMusicSection(clip.metadata?.section || clip.metadata?.musicSection || 'verse'),
+        energy: detectSectionEnergy(clip.metadata?.section || clip.metadata?.musicSection || 'medium'),
+        duration: clip.duration,
+        isKeyMoment: clip.metadata?.isKeyMoment || false,
+        shotType: clip.metadata?.shot_type || clip.metadata?.shotType,
+        cameraMovement: clip.metadata?.camera_movement || clip.metadata?.cameraMovement || 'smooth',
+        emotion: clip.metadata?.emotion || clip.metadata?.mood,
+        lyricsSegment: clip.lyricsSegment || clip.metadata?.lyrics,
+        isFirstClip: idx === 0,
+        isLastClip: idx === layer1Clips.length - 1,
+      }));
+
+      // Generate microcut plans for all clips using the engine
+      const basePrompts = new Map<number | string, string>();
+      layer1Clips.forEach(clip => {
+        basePrompts.set(clip.id, clip.metadata?.imagePrompt || clip.title || '');
+      });
+      const plans = generateTimelineMicroCuts(clipContexts, basePrompts, microCutConfig);
+      setMicroCutPlans(plans);
+
+      // Now split each layer-1 clip into sub-segments
+      let nextId = Math.max(0, ...currentClips.map(c => c.id)) + 1;
+      const nonLayer1Clips = currentClips.filter(c => c.layerId !== 1);
+      const newLayer1Clips: TimelineClip[] = [];
+
+      for (const clip of layer1Clips) {
+        const plan = plans.get(clip.id);
+        const effectCount = plan ? Math.min(plan.effects.length, numCuts) : numCuts;
+        const actualCuts = Math.max(1, effectCount); // At least 1 segment
+
+        // Only split if clip is long enough (>= 1.5 seconds per segment)
+        const minSegmentDuration = 1.0;
+        if (clip.duration < minSegmentDuration * 2 || actualCuts <= 1) {
+          // Clip too short to split or only 1 segment — keep as-is with effect metadata
+          const enrichedClip = {
+            ...clip,
+            metadata: {
+              ...clip.metadata,
+              microCutEffect: plan?.effects[0]?.effect || 'none',
+              microCutPrompt: plan?.enhancedPrompt || clip.metadata?.imagePrompt || '',
+              isMicroCut: true,
+            },
+          };
+          newLayer1Clips.push(enrichedClip);
+          continue;
+        }
+
+        // Calculate segment durations — split evenly
+        const segmentDuration = clip.duration / actualCuts;
+
+        for (let i = 0; i < actualCuts; i++) {
+          const segStart = clip.start + (i * segmentDuration);
+          const segDur = (i === actualCuts - 1) 
+            ? (clip.start + clip.duration - segStart) // Last segment gets remainder
+            : segmentDuration;
+
+          const effect = plan?.effects[i] || plan?.effects[0] || null;
+          const effectName = effect?.effect || 'none';
+          const effectPrompt = effect?.klingPromptSuffix || '';
+
+          const segment: TimelineClip = {
+            ...clip,
+            id: i === 0 ? clip.id : nextId++, // Keep original ID for first segment
+            start: Math.round(segStart * 100) / 100,
+            duration: Math.round(segDur * 100) / 100,
+            title: `${clip.title || 'Clip'} [${effectName}]`,
+            sourceStart: (clip.sourceStart || 0) + (i * segmentDuration),
+            metadata: {
+              ...clip.metadata,
+              microCutEffect: effectName,
+              microCutIntensity: effect?.intensityMultiplier || 0.5,
+              microCutTiming: effect?.timingNote || '',
+              microCutPrompt: effect 
+                ? `${clip.metadata?.imagePrompt || clip.title || ''}. ${effectPrompt}`
+                : clip.metadata?.imagePrompt || '',
+              microCutCategory: effect?.category || 'camera',
+              microCutMotion: effect?.motionDescription || '',
+              isMicroCut: true,
+              originalClipId: clip.id,
+              segmentIndex: i,
+              totalSegments: actualCuts,
+            },
+          };
+
+          newLayer1Clips.push(segment);
+        }
+      }
+
+      // Combine and sort
+      const allNewClips = [...nonLayer1Clips, ...newLayer1Clips].sort((a, b) => a.start - b.start);
+      pushHistory(allNewClips, 'microcuts-apply');
+
+      const totalSegments = newLayer1Clips.length;
+      const originalCount = layer1Clips.length;
+
+      toast({
+        title: `⚡ Microcortes Aplicados`,
+        description: `${originalCount} clips → ${totalSegments} segmentos (${microCutConfig.intensity})`,
+      });
+
+      logger.info(`⚡ [MicroCuts] Applied: ${originalCount} clips → ${totalSegments} segments (${microCutConfig.intensity})`);
+    } catch (err) {
+      logger.error('Error applying microcuts:', err);
+      toast({
+        title: "Error",
+        description: "No se pudieron aplicar los microcortes",
+        variant: "destructive",
+      });
+    } finally {
+      setIsApplyingMicroCuts(false);
+    }
+  }, [readOnly, isApplyingMicroCuts, microCutConfig, pushHistory, toast, generateTimelineMicroCuts]);
+
   // 🧲 Snap query callback for LayerRow visual snap indicators
   const handleSnapQuery = useCallback((time: number, excludeClipId?: number) => {
     return engine.snap(time, clipsRef.current, excludeClipId);
@@ -2577,7 +2730,11 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
       // ⚡ MICROCORTES: Enriquecer prompt con efectos cinematográficos de Kling
       let enhancedPrompt: string;
       
-      if (microCutConfig.enabled) {
+      // If this clip already has a pre-computed microcut prompt (from "Aplicar Microcortes"), use it directly
+      if (sceneMetadata.isMicroCut && sceneMetadata.microCutPrompt) {
+        enhancedPrompt = sceneMetadata.microCutPrompt;
+        logger.info(`⚡ [MicroCuts] Clip ${clip.id}: Using pre-applied microcut prompt (${sceneMetadata.microCutEffect})`);
+      } else if (microCutConfig.enabled) {
         // Construir contexto del clip para el motor de microcortes
         const clipContext: ClipContext = {
           id: clip.id,
@@ -4301,10 +4458,12 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
           <MicroCutsPanel
             config={microCutConfig}
             onConfigChange={setMicroCutConfig}
+            onApplyMicroCuts={handleApplyMicroCuts}
             plans={microCutPlans}
             genre={genreHint}
             bpm={audioAnalysis?.bpm}
             totalClips={clips.filter(c => c.layerId === 1).length}
+            isApplying={isApplyingMicroCuts}
           />
         </div>
       )}
