@@ -336,7 +336,9 @@ export default function CameraAnglesModal({
           )}
 
           {/* Generate Button (when no variations) */}
-          {variations.length === 0 && (2 text-sm sm:text-base">
+          {variations.length === 0 && (
+            <div className="text-center py-6 sm:py-8">
+              <p className="text-white/70 mb-2 text-sm sm:text-base">
                 Genera 4 ángulos profesionales de performance:
               </p>
               <div className="text-xs text-white/40 mb-4 space-y-1">
@@ -350,9 +352,6 @@ export default function CameraAnglesModal({
                 onClick={generateAllVariations}
                 disabled={!sourceImageUrl}
                 className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
-              >
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generar 4 Ángulos (~20s)e-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
                 Generar {CAMERA_ANGLES.length} Ángulos
