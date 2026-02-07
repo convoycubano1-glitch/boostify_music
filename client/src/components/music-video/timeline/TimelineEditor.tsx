@@ -18,6 +18,7 @@ import { VideoPreviewModal } from '../video-preview-modal';
 import { MusicianModal } from '../MusicianModal';
 import CameraAnglesModal from '../CameraAnglesModal';
 import { ImageEditorModal } from '../ImageEditorModal';
+import { MicroCutsPanel } from '../MicroCutsPanel';
 import { ExportPanel, ASPECT_RATIOS } from './ExportPanel';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -54,10 +55,20 @@ import {
   Copy, ClipboardPaste, Split, Layers, Lock, Unlock, Eye, EyeOff, MoreHorizontal,
   Download, RefreshCw, Film, Pencil, Music, Camera, Sparkles, Loader2,
   HelpCircle, Upload, FileAudio, FileVideo, ImagePlus,
-  Monitor, Check, Move, RotateCcw, Maximize2
+  Monitor, Check, Move, RotateCcw, Maximize2, Zap
 } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import type { MusicVideoScene } from '@/types/music-video-scene';
+import {
+  type MicroCutConfig,
+  type MicroCutPlan,
+  type ClipContext,
+  generateMicroCutPlan,
+  generateTimelineMicroCuts,
+  getDefaultMicroCutConfig,
+  mapToMusicSection,
+  detectSectionEnergy,
+} from '@/lib/api/micro-cuts-engine';
 
 import { 
   TimelineClip, LayerConfig, ClipType, LayerType, TimelineMarker 
@@ -234,6 +245,13 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   const [aspectRatio, setAspectRatio] = useState<string>('16:9');
   const [showAspectMenu, setShowAspectMenu] = useState(false);
   
+  // ⚡ MicroCuts Engine - Microcortes inteligentes para Kling
+  const [microCutConfig, setMicroCutConfig] = useState<MicroCutConfig>(() => 
+    getDefaultMicroCutConfig(genreHint)
+  );
+  const [microCutPlans, setMicroCutPlans] = useState<Map<number | string, MicroCutPlan>>(new Map());
+  const [showMicroCutsPanel, setShowMicroCutsPanel] = useState(false);
+
   // 🎯 CapCut-style media transform editing (scale/position within frame)
   const [isTransformMode, setIsTransformMode] = useState(false);
   const [transformDragging, setTransformDragging] = useState(false);
@@ -2536,20 +2554,55 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
     try {
       const prompt = clip.metadata?.imagePrompt || clip.title || 'cinematic motion, smooth camera movement';
       
-      // ?? Extraer metadata de la escena para instrucciones de movimiento
+      // ⚡ Extraer metadata de la escena para instrucciones de movimiento
       const sceneMetadata = clip.metadata || {};
       const cameraMovement = sceneMetadata.camera_movement || sceneMetadata.cameraMovement || 'smooth';
       const audioEnergy = sceneMetadata.audio_energy || 'medium';
       
-      // Construir prompt mejorado con movimiento
-      const motionDesc = audioEnergy === 'high' ? 'dynamic, energetic movement' :
-                        audioEnergy === 'low' ? 'subtle, slow movement' : 'smooth, natural movement';
-      const enhancedPrompt = `${prompt}. ${cameraMovement} camera movement, ${motionDesc}, cinematic quality, professional music video style`;
+      // ⚡ MICROCORTES: Enriquecer prompt con efectos cinematográficos de Kling
+      let enhancedPrompt: string;
       
-      // ?? Duraci�n: Grok genera videos de 6 segundos
+      if (microCutConfig.enabled) {
+        // Construir contexto del clip para el motor de microcortes
+        const clipContext: ClipContext = {
+          id: clip.id,
+          shotCategory: (clip.shotCategory as 'PERFORMANCE' | 'B-ROLL' | 'STORY') || 'B-ROLL',
+          musicSection: mapToMusicSection(sceneMetadata.section || sceneMetadata.musicSection || 'verse'),
+          energy: detectSectionEnergy(sceneMetadata.section || sceneMetadata.musicSection || audioEnergy),
+          duration: clip.duration,
+          isKeyMoment: sceneMetadata.isKeyMoment || sceneMetadata.is_key_moment || false,
+          shotType: sceneMetadata.shot_type || sceneMetadata.shotType,
+          cameraMovement: cameraMovement,
+          emotion: sceneMetadata.emotion || sceneMetadata.mood,
+          lyricsSegment: clip.lyricsSegment || sceneMetadata.lyrics,
+        };
+
+        // Generar plan de microcortes → prompt enriquecido para Kling
+        const microCutPlan = generateMicroCutPlan(clipContext, prompt, microCutConfig);
+        enhancedPrompt = microCutPlan.enhancedPrompt;
+        
+        // Guardar plan para visualización en UI
+        setMicroCutPlans(prev => {
+          const next = new Map(prev);
+          next.set(clip.id, microCutPlan);
+          return next;
+        });
+
+        logger.info(
+          `⚡ [MicroCuts] Clip ${clip.id}: ${microCutPlan.totalEffects} efectos → ` +
+          `[${microCutPlan.effects.map(e => e.effect).join(', ')}] | Style: ${microCutPlan.editStyle}`
+        );
+      } else {
+        // Fallback: prompt estándar sin microcortes
+        const motionDesc = audioEnergy === 'high' ? 'dynamic, energetic movement' :
+                          audioEnergy === 'low' ? 'subtle, slow movement' : 'smooth, natural movement';
+        enhancedPrompt = `${prompt}. ${cameraMovement} camera movement, ${motionDesc}, cinematic quality, professional music video style`;
+      }
+      
+      // 🎬 Duración: Grok genera videos de 6 segundos
       const videoDuration = Math.min(clip.duration, 6);
       
-      logger.info(`?? [Timeline] Grok Prompt: ${enhancedPrompt}`);
+      logger.info(`🎬 [Timeline] ${microCutConfig.enabled ? '⚡MicroCuts' : 'Standard'} Prompt: ${enhancedPrompt.substring(0, 150)}...`);
       
       // Usar endpoint de Grok Video
       const response = await fetch('/api/fal/grok-video', {
@@ -2573,8 +2626,9 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
       
       if (data.videoUrl) {
         // Video generado exitosamente - actualizar clip con videoUrl
+        const currentPlan = microCutPlans.get(clip.id);
         updateClip(clip.id, {
-          videoUrl: data.videoUrl, // Propiedad ra�z para acceso directo
+          videoUrl: data.videoUrl, // Propiedad raíz para acceso directo
           metadata: {
             ...clip.metadata,
             videoUrl: data.videoUrl,
@@ -2584,6 +2638,11 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
             videoDuration: data.duration,
             videoWidth: data.width,
             videoHeight: data.height,
+            // ⚡ MicroCuts tracking
+            microCutsEnabled: microCutConfig.enabled,
+            microCutsEffects: currentPlan?.effects.map(e => e.effect) || [],
+            microCutsStyle: currentPlan?.editStyle || 'none',
+            microCutsIntensity: microCutConfig.intensity,
           },
         });
 
@@ -3193,6 +3252,15 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
                 title="Motion"
               >
                 <MotionIcon size={11} className="text-purple-400" />
+              </Button>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={() => setShowMicroCutsPanel(!showMicroCutsPanel)}
+                className={`p-1 h-6 w-6 ${showMicroCutsPanel ? 'bg-yellow-500/20' : 'bg-yellow-500/10 hover:bg-yellow-500/20'}`}
+                title="⚡ Microcortes Cinematográficos"
+              >
+                <Zap size={11} className="text-yellow-400" />
               </Button>
               <Button 
                 size="sm" 
@@ -4196,6 +4264,27 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
         onUpdateClip={updateClip}
       />
 
+      {/* ⚡ MicroCuts Panel - Microcortes Cinematográficos */}
+      {showMicroCutsPanel && (
+        <div style={{
+          position: 'absolute',
+          top: '60px',
+          right: '16px',
+          zIndex: 40,
+          width: '320px',
+          maxWidth: 'calc(100vw - 32px)',
+        }}>
+          <MicroCutsPanel
+            config={microCutConfig}
+            onConfigChange={setMicroCutConfig}
+            plans={microCutPlans}
+            genre={genreHint}
+            bpm={audioAnalysis?.bpm}
+            totalClips={clips.filter(c => c.layerId === 1).length}
+          />
+        </div>
+      )}
+
       {/* Video Preview Modal */}
       <VideoPreviewModal
         open={previewModalOpen}
@@ -4230,7 +4319,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
         />
       )}
 
-      {/* ?? Modal de �ngulos de C�mara */}
+      {/* 🎬 Modal de Ángulos de Cámara - PERFORMANCE ONLY */}
       {showCameraAnglesModal && cameraAnglesModalClip && (
         <CameraAnglesModal
           open={showCameraAnglesModal}
@@ -4240,6 +4329,9 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
           }}
           clip={cameraAnglesModalClip}
           onSelectAngle={handleCameraAngleSelected}
+          // 🎭 Pasar referencias del artista para máxima consistencia facial
+          artistReferenceImages={projectContext?.artistReferenceImages || []}
+          originalPrompt={cameraAnglesModalClip.prompt || cameraAnglesModalClip.imagePrompt || cameraAnglesModalClip.title}
         />
       )}
 

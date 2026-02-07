@@ -42,51 +42,42 @@ interface CameraAnglesModalProps {
   onClose: () => void;
   clip: TimelineClip | null;
   onSelectAngle: (imageUrl: string, angleName: string) => void;
+  // 🎭 Imágenes de referencia del artista para máxima consistencia facial
+  artistReferenceImages?: string[];
+  // 📝 Prompt original del clip para mantener contexto
+  originalPrompt?: string;
 }
 
-// Ángulos de cámara disponibles
+// 🎬 4 ÁNGULOS PROFESIONALES PARA PERFORMANCE - Optimizado para Nano Banana Pro
+// Estos ángulos mantienen máxima consistencia facial mientras varían la composición
 const CAMERA_ANGLES: CameraAngleConfig[] = [
   {
-    id: 'close-up',
-    name: 'Close-Up',
+    id: 'extreme-closeup',
+    name: 'Gran Close-Up',
     emoji: '🔍',
-    description: 'Plano cerrado íntimo',
-    prompt: 'Transform this image to an extreme close-up shot, intimate detail, shallow depth of field, focus on the main subject, dramatic and cinematic framing'
+    description: 'Primer plano extremo - cara y expresión',
+    prompt: 'Professional music video shot: EXTREME CLOSE-UP of artist singing, face filling the frame, emotional facial expression, shallow depth of field, dramatic eye contact with camera, cinematic bokeh background, intimate performance moment, studio lighting, high detail on face and emotion, same person same face exact features'
   },
   {
-    id: 'wide',
-    name: 'Wide Shot',
-    emoji: '🌐',
-    description: 'Plano general abierto',
-    prompt: 'Transform this image to a wide establishing shot, show the full environment, distant perspective, cinematic landscape composition'
-  },
-  {
-    id: 'low-angle',
-    name: 'Low Angle',
-    emoji: '⬆️',
-    description: 'Contrapicado heroico',
-    prompt: 'Transform this image to a dramatic low angle shot, camera looking up from below, heroic and powerful perspective, epic cinematic framing'
-  },
-  {
-    id: 'high-angle',
-    name: 'High Angle',
-    emoji: '⬇️',
-    description: 'Picado desde arriba',
-    prompt: 'Transform this image to a high angle shot, camera looking down, birds eye perspective, dramatic overhead cinematic view'
-  },
-  {
-    id: 'dutch',
-    name: 'Dutch Angle',
-    emoji: '📐',
-    description: 'Ángulo inclinado dramático',
-    prompt: 'Transform this image with a Dutch angle/tilted camera, dynamic diagonal composition, edgy and stylized cinematic look'
-  },
-  {
-    id: 'over-shoulder',
-    name: 'Over Shoulder',
+    id: 'medium-shot',
+    name: 'Plano Medio',
     emoji: '👤',
-    description: 'Por encima del hombro',
-    prompt: 'Transform this image to an over-the-shoulder shot, create depth with foreground blur, intimate conversation framing, cinematic perspective'
+    description: 'Plano medio - busto y expresión',
+    prompt: 'Professional music video shot: MEDIUM SHOT of artist performing, framed from waist up, full upper body visible, singing with emotion, dynamic pose, professional stage lighting, cinematic composition, artist in center frame, same person same face exact features, studio quality'
+  },
+  {
+    id: 'side-profile',
+    name: 'Plano Lateral',
+    emoji: '↔️',
+    description: 'Perfil lateral - ángulo dramático',
+    prompt: 'Professional music video shot: SIDE PROFILE of artist singing, 90-degree angle shot, dramatic side lighting, artistic silhouette, cinematic profile view, singing performance, emotional moment, same person same face exact features, high contrast lighting, music video aesthetics'
+  },
+  {
+    id: 'overhead-wide',
+    name: 'Vista Aérea/Plano Alejado',
+    emoji: '🎥',
+    description: 'Vista superior o plano general completo',
+    prompt: 'Professional music video shot: HIGH ANGLE or OVERHEAD shot of artist performing, camera looking down, full body visible or aerial perspective, dramatic bird\'s eye view, cinematic wide composition, artist in performance space, dynamic stage lighting, same person same face exact features, epic music video framing'
   }
 ];
 
@@ -100,7 +91,14 @@ const getClipImageUrl = (clip: TimelineClip | null): string | null => {
          clip.image_url || clip.publicUrl || clip.firebaseUrl || null;
 };
 
-export default function CameraAnglesModal({ open, onClose, clip, onSelectAngle }: CameraAnglesModalProps) {
+export default function CameraAnglesModal({ 
+  open, 
+  onClose, 
+  clip, 
+  onSelectAngle,
+  artistReferenceImages = [],
+  originalPrompt = ''
+}: CameraAnglesModalProps) {
   const [variations, setVariations] = useState<GeneratedVariation[]>([]);
   const [selectedAngle, setSelectedAngle] = useState<string | null>(null);
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
@@ -117,7 +115,8 @@ export default function CameraAnglesModal({ open, onClose, clip, onSelectAngle }
     }
   }, [open]);
 
-  // Generar una variación individual usando Nano Banana Edit
+  // 🎬 Generar una variación con MÁXIMA CONSISTENCIA FACIAL
+  // Usa Nano Banana Pro directo con referencias del artista en lugar de Edit
   const generateVariation = async (angle: CameraAngleConfig): Promise<GeneratedVariation> => {
     if (!sourceImageUrl) {
       return {
@@ -131,14 +130,29 @@ export default function CameraAnglesModal({ open, onClose, clip, onSelectAngle }
     }
 
     try {
-      const response = await fetch('/api/fal/nano-banana/edit', {
+      // Extraer contexto del clip original (descripción, estilo, mood)
+      const clipContext = clip?.prompt || clip?.imagePrompt || originalPrompt || '';
+      
+      // Construir prompt enriquecido que mantiene identidad + cambia ángulo
+      // Formato: [Descripción del artista] + [Ángulo específico] + [Contexto original]
+      const enhancedPrompt = `${angle.prompt}. ${clipContext ? `Scene context: ${clipContext}.` : ''} Maintain exact same person, same facial features, same identity, same styling. Professional music video production quality, cinematic lighting.`;
+
+      logger.info(`🎬 [ANGLES] Generando ${angle.name} con Nano Banana Pro...`);
+      logger.info(`📝 [ANGLES] Prompt: ${enhancedPrompt.substring(0, 100)}...`);
+
+      const response = await fetch('/api/fal/nano-banana', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          imageUrl: sourceImageUrl,
-          prompt: angle.prompt,
+          prompt: enhancedPrompt,
+          // 🎭 CLAVE: Usar referencias del artista para máxima consistencia
+          referenceImages: artistReferenceImages.length > 0 
+            ? artistReferenceImages 
+            : [sourceImageUrl], // Fallback a imagen actual si no hay referencias
+          aspectRatio: '16:9',
+          numImages: 1,
         }),
       });
 
@@ -150,6 +164,7 @@ export default function CameraAnglesModal({ open, onClose, clip, onSelectAngle }
       const data = await response.json();
 
       if (data.success && data.imageUrl) {
+        logger.info(`✅ [ANGLES] ${angle.name} generado exitosamente`);
         return {
           angle: angle.id,
           name: angle.name,
@@ -161,7 +176,7 @@ export default function CameraAnglesModal({ open, onClose, clip, onSelectAngle }
         throw new Error('No se generó la imagen');
       }
     } catch (error: any) {
-      logger.error(`Error generando ${angle.name}:`, error);
+      logger.error(`❌ [ANGLES] Error generando ${angle.name}:`, error);
       return {
         angle: angle.id,
         name: angle.name,
@@ -199,47 +214,37 @@ export default function CameraAnglesModal({ open, onClose, clip, onSelectAngle }
     setVariations(initialVariations);
 
     toast({
-      title: "Generando ángulos...",
-      description: "Esto puede tomar unos segundos por cada ángulo",
+      title: "Generando 4 ángulos profesionales...",
+      description: "Usando Nano Banana Pro con máxima consistencia facial. Esto tomará ~20-30 segundos.",
     });
 
-    // Generar de 2 en 2 para no sobrecargar el servidor
-    const batchSize = 2;
-    const results: GeneratedVariation[] = [];
+    // 🚀 OPTIMIZACIÓN: Generar TODOS los ángulos en paralelo (4 al mismo tiempo)
+    // Esto reduce el tiempo de ~80s (4 x 20s secuencial) a ~20-25s (paralelo)
+    logger.info(`🚀 [ANGLES] Generando 4 ángulos en paralelo...`);
+    const results = await Promise.all(
+      CAMERA_ANGLES.map(angle => generateVariation(angle))
+    );
 
-    for (let i = 0; i < CAMERA_ANGLES.length; i += batchSize) {
-      const batch = CAMERA_ANGLES.slice(i, i + batchSize);
-      const batchResults = await Promise.all(
-        batch.map(angle => generateVariation(angle))
-      );
-      results.push(...batchResults);
-
-      // Actualizar UI con resultados parciales
-      setVariations(prev => {
-        const updated = [...prev];
-        batchResults.forEach((result, idx) => {
-          const globalIdx = i + idx;
-          if (updated[globalIdx]) {
-            updated[globalIdx] = { ...result, isGenerating: false };
-          }
-        });
-        return updated;
-      });
-    }
-
+    // Actualizar todos los resultados de una vez
+    setVariations(results.map(result => ({ ...result, isGenerating: false })));
     setIsGeneratingAll(false);
 
     const successCount = results.filter(v => v.success).length;
     if (successCount === 0) {
       toast({
         title: "Error",
-        description: "No se pudieron generar las variaciones. Intenta de nuevo.",
+        description: "No se pudieron generar los ángulos. Verifica tu conexión e intenta de nuevo.",
         variant: "destructive",
+      });
+    } else if (successCount === 4) {
+      toast({
+        title: "¡Perfecto! 🎬",
+        description: `Los 4 ángulos profesionales se generaron exitosamente`,
       });
     } else {
       toast({
-        title: "¡Listo!",
-        description: `Se generaron ${successCount} de ${CAMERA_ANGLES.length} ángulos`,
+        title: "Parcialmente completado",
+        description: `Se generaron ${successCount} de 4 ángulos. Puedes regenerar los que fallaron.`,
       });
     }
   };
@@ -300,12 +305,15 @@ export default function CameraAnglesModal({ open, onClose, clip, onSelectAngle }
         <DialogHeader className="px-4 py-3 sm:px-6 sm:py-4 border-b border-white/10 flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             <Camera className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
-            <span>Ángulos de Cámara</span>
+            <span>Ángulos de Performance</span>
             <Badge variant="outline" className="ml-2 text-[10px] sm:text-xs bg-orange-500/10 border-orange-500/30 text-orange-400">
               <Sparkles className="h-3 w-3 mr-1" />
-              Nano Banana AI
+              4 Ángulos Profesionales
             </Badge>
           </DialogTitle>
+          <p className="text-xs text-white/50 mt-1">
+            Genera 4 variaciones del mismo momento con diferentes ángulos de cámara para clips de PERFORMANCE
+          </p>
         </DialogHeader>
 
         {/* Scrollable Content */}
@@ -328,16 +336,23 @@ export default function CameraAnglesModal({ open, onClose, clip, onSelectAngle }
           )}
 
           {/* Generate Button (when no variations) */}
-          {variations.length === 0 && (
-            <div className="text-center py-6 sm:py-10">
-              <Camera className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-4 text-orange-500/40" />
-              <p className="text-white/60 mb-4 text-sm sm:text-base">
-                Genera variaciones con diferentes ángulos de cámara
+          {variations.length === 0 && (2 text-sm sm:text-base">
+                Genera 4 ángulos profesionales de performance:
+              </p>
+              <div className="text-xs text-white/40 mb-4 space-y-1">
+                <p>🔍 Gran Close-Up • 👤 Plano Medio</p>
+                <p>↔️ Plano Lateral • 🎥 Vista Aérea/Plano Alejado</p>
+              </div>
+              <p className="text-xs text-white/50 mb-4 max-w-md mx-auto">
+                Los 4 ángulos se generan en paralelo usando Nano Banana Pro con tus fotos de referencia para mantener máxima consistencia facial.
               </p>
               <Button
                 onClick={generateAllVariations}
                 disabled={!sourceImageUrl}
                 className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Generar 4 Ángulos (~20s)e-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
                 Generar {CAMERA_ANGLES.length} Ángulos

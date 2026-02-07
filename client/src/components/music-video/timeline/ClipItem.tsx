@@ -660,6 +660,33 @@ const ClipItem: React.FC<ClipItemProps> = ({
             <VideoIcon size={8} /> Video
           </div>
         )}
+
+        {/* ⚡ Indicador de MicroCuts aplicados */}
+        {clip.metadata?.microCutsEnabled && clip.metadata?.microCutsEffects?.length > 0 && (
+          <div 
+            className="clip-microcuts-badge" 
+            title={`⚡ MicroCuts: ${clip.metadata.microCutsEffects.join(', ')} (${clip.metadata.microCutsIntensity})`}
+            style={{
+              position: 'absolute',
+              bottom: '2px',
+              right: '2px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2px',
+              padding: '1px 4px',
+              borderRadius: '3px',
+              background: 'rgba(234, 179, 8, 0.25)',
+              border: '1px solid rgba(234, 179, 8, 0.4)',
+              color: '#fbbf24',
+              fontSize: '7px',
+              fontWeight: 600,
+              lineHeight: 1,
+              zIndex: 5,
+            }}
+          >
+            ⚡ {clip.metadata.microCutsEffects.length}fx
+          </div>
+        )}
       </div>
 
       {/* ===== MENÚ CONTEXTUAL (PORTAL - CLIC DERECHO) ===== */}
@@ -709,14 +736,14 @@ const ClipItem: React.FC<ClipItemProps> = ({
               </button>
             )}
             
-            {/* Camera Angles */}
-            {onCameraAngles && (
+            {/* Camera Angles - SOLO PARA PERFORMANCE */}
+            {onCameraAngles && clip.shotCategory === 'PERFORMANCE' && (
               <button
                 className="context-menu-item camera"
                 onClick={(e) => handleActionClick(e, onCameraAngles)}
               >
                 <Camera size={14} />
-                <span>Ángulos de Cámara</span>
+                <span>Ángulos de Cámara (4)</span>
               </button>
             )}
             
