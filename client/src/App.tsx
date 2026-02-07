@@ -165,6 +165,7 @@ const TimelineDemoPage = lazy(() => import("./pages/timeline-demo"));
 const DebugFirebasePage = lazy(() => import("./pages/debug-firebase"));
 const TimelineEditorPage = lazy(() => import("./pages/timeline-editor"));
 const SocialMediaGeneratorPage = lazy(() => import("./pages/social-media-generator"));
+const FinancialEnablementPage = lazy(() => import("./pages/financial-enablement"));
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -423,6 +424,7 @@ const Router = () => {
   const WrappedDiagnosticsPage = withPageWrapper(DiagnosticsPage);
   const WrappedArticlePage = withPageWrapper(ArticlePage);
   const WrappedSocialMediaGeneratorPage = withPageWrapper(SocialMediaGeneratorPage);
+  const WrappedFinancialEnablementPage = withPageWrapper(FinancialEnablementPage);
   const WrappedNotFound = withPageWrapper(NotFound);
 
   return (
@@ -534,6 +536,7 @@ const Router = () => {
           {getRouteComponent("/tokenization", WrappedTokenizationPage, 'free')}
           {getRouteComponent("/boostiswap", WrappedBoostiSwapPage, null)}
           {getRouteComponent("/social-media-generator", WrappedSocialMediaGeneratorPage, 'free')}
+          {getRouteComponent("/financial-enablement", WrappedFinancialEnablementPage, 'free')}
           {getRouteComponent("/resources", WrappedResourcesPage, null)}
           {getRouteComponent("/tips", WrappedTipsPage, null)}
           {getRouteComponent("/guides", WrappedGuidesPage, null)}

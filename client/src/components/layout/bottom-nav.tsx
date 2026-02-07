@@ -125,6 +125,7 @@ export function BottomNav() {
     { title: "Merch", icon: ShoppingBag, href: "/merchandise", plan: "pro" },
     { title: "Contracts", icon: FileText, href: "/contracts", plan: "basic" },
     { title: "Contacts", icon: Users, href: "/contacts", plan: "pro" },
+    { title: "Financial", icon: BarChart, href: "/financial-enablement", plan: "free" },
     { title: "Admin", icon: BarChart2, href: "/admin", plan: "free" },
     { title: "Settings", icon: Settings, href: "/settings", plan: "free" },
   ];
