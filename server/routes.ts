@@ -74,6 +74,7 @@ import aiAdvisorRouter from './routes/ai-advisor'; // Import AI Advisor Chat rou
 import contractsRouter from './routes/contracts'; // Import the contracts router with Gemini AI
 import falApiRouter from './routes/fal-api'; // Import the FAL AI router for secure backend processing
 import creditsRouter from './routes/credits'; // Import the credits and payments router
+import videoBudgetRouter from './routes/video-budget'; // Import Video Budget system (pre-generation payment)
 import faceAnalysisRouter from './routes/face-analysis'; // Import the face analysis router
 import videoRenderingRouter from './routes/video-rendering'; // Import the video rendering router with Shotstack
 import diagnosticsRouter from './routes/diagnostics'; // Import diagnostics router for system health checks
@@ -469,6 +470,7 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   app.use('/api/fashion', fashionStudioRouter); // Artist Fashion Studio (Virtual Try-On, AI Advisor, Kling Videos)
   app.use('/api/notifications', notificationsRouter); // Internal notifications system
   app.use(creditsRouter); // Credits and payment routes
+  app.use('/api/video-budget', videoBudgetRouter); // Video Budget system (pre-generation Stripe payment)
   
   // Helper function para obtener features de cada plan
   function getPlanFeatures(plan: string): string[] {

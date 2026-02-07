@@ -2650,6 +2650,10 @@ export const musicIndustryContacts = pgTable("music_industry_contacts", {
   importSource: text("import_source"), // csv, apify, manual
   importBatchId: text("import_batch_id"),
   
+  // Email verification
+  emailStatus: text("email_status"),
+  emailVerifiedAt: timestamp("email_verified_at"),
+  
   // Timestamps
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -3826,3 +3830,79 @@ export const promotedPosts = pgTable("promoted_posts", {
 
 export type PromotedPost = typeof promotedPosts.$inferSelect;
 export type NewPromotedPost = typeof promotedPosts.$inferInsert;
+
+// ============================================
+// VIDEO BUDGET SYSTEM — Pre-generation payment
+// ============================================
+
+export const videoBudgets = pgTable("video_budgets", {
+  id: serial("id").primaryKey(),
+  
+  // Project reference
+  projectId: integer("project_id"),
+  userEmail: text("user_email").notNull(),
+  userId: integer("user_id"),
+  
+  // Song details
+  songTitle: text("song_title"),
+  songDuration: integer("song_duration").notNull(), // seconds
+  
+  // Configuration
+  numClips: integer("num_clips").notNull(),
+  clipDuration: integer("clip_duration").default(5), // seconds per clip
+  videoModel: text("video_model").notNull(), // e.g. 'kling-2.6-pro', 'kling-o3', 'veo-3.1'
+  imageModel: text("image_model").default("nano-banana-pro"),
+  resolution: text("resolution").default("1080p"),
+  
+  // Optional features
+  includesLipsync: boolean("includes_lipsync").default(false),
+  includesMotion: boolean("includes_motion").default(false),
+  includesMicrocuts: boolean("includes_microcuts").default(true),
+  
+  // Cost breakdown (JSON)
+  costBreakdown: json("cost_breakdown").$type<{
+    images: { count: number; unitCost: number; total: number };
+    videos: { count: number; unitCost: number; total: number };
+    lipsync: { count: number; unitCost: number; total: number };
+    motion: { count: number; unitCost: number; total: number };
+    openai: { total: number };
+    render: { passes: number; unitCost: number; total: number };
+    corrections: { buffer: number; total: number };
+  }>(),
+  
+  // Financial
+  internalCost: decimal("internal_cost", { precision: 10, scale: 2 }).notNull(),
+  markupMultiplier: decimal("markup_multiplier", { precision: 4, scale: 2 }).default("4.00"),
+  userPrice: decimal("user_price", { precision: 10, scale: 2 }).notNull(),
+  
+  // Payment
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  stripeClientSecret: text("stripe_client_secret"),
+  paymentStatus: text("payment_status", {
+    enum: ["pending", "processing", "paid", "failed", "refunded", "admin_bypass"]
+  }).default("pending").notNull(),
+  
+  // Contract
+  contractAccepted: boolean("contract_accepted").default(false),
+  contractSignature: text("contract_signature"),
+  contractTimestamp: timestamp("contract_timestamp"),
+  
+  // Admin
+  adminBypass: boolean("admin_bypass").default(false),
+  
+  // Generation tracking
+  generationStatus: text("generation_status", {
+    enum: ["not_started", "in_progress", "completed", "failed"]
+  }).default("not_started"),
+  clipsGenerated: integer("clips_generated").default(0),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_video_budgets_user").on(table.userEmail),
+  index("idx_video_budgets_project").on(table.projectId),
+  index("idx_video_budgets_payment").on(table.paymentStatus),
+]);
+
+export type VideoBudget = typeof videoBudgets.$inferSelect;
+export type NewVideoBudget = typeof videoBudgets.$inferInsert;

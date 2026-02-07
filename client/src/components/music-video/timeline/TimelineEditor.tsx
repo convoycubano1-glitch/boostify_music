@@ -19,6 +19,7 @@ import { MusicianModal } from '../MusicianModal';
 import CameraAnglesModal from '../CameraAnglesModal';
 import { ImageEditorModal } from '../ImageEditorModal';
 import { MicroCutsPanel } from '../MicroCutsPanel';
+import { VideoBudgetModal } from '../VideoBudgetModal';
 import { ExportPanel, ASPECT_RATIOS } from './ExportPanel';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -55,7 +56,7 @@ import {
   Copy, ClipboardPaste, Split, Layers, Lock, Unlock, Eye, EyeOff, MoreHorizontal,
   Download, RefreshCw, Film, Pencil, Music, Camera, Sparkles, Loader2,
   HelpCircle, Upload, FileAudio, FileVideo, ImagePlus,
-  Monitor, Check, Move, RotateCcw, Maximize2, Zap
+  Monitor, Check, Move, RotateCcw, Maximize2, Zap, DollarSign
 } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import type { MusicVideoScene } from '@/types/music-video-scene';
@@ -280,8 +281,14 @@ export const TimelineEditor: React.FC<TimelineEditorProps> = ({
   }>({ visible: false, x: 0, y: 0 });
   
   // 📁 Proyectos Guardados - Firebase + localStorage como cache
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
+  
+  // 💰 Video Budget System - Pre-generation payment gate
+  const [showBudgetModal, setShowBudgetModal] = useState(false);
+  const [budgetApproved, setBudgetApproved] = useState(false);
+  const [currentBudgetId, setCurrentBudgetId] = useState<number | null>(null);
+  const [pendingGenerateClip, setPendingGenerateClip] = useState<TimelineClip | null>(null);
   const [firebaseProjects, setFirebaseProjects] = useState<VideoProject[]>([]);
   const [showProjectsPanel, setShowProjectsPanel] = useState(false);
   const [projectName, setProjectName] = useState('');
@@ -2531,6 +2538,14 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
   const [isGeneratingVideo, setIsGeneratingVideo] = useState<number | null>(null);
   
   const handleGenerateVideo = useCallback(async (clip: TimelineClip) => {
+    // 💰 Budget Guard — require approved budget before generation
+    if (!budgetApproved) {
+      logger.info(`💰 [Budget] Video generation blocked — opening budget modal`);
+      setPendingGenerateClip(clip);
+      setShowBudgetModal(true);
+      return;
+    }
+    
     logger.info(`?? [Timeline] Generando video para clip ${clip.id} con Grok Imagine Video`);
     setIsGeneratingVideo(clip.id);
     
@@ -2664,7 +2679,7 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
     } finally {
       setIsGeneratingVideo(null);
     }
-  }, [toast, updateClip]);
+  }, [toast, updateClip, budgetApproved]);
   
   // Polling para videos as�ncronos de FAL Kling
   const pollVideoStatus = useCallback(async (clipId: number, requestId: string, model: string) => {
@@ -3244,6 +3259,15 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
 
             {/* Quick Actions */}
             <div className="flex items-center gap-px">
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={() => setShowBudgetModal(true)}
+                className={`p-1 h-6 w-6 ${budgetApproved ? 'bg-green-500/20' : 'bg-emerald-500/10 hover:bg-emerald-500/20'}`}
+                title={budgetApproved ? '💰 Presupuesto Aprobado' : '💰 Ver Presupuesto'}
+              >
+                <DollarSign size={11} className={budgetApproved ? 'text-green-400' : 'text-emerald-400'} />
+              </Button>
               <Button 
                 size="sm" 
                 variant="ghost" 
@@ -4348,6 +4372,39 @@ ${concept?.color_palette ? `Color Palette: ${concept.color_palette}` : ''}`.trim
           onImageEdited={handleImageEdited}
         />
       )}
+
+      {/* 💰 Video Budget Modal — Pre-generation payment gate */}
+      <VideoBudgetModal
+        isOpen={showBudgetModal}
+        onClose={() => {
+          setShowBudgetModal(false);
+          setPendingGenerateClip(null);
+        }}
+        onBudgetApproved={(budgetId) => {
+          setBudgetApproved(true);
+          setCurrentBudgetId(budgetId);
+          setShowBudgetModal(false);
+          toast({
+            title: '✅ Presupuesto Aprobado',
+            description: 'Ya puedes generar videos. ¡Manos a la obra!',
+          });
+          // If there was a pending clip generation, trigger it now
+          if (pendingGenerateClip) {
+            const clipToGenerate = pendingGenerateClip;
+            setPendingGenerateClip(null);
+            // Small delay to let state update
+            setTimeout(() => handleGenerateVideo(clipToGenerate), 300);
+          }
+        }}
+        isAdmin={isAdmin}
+        songDuration={duration}
+        numClips={clips.length}
+        clipDuration={clips.length > 0 ? Math.round(clips.reduce((sum, c) => sum + c.duration, 0) / clips.length) : 5}
+        songTitle={projectName || projectContext?.songTitle || 'Video Musical'}
+        userEmail={user?.email || ''}
+        userId={user?.id ? String(user.id) : undefined}
+        projectId={undefined}
+      />
 
       {/* ?? Export Panel */}
       <ExportPanel
